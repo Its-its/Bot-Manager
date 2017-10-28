@@ -1,0 +1,17 @@
+.container {
+	margin-top: 20px;
+}
+
+
+.bot-preview {
+	transition: background-color 200ms;
+	cursor: pointer;
+}
+
+.bot-preview > p {
+	margin-bottom: 0;
+}
+
+.bot-preview:hover {
+	background-color: #d2d2d2;
+}

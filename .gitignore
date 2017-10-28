@@ -1,0 +1,8 @@
+/.vscode
+/.history
+/yarn.lock
+
+/src/**
+/node_modules
+
+/app/config/config.json

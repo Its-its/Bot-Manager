@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Bot Manager | Dashboard</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/foundation/6.4.3/css/foundation.min.css">
+		<link rel="stylesheet" href="/css/dashboard.css">
+	</head>
+	<body>
+		<!-- Top Menu -->
+		<div class="top-bar">
+			<div class="top-bar-left title">
+				<ul class="menu">
+					<li class="topbar-title">
+						<a href="/dashboard">Video Manager</a>
+					</li>
+				</ul>
+			</div>
+			
+			<div class="top-bar-right">
+				<ul class="dropdown menu" data-dropdown-menu>
+					<li>
+						<a href="javascript:void(0)">Options</a>
+						<ul class="menu vertical">
+							<li><a href="/accessed">Access</a></li>
+							<li><a href="/settings">Settings</a></li>
+							<li><a href="/logout">Logout</a></li>
+						</ul>
+					</li>
+				</ul>
+			</div>
+		</div>
+
+		<div class="grid-container fluid">
+			<div class="container grid-x grid-margin-x">
+				<div class="medium-6 large-8 cell">
+					<!--  -->
+				</div>
+				<div class="medium-6 large-4 cell">
+					<div class="callout secondary bot-preview" data-bots="twitch">
+						<h5>Twitch</h5>
+						<p>Active Bots: <span data-connections>0</span></p>
+						<p>Errors: <span data-errors>0</span></p>
+					</div>
+					<div class="callout secondary bot-preview" data-bots="discord">
+						<h5>Discord</h5>
+						<p>Active Bots: <span data-connections>0</span></p>
+						<p>Errors: <span data-errors>0</span></p>
+					</div>
+					<div class="callout secondary bot-preview" data-bots="youtube">
+						<h5>Youtube</h5>
+						<p>Active Bots: <span data-connections>0</span></p>
+						<p>Errors: <span data-errors>0</span></p>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script src="//code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/foundation/6.4.3/js/foundation.min.js"></script>
+		<script src="/js/dashboard.js"></script>
+	</body>
+</html>
