@@ -36,10 +36,13 @@
 		<div class="grid-container fluid">
 			<div class="container grid-x grid-margin-x">
 				<div class="medium-6 large-8 cell">
-					<!--  -->
+					<div id="bot"></div>
 				</div>
-				<div class="medium-6 large-4 cell">
-					<div class="callout secondary bot-preview" data-bots="twitch">
+				<div class="medium-6 large-4 cell" id="bots">
+					<div class="callout secondary">
+						<a href="javascript:void(null)" class="button" id="createBot">Create Bot</a>
+					</div>
+					<!--div class="callout secondary bot-preview" data-bots="twitch">
 						<h5>Twitch</h5>
 						<p>Active Bots: <span data-connections>0</span></p>
 						<p>Errors: <span data-errors>0</span></p>
@@ -53,12 +56,12 @@
 						<h5>Youtube</h5>
 						<p>Active Bots: <span data-connections>0</span></p>
 						<p>Errors: <span data-errors>0</span></p>
-					</div>
+					</div-->
 				</div>
 			</div>
 		</div>
 
-		<script src="//code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+		<script src="//code.jquery.com/jquery-3.2.1.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/foundation/6.4.3/js/foundation.min.js"></script>
 		<script src="/js/dashboard.js"></script>
 	</body>

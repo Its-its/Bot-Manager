@@ -1,4 +1,4 @@
-import Command = require('../command');
+import Command = require('../../command');
 
 class Create extends Command {
 	constructor() {

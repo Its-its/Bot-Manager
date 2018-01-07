@@ -6,8 +6,7 @@ let DiscordBot = new Schema({
 	user_id: { type: Schema.Types.ObjectId, ref: 'users' },
 	server_id: { type: Schema.Types.ObjectId, ref: 'discord_servers' },
 
-	
-	name: String,
+	displayName: String,
 
 	is_active: { type: Boolean, default: false },
 	is_registered: { type: Boolean, default: false },

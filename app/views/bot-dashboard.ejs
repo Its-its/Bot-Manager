@@ -1,3 +1,5 @@
+
+<!-- https://www.dynobot.net/commands#/Manager -->
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -7,6 +9,7 @@
 
 		<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/foundation/6.4.3/css/foundation.min.css">
 		<link rel="stylesheet" href="/css/dashboard.css">
+		<link rel="stylesheet" href="/css/font-awesome.css">
 	</head>
 	<body>
 		<!-- Top Menu -->
@@ -36,17 +39,13 @@
 		<div class="grid-container fluid">
 			<div class="container grid-x grid-margin-x">
 				<div class="medium-6 large-8 cell">
-					<div class="callout secondary">
-						<a href="javascript:void(null)" class="button" id="createBot">Create Bot</a>
-					</div>
-
-					<div id="bot-container"></div>
+					<div class="grid-y" id="bot-container"></div>
 				</div>
-				<div class="medium-6 large-4 cell" id="bots"></div>
+				<div class="medium-6 large-4 cell" id="bot-info"></div>
 			</div>
 		</div>
 
-		<script src="//code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+		<script src="//code.jquery.com/jquery-3.2.1.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/foundation/6.4.3/js/foundation.min.js"></script>
 		<script src="/js/bot-dashboard.js"></script>
 	</body>

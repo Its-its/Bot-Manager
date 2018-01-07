@@ -1,0 +1,187 @@
+/// Stroke font-character
+/// @param  {Integer} $stroke - Stroke width
+/// @param  {Color}   $color  - Stroke color
+/// @return {List}            - text-shadow list
+@function stroke($stroke, $color) {
+	$shadow: ();
+	$from: $stroke*-1;
+	@for $i from $from through $stroke {
+		@for $j from $from through $stroke {
+			$shadow: append($shadow, $i*1px $j*1px 0 $color, comma);
+		}
+	}
+	@return $shadow;
+}
+
+/// Stroke font-character
+/// @param  {Integer} $stroke - Stroke width
+/// @param  {Color}   $color  - Stroke color
+/// @return {Style}           - text-shadow
+@mixin stroke($stroke, $color) {
+	text-shadow: stroke($stroke, $color);
+}
+
+
+html, body {
+	height: 100%;
+}
+
+$body-bg: #131625;
+
+body {
+	background: $body-bg;
+	color: #ebebeb;
+}
+
+#bot-container {
+	> .cell {
+		margin-bottom: 20px;
+	}
+
+	.edit-app {
+		display: none;
+	
+		&.shown {
+			display: block;
+		}
+
+		.title-container {
+			.minimize {
+				float: right;
+			}
+		}
+
+		.editor-container {
+			//
+		}
+
+		.tools {
+			text-align: right;
+			
+			a {
+				margin-left: 5px;
+			}
+		}
+	}
+}
+
+
+#bot-info {
+	.status {
+		background-color: #373a4d;
+		color: white;
+	}
+}
+
+.header {
+	background-color: #373a4d;
+	position: relative;
+	padding: 5px;
+
+	.header-item {
+		padding: 5px 10px;
+	}
+}
+
+.listener {
+	.setup {
+		.desc {
+			font-size: 15px;
+			color: #464a5a;
+		}
+
+		.linked-text {
+			color: #0e4d0b;
+			font-weight: bold;
+		}
+
+		.tools {
+			text-align: right;
+			
+			.button {
+				margin-left: 5px;
+			}
+		}
+	}
+}
+
+.apps {
+	.title {
+		margin-bottom: 0px;
+	}
+
+	.apps-cont {
+		width: 100%;
+		height: auto;
+		position: relative;
+		overflow: hidden;
+
+		.app {
+			float: left;
+			height: 75px;
+			width: 25%;
+			padding: 4px;
+
+			&.active {
+				//
+			}
+
+			.app-container {
+				position: relative;
+				background-color: #373a4d;
+				cursor: pointer;
+				padding: 4px;
+				height: 100%;
+				width: 100%;
+
+				&:hover {
+					background-color: #373a4d * 0.85;
+				}
+
+				.icon {
+					color: $body-bg;
+				}
+
+				.name {
+					position: absolute;
+					@include stroke(3, $body-bg);
+					bottom: 5px;
+					left: 25px;
+					font-size: 20px;
+					color: #ddd;
+				}
+			}
+		}
+	}
+
+	.toggle {
+		width: 100%;
+		height: 15px;
+		background: #272b3b;
+		text-align: center;
+		font-size: 10px;
+		font-weight: bold;
+		cursor: pointer;
+	}
+}
+
+
+
+
+.container {
+	margin-top: 20px;
+}
+
+
+.bot-preview {
+	transition: background-color 200ms;
+	cursor: pointer;
+}
+
+.bot-preview > p {
+	margin-bottom: 0;
+}
+
+.bot-preview:hover {
+	background-color: #d2d2d2;
+}

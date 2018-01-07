@@ -12,10 +12,19 @@ let DiscordConnSchema = new Schema({
 	name: String
 });
 
+let DiscordGuildSchema = new Schema({
+	owner: Boolean,
+	permissions: Number,
+	icon: String,
+	id: String,
+	name: String
+});
+
 let User = new Schema({
 	is_active: Boolean,
 
 	bots: {
+		amount: Number,
 		twitch_amount: Number,
 		youtube_amount: Number,
 		discord_amount: Number
@@ -39,12 +48,24 @@ let User = new Schema({
 		id: String,
 		token: String,
 		name: String,
+		avatar: String,
+		mfa_enabled: Boolean,
+		// provider: String,
 		discriminator: String,
-		connections: [ DiscordConnSchema ]
+		connections: [ DiscordConnSchema ],
+		guilds: [ DiscordGuildSchema ]
 	},
 
 	created_at: { type: Date, default: Date.now }
 });
+
+User.virtual('listeners', {
+	ref: 'bots',
+	localField: '_id',
+	foreignField: 'user_id'
+});
+
+
 
 User.virtual('twitch_bots', {
 	ref: 'twitch_bots',

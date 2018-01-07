@@ -16,57 +16,68 @@
 
 import redis = require('redis');
 
-import HelpCommand = require('./help');
-import RegisterCommand = require('./register');
-import CreateCommand = require('./create');
-import RemoveCommand = require('./remove');
-
-import BaseCommand = require('../command');
-import * as Discord from 'discord.js';
+import Command = require('../command');
 
 import CommandManger = require('../../command-manager');
+
+import Discord = require('discord.js');
+
 
 // let redisGuildsClient = redis.createClient({ db: '0' });
 
 
 
-let defaultCommands: Array<BaseCommand> = [];
+let defaultCommands: Array<Command> = [];
 
-addCommand(new HelpCommand());
-addCommand(new RegisterCommand());
-addCommand(new CreateCommand());
-addCommand(new RemoveCommand());
+process.nextTick(() => {
+	addCommand(require('./misc'));
+	addCommand(require('./moderation'));
+	addCommand(require('./manager'));
+	addCommand(require('./moderator'));
+	addCommand(require('./music'));
+	addCommand(require('./roles'));
+});
 
-let Manager = {
-	parseMessage(message: string) {
-		let parts = message.split(' ');
-		let messageCommand = parts[0].toLowerCase();
+function parseMessage(message: string, userOptions, defaultMessage: Discord.Message) {
+	let parts = message.split(' ');
+	let messageCommand = parts[0].toLowerCase();
 
-		for (let i = 0; i < defaultCommands.length; i++) {
-			let command = defaultCommands[i];
+	for (let i = 0; i < defaultCommands.length; i++) {
+		let command = defaultCommands[i];
 
-			if (command.is(messageCommand)) {
-				// check if user has the perms.
+		if (command.is(messageCommand)) {
+			// TODO: check if user has the perms.
 
+			if (command.validate(parts.slice(1))) {
 				let fixedParams = CommandManger.getProperParam(parts, command.params);
-
-				return command.params[fixedParams.pos].cb(fixedParams.newParams);
+				return command.params[fixedParams.pos].cb(fixedParams.newParams, userOptions, defaultMessage);
+			} else {
+				return { type: 'echo', message: 'Invalid Params!' };
 			}
 		}
-
-		return null;
-	},
-	is(commandName: string) {
-		for (var i = 0; i < defaultCommands.length; i++) {
-			if (defaultCommands[i].is(commandName)) return true;
-		}
-
-		return false;
 	}
-};
 
-function addCommand(command: BaseCommand) {
+	return null;
+}
+
+function is(commandName: string) {
+	for (var i = 0; i < defaultCommands.length; i++) {
+		if (defaultCommands[i].is(commandName)) return true;
+	}
+
+	return false;
+}
+
+function get(commandName: string): Command {
+	for (var i = 0; i < defaultCommands.length; i++) {
+		if (defaultCommands[i].is(commandName)) return defaultCommands[i];
+	}
+	return null;
+}
+
+function addCommand(command: Command | Array<Command>) {
+	if (Array.isArray(command)) return command.forEach(c => addCommand(c));
 	defaultCommands.push(command);
 }
 
-export = Manager;
+export { parseMessage, is, get };

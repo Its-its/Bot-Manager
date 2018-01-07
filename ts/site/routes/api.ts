@@ -1,6 +1,8 @@
 import express = require('express');
+import mongoose = require('mongoose');
 
-import DiscordBot = require('../models/discord_bots');
+import DiscordServers = require('../models/discord_servers');
+import Bots = require('../models/bots');
 
 // Layout
 // /api
@@ -20,7 +22,8 @@ export = (app: express.Application) => {
 
 	route.use(function(req, res, next) {
 		if ((<any>req).isAuthenticated()) return next();
-		
+
+		// TODO: Check body for user uid.
 		res.send({ error: 'Not Authenticated' });
 	});
 
@@ -38,24 +41,25 @@ export = (app: express.Application) => {
 			if (botType != 'twitch' && botType != 'discord' && botType != 'youtube')
 				return res.send({ error: 'Invalid.' });
 
-			let param = botType + '_bots';
-	
+			let botParam = `${botType}_bots`;
+
 			req.user
-			.populate(param, (err, resp) => {
+			.populate(botParam, (err, resp) => {
 				if (err != null) return res.send({ error: err });
 
 				res.send({
 					data: {
-						bots: resp[param].map(item => {
+						bots: resp[botParam].map(item => {
 							return {
 								confirmation_id: item.confirmation_id,
 								created_at: item.created_at,
 								custom_token: item.custom_token,
+								server_id: item.server_id,
 								edited_at: item.edited_at,
 								is_active: item.is_active,
 								is_disconnected: item.is_disconnected,
 								is_registered: item.is_registered,
-								name: item.name
+								displayName: item.displayName
 							};
 						})
 					}
@@ -65,102 +69,173 @@ export = (app: express.Application) => {
 			return;
 		}
 
+		req.user.populate('listeners', (err, resp) => {
+			res.send({
+				error: err,
+				data: resp.listeners.map(b => {
+					return {
+						displayName: b.displayName,
+						uid: b.uid,
+						is_active: b.is_active,
+						created_at: b.created_at,
+						apps: b.apps
+					};
+				})
+			});
+		});
+	});
 
-		res.send({
-			data: {
-				twitch: {
-					count: req.user.bots.twitch_amount,
-					errors: 0
-				},
-				discord: {
-					count: req.user.bots.discord_amount,
-					errors: 0
-				},
-				youtube: {
-					count: req.user.bots.youtube_amount,
-					errors: 0
+	dashboard.post('/create', (req, res) => {
+		if (req.user.bots.amount >= 2) return res.send({ error: 'Max Bot count reached!' });
+
+		let bot = new Bots({
+			user_id: req.user.id,
+			uid: uniqueID()
+		});
+
+		bot.save((err) => {
+			if (err != null) return res.send({ error: err });
+
+			req.user.bots.amount++;
+			req.user.save(() => {
+				res.send({ data: 'Created!' });
+			});
+		});
+	});
+
+
+
+	// api/bot/
+	let bots = express.Router();
+
+	bots.post('/status', (req, res) => {
+		let id = req.body.id;
+
+		Bots.findOne({ uid: id }, (err, bot: any) => {
+			res.send({
+				error: err,
+				data: err != null ? null : {
+					user: {
+						twitch: {
+							linked: req.user.twitch.id != null
+						},
+						discord: {
+							linked: req.user.discord.id != null
+						},
+						youtube: {
+							linked: req.user.youtube.id != null
+						}
+					},
+					bot: {
+						displayName: bot.displayName,
+						active: bot.is_active,
+						uid: bot.uid,
+						app: bot.app,
+						created: bot.created_at,
+						edited: bot.edited_at
+					}
 				}
+			});
+		});
+	});
+
+	bots.post('/set', (req, res) => {
+		let id = req.body.id;
+		let name = req.body.name;
+
+		Bots.findOne({ uid: id }, (err, bot: any) => {
+			if (err != null) return res.send({ error: 'Error! ID not found!' });
+
+			if (bot.app == null) {
+				var modelName = toModelName(name);
+
+				if (modelName == null) return res.send({ error: 'Incorrect Listener Name' });
+
+				var Model = mongoose.model(modelName);
+				
+				var listener = <any>new Model({
+					user_id: req.user.id,
+					bot_id: bot.id,
+					uid: uniqueID()
+				});
+
+				listener.save(() => {
+					bot.app = {
+						name: name,
+						uid: listener.uid
+					};
+
+					bot.save(() => {
+						res.send({ data: 'Success!' });
+					});
+				});
+			} else {
+				//
 			}
 		});
 	});
 
-	
+	// api/listener/
+	let listeners = express.Router();
 
-	// api/bots/
-	let bots = express.Router();
+	listeners.post('/status', (req, res) => {
+		let id = req.body.id;
+		let name = req.body.name;
 
-	bots.get('/invite', (req, res) => { // Generate unqiue id, once the bot joins server, give the bot the id.
-		let botType = req.query.botType;
+		var modelName = toModelName(name);
+		if (modelName == null) return res.send({ error: 'Incorrect Listener Name' });
 
-		if (botType != null) {
-			botType = botType.toLowerCase();
-
-			if (botType == 'discord') {
-				res.redirect('https://discordapp.com/oauth2/authorize?client_id=367809207849844737&scope=bot&permissions=66321471');
+		mongoose.model(modelName)
+		.findOne({ uid: id }, (err, doc: any) => {
+			if (name == 'disc') {
+				//
+			} else {
+				res.send({ poo: 'poo' });
 			}
-		} else {
-			res.send({ error: 'Poop' });
-		}
+		});
 	});
 
-	bots.post('/create', (req, res) => {
-		let botType = req.body.botType;
-
-		if (botType != null) {
-			botType = botType.toLowerCase();
-
-			if (botType == 'twitch') {
-				//
-			} else if (botType == 'discord') {
-				if (req.user.bots.discord_amount > 0)
-					return res.send({ error: 'Exceeding Maximum Discord bots!' });
-
-				let discordBot = new DiscordBot({
-					user_id: req.user._id,
-					confirmation_id: confirmID()
-				});
-
-				discordBot.save((err) => {
-					if (err != null) return res.send({ error: err });
-
-					req.user.bots.discord_amount++;
-					req.user.save(() => {
-						res.send({ data: 'Successful' });
-					});
-				});
-
-			} else if (botType == 'youtube') {
-				//
-			}
-		}
+	listeners.post('/create', (req, res) => {
+		let botId = req.body.botId;
+		let type = req.body.type; // yt, disc, etc..
+		let userId = req.user.id;
 	});
-	
-	// bots.post('/:botType', (req, res) => {
-	// 	let botType = req.params.botType;
 
-	// 	if (botType == null) return res.send({ error: 'botType is not defined.' });
+	// bots.post('/create', (req, res) => {
+	// 	let botType = req.body.botType;
 
-	// 	botType = botType.toLowerCase();
-		
-	// 	if (botType != 'twitch' && botType != 'discord' && botType != 'youtube')
-	// 		return res.send({ error: 'Invalid.' });
+	// 	if (botType != null) {
+	// 		botType = botType.toLowerCase();
 
-	// 	req.user
-	// 	.populate(botType + '_bots', (err, resp) => {
-	// 		if (err != null) return res.send({ error: err });
-	// 		res.send({
-	// 			data: resp.map(item => {
-	// 				delete item._id;
-	// 				delete item.user_id;
+	// 		if (botType == 'twitch') {
+	// 			//
+	// 		} else if (botType == 'discord') {
+	// 			if (req.user.bots.discord_amount > 0)
+	// 				return res.send({ error: 'Exceeding Maximum Discord bots!' });
 
-	// 				return item;
-	// 			})
-	// 		});
-	// 	});
+	// 			let discordBot = new DiscordBot({
+	// 				user_id: req.user._id,
+	// 				confirmation_id: confirmID()
+	// 			});
+
+	// 			discordBot.save((err) => {
+	// 				if (err != null) return res.send({ error: err });
+
+	// 				req.user.bots.discord_amount++;
+	// 				req.user.save(() => {
+	// 					res.send({ data: 'Successful' });
+	// 				});
+	// 			});
+
+	// 		} else if (botType == 'youtube') {
+	// 			//
+	// 		}
+	// 	}
 	// });
 
 	route.use('/dashboard', dashboard);
-	route.use('/bots', bots);
+	route.use('/bot', bots);
+	route.use('/listener', listeners);
 
 	app.use('/api', route);
 }
@@ -172,4 +247,19 @@ function confirmID() {
 	function block() {
 		return Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1);
 	}
+}
+
+function uniqueID() {
+	return block() + block() + block() + block() + block() + block() + block() + block();
+
+	function block() {
+		return Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1);
+	}
+}
+
+function toModelName(name) {
+	if (name == 'disc') return 'discord_servers';
+	if (name == 'yt') return 'youtube_channels';
+	if (name == 'ttv') return 'twitch_channels';
+	return null;
 }

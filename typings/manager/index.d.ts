@@ -1,4 +1,3 @@
-
 declare interface CommandClient {
 	commands: Array<Command>;
 }
@@ -21,4 +20,4 @@ declare interface CommandParam {
 	paramReg?: string;
 	minPerms?: number;
 	cb?: (params: Array<string>) => any;
-};
+}

@@ -1,4 +1,4 @@
-import Command = require('../command');
+import Command = require('../../command');
 
 class Remove extends Command {
 	constructor() {

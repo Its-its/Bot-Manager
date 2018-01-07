@@ -16,7 +16,11 @@ interface Config {
 	bot: {
 		discord: {
 			token: string;
+			port: number;
 		}
+	}
+	youtube: {
+		key: string;
 	}
 	passport: {
 		twitch: {
@@ -28,7 +32,8 @@ interface Config {
 			clientID: string;
 			clientSecret: string;
 			callbackURL: string;
-			scope: Array<"identify" | "connections" | "guilds" | "guilds.join">;
+			scopeInvite: [ "bot", "identify", "guilds" ];
+			scopeAuth: [ "identify", "guilds" ];
 		}
 		google: {
 			clientID: string;

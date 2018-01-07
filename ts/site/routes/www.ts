@@ -9,24 +9,34 @@ export = (app: express.Application) => {
 		res.render('index');
 	});
 
-	app.get('/dashboard', (req, res) => {
+	app.get('/dashboard', authed, (req, res) => {
 		if (!(<any>req).isAuthenticated()) return res.redirect('/');
 		res.render('dashboard');
 	});
 
-	app.get('/dashboard/:botType', (req, res) => {
+	app.get('/bot/:id([0-9A-Za-z]{32})', authed, (req, res) => {
 		if (!(<any>req).isAuthenticated()) return res.redirect('/');
-
-		// let botType = req.params.botType;
-
 		res.render('bot-dashboard');
 	});
 
-	app.get('/settings', (req, res) => {
+	app.get('/settings', authed, (req, res) => {
 		res.render('index');
 	});
 
 	apiSetup(app);
-
 	passport(app);
+
+	app.get('/logout', authed, (req, res) =>{
+		(<any>req).logout();
+		res.redirect('/');
+	});
+
+	app.use((req, res) => {
+		res.status(500).send('Something Broke!');
+	});
+}
+
+function authed(req, res, next) {
+	if ((<any>req).isAuthenticated()) return next();
+	res.status(500).send('Not Authed!');
 }

@@ -1,17 +1,98 @@
-.container {
-	margin-top: 20px;
-}
+html, body {
+  height: 100%; }
 
+body {
+  background: #131625;
+  color: #ebebeb; }
+
+#bot-container > .cell {
+  margin-bottom: 20px; }
+
+#bot-container .edit-app {
+  display: none; }
+  #bot-container .edit-app.shown {
+    display: block; }
+  #bot-container .edit-app .title-container .minimize {
+    float: right; }
+  #bot-container .edit-app .tools {
+    text-align: right; }
+    #bot-container .edit-app .tools a {
+      margin-left: 5px; }
+
+#bot-info .status {
+  background-color: #373a4d;
+  color: white; }
+
+.header {
+  background-color: #373a4d;
+  position: relative;
+  padding: 5px; }
+  .header .header-item {
+    padding: 5px 10px; }
+
+.listener .setup .desc {
+  font-size: 15px;
+  color: #464a5a; }
+
+.listener .setup .linked-text {
+  color: #0e4d0b;
+  font-weight: bold; }
+
+.listener .setup .tools {
+  text-align: right; }
+  .listener .setup .tools .button {
+    margin-left: 5px; }
+
+.apps .title {
+  margin-bottom: 0px; }
+
+.apps .apps-cont {
+  width: 100%;
+  height: auto;
+  position: relative;
+  overflow: hidden; }
+  .apps .apps-cont .app {
+    float: left;
+    height: 75px;
+    width: 25%;
+    padding: 4px; }
+    .apps .apps-cont .app .app-container {
+      position: relative;
+      background-color: #373a4d;
+      cursor: pointer;
+      padding: 4px;
+      height: 100%;
+      width: 100%; }
+      .apps .apps-cont .app .app-container:hover {
+        background-color: #2f3141; }
+      .apps .apps-cont .app .app-container .icon {
+        color: #131625; }
+      .apps .apps-cont .app .app-container .name {
+        position: absolute;
+        text-shadow: -3px -3px 0 #131625, -3px -2px 0 #131625, -3px -1px 0 #131625, -3px 0px 0 #131625, -3px 1px 0 #131625, -3px 2px 0 #131625, -3px 3px 0 #131625, -2px -3px 0 #131625, -2px -2px 0 #131625, -2px -1px 0 #131625, -2px 0px 0 #131625, -2px 1px 0 #131625, -2px 2px 0 #131625, -2px 3px 0 #131625, -1px -3px 0 #131625, -1px -2px 0 #131625, -1px -1px 0 #131625, -1px 0px 0 #131625, -1px 1px 0 #131625, -1px 2px 0 #131625, -1px 3px 0 #131625, 0px -3px 0 #131625, 0px -2px 0 #131625, 0px -1px 0 #131625, 0px 0px 0 #131625, 0px 1px 0 #131625, 0px 2px 0 #131625, 0px 3px 0 #131625, 1px -3px 0 #131625, 1px -2px 0 #131625, 1px -1px 0 #131625, 1px 0px 0 #131625, 1px 1px 0 #131625, 1px 2px 0 #131625, 1px 3px 0 #131625, 2px -3px 0 #131625, 2px -2px 0 #131625, 2px -1px 0 #131625, 2px 0px 0 #131625, 2px 1px 0 #131625, 2px 2px 0 #131625, 2px 3px 0 #131625, 3px -3px 0 #131625, 3px -2px 0 #131625, 3px -1px 0 #131625, 3px 0px 0 #131625, 3px 1px 0 #131625, 3px 2px 0 #131625, 3px 3px 0 #131625;
+        bottom: 5px;
+        left: 25px;
+        font-size: 20px;
+        color: #ddd; }
+
+.apps .toggle {
+  width: 100%;
+  height: 15px;
+  background: #272b3b;
+  text-align: center;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer; }
+
+.container {
+  margin-top: 20px; }
 
 .bot-preview {
-	transition: background-color 200ms;
-	cursor: pointer;
-}
+  transition: background-color 200ms;
+  cursor: pointer; }
 
 .bot-preview > p {
-	margin-bottom: 0;
-}
+  margin-bottom: 0; }
 
 .bot-preview:hover {
-	background-color: #d2d2d2;
-}
+  background-color: #d2d2d2; }
