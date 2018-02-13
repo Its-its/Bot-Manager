@@ -1,12 +1,17 @@
 import * as Discord from 'discord.js';
 
 
-function parseMessage(defaultCommands, userConfig, message: string, defaultMessage, cb: ParseMessageCB) {
+interface DefaultCommands {
+	parseMessage: (message: string, userConfig, extra: any) => any;
+	get: (commandName: string) => any;
+}
+
+function parseMessage(defaultCommands: DefaultCommands, userConfig, message: string, extra: any, cb: ParseMessageCB) {
 	var parts = message.split(' ');
 	var messageCommand = parts[0].toLowerCase();
 
 	// Check defaultCommands first.
-	var parsed = defaultCommands.parseMessage(message, userConfig, defaultMessage);
+	var parsed = defaultCommands.parseMessage(message, userConfig, extra);
 	if (parsed != null) {
 		if (Array.isArray(parsed)) {
 			for (var a = 0; a < parsed.length; a++) cb(parsed[a]);
@@ -20,7 +25,7 @@ function parseMessage(defaultCommands, userConfig, message: string, defaultMessa
 			var command = userConfig.commands[i];
 			
 			if (command.commandName.indexOf(messageCommand) != -1) {
-				// check if user has the perms.
+				//TODO: check if user has the perms.
 	
 				var fixedParams = getProperParam(parts, command.params);
 				
@@ -36,7 +41,18 @@ function parseMessage(defaultCommands, userConfig, message: string, defaultMessa
 			}
 		}
 
-	cb({ type: "error" });
+	// cb({ type: "error" });
+}
+
+function hasPermissions(defaultCommands: DefaultCommands, message: string, isAdmin: boolean): boolean {
+	if (isAdmin) return true;
+
+	var parts = message.split(' ');
+	var command = message[0].toLowerCase();
+
+	//
+
+	return false;
 }
 
 function dealWithOnCalled(
@@ -92,7 +108,7 @@ function getProperParam(message: string[], params: Array<CommandParam>): { pos: 
 			if (param.length != message.length - 1) continue;
 			return {
 				pos: a,
-				newParams: message.slice(1)
+				newParams: message.slice(1).filter(t => t.length != 0)
 			};
 		} else {
 			if (param.minLength > message.length - 1 || (param.maxLength == -1 ? false : param.maxLength < message.length - 1)) continue;
@@ -119,10 +135,16 @@ function getProperParam(message: string[], params: Array<CommandParam>): { pos: 
 					newMessageParams.push(array.join(' '));
 				});
 
-				return { pos: a, newParams: newMessageParams.slice(1) };
+				return {
+					pos: a,
+					newParams: newMessageParams.slice(1).filter(t => t.length != 0)
+				};
 			}
 
-			return { pos: a, newParams: message.slice(1) };
+			return {
+				pos: a,
+				newParams: message.slice(1).filter(t => t.length != 0)
+			};
 		}
 	}
 
@@ -169,7 +191,8 @@ export = {
 	getParam,
 	getCommandParam,
 	isCallingCommand,
-	getCommandMessage
+	getCommandMessage,
+	hasPermissions
 };
 
 

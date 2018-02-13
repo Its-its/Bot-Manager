@@ -4,7 +4,7 @@ let started = Date.now();
 
 class Uptime extends Command {
 	constructor() {
-		super('uptime');
+		super('uptime', true, false);
 
 		this.addParams((params) => {
 			return {

@@ -15,7 +15,6 @@ import Bots = require('../models/bots');
 //       /edit
 //    /
 
-
 export = (app: express.Application) => {
 	// api/
 	let route = express.Router();
@@ -26,7 +25,6 @@ export = (app: express.Application) => {
 		// TODO: Check body for user uid.
 		res.send({ error: 'Not Authenticated' });
 	});
-
 
 
 	// api/dashboard/
@@ -112,15 +110,17 @@ export = (app: express.Application) => {
 		let id = req.body.id;
 
 		Bots.findOne({ uid: id }, (err, bot: any) => {
-			res.send({
-				error: err,
-				data: err != null ? null : {
+			if (err == null) {
+				var data = {
 					user: {
 						twitch: {
 							linked: req.user.twitch.id != null
 						},
 						discord: {
-							linked: req.user.discord.id != null
+							linked: req.user.discord.id != null,
+							guilds: req.user.discord.guilds
+								.filter(g => new Permissions(g.permissions).has(8))
+								.map(g => { return { id: g.id, name: g.name }})
 						},
 						youtube: {
 							linked: req.user.youtube.id != null
@@ -130,68 +130,79 @@ export = (app: express.Application) => {
 						displayName: bot.displayName,
 						active: bot.is_active,
 						uid: bot.uid,
-						app: bot.app,
+						app: null,
 						created: bot.created_at,
 						edited: bot.edited_at
 					}
-				}
-			});
-		});
-	});
-
-	bots.post('/set', (req, res) => {
-		let id = req.body.id;
-		let name = req.body.name;
-
-		Bots.findOne({ uid: id }, (err, bot: any) => {
-			if (err != null) return res.send({ error: 'Error! ID not found!' });
-
-			if (bot.app == null) {
-				var modelName = toModelName(name);
-
-				if (modelName == null) return res.send({ error: 'Incorrect Listener Name' });
-
-				var Model = mongoose.model(modelName);
+				};
 				
-				var listener = <any>new Model({
-					user_id: req.user.id,
-					bot_id: bot.id,
-					uid: uniqueID()
-				});
+				bot.getApp((err, app) => {
+					if (app != null) {
+						delete app['__v'];
+						delete app['_id'];
+						delete app['user_id'];
+						delete app['server_id'];
+						delete app['bot_id'];
+					}
 
-				listener.save(() => {
-					bot.app = {
-						name: name,
-						uid: listener.uid
-					};
+					data.bot.app = app;
 
-					bot.save(() => {
-						res.send({ data: 'Success!' });
-					});
+					res.send({ data: data });
 				});
-			} else {
-				//
-			}
+			} else res.send({ error: err });
 		});
 	});
+
+	// bots.post('/set', (req, res) => {
+	// 	let id = req.body.id;
+	// 	let name = req.body.name;
+
+	// 	Bots.findOne({ uid: id }, (err, bot: any) => {
+	// 		if (err != null) return res.send({ error: 'Error! ID not found!' });
+
+	// 		if (bot.app == null) {
+	// 			var modelName = Bots['appName'](name);
+
+	// 			if (modelName == null) return res.send({ error: 'Incorrect Listener Name' });
+
+	// 			var Model = mongoose.model(modelName);
+				
+	// 			var listener = <any>new Model({
+	// 				user_id: req.user.id,
+	// 				bot_id: bot.id,
+	// 				uid: uniqueID()
+	// 			});
+
+	// 			listener.save(() => {
+	// 				bot.app = {
+	// 					name: name,
+	// 					id: listener.uid
+	// 				};
+
+	// 				bot.save(() => {
+	// 					res.send({ data: 'Success!' });
+	// 				});
+	// 			});
+	// 		} else {
+	// 			//
+	// 		}
+	// 	});
+	// });
 
 	// api/listener/
 	let listeners = express.Router();
 
 	listeners.post('/status', (req, res) => {
 		let id = req.body.id;
-		let name = req.body.name;
+		let type = req.body.type;
 
-		var modelName = toModelName(name);
+		var modelName = Bots['appName'](type);
 		if (modelName == null) return res.send({ error: 'Incorrect Listener Name' });
 
 		mongoose.model(modelName)
 		.findOne({ uid: id }, (err, doc: any) => {
-			if (name == 'disc') {
-				//
-			} else {
-				res.send({ poo: 'poo' });
-			}
+			//
+			res.send({ poo: 'poo' });
 		});
 	});
 
@@ -257,9 +268,110 @@ function uniqueID() {
 	}
 }
 
-function toModelName(name) {
-	if (name == 'disc') return 'discord_servers';
-	if (name == 'yt') return 'youtube_channels';
-	if (name == 'ttv') return 'twitch_channels';
-	return null;
+
+class Permissions {
+	public bitfield;
+
+	constructor(permissions) {
+		this.bitfield = Permissions.resolve(permissions);
+	}
+
+	has(permission, checkAdmin = true) {
+		if (permission instanceof Array) return permission.every(p => this.has(p, checkAdmin));
+			permission = Permissions.resolve(permission);
+		if (checkAdmin && (this.bitfield & Permissions.FLAGS.ADMINISTRATOR) > 0) return true;
+			return (this.bitfield & permission) === permission;
+	}
+
+	missing(permissions, checkAdmin = true) {
+		if (!(permissions instanceof Array)) permissions = new Permissions(permissions).toArray(false);
+			return permissions.filter(p => !this.has(p, checkAdmin));
+	}
+
+	freeze() {
+		return Object.freeze(this);
+	}
+
+	add(...permissions) {
+		let total = 0;
+		for (let p = permissions.length - 1; p >= 0; p--) {
+			const perm = Permissions.resolve(permissions[p]);
+			total |= perm;
+		}
+		if (Object.isFrozen(this)) return new Permissions(this.bitfield | total);
+		this.bitfield |= total;
+		return this;
+	}
+
+	remove(...permissions) {
+		let total = 0;
+		for (let p = permissions.length - 1; p >= 0; p--) {
+			const perm = Permissions.resolve(permissions[p]);
+			total |= perm;
+		}
+		if (Object.isFrozen(this)) return new Permissions(this.bitfield & ~total);
+		this.bitfield &= ~total;
+		return this;
+	}
+
+	serialize(checkAdmin = true) {
+		const serialized = {};
+		for (const perm in Permissions.FLAGS) serialized[perm] = this.has(perm, checkAdmin);
+		return serialized;
+	}
+
+	toArray(checkAdmin = true) {
+		return Object.keys(Permissions.FLAGS).filter(perm => this.has(perm, checkAdmin));
+	}
+
+	*[Symbol.iterator]() {
+		const keys = this.toArray();
+		while (keys.length) yield keys.shift();
+	}
+
+	static resolve(permission) {
+		if (typeof permission === 'number' && permission >= 0) return permission;
+		if (permission instanceof Permissions) return permission.bitfield;
+		if (permission instanceof Array) return permission.map(p => this.resolve(p)).reduce((prev, p) => prev | p, 0);
+		if (typeof permission === 'string') return this.FLAGS[permission];
+		throw new Error('PERMISSIONS_INVALID');
+	}
+
+	static FLAGS = {
+		CREATE_INSTANT_INVITE: 1 << 0,
+		KICK_MEMBERS: 1 << 1,
+		BAN_MEMBERS: 1 << 2,
+		ADMINISTRATOR: 1 << 3,
+		MANAGE_CHANNELS: 1 << 4,
+		MANAGE_GUILD: 1 << 5,
+		ADD_REACTIONS: 1 << 6,
+		VIEW_AUDIT_LOG: 1 << 7,
+
+		VIEW_CHANNEL: 1 << 10,
+		SEND_MESSAGES: 1 << 11,
+		SEND_TTS_MESSAGES: 1 << 12,
+		MANAGE_MESSAGES: 1 << 13,
+		EMBED_LINKS: 1 << 14,
+		ATTACH_FILES: 1 << 15,
+		READ_MESSAGE_HISTORY: 1 << 16,
+		MENTION_EVERYONE: 1 << 17,
+		USE_EXTERNAL_EMOJIS: 1 << 18,
+
+		CONNECT: 1 << 20,
+		SPEAK: 1 << 21,
+		MUTE_MEMBERS: 1 << 22,
+		DEAFEN_MEMBERS: 1 << 23,
+		MOVE_MEMBERS: 1 << 24,
+		USE_VAD: 1 << 25,
+
+		CHANGE_NICKNAME: 1 << 26,
+		MANAGE_NICKNAMES: 1 << 27,
+		MANAGE_ROLES: 1 << 28,
+		MANAGE_WEBHOOKS: 1 << 29,
+		MANAGE_EMOJIS: 1 << 30,
+	};
+
+	static ALL = (<any>Object).values(Permissions.FLAGS).reduce((all, p) => all | p, 0);
+
+	static DEFAULT = 104324097;
 }

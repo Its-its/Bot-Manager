@@ -2,7 +2,7 @@ import Command = require('../../command');
 
 class RandNumber extends Command {
 	constructor() {
-		super(['number', 'randomnumber'], false);
+		super(['number', 'randomnumber'], true, false);
 
 		this.description = 'Generates a random number.';
 
@@ -16,45 +16,17 @@ class RandNumber extends Command {
 			var max = strToNumber(params[1], 100);
 
 			if (min >= max) {
-				return {
-					type: 'echo', 
-					embed: {
-						color: 0xd91582,
-						fields: [
-							{
-								name: 'Invalid Params!',
-								value: 'Minimum number is larger than Max number'
-							},
-							{
-								name: 'Values',
-								value: 'Min: ' + min + ', Max: ' + max
-							}
-						]
-					}
-				};
+				return Command.error([
+					['Invalid Params!', 'Minimum number is larger than Maximum number'],
+					['Values', 'Min: ' + min + ', Max: ' + max]
+				]);
 			}
 
-
-			return {
-				type: 'echo', 
-				embed: {
-					color: 0x43f104,
-					fields: [
-						{
-							name: 'Number Picked!',
-							value: 'Picked ' + (Math.floor(Math.random() * (max - min + 1)) + min)
-						},
-						{
-							name: 'Picked From',
-							value: 'Min: ' + min + ', Max: ' + max
-						},
-					]
-				}
-			};
-		}, [
-			'?number', 
-			'?number.2'
-		]);
+			return Command.success([
+				[ 'Number Picked!', 'Picked ' + (Math.floor(Math.random() * (max - min + 1)) + min) ],
+				[ 'Picked From', 'Min: ' + min + ', Max: ' + max ]
+			]);
+		});
 	}
 }
 

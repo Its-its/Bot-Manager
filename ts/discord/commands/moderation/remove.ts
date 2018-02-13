@@ -11,19 +11,16 @@ class Remove extends Command {
 			};
 		});
 
-		this.addParams(2, (params) => {
+		this.addParams(2, (params, client, message) => {
 			params.shift();
 
-			let commandName = params.shift();
+			let command = params.shift();
 			let paramId = parseInt(params.shift());
 
 			if (!Number.isInteger(paramId)) paramId = null;
 
-			return {
-				type: 'remove',
-				commandName: commandName,
-				paramId: paramId
-			};
+			client.removeCommand(command, paramId);
+			client.save(() => message.reply(`Successfully removed command "${command}"`));
 		});
 	}
 }

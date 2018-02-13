@@ -58,50 +58,50 @@ export = (app: express.Application) => {
 	// );
 
 
-	app.get('/invite/discord/:bot_id', (req, res, next) => {
-		passport.authenticate('discord', {
-			callbackURL: '/invite/discord/callback/' + req.params.bot_id,
-			permissions: 2134207671,
-			scope: config.passport.discord.scopeInvite
-		})(req, res, next);
-	});
+	// app.get('/invite/discord/:bot_id', (req, res, next) => {
+	// 	passport.authenticate('discord', {
+	// 		callbackURL: '/invite/discord/callback/' + req.params.bot_id,
+	// 		permissions: 2134207671,
+	// 		scope: config.passport.discord.scopeInvite
+	// 	})(req, res, next);
+	// });
 
-	app.get('/invite/discord/callback/:bot_id', passport.authenticate('discord', {
-		failureRedirect: '/'
-	}), (req, res) => {
-		let guild_id = req.query.guild_id;
-		let permissions = req.query.permissions;
-		let bot_id = req.params.bot_id;
+	// app.get('/invite/discord/callback/:bot_id', passport.authenticate('discord', {
+	// 	failureRedirect: '/'
+	// }), (req, res) => {
+	// 	let guild_id = req.query.guild_id;
+	// 	let permissions = req.query.permissions;
+	// 	let bot_id = req.params.bot_id;
 
-		if (req.user != null && guild_id != null && permissions != null && bot_id != null) {
-			Bots.findOne({ uid: bot_id }, (err, bot: any) => {
-				if (err != null) return console.error(err);
+	// 	if (req.user != null && guild_id != null && permissions != null && bot_id != null) {
+	// 		Bots.findOne({ uid: bot_id }, (err, bot: any) => {
+	// 			if (err != null) return console.error(err);
 
-				if (bot == null) {
-					DiscordServers.findOne({ server_id: guild_id }, (err, server) => {
-						if (err != null) return console.error(err);
+	// 			if (bot == null) {
+	// 				DiscordServers.findOne({ server_id: guild_id }, (err, server) => {
+	// 					if (err != null) return console.error(err);
 		
-						if (server == null) {
-							server = new DiscordServers({
-								user_id: req.user.id,
-								bot_id: bot.id,
-								server_id: guild_id,
-								permission: permissions
-							});
+	// 					if (server == null) {
+	// 						server = new DiscordServers({
+	// 							user_id: req.user.id,
+	// 							bot_id: bot.id,
+	// 							server_id: guild_id,
+	// 							permission: permissions
+	// 						});
 							
-							bot.app.name = 'disc';
-							bot.app.uid = server['server_id'];
+	// 						bot.app.name = 'disc';
+	// 						bot.app.uid = server['server_id'];
 
-							// Call Bot - get info
+	// 						// Call Bot - get info
 
-							server.save(() => {});
-							bot.save(() => {});
-						} else res.redirect('/error?error=Server already has a bot in it!');
-					});
-				} else res.redirect('/error?error=Bot id does not exist!');
-			});
-		} else res.redirect('/');
-	});
+	// 						server.save(() => {});
+	// 						bot.save(() => {});
+	// 					} else res.redirect('/error?error=Server already has a bot in it!');
+	// 				});
+	// 			} else res.redirect('/error?error=Bot id does not exist!');
+	// 		});
+	// 	} else res.redirect('/');
+	// });
 
 	app.get('/auth/discord', passport.authenticate('discord', {
 		scope: config.passport.discord.scopeAuth

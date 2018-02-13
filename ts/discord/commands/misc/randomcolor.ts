@@ -2,7 +2,7 @@ import Command = require('../../command');
 
 class RandColor extends Command {
 	constructor() {
-		super(['randomcolor', 'color'], false);
+		super(['randomcolor', 'color'], true, false);
 
 		this.addParams(0, 0, (params) => {
 			var color = RandColor.randomColor();

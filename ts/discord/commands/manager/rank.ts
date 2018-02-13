@@ -21,18 +21,13 @@ class Rank extends Command {
 			switch (params[0]) {
 				case 'list':
 					if (ranks.length == 0) return Command.info([[ 'Public Ranks:', 'No Ranks Public' ]]);
-					var largestName = 0;
+					
 					var roles = ranks.map(b => {
 						var role = message.guild.roles.get(b);
-						if (largestName < role.name.length) largestName = role.name.length;
-						return role;
+						return [role.name, role.members.size + ' members'];
 					});
 
-					//
-
-					return Command.info([[
-						'Public Ranks:',
-						roles.map(r => ' - ' + r.name + ' '.repeat(largestName - r.name.length + 1) + r.members.size + ' members').join('\n') ]]);
+					return Command.info([[ 'Public Ranks:', Command.table([], roles) ]]);
 
 				case 'join':
 					if (val == null) return Command.error([['ERROR!', 'Please specify the role!']]);
@@ -41,9 +36,7 @@ class Rank extends Command {
 					if (member.roles.has(val)) return Command.error([['ERROR!', 'You already have the role!']]);
 					member.addRole(roleId, 'Public Rank - User requested.')
 					.then(s => {}, reason => { console.error(' - ' + reason); })
-					.catch(reason => {
-						console.error(reason);
-					});
+					.catch(reason => console.error(reason));
 					break;
 
 				case 'leave':
@@ -53,9 +46,7 @@ class Rank extends Command {
 					if (!member.roles.has(val)) return Command.error([['ERROR!', 'You already have the role!']]);
 					member.removeRole(roleId, 'Public Rank - User requested.')
 					.then(s => {}, reason => { console.error(' - ' + reason); })
-					.catch(reason => {
-						console.error(reason);
-					});
+					.catch(reason => console.error(reason));
 					break;
 				
 				// Add/Remove role from public ranks.

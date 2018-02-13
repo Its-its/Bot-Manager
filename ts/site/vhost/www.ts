@@ -14,6 +14,10 @@ app.use(express.static(path.join(__dirname, '../../../app/public')));
 app.use(passport.initialize());
 app.use(passport.session());
 
-require('../routes/www.js')(app);
+require('../routes/www')(app);
+
+app.use((req, res) => {
+	res.status(500).send('Something Broke!');
+});
 
 export = app;

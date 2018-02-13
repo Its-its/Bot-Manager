@@ -6,15 +6,18 @@ import Discord = require('discord.js');
 
 class Command implements Command {
 	public commandName: Array<string>;
-	public params: Array<CommandParams> = [];
-
 	public togglable: boolean;
-
 	public description: string;
 
-	constructor(commandName: string | Array<string>, togglable?: boolean, botHasToBeRegistered?: boolean) {
+	public adminOnly: boolean;
+	public perms: Array<string> = [];
+
+	public params: Array<CommandParams> = [];
+
+	constructor(commandName: string | Array<string>, togglable = true, adminOnly = true) {
 		this.commandName = (typeof commandName == 'string' ? [commandName] : commandName);
 		this.togglable = (togglable == null ? true : togglable);
+		this.adminOnly = adminOnly;
 	}
 
 	public is(name: string): boolean {
@@ -141,6 +144,41 @@ class Command implements Command {
 
 	static info(array: string[][]) {
 		return Command.defCall(Command.InfoColor, array);
+	}
+
+	// TODO: Text is different widths
+	static table(header: string[], body: any[][], opts?: { delimiter?: string; spacing?: number; }): string {
+		opts = Object.assign({
+			delimiter: ' ',
+			spacing: 2
+		}, opts);
+
+		var largestCell: number[] = [];
+		var rows: string[] = [];
+
+		// Column Lengths
+		header.forEach((h, i) => largestCell[i] = String(h).length);
+		body.forEach(b => {
+			b.forEach((c, i) => {
+				var len = String(c).length;
+				var curLen = largestCell[i];
+
+				if (curLen == null) {
+					largestCell[i] = len;
+				} else if (curLen < len) {
+					largestCell[i] = len;
+				}
+			});
+		});
+
+		//
+		rows.push(header.map((h, i) => h + ' '.repeat(largestCell[i] - String(h).length + opts.spacing)).join(opts.delimiter));
+
+		body.forEach(ro => {
+			rows.push(ro.map((c, i) => c + ' '.repeat(largestCell[i] - String(c).length + opts.spacing)).join(opts.delimiter));
+		});
+
+		return rows.join('\n');
 	}
 }
 

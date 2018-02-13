@@ -22,7 +22,7 @@ let MongoStore = connectMongo(session);
 let server = http.createServer(app);
 
 mongoose.Promise = global.Promise;
-mongoose.connect(config.database, { useMongoClient: true })
+mongoose.connect(config.database);
 
 
 app.set('port', config.port);

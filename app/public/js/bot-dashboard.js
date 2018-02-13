@@ -7,7 +7,8 @@
 			linked: false
 		},
 		discord: {
-			linked: false
+			linked: false,
+			guilds: []
 		},
 		youtube: {
 			linked: false
@@ -27,18 +28,27 @@
 		constructor(id, displayName, color, icon) {
 			this.setup = false;
 
+			this.rowCache = [];
+
 			this.id = id;
 			this.displayName = displayName;
 			this.icon = icon;
 			this.color = color;
+			
 			this.buttonElement = this.button();
+		}
+
+		remRow(row) {
+			var index = this.rowCache.indexOf(row);
+			if (index != -1) this.rowCache.splice(index, 1);
+			listenerContainer.removeChild(row);
 		}
 
 		addRow(className, func) {
 			let div = createElement('div', { className: className });
 			if (func != null) func(div);
 			listenerContainer.appendChild(div);
-	
+			this.rowCache.push(div);
 			return div;
 		}
 
@@ -75,16 +85,28 @@
 		}
 
 		close() {
+			this.buttonElement.style.background = '';
 			while(listenerContainer.firstChild)
 				listenerContainer.removeChild(listenerContainer.firstChild);
 		}
 
 		display() {
 			if (displaying != null) displaying.close();
+			this.buttonElement.style.background = '#242';
 			displaying = this;
+
+			if (!this.setup) this.displaySetup();
 		}
 
-		displaySetup() {}
+		displaySetup() {
+			if (this.setup) {
+				this.rowCache.forEach(r => listenerContainer.appendChild(r));
+				return true;
+			}
+
+			this.setup = true;
+			return false;
+		}
 	}
 
 	class DiscordListener extends Listener {
@@ -94,52 +116,69 @@
 
 		display() {
 			super.display();
-			if (!this.setup) this.displaySetup();
 			// Groups, Members, Channels
 		}
 
 		displaySetup() {
-			this.addRow('cell large-12 setup', function(row) {
-				createElement('h4', { className: 'title', innerText: 'Setup' }, row);
+			if (super.displaySetup()) return;
 
-				createElement('p', {
-					className: 'desc',
-					innerText: 'It\'s super simple to setup the Discord listener. \
-					All you have to do is link your discord account, click Invite to Server, and \
-					paste "!register <unique ID>" in any server chat to finish setup. :)'
-				}, row);
-
-				// Link button
-				if (user.discord.linked) {
-					createElement('p', { className: 'linked-text', innerText: 'Discord Linked.' }, row);
-				} else {
-					createElement('a', {
-						className: 'button',
-						innerText: 'Link Discord'
+			// Setup
+			if (user.bot.app == null) {
+				this.addRow('cell large-12 setup', function(row) {
+					createElement('h4', { className: 'title', innerText: 'Setup' }, row);
+	
+					createElement('p', {
+						className: 'desc',
+						innerText: `
+							It's super simple to setup the Discord listener!
+							All you have to do is link your discord account, click on any server in the dropdown.
+							After that it will setup itself. :)`
 					}, row);
-				}
+	
+					// Link button
+					if (user.discord.linked) {
+						createElement('p', { className: 'linked-text', innerText: 'Discord Linked.' }, row);
+					} else {
+						createElement('a', {
+							className: 'button',
+							innerText: 'Link Discord'
+						}, row);
+					}
+	
+					if (user.bot.app != null) {
+						$.post('/api/listener/status', { type: user.bot.type, id: user.bot.id }, function(data) {
+							if (data.error != null) return console.error(data.error);
+							data = data.data;
+							console.log(data);
+						});
+					} else {
+						// Create the bot and join the server.
+						var select = document.createElement('select');
+						row.appendChild(select);
+						select.add(createElement('option', { value: '', innerText: 'Select A Guild' }));
+						user.discord.guilds.forEach(g => select.add(createElement('option', { value: g.id , innerText: g.name })));
+	
+						select.addEventListener('change', function(event) {
+							var _this = this;
+							var selected = _this.selectedOptions[0];
+							if (selected.value.length != 0) {
+								var name = selected.innerText;
+								selected.innerText = 'Fetching. Please wait...';
+								_this.disabled = true;
+								$.post('/discord/invite', { botId: botId, guildId: selected.value }, function(data) {
+									_this.disabled = false;
+									selected.innerText = name;
+									window.location = data;
+								});
+							}
+						});
+					}
+				});
+			}
 
-				if (user.bot.app != null && user.bot.app.name != null) {
-					$.post('/api/listener/status', { name: user.bot.name, id: user.bot.uid }, function(data) {
-						if (data.error != null) return console.error(data.error);
-						data = data.data;
-						console.log(data);
-					});
-				} else {
-					// Create the bot and join the server.
-					createElement('a', {
-						className: 'button',
-						innerText: 'Invite to Server'
-					}, row)
-					.addEventListener('click', () => {
-						//
-					});
-				}
-
-
-				let tools = createElement('div', { className: 'tools' }, row);
-				createElement('a', { className: 'button error', innerText: 'Cancel' }, tools);
-				createElement('a', { className: 'button success', innerText: 'Done' }, tools);
+			// Analytics
+			this.addRow('cell large-12 analytics', function(row) {
+				//
 			});
 		}
 	}
@@ -221,12 +260,12 @@
 
 
 	let listeners = {
-		'ttv': new TwitchListener(),
-		'disc': new DiscordListener(),
-		'yt': new YoutubeListener(),
-		'tele': new TelegramListener(),
-		'slk': new SlackListener(),
-		'twit': new TwitterListener()
+		'twitch': new TwitchListener(),
+		'discord': new DiscordListener(),
+		'youtube': new YoutubeListener(),
+		'telegram': new TelegramListener(),
+		'slack': new SlackListener(),
+		'twitter': new TwitterListener()
 	}
 
 	// Header
@@ -297,7 +336,7 @@
 
 		document.getElementById('bot-info').appendChild(status);
 
-		console.log(' -', bot.app);
+		if (bot.app != null) listeners[bot.app.type].display();
 	});
 
 	function editApp(app) {

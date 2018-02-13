@@ -22,23 +22,25 @@ import CommandManger = require('../../command-manager');
 
 import Discord = require('discord.js');
 
+import Server = require('../guildClient');
 
-// let redisGuildsClient = redis.createClient({ db: '0' });
-
-
-
+let categoryCommands: { [category: string]: Command[] } = {};
 let defaultCommands: Array<Command> = [];
 
+let validPerms: Array<string> = [
+	'commands.bypasstoggle'
+];
+
 process.nextTick(() => {
-	addCommand(require('./misc'));
-	addCommand(require('./moderation'));
-	addCommand(require('./manager'));
-	addCommand(require('./moderator'));
-	addCommand(require('./music'));
-	addCommand(require('./roles'));
+	addCommand(require('./misc'), 'Misc');
+	addCommand(require('./moderation'), 'Moderation');
+	addCommand(require('./manager'), 'Manager');
+	addCommand(require('./moderator'), 'Moderator');
+	addCommand(require('./music'), 'Music');
+	addCommand(require('./roles'), 'Roles');
 });
 
-function parseMessage(message: string, userOptions, defaultMessage: Discord.Message) {
+function parseMessage(message: string, server: Server.Server, defaultMessage: Discord.Message) {
 	let parts = message.split(' ');
 	let messageCommand = parts[0].toLowerCase();
 
@@ -48,9 +50,23 @@ function parseMessage(message: string, userOptions, defaultMessage: Discord.Mess
 		if (command.is(messageCommand)) {
 			// TODO: check if user has the perms.
 
+			if (!defaultMessage.member.hasPermission('ADMINISTRATOR')) {
+				var perm = command.perms[0];
+				if (perm != null) {
+					var p = perm.split('.', 2)[0].toLowerCase();
+					var basePerms = server.userHasBasePerm(defaultMessage.member.id, perm);
+
+					// forced perms? doesn't have base perms? return
+					if ((server.plugins[p] == null || server.plugins[p].perms) && !basePerms) return;
+
+					// Admin only command? Doesn't have base perms? return
+					if (command.adminOnly && !basePerms) return;
+				} else if (server.plugins.commands == null || server.plugins.commands.perms || command.adminOnly) return;
+			}
+
 			if (command.validate(parts.slice(1))) {
 				let fixedParams = CommandManger.getProperParam(parts, command.params);
-				return command.params[fixedParams.pos].cb(fixedParams.newParams, userOptions, defaultMessage);
+				return command.params[fixedParams.pos].cb(fixedParams.newParams, server, defaultMessage);
 			} else {
 				return { type: 'echo', message: 'Invalid Params!' };
 			}
@@ -75,9 +91,25 @@ function get(commandName: string): Command {
 	return null;
 }
 
-function addCommand(command: Command | Array<Command>) {
-	if (Array.isArray(command)) return command.forEach(c => addCommand(c));
+function addCommand(command: Command | Array<Command>, category: string) {
+	if (Array.isArray(command)) return command.forEach(c => addCommand(c, category));
+
+	validPerms = validPerms.concat(command.perms);
 	defaultCommands.push(command);
+
+	if (categoryCommands[category] == null)
+		categoryCommands[category] = [];
+	categoryCommands[category].push(command);
 }
 
-export { parseMessage, is, get };
+function list(flat = false) {
+	return flat ? defaultCommands : categoryCommands;
+}
+
+export {
+	validPerms,
+	parseMessage, 
+	is, 
+	get,
+	list
+};

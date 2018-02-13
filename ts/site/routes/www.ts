@@ -1,6 +1,6 @@
 import passport = require('./passport');
 import apiSetup = require('./api');
-
+import discord = require('./discord');
 
 import * as express from 'express';
 export = (app: express.Application) => {
@@ -22,17 +22,14 @@ export = (app: express.Application) => {
 	app.get('/settings', authed, (req, res) => {
 		res.render('index');
 	});
-
+	
 	apiSetup(app);
 	passport(app);
+	discord(app);
 
 	app.get('/logout', authed, (req, res) =>{
 		(<any>req).logout();
 		res.redirect('/');
-	});
-
-	app.use((req, res) => {
-		res.status(500).send('Something Broke!');
 	});
 }
 

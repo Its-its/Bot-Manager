@@ -13,8 +13,13 @@ interface Config {
 	baseUrl: string;
 	session_secret: string;
 	database: string;
+	redis: {
+		guildsDB: number;
+		musicDB: number;
+	}
 	bot: {
 		discord: {
+			id: string;
 			token: string;
 			port: number;
 		}

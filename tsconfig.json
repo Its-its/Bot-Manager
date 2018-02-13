@@ -8,7 +8,13 @@
 		"typeRoots": [
 			"node_modules/@types",
 			"typings"
-		]
+		],
+		// "baseUrl": "src",
+		// "paths": {
+		// 	"@discord/*": ["discord/*"],
+		// 	"@music/*": ["music/*"],
+		// 	"@site/*": ["site/*"]
+		// }
 	},
 	"include": [
 		"ts/**/*"

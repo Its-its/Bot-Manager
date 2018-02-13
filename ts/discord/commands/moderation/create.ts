@@ -11,17 +11,14 @@ class Create extends Command {
 			};
 		});
 
-		this.addParams(2, (params) => {
+		this.addParams(2, (params, client, message) => {
 			params.shift();
 
-			let commandName = params.shift();
-			let message = params.join(' ');
+			var command = params.shift();
+			var onCalled = params.join(' ');
 
-			return {
-				type: 'create',
-				commandName: 'ECHO ' + commandName,
-				message: message
-			};
+			client.createCommand(command, 'ECHO ' + onCalled);
+			client.save(() => message.reply(`Successfully created command "${command}"`));
 		});
 	}
 }
