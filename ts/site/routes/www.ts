@@ -2,8 +2,10 @@ import passport = require('./passport');
 import apiSetup = require('./api');
 import discord = require('./discord');
 
+import musicRoute = require('../../music/routes');
+
 import * as express from 'express';
-export = (app: express.Application) => {
+export = (app: express.Application, socketio) => {
 	app.get('/', (req, res) => {
 		if ((<any>req).isAuthenticated()) return res.redirect('/dashboard');
 		res.render('index');
@@ -14,7 +16,7 @@ export = (app: express.Application) => {
 		res.render('dashboard');
 	});
 
-	app.get('/bot/:id([0-9A-Za-z]{32})', authed, (req, res) => {
+	app.get('/bot/:id([0-9A-Za-z]{24,32})', authed, (req, res) => {
 		if (!(<any>req).isAuthenticated()) return res.redirect('/');
 		res.render('bot-dashboard');
 	});
@@ -22,6 +24,9 @@ export = (app: express.Application) => {
 	app.get('/settings', authed, (req, res) => {
 		res.render('index');
 	});
+
+	var route = musicRoute(socketio);
+	app.use(route.loc, route.route);
 	
 	apiSetup(app);
 	passport(app);

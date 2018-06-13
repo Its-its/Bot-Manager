@@ -10,7 +10,12 @@ class Ignore extends Command {
 				return Command.info([
 					[
 						'Command Usage',
-						['list', 'channel [#channel]', 'user [@user]', '[@user/#channel]'].map(s => '!ignore ' + s).join('\n')
+						[
+							'list', 
+							'channel [#channel]', 
+							'user [@user]', 
+							'[@user/#channel]'
+						].map(s => '!ignore ' + s).join('\n')
 					]
 				]);
 			}
@@ -70,6 +75,7 @@ class Ignore extends Command {
 						} else return Command.error([['Ignore', 'Unable to find member! Does it Exist?!']]);
 					}
 					break;
+				case 'role': break;
 				default:
 					if (isMention(type)) {
 						var isUser = type[1] == '@';

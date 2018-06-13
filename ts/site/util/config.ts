@@ -2,7 +2,12 @@ import fs = require('fs');
 import path = require('path');
 
 let config: Config = JSON.parse(fs.readFileSync(path.join(__dirname, '../../..', 'app/config/config.json'), 'utf8'));
+// TODO: Fix config
 
+for (var key in config.passport) {
+	let item = config.passport[key];
+	item['callbackURL'] = config.urlProtocol + '://' + config.baseUrl + item['callbackURL'];
+}
 
 export = config;
 
@@ -13,9 +18,22 @@ interface Config {
 	baseUrl: string;
 	session_secret: string;
 	database: string;
+	ytdl: {
+		address: string;
+		port: number;
+	}
+	music: {
+		address: string;
+		port: number;
+	}
 	redis: {
+		address: string;
+		port: number;
 		guildsDB: number;
 		musicDB: number;
+	}
+	socketIO: {
+		discordPort: number;
 	}
 	bot: {
 		discord: {
@@ -37,8 +55,8 @@ interface Config {
 			clientID: string;
 			clientSecret: string;
 			callbackURL: string;
-			scopeInvite: [ "bot", "identify", "guilds" ];
-			scopeAuth: [ "identify", "guilds" ];
+			scopeInvite: string[];
+			scopeAuth: string[];
 		}
 		google: {
 			clientID: string;

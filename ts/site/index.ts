@@ -1,5 +1,6 @@
 import path = require('path');
 import http = require('http');
+import socketio = require('socket.io');
 
 import express = require('express');
 import redis = require('redis');
@@ -20,6 +21,11 @@ let app = express();
 let redisClient = redis.createClient();
 let MongoStore = connectMongo(session);
 let server = http.createServer(app);
+
+
+let io = socketio(server);
+
+mongoose.set('debug', true);
 
 mongoose.Promise = global.Promise;
 mongoose.connect(config.database);
@@ -52,7 +58,7 @@ console.info('Host:', config.baseUrl);
 console.info('Port:', config.port);
 
 
-let www = require('./vhost/www');
+let www = require('./vhost/www')(io);
 app.use(www);
 // app.use(vhost(globalOpts.config.baseUrl, www));
 // app.use(vhost('www.' + globalOpts.config.baseUrl, www));

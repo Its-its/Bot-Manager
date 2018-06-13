@@ -1,12 +1,11 @@
-import * as Discord from 'discord.js';
-
+var prefix = '~';
 
 interface DefaultCommands {
 	parseMessage: (message: string, userConfig, extra: any) => any;
 	get: (commandName: string) => any;
 }
 
-function parseMessage(defaultCommands: DefaultCommands, userConfig, message: string, extra: any, cb: ParseMessageCB) {
+function parseMessage(defaultCommands: DefaultCommands, userConfig, message: string, extra: any, cb: (obj: DiscordBot.PhraseResponses) => void) {
 	var parts = message.split(' ');
 	var messageCommand = parts[0].toLowerCase();
 
@@ -22,11 +21,11 @@ function parseMessage(defaultCommands: DefaultCommands, userConfig, message: str
 
 	if (userConfig.commands.length != 0)
 		for (var i = 0; i < userConfig.commands.length; i++) {
-			var command = userConfig.commands[i];
-			
-			if (command.commandName.indexOf(messageCommand) != -1) {
+			var command: Command = userConfig.commands[i];
+
+			if (command.alias.indexOf(messageCommand) != -1) {
 				//TODO: check if user has the perms.
-	
+
 				var fixedParams = getProperParam(parts, command.params);
 				
 				var calls = dealWithOnCalled(
@@ -59,42 +58,50 @@ function dealWithOnCalled(
 	commands: Array<Command>, 
 	messageParams: Array<string>, 
 	usedParam: CommandParam, 
-	allParams?: Array<CommandParam>): any {
+	allParams?: Array<CommandParam>): DiscordBot.PhraseResponses {
 
-	if (usedParam.onCalled == null) return { type: 'nil', messageParams: messageParams};
+	var response = usedParam.onCalled || usedParam.response;
 
-	var onCalled = usedParam.onCalled.split(' ');
-
-	switch(onCalled.shift().toLowerCase()) {
-		case 'echo': return { type: 'echo', message: onCalled.join(' ') };
-		case 'set':
-			var command = onCalled.shift();
-			var paramId = parseInt(onCalled.shift());
-
-			var newValue = onCalled.join(' ');
-			messageParams.forEach((m, i) => newValue = newValue.replace('%' + i, m));
-
-
-			var guildCommand = getCommand(commands, command);
-			var commandParam = getParam(guildCommand, paramId);
-
-			var oldValue = commandParam.onCalled;
-
-			commandParam.onCalled = newValue;
-	
-			return {
-				type: 'set',
-				command: command,
-				paramId: paramId,
-				oldValue: oldValue,
-				newValue: newValue
-			};
+	if (response == null) {
+		console.log(messageParams);
+		return null;
 	}
+
+	// if (typeof response == 'string') {
+	// 	var calledText = response.split(' ');
+
+	// 	switch(calledText.shift().toLowerCase()) {
+	// 		case 'echo': return { type: 'echo', message: calledText.join(' ') };
+	// 		case 'set':
+	// 			var command = calledText.shift();
+	// 			var paramId = parseInt(calledText.shift());
+
+	// 			var newValue = calledText.join(' '); // TODO: Fix new Value
+	// 			messageParams.forEach((m, i) => newValue = newValue.replace('%' + i, m));
+
+
+	// 			var guildCommand = getCommand(commands, command);
+	// 			var commandParam = getParam(guildCommand, paramId);
+
+	// 			var oldValue = commandParam.onCalled;
+
+	// 			commandParam.onCalled = newValue;
+		
+	// 			return {
+	// 				type: 'set',
+	// 				command: command,
+	// 				paramId: paramId,
+	// 				oldValue: oldValue,
+	// 				newValue: newValue
+	// 			};
+	// 	}
+	// } else 
+	return response;
 }
 
 function getCommand(commands: Array<Command>, command: string): Command {
 	for (var i = 0; i < commands.length; i++) {
-		if (commands[i].commandName.indexOf(command) != -1) return commands[i];
+		if (commands[i].alias.indexOf(command) != -1) return commands[i];
 	}
 
 	return null;
@@ -106,10 +113,7 @@ function getProperParam(message: string[], params: Array<CommandParam>): { pos: 
 
 		if (param.length != null) {
 			if (param.length != message.length - 1) continue;
-			return {
-				pos: a,
-				newParams: message.slice(1).filter(t => t.length != 0)
-			};
+			return { pos: a, newParams: fix(message) };
 		} else {
 			if (param.minLength > message.length - 1 || (param.maxLength == -1 ? false : param.maxLength < message.length - 1)) continue;
 
@@ -123,7 +127,7 @@ function getProperParam(message: string[], params: Array<CommandParam>): { pos: 
 				var newMessageParams = [];
 				newMessageParams.push(messageRemains.shift());
 
-				parts.forEach((part) => {
+				parts.forEach(part => {
 					var points = parseInt(part);
 
 					var array = [];
@@ -135,29 +139,21 @@ function getProperParam(message: string[], params: Array<CommandParam>): { pos: 
 					newMessageParams.push(array.join(' '));
 				});
 
-				return {
-					pos: a,
-					newParams: newMessageParams.slice(1).filter(t => t.length != 0)
-				};
+				return { pos: a, newParams: fix(newMessageParams) };
 			}
 
-			return {
-				pos: a,
-				newParams: message.slice(1).filter(t => t.length != 0)
-			};
+			return { pos: a, newParams: fix(message) };
 		}
 	}
 
 	return null;
 }
 
-function getParam(command: Command, id: number): CommandParam {
-	for (var i = 0; i < command.params.length; i++) {
-		var param = command.params[i];
-		if (param.id == id) return param;
-	}
+function fix(msg: string[]) { return msg.slice(1).filter(t => t.length != 0); }
 
-	return null;
+
+function getParam(command: Command, id: number): CommandParam {
+	return command.params[id];
 }
 
 function getCommandParam(commandName: string, id: number, commands: Array<Command>): CommandParam {
@@ -168,11 +164,11 @@ function getCommandParam(commandName: string, id: number, commands: Array<Comman
 }
 
 function isCallingCommand(userId: string, message: string) {
-	return message[0] == '!' || message.indexOf(`<@${userId}>`) == 0;
+	return message[0] == prefix || message.indexOf(`<@${userId}>`) == 0;
 }
 
 function getCommandMessage(userId: string, message: string) {
-	if (message[0] == '!') return message.substr(1);
+	if (message[0] == prefix) return message.substr(1);
 	
 	var myId = `<@${userId}>`;
 
@@ -196,52 +192,54 @@ export = {
 };
 
 
-interface ParseMessageCB {
-	(value: ParseMessageDef<"error">): void;
-	(value: ParseMessageEcho): void;
-	(value: ParseMessageRemove): void;
-	(value: ParseMessageCreate): void;
-}
+// interface ParseMessageCB {
+// 	(value: ParseMessageDef<"error">): void;
+// 	(value: ParseMessageEcho): void;
+// 	(value: ParseMessageRemove): void;
+// 	(value: ParseMessageCreate): void;
+// }
 
-interface ParseMessageDef<T> {
-	[name: string]: any;
+// interface ParseMessageDef<T> {
+// 	[name: string]: any;
 
-	type: T;
-	reply?: boolean;
-}
+// 	type: T;
+// 	reply?: boolean;
+// }
 
-interface ParseMessageEcho extends ParseMessageDef<"echo"> {
-	message: string;
-	embed?: Discord.RichEmbedOptions;
-}
+// interface ParseMessageEcho extends ParseMessageDef<"echo"> {
+// 	message: string;
+// 	embed?: Discord.RichEmbedOptions;
+// }
 
-interface ParseMessageRemove extends ParseMessageDef<"remove"> {
-	commandName: string;
-	paramId: number;
-}
+// interface ParseMessageRemove extends ParseMessageDef<"remove"> {
+// 	commandName: string;
+// 	paramId: number;
+// }
 
-interface ParseMessageCreate extends ParseMessageDef<"create"> {
-	commandName: string;
-	message: string;
-}
+// interface ParseMessageCreate extends ParseMessageDef<"create"> {
+// 	commandName: string;
+// 	message: string;
+// }
 
-interface ParseMessageSet extends ParseMessageDef<"set"> {
-	newValue: string;
-	command: string;
-	paramId: number;
-}
+// interface ParseMessageSet extends ParseMessageDef<"set"> {
+// 	newValue: string;
+// 	command: string;
+// 	paramId: number;
+// }
 
 
 
 interface Command {
-	commandName: Array<string>;
-	disabled: boolean;
-	params: Array<CommandParam>;
+	id: string;
+	alias: string[];
+	disabled?: boolean;
+	enabled: boolean;
+	params: CommandParam[];
 }
 
 interface CommandParam {
-	id: number;
-	onCalled?: string;
+	onCalled?: DiscordBot.PhraseResponses;
+	response?: DiscordBot.PhraseResponses;
 
 	length?: number;
 	minLength?: number;
@@ -249,5 +247,5 @@ interface CommandParam {
 
 	paramReg?: string;
 	minPerms?: number;
-	cb?: (params: Array<string>, userOptions: any, defaultMessage: any) => any;
+	cb?: (params: string[], userOptions: any, defaultMessage: any) => any;
 };

@@ -7,18 +7,20 @@ class Create extends Command {
 		this.addParams(0, 0, (params) => {
 			return {
 				type: 'echo',
-				message: 'Please use "!create [Command Name] [Message]"'
+				message: 'Please use "!create [name] [message]" to create a command'
 			};
 		});
 
 		this.addParams(2, (params, client, message) => {
-			params.shift();
-
 			var command = params.shift();
 			var onCalled = params.join(' ');
 
-			client.createCommand(command, 'ECHO ' + onCalled);
-			client.save(() => message.reply(`Successfully created command "${command}"`));
+			if (onCalled.length == 0) return;
+
+			client.createCommand(message.member, command, { type: 'echo', message: onCalled }, (resp) => {
+				if (resp) client.save(() => message.reply(`Successfully created command "${command}"`));
+				else message.reply('Command with that name already exists!');
+			});
 		});
 	}
 }

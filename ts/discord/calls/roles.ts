@@ -1,5 +1,5 @@
 
-import DiscordServers = require('../../site/models/discord_servers');
+import DiscordServers = require('../models/servers');
 
 import guildClient = require('../guildClient');
 

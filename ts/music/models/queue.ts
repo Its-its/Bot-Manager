@@ -4,7 +4,8 @@ let Schema = mongoose.Schema;
 
 let QueueItem = new Schema({
 	addedBy: String,
-	song: { type: Schema.Types.ObjectId, ref: 'music_songs' }
+	// type: String,
+	id: String
 }, { _id: false });
 
 

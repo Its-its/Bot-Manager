@@ -1,27 +1,29 @@
+// import { Message } from 'discord.js';
+
 
 declare interface CommandClient {
-	commands: Array<Command>;
+	commands: Array<DiscordBot.Command>;
 }
 
 
-declare interface Command {
-	commandName: Array<string>;
-	disabled: boolean;
-	params: Array<CommandParam>;
-}
+// declare interface Command {
+// 	commandName: Array<string>;
+// 	disabled: boolean;
+// 	params: Array<CommandParam>;
+// }
 
-declare interface CommandParam {
-	id: number;
-	onCalled?: string;
+// declare interface CommandParam {
+// 	id: number;
+// 	onCalled?: DiscordBot.PhraseResponses;
 
-	length?: number;
-	minLength?: number;
-	maxLength?: number;
+// 	length?: number;
+// 	minLength?: number;
+// 	maxLength?: number;
 
-	paramReg?: string;
-	minPerms?: number;
-	cb?: (params: Array<string>) => any;
-}
+// 	paramReg?: string;
+// 	minPerms?: number;
+// 	cb?: (params: Array<string>) => any;
+// }
 
 
 declare namespace DiscordBot {
@@ -34,7 +36,7 @@ declare namespace DiscordBot {
 
 			playing: PlayedSong;
 
-			defaultPlaylist: string;
+			guildPlaylist: string;
 			customPlaylist: string;
 
 			playingFrom: number;
@@ -45,10 +47,10 @@ declare namespace DiscordBot {
 			constructor(guildId: string, save: MusicOptions);
 			
 			save(cb?);
-			play(song?: SongGlobal, trys?: number): boolean;
-			stop(): boolean;
-			next(): boolean;
-			joinVoice(guild?: any/*Guild*/, cb?: () => any): boolean;
+			play(cb?: (err: string, newSong?: DiscordBot.plugins.SongGlobal, lastSong?: DiscordBot.plugins.SongGlobal) => any, trys?: number);
+			sendStop(reason: 'stopped' | 'next', cb?: (reason: string) => any);
+			next(cb: (err: string, newSong: DiscordBot.plugins.PlayedSong, lastSong: DiscordBot.plugins.PlayedSong) => any);
+			rejoinVoice(guild?: any/*Guild*/, cb?: (err, msg?) => any);
 			clearQueue(cb: (err: any) => any);
 			addToQueue(user: string, song: SongGlobal, cb: () => any);
 			removeFromQueue(id: string, cb: (err: any) => any);
@@ -57,8 +59,7 @@ declare namespace DiscordBot {
 			toggleQueueRepeat(): boolean;
 			addToHistory(song: PlayedSong);
 			clearHistory(cb: (err: any) => any);
-			isPlaying(): boolean;
-			sendMessage(message: string, error?: boolean);
+			isPlaying(cb: (playing: boolean) => any);
 			sendMessageFromGuild(guild: any/*Guild*/, message: string, error?: boolean);
 			regrab(cb: (music: Music) => any);
 			toString(): string;
@@ -72,7 +73,9 @@ declare namespace DiscordBot {
 			
 			playing: PlayedSong;
 
-			defaultPlaylist: string;
+			defaultPlaylist?: string;
+
+			guildPlaylist: string;
 			customPlaylist: string;
 
 			playingFrom: number;
@@ -83,19 +86,18 @@ declare namespace DiscordBot {
 		}
 
 		interface SongYT extends SongType<'youtube'> {
-			channelId: string;
+			channel_id: string;
 		}
 		
 		interface SongType<T> {
-			_id: string;
-
 			type: T;
 			
-			uid: string;
+			id: string;
 			title: string;
 			length: number;
-			thumb: string;
-			uploaded: number;
+			thumbnail_url: string;
+			published: number;
+			view_count: number;
 
 			addedBy?: string;
 		}
@@ -108,24 +110,25 @@ declare namespace DiscordBot {
 
 
 	export class Server {
-		serverId: string;
-		region: string;
-		moderation: Moderation;
-		intervals: Interval[];
-		ranks: string[];
-		commands: Command[];
-		phrases: Phrase[];
-		roles: Role[];
-		plugins: any;
-		values: any;
-		permissions: Permissions;
+		public serverId: string;
+		public region: string;
+		public moderation: Moderation;
+		public intervals: Interval[];
+		public ranks: string[];
+		public commands: Command[];
+		public phrases: Phrase[];
+		public roles: Role[];
+		public plugins: any;
+		public values: any;
+		public permissions: Permissions;
 
 		constructor(serverID: string, options: ServerOptions);
 		save(cb?);
-		createPhrase(phraseText: string[]): Phrase;
+
+		createPhrase(member, phraseText: string[], cb: (phrase: Phrase) => any);
 		removePhrase(id: number, phrases?: string[]): Phrase;
 		addPhrase(id: number, phrases: string[]): boolean;
-		setPhraseResponse(id: number, response: string[]): boolean;
+		setPhraseResponse(id: number, response: DiscordBot.PhraseResponses[]): boolean;
 		findPhrase(text: string[] | string): Phrase;
 
 		hasBlacklistedWord(content: string): boolean;
@@ -137,7 +140,7 @@ declare namespace DiscordBot {
 		channelIgnored(id: string): boolean;
 		memberIgnored(id: string): boolean;
 
-		createCommand(commandName: string, onCalled: string): boolean;
+		createCommand(member, commandName: string, onCalled: PhraseResponses, cb: (resp: boolean) => any);
 		removeCommand(commandName: string, paramId: number): boolean;
 		commandIndex(commandName: string): number;
 
@@ -167,7 +170,15 @@ declare namespace DiscordBot {
 	}
 
 	interface ServerOptions {
+		version?: number;
+
 		region: string;
+		name: string;
+		iconURL: string;
+		createdAt: number;
+		memberCount: number;
+		ownerID: string;
+
 		intervals?: Interval[];
 		ranks?: string[];
 		commands?: Command[];
@@ -204,12 +215,44 @@ declare namespace DiscordBot {
 	}
 	
 	interface Phrase {
+		_id?: string;
+
+		pid: string;
+
+		enabled?: boolean;
+		ignoreCase?: boolean;
+
 		phrases: string[];
-		responses: string[];
+		responses: PhraseResponses[];
+	}
+
+
+	type PhraseResponses = PhraseResEcho | PhraseResInterval | PhraseResSet;
+
+	interface PhraseResEcho {
+		reply?: boolean;
+		type: 'echo';
+		message: string;
+		embed?: any;
+	}
+
+	interface PhraseResInterval {
+		type: 'interval';
+		do: string | 'reset';
+		id: string;
+	}
+
+	interface PhraseResSet {
+		type: 'set';
+		command: string;
+		paramId: number;
+		oldValue: PhraseResponses;
+		newValue: PhraseResponses;
 	}
 	
 	interface Moderation {
-		disabledCommands: string[];
+		disabledDefaultCommands: string[];
+		disabledCustomCommands: string[];
 		blacklisted: string[];
 		whitelisted: string[];
 		ignoredChannels: string[];
@@ -219,6 +262,8 @@ declare namespace DiscordBot {
 	
 	interface Interval {
 		_id?: string;
+
+		pid?: string;
 	
 		server_id?: string;
 		channel_id?: string;
@@ -242,7 +287,12 @@ declare namespace DiscordBot {
 		music?: PluginItem;
 		interval?: PluginItem;
 		rssfeed?: PluginItem;
-		logs?: PluginItem;
+		logs?: PluginLogs;
+	}
+
+	interface PluginLogs extends PluginItem {
+		textChannelId?: string;
+		filter?: string[];
 	}
 
 	interface PluginItem {
@@ -264,14 +314,16 @@ declare namespace DiscordBot {
 	
 	// Command
 	interface Command {
-		commandName: string[];
-		disabled: boolean;
+		_id?: string;
+	
+		pid: string;
+		alias: string[];
 		params: CommandParam[];
 	}
 	
 	interface CommandParam {
-		id: number;
-		onCalled?: string;
+		onCalled?: PhraseResponses;
+		response?: PhraseResponses;
 	
 		length?: number;
 		minLength?: number;
@@ -279,6 +331,6 @@ declare namespace DiscordBot {
 	
 		paramReg?: string;
 		minPerms?: number;
-		cb?: (params: string[], userOptions: object) => any;
+		cb?: (params: string[], userOptions: any, message: any) => any;
 	}
 }

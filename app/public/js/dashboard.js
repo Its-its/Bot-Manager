@@ -11,6 +11,7 @@
 	$('#createBot').on('click', function() {
 		$.post('/api/dashboard/create', function(data) {
 			console.log(data);
+			window.location.reload();
 		});
 	});
 
@@ -34,7 +35,7 @@
 			div.appendChild(content);
 
 			content = document.createElement('p');
-			content.innerText = 'Apps: ' + bot.apps;
+			content.innerText = 'Type: ' + (bot.selectedBot == null ? 'None' : bot.selectedBot);
 			div.appendChild(content);
 
 			content = document.createElement('p');

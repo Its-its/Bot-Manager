@@ -7,10 +7,8 @@ let Bots = new Schema({
 	user_id: { type: Schema.Types.ObjectId, ref: 'users' },
 	uid: String,
 
-	app: {
-		name: String,
-		id: Schema.Types.ObjectId
-	},
+	botType: String,
+	botId: Schema.Types.ObjectId,
 
 	displayName: String,
 	is_active: { type: Boolean, default: false },
@@ -19,23 +17,19 @@ let Bots = new Schema({
 	edited_at: { type: Date, default: Date.now }
 });
 
-Bots.method('setApp', (name: string, uid: string) => {
-	//
-})
-
-Bots.method('getApp', function(cb) {
-	if (this.app == null || this.app.name == null || this.app.id == null)
+Bots.method('getBot', function(cb) {
+	if (this.botType == null || this.botId == null)
 		return cb(new Error('No App Exists.'), null);
 	
-	mongoose.connection.collection(this.app.name)
-	.findOne({ '_id': this.app.id }, (err, res) => {
-		if (res != null)
-			res.type = collectionToName(this.app.name).toLowerCase();
+	mongoose.connection.collection(this.botType)
+	.findOne({ '_id': this.botId }, (err, res) => {
+		if (res != null) res.type = collectionToName(this.botType).toLowerCase();
 		cb(err, res);
 	});
 });
 
 Bots.static('appName', appName);
+Bots.static('collectionToName', collectionToName);
 
 
 function appName(name: string) {
@@ -61,4 +55,24 @@ function collectionToName(collection: string) {
 	return 'Unknown';
 }
 
-export = mongoose.model('bots', Bots);
+interface MongooseDoc extends mongoose.Document {
+	getBot: (cb: (err, res: mongoose.Document) => any) => any;
+	appName: (str: string) => string;
+
+	user_id: string;
+	uid: string;
+
+	botType: string;
+	botId: string;
+	
+	displayName: string;
+
+	is_active: boolean;
+
+	created_at: Date;
+	edited_at: Date;
+}
+
+let model: mongoose.Model<MongooseDoc> = mongoose.model('bots', Bots);
+
+export = model;

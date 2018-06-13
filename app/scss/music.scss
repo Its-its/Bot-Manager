@@ -1,0 +1,224 @@
+/// Stroke font-character
+/// @param  {Integer} $stroke - Stroke width
+/// @param  {Color}   $color  - Stroke color
+/// @return {List}            - text-shadow list
+@function stroke($stroke, $color) {
+	$shadow: ();
+	$from: $stroke*-1;
+	@for $i from $from through $stroke {
+		@for $j from $from through $stroke {
+			$shadow: append($shadow, $i*1px $j*1px 0 $color, comma);
+		}
+	}
+	@return $shadow;
+}
+
+/// Stroke font-character
+/// @param  {Integer} $stroke - Stroke width
+/// @param  {Color}   $color  - Stroke color
+/// @return {Style}           - text-shadow
+@mixin stroke($stroke, $color) {
+	text-shadow: stroke($stroke, $color);
+}
+
+
+html, body {
+	height: 100%;
+}
+
+$body-bg: #191b1d;
+
+$text-color: #b0b0b1;
+
+body {
+	background: $body-bg;
+	color: #ebebeb;
+	font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+
+.header {
+	background-color: #373a4d;
+	position: relative;
+	padding: 5px;
+
+	.header-item {
+		padding: 5px 10px;
+	}
+}
+
+.footer {
+	background-color: $body-bg * 0.9;
+}
+
+.container {
+	height: 100%;
+}
+
+.sidebar {
+	background-color: $body-bg * 0.9;
+	padding: 5px;
+	height: 100%;
+}
+
+#player-info {
+	background: #2c1436;
+
+	.player-info-container {
+		padding: 10px;
+		height: 100%;
+		display: flex;
+		align-items: center;
+	
+		.title {
+			overflow: hidden;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+			font-size: 14px;
+			width: 100%;
+			display: block;
+			color: #ebebeb;
+			text-align: center;
+
+			&:hover {
+				color: #b9b9b9;
+			}
+		}
+	}
+}
+
+.footer {
+	height: 64px !important;
+}
+
+#player-controls {	
+	.progress-container {
+		height: 100%;
+		// display: block;
+		overflow: auto;
+		display: flex;
+		align-items: center;
+		padding: 0px 5px;
+
+		.time {
+			font-size: 15px;
+		}
+
+		.progress-bar {
+			height: 10px;
+			background-color: #292929;
+			position: relative;
+			overflow: hidden;
+			border-radius: 10px;
+			width: 100%;
+			margin: 0px 4px;
+
+			.progress-item {
+				border-radius: 10px;
+				height: 100%;
+				width: 0%;
+				background: #453451;
+			}
+		}
+	}
+
+	.controls-container {
+		width: 20%;
+		max-width: 170px;
+		min-width: 100px;
+		float: right;
+		height: 100%;
+		display: flex;
+		align-items: center;
+
+		.volume-control,
+		.addto-control {
+			color: white;
+			cursor: pointer;
+			margin: 0px 10px;
+
+			&:hover {
+				color: #b4b4b4;
+			}
+		}
+	}
+}
+
+.video-player-container {
+	position: absolute;
+	right: 1em;
+	bottom: 1em;
+	width: 350px;
+	height: 262px;
+}
+
+.info {
+	padding: 15px 10px;
+	display: inline-block;
+
+	&.server-info {
+		.thumb-container {
+			width: 128px;
+
+			.thumb {
+				border-radius: 50%;
+			}
+		}
+	}
+
+	.thumb-container {
+		width: auto;
+		position: relative;
+		float: left;
+		margin-right: 15px;
+	}
+
+	.info-container {
+		float: left;
+	}
+
+	.right-side {
+		float: right;
+	}
+}
+
+.group {
+	margin-bottom: 1em;
+
+	.name {
+		text-transform: uppercase;
+		font-size: 15px;
+		color: $text-color;
+	}
+
+	.group-list {
+		margin-left: 0;
+		margin-bottom: 0;
+		list-style-type: none;
+		margin-block-start: 0;
+		margin-block-end: 0;
+
+		.group-list-item {
+			padding: 0.5em;
+			color: $text-color;
+
+			&.create-playlist {
+				a {
+					color: #8caf85;
+
+					&:hover {
+						color: #8caf85 * 0.7;
+					}
+				}
+			}
+
+			a {
+				color: $text-color;
+
+				&:hover {
+					color: $text-color * 0.7;
+				}
+			}
+		}
+	}
+}

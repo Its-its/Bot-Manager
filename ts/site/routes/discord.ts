@@ -10,9 +10,9 @@ export = (app: express.Application) => {
 		if (botId == null || guildId == null) return res.send('error');
 
 		// TODO: Check to see if user.id/botId is already being used.
-		
+
 		var validate = new Validation({
-			user_id: req.user.id,
+			user_id: req['user'].id,
 			bot_id: botId,
 			listener_id: guildId
 		});
@@ -23,16 +23,16 @@ export = (app: express.Application) => {
 				res.send({ error: 'Error while saving Validation.' });
 				return;
 			}
-			
+
 			var params = [
 				'client_id=' + config.bot.discord.id,
 				'scope=bot',
 				'permissions=8',
-				'guild_id=314946214523174913',
+				'guild_id=' + guildId,//314946214523174913
 				'response_type=code',
-				'redirect_uri=http://127.0.0.1:8088/auth/discord/callback'
+				'redirect_uri=' + encodeURIComponent(config.passport.discord.callbackURL)
 			].join('&');
-	
+
 			res.send('https://discordapp.com/oauth2/authorize?' + params);
 		});
 	});

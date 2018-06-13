@@ -5,7 +5,8 @@ import passport = require('passport');
 
 import Users = require('../models/users');
 import Bots = require('../models/bots');
-import DiscordServers = require('../models/discord_servers');
+import DiscordServers = require('../../discord/models/servers');
+import DiscordMembers = require('../../discord/models/members');
 
 import config = require('../util/config');
 
@@ -73,7 +74,7 @@ export = (app: express.Application) => {
 	// 	let permissions = req.query.permissions;
 	// 	let bot_id = req.params.bot_id;
 
-	// 	if (req.user != null && guild_id != null && permissions != null && bot_id != null) {
+	// 	if (req['user'] != null && guild_id != null && permissions != null && bot_id != null) {
 	// 		Bots.findOne({ uid: bot_id }, (err, bot: any) => {
 	// 			if (err != null) return console.error(err);
 
@@ -83,7 +84,7 @@ export = (app: express.Application) => {
 		
 	// 					if (server == null) {
 	// 						server = new DiscordServers({
-	// 							user_id: req.user.id,
+	// 							user_id: req['user'].id,
 	// 							bot_id: bot.id,
 	// 							server_id: guild_id,
 	// 							permission: permissions
@@ -120,37 +121,43 @@ export = (app: express.Application) => {
 		},
 		(accessToken, refreshToken, profile, done) => {
 			Users.findOne({ 'discord.id': profile.id }, (err, user: any) => {
-				if (err) return done(err);
-				if (user) {
-					if (user.discord.guilds.length == 0) {
-						user.discord.guilds = profile.guilds;
-						user.save(() => {});
-					}
+				if (err != null) return done(err);
 
-					return done(null, user);
+				if (user != null) {
+					DiscordMembers.updateOne({ user_id: user._id }, { $set: { guilds: profile.guilds } }).exec();
+					// user.discord.guilds = profile.guilds;
+					// user.save(() => done(null, user));
+
+					return;
 				}
 
-				// console.log(JSON.stringify(profile.connections, null, 4));
-	
 				user = new Users({
 					'discord.id': profile.id,
-					'discord.token': accessToken,
-					'discord.name': profile.username,
-					'discord.avatar': profile.avatar,
-					// 'discord.provider': profile.provider,
-					'discord.mfa_enabled': profile.mfa_enabled,
-					'discord.discriminator': profile.discriminator,
-					// 'discord.connections': profile.connections,
-					'discord.guilds': profile.guilds
+					'discord.token': accessToken
 				});
 
 				// guilds: [{ owner: Boolean, permissions: Number, icon: String, id: String, name: String }]
 	
-				user.save((err) => {
+				user.save((err, doc) => {
 					if (err) {
 						console.log(err);
 						return done(err, null);
 					}
+
+					DiscordMembers.updateOne({
+						did: profile.id
+					}, {
+						$set: {
+							user_id: doc._id,
+							did: profile.id,
+							name: profile.username,
+							avatar: profile.avatar,
+							mfa_enabled: profile.mfa_enabled,
+							discriminator: profile.discriminator,
+							connections: profile.connections,
+							guilds: profile.guilds
+						}
+					}, { upsert: true }).exec();
 
 					done(null, user);
 				});
@@ -160,11 +167,13 @@ export = (app: express.Application) => {
 
 	// Login
 	passport.serializeUser((user, done) => {
+		console.log('passport.serializeUser:', user);
 		done(null, user.id);
 	});
 
 	// Logout
 	passport.deserializeUser((id, done) => {
+		console.log('passport.deserializeUser:', id);
 		Users.findById(id, (err, user) => {
 			done(err, user);
 		});

@@ -4,20 +4,22 @@ import express = require('express');
 import passport = require('passport');
 
 
-let app = express();
+export = (socketio) => {
+	let app = express();
 
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, '../../../app/views'));
-app.use(express.static(path.join(__dirname, '../../../app/public')));
-// app.set('trust proxy', true);
+	app.set('view engine', 'ejs');
+	app.set('views', path.join(__dirname, '../../../app/views'));
+	app.use(express.static(path.join(__dirname, '../../../app/public')));
+	// app.set('trust proxy', true);
 
-app.use(passport.initialize());
-app.use(passport.session());
+	app.use(passport.initialize());
+	app.use(passport.session());
 
-require('../routes/www')(app);
+	require('../routes/www')(app, socketio);
 
-app.use((req, res) => {
-	res.status(500).send('Something Broke!');
-});
+	app.use((req, res) => {
+		res.status(500).send('Something Broke!');
+	});
 
-export = app;
+	return app;
+};

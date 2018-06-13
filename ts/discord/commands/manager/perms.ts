@@ -241,15 +241,6 @@ class Perms extends Command {
 			}
 
 			server.save();
-
-			function getType(str: string): 'roles' | 'users' | 'groups' {
-				if (!str.startsWith('<@')) return 'groups';
-
-				if (str.length < 3) return null;
-				var sub = str.substr(2, str.length - 3);
-				if (sub[0] == '@') return 'roles';
-				else return 'users';
-			}
 		});
 	}
 }

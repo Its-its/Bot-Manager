@@ -22,7 +22,8 @@ import CommandManger = require('../../command-manager');
 
 import Discord = require('discord.js');
 
-import Server = require('../guildClient');
+import Server = require('../discordserver');
+
 
 let categoryCommands: { [category: string]: Command[] } = {};
 let defaultCommands: Array<Command> = [];
@@ -36,11 +37,11 @@ process.nextTick(() => {
 	addCommand(require('./moderation'), 'Moderation');
 	addCommand(require('./manager'), 'Manager');
 	addCommand(require('./moderator'), 'Moderator');
-	addCommand(require('./music'), 'Music');
+	addCommand(require('./plugins'), 'Plugins');
 	addCommand(require('./roles'), 'Roles');
 });
 
-function parseMessage(message: string, server: Server.Server, defaultMessage: Discord.Message) {
+function parseMessage(message: string, server: Server, defaultMessage: Discord.Message) {
 	let parts = message.split(' ');
 	let messageCommand = parts[0].toLowerCase();
 

@@ -1,0 +1,134 @@
+html, body {
+  height: 100%; }
+
+body {
+  background: #191b1d;
+  color: #ebebeb;
+  font-family: Verdana, Geneva, Tahoma, sans-serif; }
+
+.header {
+  background-color: #373a4d;
+  position: relative;
+  padding: 5px; }
+  .header .header-item {
+    padding: 5px 10px; }
+
+.footer {
+  background-color: #17181a; }
+
+.container {
+  height: 100%; }
+
+.sidebar {
+  background-color: #17181a;
+  padding: 5px;
+  height: 100%; }
+
+#player-info {
+  background: #2c1436; }
+  #player-info .player-info-container {
+    padding: 10px;
+    height: 100%;
+    display: flex;
+    align-items: center; }
+    #player-info .player-info-container .title {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      font-size: 14px;
+      width: 100%;
+      display: block;
+      color: #ebebeb;
+      text-align: center; }
+      #player-info .player-info-container .title:hover {
+        color: #b9b9b9; }
+
+.footer {
+  height: 64px !important; }
+
+#player-controls .progress-container {
+  height: 100%;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  padding: 0px 5px; }
+  #player-controls .progress-container .time {
+    font-size: 15px; }
+  #player-controls .progress-container .progress-bar {
+    height: 10px;
+    background-color: #292929;
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    width: 100%;
+    margin: 0px 4px; }
+    #player-controls .progress-container .progress-bar .progress-item {
+      border-radius: 10px;
+      height: 100%;
+      width: 0%;
+      background: #453451; }
+
+#player-controls .controls-container {
+  width: 20%;
+  max-width: 170px;
+  min-width: 100px;
+  float: right;
+  height: 100%;
+  display: flex;
+  align-items: center; }
+  #player-controls .controls-container .volume-control,
+  #player-controls .controls-container .addto-control {
+    color: white;
+    cursor: pointer;
+    margin: 0px 10px; }
+    #player-controls .controls-container .volume-control:hover,
+    #player-controls .controls-container .addto-control:hover {
+      color: #b4b4b4; }
+
+.video-player-container {
+  position: absolute;
+  right: 1em;
+  bottom: 1em;
+  width: 350px;
+  height: 262px; }
+
+.info {
+  padding: 15px 10px;
+  display: inline-block; }
+  .info.server-info .thumb-container {
+    width: 128px; }
+    .info.server-info .thumb-container .thumb {
+      border-radius: 50%; }
+  .info .thumb-container {
+    width: auto;
+    position: relative;
+    float: left;
+    margin-right: 15px; }
+  .info .info-container {
+    float: left; }
+  .info .right-side {
+    float: right; }
+
+.group {
+  margin-bottom: 1em; }
+  .group .name {
+    text-transform: uppercase;
+    font-size: 15px;
+    color: #b0b0b1; }
+  .group .group-list {
+    margin-left: 0;
+    margin-bottom: 0;
+    list-style-type: none;
+    margin-block-start: 0;
+    margin-block-end: 0; }
+    .group .group-list .group-list-item {
+      padding: 0.5em;
+      color: #b0b0b1; }
+      .group .group-list .group-list-item.create-playlist a {
+        color: #8caf85; }
+        .group .group-list .group-list-item.create-playlist a:hover {
+          color: #627b5d; }
+      .group .group-list .group-list-item a {
+        color: #b0b0b1; }
+        .group .group-list .group-list-item a:hover {
+          color: #7b7b7c; }

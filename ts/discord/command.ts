@@ -1,6 +1,6 @@
-import CommandManager = require('../command-manager');
+import Server = require('./discordserver');
 
-import { Server } from './guildClient';
+import info = require('./utils');
 
 import Discord = require('discord.js');
 
@@ -49,10 +49,8 @@ class Command implements Command {
 		}
 
 		this.params.push({
-			id: this.params.length,
 			minLength: minLength,
 			maxLength: maxLength,
-			validParams: validParams || [],
 			cb: cb
 		});
 
@@ -110,11 +108,11 @@ class Command implements Command {
 		});
 	}
 
-	static DefaultColor = 0xb0a79e;
-	static SuccessColor = 0x43f104;
-	static InfoColor = 0x46a0c0;
-	static WarningColor = 0xc4d950;
-	static ErrorColor = 0xd91582;
+	static DefaultColor = info.DefaultColor;
+	static SuccessColor = info.SuccessColor;
+	static InfoColor = info.InfoColor;
+	static WarningColor = info.WarningColor;
+	static ErrorColor = info.ErrorColor;
 
 	static defCall(color: number, array: string[][]) {
 		return {
@@ -186,18 +184,18 @@ export = Command;
 
 
 interface Command {
-	// disabled: boolean;
+	disabled?: boolean;
 
-	addParams(minLength: number, maxLength: number, cb: (params: Array<string>, userOptions: Server, message: Discord.Message) => any);
+	addParams(minLength: number, maxLength: number, cb: (params: string[], userOptions: Server, message: Discord.Message) => any);
 	addParams(minLength: number, cb: (params: Array<string>, userOptions: Server, message: Discord.Message) => any);
 	addParams(cb: (params: Array<string>, userOptions: Server, message: Discord.Message) => any);
 }
 
 interface CommandParams {
-	id: number;
-	onCalled?: string;
+	onCalled?: DiscordBot.PhraseResponses;
+	response?: DiscordBot.PhraseResponses;
 
-	validParams?: string[]; // [ string, any, number, boolean ]
+	// validParams?: string[]; // [ string, any, number, boolean ]
 
 	length?: number;
 	minLength?: number;
@@ -205,5 +203,5 @@ interface CommandParams {
 
 	paramReg?: string;
 	minPerms?: number;
-	cb?: (params: object, userOptions: object, message: Discord.Message) => any;
+	cb?: (params: string[], userOptions: object, message: Discord.Message) => any;
 };

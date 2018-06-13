@@ -7,13 +7,11 @@ class Remove extends Command {
 		this.addParams(0, 0, (params) => {
 			return {
 				type: 'echo',
-				message: 'Please use "!remove [Command Name] (param ID)"'
+				message: 'Please use "!remove [name]"'
 			};
 		});
 
 		this.addParams(2, (params, client, message) => {
-			params.shift();
-
 			let command = params.shift();
 			let paramId = parseInt(params.shift());
 
