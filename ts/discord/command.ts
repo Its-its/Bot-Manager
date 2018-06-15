@@ -4,7 +4,7 @@ import info = require('./utils');
 
 import Discord = require('discord.js');
 
-class Command implements Command {
+class Command {
 	public commandName: Array<string>;
 	public togglable: boolean;
 	public description: string;
@@ -12,57 +12,26 @@ class Command implements Command {
 	public adminOnly: boolean;
 	public perms: Array<string> = [];
 
-	public params: Array<CommandParams> = [];
-
 	constructor(commandName: string | Array<string>, togglable = true, adminOnly = true) {
 		this.commandName = (typeof commandName == 'string' ? [commandName] : commandName);
 		this.togglable = (togglable == null ? true : togglable);
 		this.adminOnly = adminOnly;
+		
+		this.description = 'Nothing written yet.';
+	}
+
+	public hasPerms(discordPerms: Discord.PermissionResolvable | Discord.PermissionResolvable[], member: Discord.GuildMember) {
+		// TODO: Custom Perms
+
+		if (member.hasPermission(discordPerms)) return true;
+		return false;
 	}
 
 	public is(name: string): boolean {
 		return this.commandName.indexOf(name) != -1;
 	}
 
-	public validate(params: String[]): boolean {
-		for(var i = 0; i < this.params.length; i++) {
-			var param = this.params[i];
-			// TODO: Validate numbers, booleans, etc.
-			if (params.length >= param.minLength && (param.maxLength == -1 || params.length <= param.maxLength)) return true;
-		}
-		return false;
-	}
-
-	public addParams(
-		minLength?: number | ((params: Array<string>, userOptions: object, message: Discord.Message) => any), 
-		maxLength?: number | ((params: Array<string>, userOptions: object, message: Discord.Message) => any), 
-		cb?: (params: Array<string>, userOptions: Server, message: Discord.Message) => any,
-		validParams?: string[]) {
-
-		if (typeof minLength == 'function') {
-			cb = minLength;
-			minLength = 0;
-			maxLength = -1;
-		} else if (typeof maxLength == 'function') {
-			cb = maxLength;
-			maxLength = -1;
-		}
-
-		this.params.push({
-			minLength: minLength,
-			maxLength: maxLength,
-			cb: cb
-		});
-
-		// 0, 0
-		// 1, 1
-		// 3, 4
-		// 1, 10
-		this.params.sort((a, b) => {
-			var ad = (a.maxLength - a.minLength), bd = (b.maxLength - b.minLength);
-			return ad == bd ? a.minLength - b.minLength : ad - bd
-		});
-	}
+	public call(params: string[], userOptions: Server, message: Discord.Message) {}
 
 	static paramsExpanded(params: string[]): string[] {
 		return params.map(p => {
@@ -181,27 +150,3 @@ class Command implements Command {
 }
 
 export = Command;
-
-
-interface Command {
-	disabled?: boolean;
-
-	addParams(minLength: number, maxLength: number, cb: (params: string[], userOptions: Server, message: Discord.Message) => any);
-	addParams(minLength: number, cb: (params: Array<string>, userOptions: Server, message: Discord.Message) => any);
-	addParams(cb: (params: Array<string>, userOptions: Server, message: Discord.Message) => any);
-}
-
-interface CommandParams {
-	onCalled?: DiscordBot.PhraseResponses;
-	response?: DiscordBot.PhraseResponses;
-
-	// validParams?: string[]; // [ string, any, number, boolean ]
-
-	length?: number;
-	minLength?: number;
-	maxLength?: number;
-
-	paramReg?: string;
-	minPerms?: number;
-	cb?: (params: string[], userOptions: object, message: Discord.Message) => any;
-};

@@ -16,159 +16,162 @@ class Plugin extends Command {
 	constructor() {
 		super(['plugin', 'plugins']);
 
+		this.description = 'Used to enable/disable parts of the bot.';
+
 		this.perms = [
 			'commands.plugin'
 		].concat([
 			'list',
 			'enable',
 			'disable',
-			'perms'
+			// 'perms'
 		].map(i => 'commands.plugin.' + i));
+	}
 
-		this.addParams(0, (params, server, message) => {
-			if (params.length == 0) {
+	public call(params, server, message) {
+		if (params.length == 0) {
+			message.channel.send(Command.info([
+				[ 'Description', this.description ],
+				[	'Command Usage',
+					[	'list', 
+						'enable <name/all>', 
+						'disable <name/all>',
+						// 'perms <plugin> <none/strict>'
+					].map(b => 'plugin ' + b).join('\n')
+				]
+			]));
+			return;
+		}
+
+		switch (params.shift()) {
+			case 'list':
+				if (!server.userHasPerm(message.member, 'commands.plugin.list')) return;
+
 				message.channel.send(Command.info([
-					[	'Command Usage',
-						[	'list', 
-							'enable <name/all>', 
-							'disable <name/all>',
-							'perms <plugin> <none/strict>'
-						].map(b => '!plugin ' + b).join('\n')
+					[
+						'Plugin List',
+						Command.table(['Name', 'Active', 'Perms'], plugins.map(name => {
+							var plugin = server.plugins[name];
+							return [
+								name,
+								(server.isPluginEnabled(<any>name) ? 'Enabled' : 'Disabled'),
+								((plugin == null ? false : plugin.perms) ? 'Forced' : 'Lenient')
+							]
+						}))
 					]
 				]));
 				return;
-			}
+			case 'enable':
+				if (!server.userHasPerm(message.member, 'commands.plugin.enable')) return;
 
-			switch (params.shift()) {
-				case 'list':
-					if (!server.userHasPerm(message.member, 'commands.plugin.list')) return;
+				var type = params.shift();
+				if (type == null) return;
 
+				if (type == 'all') {
+					plugins.forEach(p => {
+						if (server.plugins[p] != null) {
+							server.plugins[p].enabled = true;
+						} else {
+							server.plugins[p] = { enabled: true, perms: true };
+						}
+					});
 					message.channel.send(Command.info([
-						[
-							'Plugin List',
-							Command.table(['Name', 'Active', 'Perms'], plugins.map(name => {
-								var plugin = server.plugins[name];
-								return [
-									name,
-									(server.isPluginEnabled(<any>name) ? 'Enabled' : 'Disabled'),
-									((plugin == null ? false : plugin.perms) ? 'Forced' : 'Lenient')
-								]
-							}))
-						]
+						[ 'Plugin', 'Enabled All Plugins' ]
 					]));
-					return;
-				case 'enable':
-					if (!server.userHasPerm(message.member, 'commands.plugin.enable')) return;
+				} else {
+					var index = plugins.indexOf(type);
+					if (index != -1) {
+						if (server.plugins[type] != null) {
+							server.plugins[type].enabled = true;
+						} else {
+							server.plugins[type] = { enabled: true, perms: true };
+						}
 
-					var type = params.shift();
-					if (type == null) return;
-
-					if (type == 'all') {
-						plugins.forEach(p => {
-							if (server.plugins[p] != null) {
-								server.plugins[p].enabled = true;
-							} else {
-								server.plugins[p] = { enabled: true, perms: true };
-							}
-						});
 						message.channel.send(Command.info([
-							[ 'Plugin', 'Enabled All Plugins' ]
+							[ 'Plugin', 'Enabled ' + type ]
 						]));
 					} else {
-						var index = plugins.indexOf(type);
-						if (index != -1) {
-							if (server.plugins[type] != null) {
-								server.plugins[type].enabled = true;
-							} else {
-								server.plugins[type] = { enabled: true, perms: true };
-							}
-
-							message.channel.send(Command.info([
-								[ 'Plugin', 'Enabled ' + type ]
-							]));
-						} else {
-							message.channel.send(Command.info([
-								[	'Plugin',
-									[	'No plugin exists with the name "' + type + '"',
-										'Please use one of the following:',
-										' - ' + plugins.join(', ')
-									].join('\n') ]
-							]));
-						}
-					}
-					break;
-				case 'disable':
-					if (!server.userHasPerm(message.member, 'commands.plugin.disable')) return;
-
-					var type = params.shift();
-					if (type == null) return;
-
-					if (type == 'all') {
-						plugins.forEach(p => {
-							if (server.plugins[p] != null) {
-								server.plugins[p].enabled = false;
-							} else {
-								server.plugins[p] = { enabled: false, perms: true };
-							}
-						});
 						message.channel.send(Command.info([
-							[ 'Plugin', 'Disabled All Plugins' ]
+							[	'Plugin',
+								[	'No plugin exists with the name "' + type + '"',
+									'Please use one of the following:',
+									' - ' + plugins.join(', ')
+								].join('\n') ]
 						]));
-					} else {
-						var index = plugins.indexOf(type);
-						if (index != -1) {
-							if (server.plugins[type] != null) {
-								server.plugins[type].enabled = false;
-							} else {
-								server.plugins[type] = { enabled: false, perms: true };
-							}
+					}
+				}
+				break;
+			case 'disable':
+				if (!server.userHasPerm(message.member, 'commands.plugin.disable')) return;
 
-							message.channel.send(Command.info([[ 'Plugin', 'Disabled Plugin.' ]]));
+				var type = params.shift();
+				if (type == null) return;
+
+				if (type == 'all') {
+					plugins.forEach(p => {
+						if (server.plugins[p] != null) {
+							server.plugins[p].enabled = false;
 						} else {
-							message.channel.send(Command.info([
-								[	'Plugin',
-									[	'No plugin exists with the name "' + type + '"',
-										'Please use one of the following:',
-										' - ' + plugins.join(', ')
-									].join('\n') ]
-							]));
+							server.plugins[p] = { enabled: false, perms: true };
 						}
-					}
-					break;
-				case 'perms':
-					if (!server.userHasPerm(message.member, 'commands.plugin.perms')) return;
-					
-					if (params.length != 2) return;
-					var plugin = params.shift().toLowerCase();
-					var setTo = params.shift().toLowerCase();
-
-					if (plugins.indexOf(plugin) == -1) return Command.error([[ 'Plugin', 'Plugin ' + plugin + ' does not exist!' ]]);
-					if (setTo != 'strict' && setTo != 'none') return Command.error([[ 'Plugin', 'Set to "strict" or "none"' ]]);
-
-					var plug = server.plugins[plugin];
-					var bool = setTo == 'strict';
-
-					if (plug == null) {
-						if (!bool) {
-							server.plugins[plugin] = {
-								enabled: true,
-								perms: bool
-							};
-						} else return Command.error([[ 'Plugin', 'You cannot set, what\'s already been set!' ]]);
-					} else {
-						if (plug.perms != bool) plug.perms = bool;
-						else return Command.error([[ 'Plugin', 'You cannot set, what\'s already been set!' ]]);
-					}
-
+					});
 					message.channel.send(Command.info([
-						[ 'Plugin', 'Required perms for ' + plugin + ' now set to ' + setTo ]
+						[ 'Plugin', 'Disabled All Plugins' ]
 					]));
-					break;
-				default: return;
-			}
+				} else {
+					var index = plugins.indexOf(type);
+					if (index != -1) {
+						if (server.plugins[type] != null) {
+							server.plugins[type].enabled = false;
+						} else {
+							server.plugins[type] = { enabled: false, perms: true };
+						}
 
-			server.save();
-		});
+						message.channel.send(Command.info([[ 'Plugin', 'Disabled Plugin.' ]]));
+					} else {
+						message.channel.send(Command.info([
+							[	'Plugin',
+								[	'No plugin exists with the name "' + type + '"',
+									'Please use one of the following:',
+									' - ' + plugins.join(', ')
+								].join('\n') ]
+						]));
+					}
+				}
+				break;
+			case 'perms':
+				if (!server.userHasPerm(message.member, 'commands.plugin.perms')) return;
+				
+				if (params.length != 2) return;
+				var plugin = params.shift().toLowerCase();
+				var setTo = params.shift().toLowerCase();
+
+				if (plugins.indexOf(plugin) == -1) return Command.error([[ 'Plugin', 'Plugin ' + plugin + ' does not exist!' ]]);
+				if (setTo != 'strict' && setTo != 'none') return Command.error([[ 'Plugin', 'Set to "strict" or "none"' ]]);
+
+				var plug = server.plugins[plugin];
+				var bool = setTo == 'strict';
+
+				if (plug == null) {
+					if (!bool) {
+						server.plugins[plugin] = {
+							enabled: true,
+							perms: bool
+						};
+					} else return Command.error([[ 'Plugin', 'You cannot set, what\'s already been set!' ]]);
+				} else {
+					if (plug.perms != bool) plug.perms = bool;
+					else return Command.error([[ 'Plugin', 'You cannot set, what\'s already been set!' ]]);
+				}
+
+				message.channel.send(Command.info([
+					[ 'Plugin', 'Required perms for ' + plugin + ' now set to ' + setTo ]
+				]));
+				break;
+			default: return;
+		}
+
+		server.save();
 	}
 }
 

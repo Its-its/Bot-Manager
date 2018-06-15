@@ -199,7 +199,7 @@ app.post('/queue/:type', (req, res) => {
 
 					if (itemsToSearch.length == 0) return res.send({ error: 'No more items.' });
 
-					request.get('http://ytdl.local/info?force=true&id=' + itemsToSearch.join(','), (err, resp) => {
+					request.get(`http://${config.ytdl.full}/info?force=true&id=${itemsToSearch.join(',')}`, (err, resp) => {
 						if (err != null) return console.error(err);
 						var items = JSON.parse(resp.body);
 						if (!Array.isArray(items)) items = [items];
@@ -287,11 +287,11 @@ let client = new Discord.Client({
 
 
 client.on('channelDelete', (channel) => {
-	console.log('channelDelete:', channel);
+	// console.log('channelDelete:', channel);
 });
 
 client.on('channelUpdate', (oldChannel, newChannel: Discord.VoiceChannel) => {
-	console.log('channelUpdate:', newChannel);
+	// console.log('channelUpdate:', newChannel);
 
 	if (newChannel.type == 'voice' && newChannel.members.has(client.user.id)) {
 		var member = newChannel.members.get(client.user.id);
@@ -312,7 +312,7 @@ client.on('channelUpdate', (oldChannel, newChannel: Discord.VoiceChannel) => {
 client.on('voiceStateUpdate', (oldMember, newMember) => {
 	if (newMember.user.bot) return;
 
-	console.log('voiceStateUpdate:', newMember);
+	// console.log('voiceStateUpdate:', newMember);
 
 	if (oldMember.voiceChannel != null && check(oldMember.voiceChannel)) return;
 	if (oldMember.voiceChannel != null && newMember.voiceChannel != null && oldMember.voiceChannel.id == newMember.voiceChannel.id) return;
@@ -335,7 +335,6 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
 		});
 	}
 });
-
 
 
 client.login(config.bot.discord.token);
@@ -391,7 +390,7 @@ function stop(guild_id: string, reason: 'stopped' | 'next', cb?: (err, res?) => 
 			if (err) return cb && cb(err);
 			cb && cb(null, 'Stopped playing music.');
 		});
-	} else stopReason(reason, () => cb && cb(reason));
+	} else stopReason(guild_id, reason, () => cb && cb(reason));
 }
 
 function next(guild_id: string, cb) {
@@ -446,7 +445,7 @@ function playSong(
 
 			const pass = new PassThrough();
 
-			var req = request.get('http://ytdl.local/stream?id=' + song.id);
+			var req = request.get(`http://${config.ytdl.full}/stream?id=${song.id}`);
 			req.pipe(pass);
 
 			var dispatcher = conn.playStream(pass);
@@ -552,13 +551,13 @@ function findAndPlay(guildId: string, uriOrSearch: string, cb: (errorMessage?: s
 function stopPlaying(guildId: string, cb: (errorMessage?: string) => any) {
 	guildClient.getMusic(guildId, music => {
 		io.to(guildId).emit('play-stop');
-		stopReason();
+		stopReason(guildId);
 		cb();
 	});
 }
 
-function stopReason(reason: 'stopped' | 'next' = 'stopped', cb?: (reason: string) => any): boolean {
-	var voiceConnection = client.voiceConnections.get(this.guildId);
+function stopReason(guild_id: string, reason: 'stopped' | 'next' = 'stopped', cb?: (reason: string) => any): boolean {
+	var voiceConnection = client.voiceConnections.get(guild_id);
 	if (voiceConnection == null) return false;
 	if (voiceConnection.dispatcher == null) return false;
 

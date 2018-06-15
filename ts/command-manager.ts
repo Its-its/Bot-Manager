@@ -1,5 +1,3 @@
-var prefix = '~';
-
 interface DefaultCommands {
 	parseMessage: (message: string, userConfig, extra: any) => any;
 	get: (commandName: string) => any;
@@ -163,11 +161,11 @@ function getCommandParam(commandName: string, id: number, commands: Array<Comman
 	return param;
 }
 
-function isCallingCommand(userId: string, message: string) {
+function isCallingCommand(prefix: string, userId: string, message: string) {
 	return message[0] == prefix || message.indexOf(`<@${userId}>`) == 0;
 }
 
-function getCommandMessage(userId: string, message: string) {
+function getCommandMessage(prefix: string, userId: string, message: string) {
 	if (message[0] == prefix) return message.substr(1);
 	
 	var myId = `<@${userId}>`;
@@ -184,6 +182,7 @@ export = {
 	dealWithOnCalled,
 	getCommand,
 	getProperParam,
+	fix,
 	getParam,
 	getCommandParam,
 	isCallingCommand,

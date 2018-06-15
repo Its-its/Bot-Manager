@@ -4,6 +4,9 @@ import Server = require('../discordserver');
 import CommandManager = require('../../command-manager');
 import defaultCommands = require('../commands');
 
+const prefix = '~';
+
+
 function isEnabled(server: Server): boolean {
 	return server.plugins.commands == null ? true : server.plugins.commands.enabled;
 }
@@ -14,8 +17,8 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 	var serverId = message.member.guild.id;
 
 	if (!server.memberIgnored(message.member.id)) {
-		if (CommandManager.isCallingCommand(bot_id, message.content)) {
-			var commandMessage = CommandManager.getCommandMessage(bot_id, message.content).trim();
+		if (CommandManager.isCallingCommand(prefix, bot_id, message.content)) {
+			var commandMessage = CommandManager.getCommandMessage(prefix, bot_id, message.content).trim();
 
 			if (commandMessage.length == 0) return true;
 
@@ -33,27 +36,9 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 			return true;
 		} else {
 			var phrase = server.findPhrase(message.content.split(' '));
+
 			if (phrase != null && phrase.responses.length != 0) {
-				phrase.responses.forEach(r => {
-					// if (typeof r == 'string') {
-					// 	var resp = r.split(' ');
-
-					// 	if (resp[0].toLowerCase() == 'interval') {
-					// 		resp.shift();
-					// 		parseOptions({
-					// 			type: 'interval',
-					// 			id: resp.shift(),
-					// 			do: resp.shift()
-					// 		})
-					// 	} else {
-					// 		if (resp[0].toLowerCase() == 'echo') resp.shift();
-					// 		// var splt = r.replace('echo ', ''); // TODO: Fix
-					// 		parseOptions({ type: 'echo', message: resp.join(' ') })
-					// 	}
-					// } else 
-					parseOptions(r);
-				});
-
+				phrase.responses.forEach(r => parseOptions(r));
 				return true;
 			}
 		}

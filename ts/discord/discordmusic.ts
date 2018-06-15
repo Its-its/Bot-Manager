@@ -20,7 +20,7 @@ let redisMusic = redis.createClient({ host: config.redis.address, port: config.r
 function sendReq(url: string, opts, cb) {
 	return request.post('http://' + config.music.address + ':' + config.music.port + '/' + url)
 	.form(opts)
-	.on('response', res => cb(null, res.body == null ? { error: 'Response error' } : JSON.parse(res.body)))
+	.on('response', res => cb(null, res.body == null ? { error: 'Music portion errored!' } : JSON.parse(res.body)))
 	.on('error', error => cb(error));
 }
 

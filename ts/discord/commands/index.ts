@@ -42,11 +42,11 @@ process.nextTick(() => {
 });
 
 function parseMessage(message: string, server: Server, defaultMessage: Discord.Message) {
-	let parts = message.split(' ');
-	let messageCommand = parts[0].toLowerCase();
+	var parts = message.split(' ');
+	var messageCommand = parts[0].toLowerCase();
 
-	for (let i = 0; i < defaultCommands.length; i++) {
-		let command = defaultCommands[i];
+	for (var i = 0; i < defaultCommands.length; i++) {
+		var command = defaultCommands[i];
 
 		if (command.is(messageCommand)) {
 			// TODO: check if user has the perms.
@@ -65,12 +65,15 @@ function parseMessage(message: string, server: Server, defaultMessage: Discord.M
 				} else if (server.plugins.commands == null || server.plugins.commands.perms || command.adminOnly) return;
 			}
 
-			if (command.validate(parts.slice(1))) {
-				let fixedParams = CommandManger.getProperParam(parts, command.params);
-				return command.params[fixedParams.pos].cb(fixedParams.newParams, server, defaultMessage);
-			} else {
-				return { type: 'echo', message: 'Invalid Params!' };
-			}
+			// var fixedParams = CommandManger.getProperParam(parts, command.params);
+			return command.call(CommandManger.fix(parts), server, defaultMessage);
+
+			// if (command.validate(parts.slice(1))) {
+			// 	var fixedParams = CommandManger.getProperParam(parts, command.params);
+			// 	return command.params[fixedParams.pos].cb(fixedParams.newParams, server, defaultMessage);
+			// } else {
+			// 	return { type: 'echo', message: 'Invalid Params!' };
+			// }
 		}
 	}
 

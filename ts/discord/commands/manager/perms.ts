@@ -1,31 +1,13 @@
 import Command = require('../../command');
 
-var commandUsage = [
-	// 'list <@user/@role/group>',
-	'user <@user>',
-	'user <@user> add <command/perm>',
-	'user <@user> remove <command/perm>',
-	'user <@user> group add <command/perm>',
-	'user <@user> group remove <name>',
-	'role <@role>',
-	'role <@role> add <command/perm>',
-	'role <@role> remove <command/perm>',
-	'role <@role> group add <command/perm>',
-	'role <@role> group remove <name>',
-	'group <name>',
-	'group create <Display Name> - A-Z 0-9 spaces',
-	'group <name> add <command/perm>',
-	'group <name> remove <command/perm>'
-]
-.map(b => '!perms ' + b)
-.join('\n');
-
 //! Check if user/group/role has base command. If so, YELL AT HIM
 //! Ex: commands.plugins.list -> commands & commands.plugins
 
 class Perms extends Command {
 	constructor() {
 		super(['perms', 'permissions']);
+
+		this.description = 'A permissions system for the bot. - NOT FINISHED!';
 
 		this.perms = [
 			'commands.perms'
@@ -45,9 +27,34 @@ class Perms extends Command {
 			'group.add',
 			'group.remove'
 		].map(i => 'commands.perms.' + i));
+	}
 
-		this.addParams(0, (params, server, message) => {
-			if (params.length == 0) return Command.info([[ 'Command Usage', commandUsage ]]);
+	public call(params, server, message) {
+		if (params.length == 0)
+				return Command.info([
+					[ 'Description', this.description ],
+					[
+						'Command Usage',
+						[
+							// 'list <@user/@role/group>',
+							'user <@user>',
+							'user <@user> add <command/perm>',
+							'user <@user> remove <command/perm>',
+							'user <@user> group add <command/perm>',
+							'user <@user> group remove <name>',
+							'role <@role>',
+							'role <@role> add <command/perm>',
+							'role <@role> remove <command/perm>',
+							'role <@role> group add <command/perm>',
+							'role <@role> group remove <name>',
+							'group <name>',
+							'group create <Display Name> - A-Z 0-9 spaces',
+							'group <name> add <command/perm>',
+							'group <name> remove <command/perm>'
+						]
+						.map(b => server.getPrefix() + 'perms ' + b)
+						.join('\n')
+					]]);
 
 			var comm = params.shift();
 
@@ -241,7 +248,6 @@ class Perms extends Command {
 			}
 
 			server.save();
-		});
 	}
 }
 

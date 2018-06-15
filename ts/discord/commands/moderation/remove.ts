@@ -3,23 +3,23 @@ import Command = require('../../command');
 class Remove extends Command {
 	constructor() {
 		super('remove', false);
+	}
 
-		this.addParams(0, 0, (params) => {
+	public call(params, server, message) {
+		if (params.length == 0) {
 			return {
 				type: 'echo',
 				message: 'Please use "!remove [name]"'
 			};
-		});
+		}
 
-		this.addParams(2, (params, client, message) => {
-			let command = params.shift();
-			let paramId = parseInt(params.shift());
+		var command = params.shift();
+		var paramId = parseInt(params.shift());
 
-			if (!Number.isInteger(paramId)) paramId = null;
+		if (!Number.isInteger(paramId)) paramId = null;
 
-			client.removeCommand(command, paramId);
-			client.save(() => message.reply(`Successfully removed command "${command}"`));
-		});
+		server.removeCommand(command, paramId);
+		server.save(() => message.reply(`Successfully removed command "${command}"`));
 	}
 }
 

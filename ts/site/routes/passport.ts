@@ -124,7 +124,22 @@ export = (app: express.Application) => {
 				if (err != null) return done(err);
 
 				if (user != null) {
-					DiscordMembers.updateOne({ user_id: user._id }, { $set: { guilds: profile.guilds } }).exec();
+					DiscordMembers.updateOne(
+						{ user_id: user._id }, 
+						{
+							$set: {
+								guilds: profile.guilds
+							},
+							$setOnInsert: {
+								user_id: user._id,
+								did: profile.id,
+								name: profile.username,
+								avatar: profile.avatar,
+								mfa_enabled: profile.mfa_enabled,
+								discriminator: profile.discriminator,
+								connections: profile.connections
+							}
+						}, { upsert: true }).exec(() => done(null, user));
 					// user.discord.guilds = profile.guilds;
 					// user.save(() => done(null, user));
 

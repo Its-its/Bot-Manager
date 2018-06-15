@@ -1,8 +1,3 @@
-import * as express from 'express';
-import * as bodyParser from 'body-parser';
-
-import * as http from 'http';
-
 import * as mongoose from 'mongoose';
 import * as Discord from 'discord.js';
 import * as Events from 'events';
@@ -11,15 +6,10 @@ import logger = require('../logging');
 
 import migration = require('../migration');
 
-import cookieParse = require('cookie-parser');
-
 import DiscordServers = require('../models/servers');
 import Validation = require('../../site/models/validation');
 import Bots = require('../../site/models/bots');
 
-// Calls
-import roles = require('../calls/roles');
-// import message = require('./calls/message');
 
 // Plugins
 import commandPlugin = require('../plugins/commands');
@@ -35,45 +25,25 @@ mongoose.set('debug', true);
 mongoose.connect(config.database);
 
 // TODO: Sharding
-let client = new Discord.Client();
+let client = new Discord.Client({
+	disabledEvents: [
+		'TYPING_START'
+	]
+});
 let events: NewNode = new Events();
 
-let app = express();
-app.set('port', config.bot.discord.port);
-app.use(cookieParse());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+// let app = express();
+// app.set('port', config.bot.discord.port);
+// app.use(cookieParse());
+// app.use(bodyParser.urlencoded({ extended: true }));
+// app.use(bodyParser.json());
 
 
-app.get('/', (req, res) => { res.send('ok'); });
+// app.get('/', (req, res) => { res.send('ok'); });
 
-app.post('/', (req, res) => {
-	let user = req.body.user;
-	let lastCheck = parseInt(req.body.lastCheck);
 
-	if (user != null) logger.info('Checked by ' + user + ' | ' + lastCheck);
-	else logger.info('Last Check ' + lastCheck);
-
-	// let guild: Discord.Guild = client.guilds['355862318132756491'];
-	// if (guild == null) return res.send('nop');;
-
-	// let chann: Discord.TextChannel = guild.channels['402062582980018196'];
-	// if (chann == null) return res.send('nop');
-
-	// if (user != null) chann.send('Buffers Checked by ' + user + '!');
-	// else chann.send([
-	// 	'@everyone WEE WOO WEE WOO TNT DETECTED SOUTH WEST CORNER!',
-	// 	'Check the Buffers! Bedrock and above!',
-	// 	'/msg VPS anything when you\'re done checking!'
-	// ].join('\n'));
-
-	// let key = "";
-	// let type = "discord.server";
-	// let dos = [ "INTERVAL 1 reset", "ECHO 010101010101 :)" ];
-
-	res.send('ok');
-});
-
+// http.createServer(app)
+// .listen(app.get('port'), () => logger.info('Started Discord Server Listener.'));
 
 
 client.on('ready', () => {
@@ -103,17 +73,17 @@ client.on('ready', () => {
 
 
 // TODO: Express-ify events?
-client.on('roleCreate', (role) => {
-	roles.roleCreate(role, client);
-});
+// client.on('roleCreate', (role) => {
+// 	roles.roleCreate(role, client);
+// });
 
-client.on('roleDelete', (role) => {
-	roles.roleDelete(role, client);
-});
+// client.on('roleDelete', (role) => {
+// 	roles.roleDelete(role, client);
+// });
 
-client.on('roleUpdate', (oldRole, newRole) => {
-	roles.roleUpdate(oldRole, newRole, client);
-});
+// client.on('roleUpdate', (oldRole, newRole) => {
+// 	roles.roleUpdate(oldRole, newRole, client);
+// });
 
 
 
@@ -315,10 +285,6 @@ client.on('resume', (replayed) => logger.info(' - resume', replayed));
 
 
 client.login(config.bot.discord.token);
-
-
-http.createServer(app)
-.listen(app.get('port'), () => logger.info('Started Discord Server Listener.'));
 
 // Kicked from server (events in order)
 // - roleDelete

@@ -1,15 +1,13 @@
 import Blacklist = require('./blacklist');
 import Whitelist = require('./whitelist');
-import CreateCommand = require('./create');
-import RemoveCommand = require('./remove');
+import Command = require('./command');
 import Interval = require('./interval');
 import Phrase = require('./phrase');
 
 export = [
-	new CreateCommand(),
-	new RemoveCommand(),
+	new Command(),
 	new Blacklist(),
-	new Whitelist(),
+	// new Whitelist(),
 	new Interval(),
 	new Phrase()
 ];

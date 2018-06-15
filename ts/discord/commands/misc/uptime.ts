@@ -5,21 +5,14 @@ let started = Date.now();
 class Uptime extends Command {
 	constructor() {
 		super('uptime', true, false);
+		this.description = 'Gets the bot uptime.';
+	}
 
-		this.addParams((params) => {
-			return {
-				type: 'echo',
-				embed: {
-					color: Command.SuccessColor,
-					fields: [
-						{
-							name: 'Bot Uptime',
-							value: Math.floor((Date.now() - started)/60000) + ' Minutes.'
-						}
-					]
-				}
-			}
-		})
+	public call(params, server, message) {
+		return Command.info([[
+			'Uptime',
+			Math.floor((Date.now() - started)/(1000 * 60 * 60 * 24)) + ' Hours.'
+		]]);
 	}
 }
 

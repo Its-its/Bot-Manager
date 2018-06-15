@@ -179,6 +179,8 @@ declare namespace DiscordBot {
 		memberCount: number;
 		ownerID: string;
 
+		commandPrefix?: string;
+
 		intervals?: Interval[];
 		ranks?: string[];
 		commands?: Command[];

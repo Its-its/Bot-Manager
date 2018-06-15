@@ -6,6 +6,8 @@ import Users = require('../../site/models/users');
 
 import request = require('request');
 
+import config = require('../../site/util/config');
+
 
 type SongGlobal = DiscordBot.plugins.SongGlobal;
 
@@ -132,7 +134,7 @@ function isProperSongUrl(url: string) {
 
 
 const getSong: newGetSong = <any>function(uri: string | string[], cb: (errorMessage?: string, song?: SongGlobal | SongGlobal[]) => any) {
-	request.get('http://ytdl.local/info?force=true&id=' + (typeof uri == 'string' ? uri : uri.join(',')), (err, res) => {
+	request.get(`http://${config.ytdl.full}/info?force=true&id=` + (typeof uri == 'string' ? uri : uri.join(',')), (err, res) => {
 		if (err != null) return cb(err);
 		var song = JSON.parse(res.body);
 		if (song.error) return cb(song.error);
@@ -146,7 +148,7 @@ const getSong: newGetSong = <any>function(uri: string | string[], cb: (errorMess
 }
 
 function searchForSong(search: string, cb: (errorMsg?: any, song?: SongGlobal) => any) {
-	request.get('http://ytdl.local/info?search=' + search, (err, res) => {
+	request.get(`http://${config.ytdl.full}/info?search=${search}`, (err, res) => {
 		if (err != null) return cb(err);
 		var song = JSON.parse(res.body);
 		if (song.error) return cb(song.error);

@@ -6,7 +6,7 @@ import guildClient = require('../guildClient');
 
 
 function messageDelete(message: Discord.Message) {
-	if (message.member.user.bot || message.channel.type != 'text') return;
+	if (message.member == null || message.member.user.bot || message.channel.type != 'text') return;
 
 	guildClient.get(message.guild.id, server => {
 		if (server.isPluginEnabled('logs') && server.plugins.logs.textChannelId != null && server.plugins.logs.textChannelId != message.channel.id) {
@@ -41,7 +41,7 @@ function messageDeleteBulk(messageCollection: Discord.Collection<string, Discord
 }
 
 function messageUpdate(oldMessage: Discord.Message, newMessage: Discord.Message) {
-	if (oldMessage.member.user.bot || newMessage.channel.type != 'text' || oldMessage.content == newMessage.content) return;
+	if (oldMessage.member == null || oldMessage.member.user.bot || newMessage.channel.type != 'text' || oldMessage.content == newMessage.content) return;
 
 	guildClient.get(oldMessage.guild.id, server => {
 		if (server.isPluginEnabled('logs') && server.plugins.logs.textChannelId != null) {

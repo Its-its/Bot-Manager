@@ -97,6 +97,8 @@ class Server implements DiscordBot.Server {
 		this.values = options.values || {};
 		this.migration = options.version == null ? server.lastestVersion : options.version;
 
+		this.commandPrefix = options.commandPrefix;
+
 		if (options.moderation) this.moderation = options.moderation;
 		if (options.permissions) this.permissions = options.permissions;
 	}
@@ -798,6 +800,7 @@ class Server implements DiscordBot.Server {
 			createdAt: this.createdAt,
 			memberCount: this.memberCount,
 			ownerID: this.ownerID,
+			commandPrefix: this.commandPrefix,
 
 			ranks: this.ranks,
 			moderation: this.moderation,
@@ -820,6 +823,7 @@ class Server implements DiscordBot.Server {
 			createdAt: this.createdAt,
 			memberCount: this.memberCount,
 			ownerID: this.ownerID,
+			commandPrefix: this.commandPrefix,
 
 			ranks: this.ranks,
 			moderation: this.moderation,

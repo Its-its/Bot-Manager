@@ -9,6 +9,8 @@ for (var key in config.passport) {
 	item['callbackURL'] = config.urlProtocol + '://' + config.baseUrl + item['callbackURL'];
 }
 
+config.ytdl.full = config.ytdl.address + (config.ytdl.port == 80 ? '' : ':' + config.ytdl.port);
+
 export = config;
 
 
@@ -19,6 +21,7 @@ interface Config {
 	session_secret: string;
 	database: string;
 	ytdl: {
+		full: string;
 		address: string;
 		port: number;
 	}

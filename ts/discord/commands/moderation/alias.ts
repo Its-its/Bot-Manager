@@ -1,0 +1,1 @@
+// Alias for commands. Eg. !play <id> == !music play <id>

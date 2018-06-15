@@ -7,6 +7,7 @@ import generate = require('nanoid/generate');
 
 import Commands = require('../../models/commands');
 import DiscordServers = require('../../discord/models/servers');
+import DiscordMembers = require('../../discord/models/members');
 import Bots = require('../models/bots');
 
 import config = require('../util/config');
@@ -265,43 +266,45 @@ export = (app: express.Application) => {
 
 		Bots.findOne({ uid: id }, (err, bot) => {
 			if (err == null && bot != null) {
-				var data = {
-					user: {
-						twitch: {
-							linked: req['user'].twitch.id != null
+				DiscordMembers.findOne({ user_id: req['user'].id }, (err, member) => {
+					var data = {
+						user: {
+							twitch: {
+								linked: req['user'].twitch.id != null
+							},
+							discord: {
+								linked: req['user'].discord.id != null,
+								guilds: member['guilds']
+									.filter(g => new Permissions(g.permissions).has(Permissions.FLAGS.ADMINISTRATOR))
+									.map(g => { return { id: g.id, name: g.name }})
+							},
+							youtube: {
+								linked: req['user'].youtube.id != null
+							}
 						},
-						discord: {
-							linked: req['user'].discord.id != null,
-							guilds: req['user'].discord.guilds
-								.filter(g => new Permissions(g.permissions).has(Permissions.FLAGS.ADMINISTRATOR))
-								.map(g => { return { id: g.id, name: g.name }})
-						},
-						youtube: {
-							linked: req['user'].youtube.id != null
+						bot: {
+							displayName: bot.displayName,
+							active: bot.is_active,
+							uid: bot.uid,
+							app: null,
+							created: bot.created_at,
+							edited: bot.edited_at
 						}
-					},
-					bot: {
-						displayName: bot.displayName,
-						active: bot.is_active,
-						uid: bot.uid,
-						app: null,
-						created: bot.created_at,
-						edited: bot.edited_at
-					}
-				};
-
-				bot.getBot((err, app) => { // TODO: Remove? Just send type of bot?
-					if (app != null) {
-						delete app['__v'];
-						delete app['_id'];
-						delete app['user_id'];
-						delete app['server_id'];
-						delete app['bot_id'];
-					}
-
-					data.bot.app = app;
-
-					res.send({ data: data });
+					};
+	
+					bot.getBot((err, app) => { // TODO: Remove? Just send type of bot?
+						if (app != null) {
+							delete app['__v'];
+							delete app['_id'];
+							delete app['user_id'];
+							delete app['server_id'];
+							delete app['bot_id'];
+						}
+	
+						data.bot.app = app;
+	
+						res.send({ data: data });
+					});
 				});
 			} else res.send({ error: err || 'Bot doesn\'t exist.' });
 		});

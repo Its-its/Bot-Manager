@@ -10,6 +10,6 @@ export = [
 	new Rank(),
 	new Perms(),
 	new Nick(),
-	new Prefix(),
+	// new Prefix(),
 	new Raw()
 ];

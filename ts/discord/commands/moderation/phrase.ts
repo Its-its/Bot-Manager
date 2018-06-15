@@ -4,38 +4,44 @@ class Create extends Command {
 	constructor() {
 		super('phrase', false);
 
-		this.addParams(0, 0, (params, client, message) => {
-			message.channel.send(Command.info([[
-				'Phrase',
-				[
-					'list',
-					'create <phrase,> <response>',
-					'<ID> add phrase <phrase,>',
-					'<ID> remove phrase [phrase,]',
-					'<ID> add response <phrase,>',
-					'<ID> remove response [phrase,]',
-					// 'response <ID> <response,>',
-					'<ID> ignorecase <true/false>'
-				].map(i => '!phrase ' + i).join('\n')
-			]]));
-		});
+		this.description = 'Create phrases, when triggered reply with a message.';
+	}
 
-		this.addParams(1, (params, client, message) => {
-			var type = params.shift();
+	public call(params, server, message) {
+		if (params.length == 0) {
+			return Command.info([
+				[ 'Description', this.description ],
+				[
+					'Phrase',
+					[
+						'list',
+						'create <phrase,> <response>',
+						'<ID> add phrase <phrase,>',
+						'<ID> remove phrase [phrase,]',
+						'<ID> add response <phrase,>',
+						'<ID> remove response [phrase,]',
+						// 'response <ID> <response,>',
+						'<ID> ignorecase <true/false>'
+					].map(i => server.getPrefix() + 'phrase ' + i).join('\n')
+				]
+			]);
+		}
+
+		var type = params.shift();
 			switch (type) {
 				case 'list':
 					var args = [
 						[	'Phrase List',
-							'Phrase Count: ' + client.phrases.length ]
+							'Phrase Count: ' + server.phrases.length ]
 					];
 
-					args = args.concat(client.phrases.map((p, i) => [ 'ID: ' + p.pid , 'Phrases: ' + p.phrases.join(', ') + '\nResponse: ' + p.responses.join(', ') ]));
+					args = args.concat(server.phrases.map((p, i) => [ 'ID: ' + p.pid , 'Phrases: ' + p.phrases.join(', ') + '\nResponse: ' + p.responses.join(', ') ]));
 
 					message.channel.send(Command.info(args));
 					break;
 				case 'create':
 					if (params.length < 2) return;
-					client.createPhrase(message.member, params.shift().split(','), (phrase) => {
+					server.createPhrase(message.member, params.shift().split(','), (phrase) => {
 						if (phrase == null) return;
 
 						var resp = params.join(' ');
@@ -57,7 +63,7 @@ class Create extends Command {
 						// });
 
 						phrase.responses = [ { type: 'echo', message: resp } ];
-						client.save(() => message.channel.send(Command.info([['Phrase', 'Created Phrase Successfully.']])));
+						server.save(() => message.channel.send(Command.info([['Phrase', 'Created Phrase Successfully.']])));
 					});
 					break;
 				default:
@@ -68,19 +74,19 @@ class Create extends Command {
 
 					if (dodis == 'add') {
 						if (name == 'phrase') {
-							client.addPhrase(type, params.join(' ').split(','));
-							client.save(() => message.channel.send(Command.info([['Phrase', 'Added Phrase']])));
+							server.addPhrase(type, params.join(' ').split(','));
+							server.save(() => message.channel.send(Command.info([['Phrase', 'Added Phrase']])));
 						} else if (name == 'response') {
-							client.setPhraseResponse(type, <any>params.join(' ').split(',').map(i => { return { type: 'echo', message: i } }));
-							client.save(() => message.channel.send(Command.info([['Phrase', 'Changed Phrase Response.']])));
+							server.setPhraseResponse(type, <any>params.join(' ').split(',').map(i => { return { type: 'echo', message: i } }));
+							server.save(() => message.channel.send(Command.info([['Phrase', 'Changed Phrase Response.']])));
 						}
 					} else if (dodis == 'remove') {
 						if (name == 'phrase') {
 							var phrases = null;
 							if (params.length != 0) phrases = params.join(' ').split(',');
 
-							client.removePhrase(type, phrases);
-							client.save(() => message.channel.send(Command.info([['Phrase', 'Successfully Removed Phrase']])));
+							server.removePhrase(type, phrases);
+							server.save(() => message.channel.send(Command.info([['Phrase', 'Successfully Removed Phrase']])));
 						} else if (name == 'response') {
 							//
 						}
@@ -90,8 +96,8 @@ class Create extends Command {
 				// 	var id = parseInt(params.shift());
 				// 	if (isNaN(id)) return;
 
-				// 	client.addPhrase(id, params.join(' ').split(','));
-				// 	client.save(() => message.channel.send(Command.info([['Phrase', 'Added Phrase']])));
+				// 	server.addPhrase(id, params.join(' ').split(','));
+				// 	server.save(() => message.channel.send(Command.info([['Phrase', 'Added Phrase']])));
 				// 	break;
 				// case 'remove':
 				// 	if (params.length < 1) return;
@@ -101,27 +107,26 @@ class Create extends Command {
 				// 	var phrases = null;
 				// 	if (params.length != 0) phrases = params.join(' ').split(',');
 
-				// 	client.removePhrase(id, phrases);
-				// 	client.save(() => message.channel.send(Command.info([['Phrase', 'Successfully Removed Phrase']])));
+				// 	server.removePhrase(id, phrases);
+				// 	server.save(() => message.channel.send(Command.info([['Phrase', 'Successfully Removed Phrase']])));
 				// 	break;
 				// case 'response':
 				// 	if (params.length < 2) return;
 				// 	var id = parseInt(params.shift());
 				// 	if (isNaN(id)) return;
 
-				// 	client.setPhraseResponse(id, params.join(' ').split(','));
-				// 	client.save(() => message.channel.send(Command.info([['Phrase', 'Changed Phrase Response.']])));
+				// 	server.setPhraseResponse(id, params.join(' ').split(','));
+				// 	server.save(() => message.channel.send(Command.info([['Phrase', 'Changed Phrase Response.']])));
 				// 	break;
 				case 'ignorecase':
 					if (params.length < 2) return;
 					var id = parseInt(params.shift());
 					if (isNaN(id)) return;
 
-					client.setPhraseIgnoreCase(id, params.shift() == 'true');
-					client.save(() => message.channel.send(Command.info([['Phrase', 'Changed Phrase Ignore Case.']])));
+					server.setPhraseIgnoreCase(id, params.shift() == 'true');
+					server.save(() => message.channel.send(Command.info([['Phrase', 'Changed Phrase Ignore Case.']])));
 					break;
 			}
-		});
 	}
 }
 
