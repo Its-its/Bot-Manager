@@ -1,13 +1,31 @@
+import Discord = require('discord.js');
+import DiscordServer = require('../../discordserver');
+
 import Command = require('../../command');
+
+
+const PERMS = {
+	MAIN: 'commands.blacklist',
+	LIST: 'list',
+	CLEAR: 'clear',
+	ADD: 'add'
+};
+
+for(var name in PERMS) {
+	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
+}
+
 
 class Blacklist extends Command {
 	constructor() {
 		super('blacklist');
 
 		this.description = 'Blacklist certain words.';
+
+		this.perms = Object.values(PERMS);
 	}
 
-	public call(params, server, message) {
+	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		var blacklisted = server.moderation.blacklisted;
 
 		if (params.length == 0) {
@@ -18,6 +36,8 @@ class Blacklist extends Command {
 		}
 
 		if (params[0] == 'list') {
+			if (!this.hasPerms(message.member, server, PERMS.LIST)) return Command.noPermsMessage('Blacklist');
+
 			return Command.info([
 				[
 					'Blacklisted items:', 
@@ -25,11 +45,14 @@ class Blacklist extends Command {
 				]
 			]);
 		} else if (params[0] == 'clear') {
+			if (!this.hasPerms(message.member, server, PERMS.CLEAR)) return Command.noPermsMessage('Blacklist');
+
 			if (blacklisted.length == 0) {
 				return Command.info([
 					[ 'Blacklist', 'Blacklist already empty! You can\'t remove what\'s not there!' ]
 				]);
 			}
+
 			server.moderation.blacklisted = [];
 			server.save();
 
@@ -40,6 +63,8 @@ class Blacklist extends Command {
 				]
 			]);
 		}
+
+		if (!this.hasPerms(message.member, server, PERMS.ADD)) return Command.noPermsMessage('Blacklist');
 
 		var word = params.join(' ').trim();
 

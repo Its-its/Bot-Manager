@@ -1,5 +1,6 @@
 import Discord = require('discord.js');
-import YouTube = require('youtube-node');
+import DiscordServer = require('../../discordserver');
+
 
 import Command = require('../../command');
 // import discordClient = require('../../index');
@@ -16,9 +17,6 @@ import musicPermissions = require('../../../music/permissions');
 import request = require('request');
 
 
-let youTube = new YouTube();
-youTube.setKey(config.youtube.key);
-
 // TODO: Check if in voice channel after restart.
 // TODO: Repeat/previous
 // TODO: Transfer most of these things to plugins/music for web view functionality.
@@ -31,35 +29,55 @@ function sendReq(url: string, opts, cb) {
 	.on('error', error => cb(error));
 }
 
+
+const PERMS = {
+	MAIN: 'commands.music',
+	INFO: 'info',
+	JOIN: 'join',
+	LEAVE: 'leave',
+	CURRENT: 'current',
+	PLAY: 'play',
+	STOP: 'stop',
+	SKIP: 'skip',
+	HISTORY: 'history',
+	HISTORY_LIST: 'history.list',
+	HISTORY_CLEAR: 'history.clear',
+	QUEUE: 'queue',
+	QUEUE_ITEM: 'queue.item',
+	QUEUE_PLAYLIST: 'queue.playlist',
+	QUEUE_LIST: 'queue.list',
+	QUEUE_REPEAT: 'queue.repeat',
+	QUEUE_SHUFFLE: 'queue.shuffle',
+	QUEUE_CLEAR: 'queue.clear',
+	QUEUE_REMOVE: 'queue.remove',
+	PLAYLIST: 'playlist',
+	PLAYLIST_CREATE: 'playlist.create',
+	PLAYLIST_INFO: 'playlist.info',
+	PLAYLIST_LIST: 'playlist.list',
+	PLAYLIST_DELETE: 'playlist.delete',
+	PLAYLIST_ADD: 'playlist.add',
+	PLAYLIST_REMOVE: 'playlist.remove',
+	PLAYLIST_CLEAR: 'playlist.clear',
+	PLAYLIST_TITLE: 'playlist.title',
+	PLAYLIST_DESCRIPTION: 'playlist.description',
+	PLAYLIST_THUMBNAIL: 'playlist.thumbnail'
+};
+
+for(var name in PERMS) {
+	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
+}
+
+// if (!this.hasPerms(message.member, server, PERMS.MAIN)) return Command.noPermsMessage('Music');
+
 class Music extends Command {
 	constructor() {
 		super('music');
 
-		this.perms = [ 'commands.music' ]
-		.concat([
-			'join',
-			'leave',
-			'song',
-			'current',
-			'play',
-			'stop',
-			'skip',
-			'next',
-			'history',
-			'history.list',
-			'history.clear',
-			'queue',
-			'queue.item',
-			'queue.playlist',
-			'queue.list',
-			'queue.repeat',
-			'queue.shuffle',
-			'queue.clear',
-			'queue.remove'
-		].map(i => 'commands.music.' + i));
+		this.perms = Object.values(PERMS);
+		this.description = 'Used to manage music in voice channels.';
 	}
 
-	public call(params, server, message) {
+	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (!server.isPluginEnabled('music'))
 			return Command.error([['Music', 'Music isn\'t enabled! Please enable the plugin!\n' + server.getPrefix() + 'plugin enable music' ]]);
 
@@ -67,36 +85,42 @@ class Music extends Command {
 			return Command.info([
 				[
 					'Command Usage', 
-					[	'join [@channel/Channel ID]',
-						'info/current/song',
-						'play [URL/Name]',
-						'stop',
-						'skip/next',
-						'history [page]',
-						// 'history clear',
-						'queue [page/URL/Name]',
-						'queue repeat',
-						'queue shuffle',
-						'queue clear',
-						'queue playlist <ID>',
-						'queue remove <ID/URL>',
-						'playlist create',
-						'playlist <pid/default> info',
-						'playlist <pid/default> list [page]',
-						'playlist <pid> delete',
-						'playlist <pid/default> add <song id>',
-						'playlist <pid/default> remove <song id>',
-						'playlist <pid/default> clear',
-						'playlist <pid/default> title <title>',
-						'playlist <pid/default> description <description>',
-						'playlist <pid/default> thumbnail <url>'
-					].map(b => server.getPrefix() + 'music ' + b).join('\n')
+					Command.table(['Command', 'Desc'], [
+						['join [@channel/Channel ID]', 'Joins said channel'],
+						['info', 'Shows the current song info'],
+						['play [URL/Name]', 'Instantly plays a song'],
+						['stop', 'Stops playing music'],
+						['skip/next', 'Skips the current song'],
+						['history [page]', 'Shows song history'],
+						['history clear', 'Clears song history'],
+						['queue [page/URL/Name]', 'View queue/Queue song'],
+						['queue repeat', 'Repeat Queue'],
+						['queue shuffle', 'Shuffle Queue'],
+						['queue clear', 'Clear Queue'],
+						['queue playlist <pid>', 'Queue Playlist'],
+						['queue remove <ID/URL>', 'Remove item from queue']
+					])
 				],
-				// [ 'Listen Online', 'https://bots.its.rip/music/' ] 
+				[
+					'Command Usage', 
+					Command.table(['Command', 'Desc'], [
+						['playlist create', 'Create new playlist'],
+						['playlist <pid/default> info', 'View playlist info'],
+						['playlist <pid/default> list [page]', 'View playlist songs'],
+						['playlist <pid> delete', 'Delete playlist'],
+						['playlist <pid/default> add <id>', 'Add item to playlist'],
+						['playlist <pid/default> remove <id>', 'Remove item from playlist'],
+						['playlist <pid/default> clear', 'Clear Playlist'],
+						['playlist <pid/default> title <title>', 'Change title'],
+						['playlist <pid/default> description <desc>', 'Change description'],
+						['playlist <pid/default> thumbnail <url>', 'Change thumbnail']
+					])
+				],
+				// [ 'Listen Online', 'https://bots.its.rip/music/' ]
 			]);
 		}
 
-		// TODO: Fix this crap
+		// TODO: Fix this crap... whatever it was used for.
 		// music.lastTextChannelId = message.channel.id;
 		// if (music.lastVoiceChannelId != null) {
 		// 	if (message.guild.channels.get(music.lastVoiceChannelId) == null) {
@@ -107,6 +131,8 @@ class Music extends Command {
 
 		switch (params.shift().toLowerCase()) {
 			case 'info':
+				if (!this.hasPerms(message.member, server, PERMS.INFO)) return Command.noPermsMessage('Music');
+
 				var items = [];
 
 				guildClient.getMusic(message.guild.id, (music) => {
@@ -133,22 +159,9 @@ class Music extends Command {
 					send(Command.info(items));
 				});
 				break;
-			case 'current':
-			case 'song':
-				guildClient.getMusic(message.guild.id, (music) => {
-					if (music.playing) {
-						send(Command.info([[
-							'Music', 
-							[
-								'The Current song is:',
-								'Title: ' + music.playing.title,
-								'Link: ' + idToUrl(music.playing.type, music.playing.id)
-							].join('\n')
-						]]));
-					} else send(Command.info([['Music', 'No song is currently playing!']]));
-				});
-				break;
 			case 'join':
+				if (!this.hasPerms(message.member, server, PERMS.JOIN)) return Command.noPermsMessage('Music');
+
 				var voiceChannel: string = params.shift();
 
 				if (voiceChannel == null && message.member.voiceChannel != null) {
@@ -170,6 +183,8 @@ class Music extends Command {
 				break;
 
 			case 'leave':
+				if (!this.hasPerms(message.member, server, PERMS.LEAVE)) return Command.noPermsMessage('Music');
+
 				sendReq('leave', {
 					guild_id: message.guild.id
 				}, (err, res) => {
@@ -180,6 +195,8 @@ class Music extends Command {
 				break;
 
 			case 'play':
+				if (!this.hasPerms(message.member, server, PERMS.PLAY)) return Command.noPermsMessage('Music');
+
 				var joined = params.join(' ').trim();
 
 				sendReq('play', {
@@ -189,11 +206,13 @@ class Music extends Command {
 				}, (err, res) => {
 					if (err) { console.error(err); send(Command.error([['Music', 'An error occured.']])); return; }
 					if (res.error) { console.error(err); send(Command.error([['Music', res.error]])); return; }
-					send(Command.success([['Music', 'Playing song.']]));
+					// send(Command.success([['Music', 'Playing song.']]));
 				});
 				break;
 
 			case 'stop':
+				if (!this.hasPerms(message.member, server, PERMS.STOP)) return Command.noPermsMessage('Music');
+
 				sendReq('stop', {
 					guild_id: message.guild.id
 				}, (err, res) => {
@@ -205,6 +224,8 @@ class Music extends Command {
 
 			case 'skip':
 			case 'next':
+				if (!this.hasPerms(message.member, server, PERMS.SKIP)) return Command.noPermsMessage('Music');
+
 				sendReq('next', {
 					guild_id: message.guild.id,
 					member_id: message.member.id,
@@ -220,11 +241,16 @@ class Music extends Command {
 				var paramToDo = params.shift();
 
 				if (paramToDo == 'clear') {
-					// music.clearHistory();
-					// music.save();
-					// send(Command.info([['Music!', 'History is removed after it\'s older than 7 days.\n If you would like to remove it now use "!music history clear forced"']]));
+					if (!this.hasPerms(message.member, server, PERMS.HISTORY_CLEAR)) return Command.noPermsMessage('Music');
+
+					MusicHistory.updateOne({ server_id: message.guild.id }, { $set: { songs: [], song_count: 0 } }).exec(() => {
+						send(Command.info([['Music!', 'Cleared history.']]));
+					});
 				} else {
+					if (!this.hasPerms(message.member, server, PERMS.HISTORY_LIST)) return Command.noPermsMessage('Music');
+
 					var page = 1;
+					var maxItems = 5;
 
 					if (paramToDo != null) {
 						var parsed = parseInt(paramToDo);
@@ -233,38 +259,47 @@ class Music extends Command {
 
 					if (page < 1) page = 1;
 
-					MusicHistory.find({ server_id: message.guild.id })
-					.sort({ _id: -1 })
-					// .skip((page - 1) * 8)
-					.limit(50)
-					.populate('song')
-					.exec((err, items) => {
-						console.log(items);
-						if (items.length == 0) return send(Command.info([['Music', 'Nothing in History!']]));
+					MusicHistory.findOne({ server_id: message.guild.id }, { songs: { $slice: [(page - 1) * maxItems, maxItems] } }, (err, item) => {
+						if (err != null) {
+							console.error(err);
+							send(Command.error([['Music', 'Nothing in History!']]));
+							return;
+						}
 
-						var maxPages = Math.ceil(items.length/5);
+						if (item == null || item.song_count == 0) return send(Command.info([['Music', 'Nothing in History!']]));
 
-						if (page > maxPages) page = maxPages;
+						var maxPages = Math.ceil(item.song_count/maxItems);
+
+						if (page > maxPages) return send(Command.info([['Music', 'Exceeded max history pages. (' + page + '/' + maxPages + ')']]));
 
 						var fields = [
 							[
 								'Music', 
-								'Items In History: ' + items.length + '\nPage: ' + page + '/' + maxPages
+								'Items In History: ' + item.song_count + '\nPage: ' + page + '/' + maxPages
 							]
 						];
 
-						fields = fields.concat(items.slice((page - 1) * 5, 5).map((q: any, i) => [
-							'ID: ' + i,
-							q.song.title + '\nhttps://youtu.be/' + q.song.uid + '\nListened to: ' + timeSince(q.played_at) + ' ago'
-						]));
+						musicPlugin.getSong(item.songs.map(s => s.song_id), (err, songs) => {
+							if (err != null) return send(Command.error([['Music', err]]));
 
-						return send(Command.info(fields));
+							fields = fields.concat(songs.map((q, i) => [
+								'ID: ' + i,
+								q.title + '\nhttps://youtu.be/' + q.id + '\nListened to: ' + timeSince(item.songs[i].played_at) + ' ago'
+							]));
+	
+							send(Command.info(fields));
+						});
 					});
 				}
 				break;
 
 			case 'queue':
 				var paramToDo = (params.shift() || 'list').toLowerCase();
+
+				if (['list', 'item', 'playlist', 'repeat', 'shuffle', 'clear', 'remove'].indexOf(paramToDo)) return Command.error([['Music', 'Not a valid option: ' + paramToDo]]);
+
+				if (!this.hasPerms(message.member, server, PERMS['QUEUE_' + paramToDo.toUpperCase()])) return Command.noPermsMessage('Music');
+
 
 				sendReq('queue/' + paramToDo, {
 					guild_id: message.guild.id,
@@ -281,12 +316,10 @@ class Music extends Command {
 
 			case 'playlist':
 				var playlistId = params.shift();
-				var todo = params.shift() || 'info';
-				var defaultPlaylist = playlistId == null || (playlistId == 'default');
-
-				if (playlistId == null) todo = 'info';
 
 				if (playlistId == 'create') {
+					if (!this.hasPerms(message.member, server, PERMS.PLAYLIST_CREATE)) return Command.noPermsMessage('Music');
+
 					Playlists.count({ creator_id: message.member.id }, (err, count) => {
 						if (count >= 10) return send(Command.error([['Playlist', 'Max Playlists reached.']]));
 
@@ -320,6 +353,15 @@ class Music extends Command {
 					});
 					return;
 				}
+
+				var todo = params.shift() || 'info';
+				var defaultPlaylist = playlistId == null || (playlistId == 'default');
+
+				if (playlistId == null) todo = 'info';
+
+				if (['info', 'list', 'delete', 'add', 'remove', 'clear', 'title', 'description', 'thumbnail'].indexOf(todo) == -1) return Command.error([['Music', 'Unknown Usage: ' + todo]]);
+				
+				if (!this.hasPerms(message.member, server, PERMS['PLAYLIST_' + todo.toUpperCase()])) return Command.noPermsMessage('Music');
 
 				switch (todo) {
 					case 'info':
@@ -445,7 +487,7 @@ class Music extends Command {
 			default: return Command.error([['ERROR!', 'Unknown usage!']]);
 		}
 
-		function send(str: any) {
+		function send(str: { embed: any; }) {
 			return message.channel.send(new Discord.RichEmbed(str.embed));
 		}
 	}

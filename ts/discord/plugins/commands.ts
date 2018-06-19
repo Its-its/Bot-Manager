@@ -4,34 +4,53 @@ import Server = require('../discordserver');
 import CommandManager = require('../../command-manager');
 import defaultCommands = require('../commands');
 
-const prefix = '~';
-
 
 function isEnabled(server: Server): boolean {
 	return server.plugins.commands == null ? true : server.plugins.commands.enabled;
 }
 
+
 function onMessage(bot_id: string, message: Discord.Message, server: Server): boolean {
 	if (message.author.bot) return true;
 
-	var serverId = message.member.guild.id;
-
 	if (!server.memberIgnored(message.member.id)) {
-		if (CommandManager.isCallingCommand(prefix, bot_id, message.content)) {
-			var commandMessage = CommandManager.getCommandMessage(prefix, bot_id, message.content).trim();
+		if (CommandManager.isCallingCommand(server.getPrefix(), bot_id, message.content)) {
+			if (message.content.trim() == `<@${bot_id}>`) {
+				message.channel.send(new Discord.RichEmbed({
+					description: 'You can use @bot_name instead of the command prefix if desired.',
+					fields: [
+						{
+							name: 'Command Prefix',
+							value: server.getPrefix()
+						}
+						// {
+						// 	name: '',
+						// 	value: ''
+						// }
+					]
+				}));
+				return true;
+			}
+
+
+			var commandMessage = CommandManager.getCommandMessage(server.getPrefix(), bot_id, message.content).trim();
 
 			if (commandMessage.length == 0) return true;
 
-			var comm = commandMessage.split(' ', 2)[0].toLowerCase();
+			var commName = commandMessage.split(' ', 2)[0].toLowerCase();
 
 			// Not enabled? Not "plugin" or "perms"? Doesn't have bypasstoggle perm? return
-			if (!isEnabled(server) && comm != 'plugin' && comm != 'perms' && !server.userHasFullPerm(bot_id, 'commands.bypasstoggle')) return true;
+			if (!isEnabled(server) && commName != 'plugin' && commName != 'perms' && !server.memberHasExactPerm(message.member, 'commands.bypasstoggle')) return true;
 
 			// Check if cannot call command.
 			// Not admin? not enabled?
-			// if (!message.member.hasPermission('ADMINISTRATOR') && (!isEnabled(server) && !server.userHasBasePerm(bot_id, 'commands.' + comm))) return true;
+			// if (!message.member.hasPermission('ADMINISTRATOR') && (!isEnabled(server) && !server.userHasParentPerm(bot_id, 'commands.' + comm))) return true;
 
-			CommandManager.parseMessage(defaultCommands, server, commandMessage, message, parseOptions);
+			try {
+				CommandManager.parseMessage(defaultCommands, server, commandMessage, message, parseOptions);
+			} catch (e) {
+				console.error(e);
+			}
 
 			return true;
 		} else {
@@ -63,6 +82,9 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 							server.save();
 						}
 						return;
+					case 'alias':
+						// value.do
+						return;
 					// case 'set':
 					// 	var command = value.command;
 					// 	var paramId = value.paramId;
@@ -78,6 +100,8 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 			}
 
 			console.log(value);
+			console.log(bot_id, server.toString());
+			throw 'Invalid parse Options.';
 		}
 
 	}

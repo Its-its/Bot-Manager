@@ -1,13 +1,26 @@
+import Discord = require('discord.js');
+import DiscordServer = require('../../discordserver');
+
 import Command = require('../../command');
 
 import utils = require('../../utils');
+
+const PERMS = {
+	MAIN: 'commands.'
+};
+
+for(var name in PERMS) {
+	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
+}
+
+// if (!this.hasPerms(message.member, server, PERMS.MAIN)) return Command.noPermsMessage('');
 
 class Info extends Command {
 	constructor() {
 		super('info', false, false);
 	}
 
-	public call(params, server, message) {
+	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			//
 		}

@@ -5,14 +5,14 @@ import info = require('./utils');
 import Discord = require('discord.js');
 
 class Command {
-	public commandName: Array<string>;
+	public commandName: string[];
 	public togglable: boolean;
 	public description: string;
 
 	public adminOnly: boolean;
-	public perms: Array<string> = [];
+	public perms: string[] = [];
 
-	constructor(commandName: string | Array<string>, togglable = true, adminOnly = true) {
+	constructor(commandName: string | string[], togglable = true, adminOnly = true) {
 		this.commandName = (typeof commandName == 'string' ? [commandName] : commandName);
 		this.togglable = (togglable == null ? true : togglable);
 		this.adminOnly = adminOnly;
@@ -20,10 +20,37 @@ class Command {
 		this.description = 'Nothing written yet.';
 	}
 
-	public hasPerms(discordPerms: Discord.PermissionResolvable | Discord.PermissionResolvable[], member: Discord.GuildMember) {
-		// TODO: Custom Perms
+	public hasPermsCount(member: Discord.GuildMember, server: Server, perms: string[]): number {
+		var count = 0;
 
-		if (member.hasPermission(discordPerms)) return true;
+		var lastFound = null;
+
+		for(var i = 0; i < perms.length; i++) {
+			var perm = perms[i];
+
+			if (lastFound != null) {
+				if (perm.startsWith(lastFound)) {
+					count++;
+					continue;
+				} else {
+					lastFound = null;
+				}
+			}
+
+			if (server.userHasPerm(member, perm)) {
+				lastFound = perm;
+				count++;
+			}
+		}
+
+		return count;
+	}
+
+	public hasPerms(member: Discord.GuildMember, server: Server, perms: string): boolean {
+		if (member == null) return false;
+
+		if (server.userHasPerm(member, perms)) return true;
+
 		return false;
 	}
 
@@ -31,51 +58,7 @@ class Command {
 		return this.commandName.indexOf(name) != -1;
 	}
 
-	public call(params: string[], userOptions: Server, message: Discord.Message) {}
-
-	static paramsExpanded(params: string[]): string[] {
-		return params.map(p => {
-			// number.2 string.2
-			var fields = p.split(' ');
-			
-			return fields.map(f => {
-				// number.2
-				var spl = f.split('.');
-
-				var val = spl[0];
-				var amo = spl[1] == null ? 1 : parseInt(spl[1]);
-
-				if (amo == 1) return val;
-				if (amo == -1) return val + '..';
-
-				var a = [];
-
-				for(var i = 0; i < amo; i++) a.push(val);
-
-				return a.join(' ');
-			}).join(' ');
-		});
-	}
-
-	static paramsToReadable(params: string[]): string[] {
-		var cleaned = Command.paramsExpanded(params);
-
-		return cleaned.map(c => {
-			return c
-			.split(' ')
-			.map(s => {
-				var prefix = s[0] == '?' ? '[]' : '<>';
-
-				s = s.replace('?', '');
-
-				return prefix[0] + s
-				.replace('string', 'text')
-				.replace('boolean', 'true/false')
-				.toUpperCase() + prefix[1];
-			})
-			.join(' ');
-		});
-	}
+	public call(params: string[], userOptions: Server, message: Discord.Message): any {}
 
 	static DefaultColor = info.DefaultColor;
 	static SuccessColor = info.SuccessColor;
@@ -83,41 +66,46 @@ class Command {
 	static WarningColor = info.WarningColor;
 	static ErrorColor = info.ErrorColor;
 
-	static defCall(color: number, array: string[][]) {
+	static noPermsMessage(cmdName) {
+		return Command.error([[cmdName, 'You don\'t have perms to access this.']]);
+	}
+
+	static defCall(color: number, array: string[][] | { embed: any; }) {
 		return {
 			type: 'echo',
-			embed: {
+			embed: Array.isArray(array) ? {
 				color: color,
 				fields: array.map(a => { return { name: a[0], value: a[1] } })
-			}
+			} : array.embed
 		};
 	}
 
-	static default(array: string[][]) {
+	static default(array: string[][] | { embed: any; }) {
 		return Command.defCall(Command.DefaultColor, array);
 	}
 
-	static success(array: string[][]) {
+	static success(array: string[][] | { embed: any; }) {
 		return Command.defCall(Command.SuccessColor, array);
 	}
 
-	static error(array: string[][]) {
+	static error(array: string[][] | { embed: any; }) {
 		return Command.defCall(Command.ErrorColor, array);
 	}
 
-	static warning(array: string[][]) {
+	static warning(array: string[][] | { embed: any; }) {
 		return Command.defCall(Command.WarningColor, array);
 	}
 
-	static info(array: string[][]) {
+	static info(array: string[][] | { embed: any; }) {
 		return Command.defCall(Command.InfoColor, array);
 	}
 
-	// TODO: Text is different widths
-	static table(header: string[], body: any[][], opts?: { delimiter?: string; spacing?: number; }): string {
+	// TODO: Text is different widths if not in code blocks.
+	static table(header: string[], body: any[][], opts?: { delimiter?: string; spacing?: number; monospaced?: boolean; }): string {
 		opts = Object.assign({
 			delimiter: ' ',
-			spacing: 2
+			spacing: 2,
+			monospaced: true
 		}, opts);
 
 		var largestCell: number[] = [];
@@ -138,14 +126,24 @@ class Command {
 			});
 		});
 
-		//
 		rows.push(header.map((h, i) => h + ' '.repeat(largestCell[i] - String(h).length + opts.spacing)).join(opts.delimiter));
+
+		rows.push('='.repeat(rows[0].length));
 
 		body.forEach(ro => {
 			rows.push(ro.map((c, i) => c + ' '.repeat(largestCell[i] - String(c).length + opts.spacing)).join(opts.delimiter));
 		});
 
-		return rows.join('\n');
+
+		var comp = rows.join('\n');
+
+
+		if (opts.monospaced) comp = '```' + comp + '```';
+
+
+		if (comp.length > 1024) throw 'Table is too large. ' + comp.length + '/1024';
+
+		return comp;
 	}
 }
 

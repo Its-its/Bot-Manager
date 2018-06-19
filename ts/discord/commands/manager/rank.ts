@@ -1,13 +1,33 @@
+import Discord = require('discord.js');
+import DiscordServer = require('../../discordserver');
+
 import Command = require('../../command');
+
+
+const PERMS = {
+	MAIN: 'commands.rank',
+	LIST: 'list',
+	JOIN: 'join',
+	LEAVE: 'leave',
+	ADD: 'add',
+	REMOVE: 'remove'
+};
+
+for(var name in PERMS) {
+	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
+}
+
 
 class Rank extends Command {
 	constructor() {
 		super('rank');
 
 		this.description = 'Lets players join a rank you created. By themselves.';
+
+		this.perms = Object.values(PERMS);
 	}
 
-	public call(params, server, message) {
+	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		var ranks = server.ranks;
 
 		if (params.length == 0) {
@@ -25,6 +45,8 @@ class Rank extends Command {
 
 		switch (type) {
 			case 'list':
+				if (!this.hasPerms(message.member, server, PERMS.LIST)) return Command.noPermsMessage('Rank');
+
 				if (ranks.length == 0) return Command.info([[ 'Public Ranks:', 'No Ranks Public' ]]);
 				
 				var roles = ranks.map(b => {
@@ -35,6 +57,8 @@ class Rank extends Command {
 				return Command.info([[ 'Public Ranks:', Command.table([], roles) ]]);
 
 			case 'join':
+				if (!this.hasPerms(message.member, server, PERMS.JOIN)) return Command.noPermsMessage('Rank');
+
 				if (val == null) return Command.error([['ERROR!', 'Please specify the role!']]);
 				if ((roleId = getRoleId(val)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
 				if (!server.isRank(roleId)) return Command.error([['ERROR!', 'That is not a public rank!']]);
@@ -45,6 +69,8 @@ class Rank extends Command {
 				break;
 
 			case 'leave':
+				if (!this.hasPerms(message.member, server, PERMS.LEAVE)) return Command.noPermsMessage('Rank');
+
 				if (val == null) return Command.error([['ERROR!', 'Please specify the role!']]);
 				if ((roleId = getRoleId(val)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
 				if (!server.isRank(roleId)) return Command.error([['ERROR!', 'That is not a public rank!']]);
@@ -56,6 +82,8 @@ class Rank extends Command {
 			
 			// Add/Remove role from public ranks.
 			case 'add':
+				if (!this.hasPerms(message.member, server, PERMS.ADD)) return Command.noPermsMessage('Rank');
+
 				if (val == null) return Command.error([['ERROR!', 'Please specify the role!']]);
 				if (server.isRank(val)) return Command.error([['ERROR!', 'Rank already exists!']]);
 				if ((roleId = getRoleId(val)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
@@ -63,6 +91,8 @@ class Rank extends Command {
 				break;
 
 			case 'remove':
+				if (!this.hasPerms(message.member, server, PERMS.REMOVE)) return Command.noPermsMessage('Rank');
+
 				if (val == null) return Command.error([['ERROR!', 'Please specify the role!']]);
 				if (!server.isRank(val)) return Command.error([['ERROR!', 'Rank already removed!']]);
 				if ((roleId = getRoleId(val)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);

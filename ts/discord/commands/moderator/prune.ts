@@ -1,25 +1,33 @@
+import Discord = require('discord.js');
+import DiscordServer = require('../../discordserver');
+
 import Command = require('../../command');
 
-import Discord = require('discord.js');
-
 const maxBulkDeleteTime = (1000 * 60 * 60 * 24 * 14);
+
+
+const PERMS = {
+	MAIN: 'commands.prune',
+	USER: 'user',
+	CHANNEL: 'channel'
+};
+
+for(var name in PERMS) {
+	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
+}
+
+// if (!this.hasPerms(message.member, server, PERMS.MAIN)) return Command.noPermsMessage('Prune');
 
 class Prune extends Command {
 	constructor() {
 		super('prune', true, false);
 
 		this.description = 'Prunes a channel.';
-
-		this.perms = [
-			'commands.prune'
-		].concat([
-			'user',
-			'channel'
-		].map(i => 'commands.prune.' + i));
+		this.perms = Object.values(PERMS);
 	}
 
-	public call(params, server, message) {
-		if (!this.hasPerms([ 'MANAGE_MESSAGES' ], message.member)) {
+	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+		if (!message.member.hasPermission([ 'MANAGE_MESSAGES' ])) {
 			return send(Command.error([['Prune', 'Missing Manage Messages Perms!']])).catch(e => console.error(e));
 		}
 
@@ -37,8 +45,13 @@ class Prune extends Command {
 		}
 
 		switch(params.shift()) {
-			case 'user': break;
+			case 'user': // TODO: 
+				if (!this.hasPerms(message.member, server, PERMS.USER)) return Command.noPermsMessage('Prune');
+				return Command.error([['Prune', 'Not implemented yet.']]);
+				// break;
 			case 'channel':
+				if (!this.hasPerms(message.member, server, PERMS.CHANNEL)) return Command.noPermsMessage('Prune');
+
 				var id = server.strpToId(params.shift());
 				var reason = params.shift();
 				var limit = 100;
@@ -58,7 +71,7 @@ class Prune extends Command {
 				if (channel.type != 'text') return Command.error([[ 'Prune', 'Channel must be text only!' ]]);
 
 				if (reason == 'all') {
-					if (!this.hasPerms([ 'MANAGE_CHANNELS' ], message.member)) {
+					if (!message.member.hasPermission([ 'MANAGE_CHANNELS' ])) {
 						return send(Command.error([['Prune', 'Missing Manage Channels Perms!']])).catch(e => console.error(e));
 					}
 					return recreateChannel(channel);

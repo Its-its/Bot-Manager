@@ -1,4 +1,20 @@
+import Discord = require('discord.js');
+import DiscordServer = require('../../discordserver');
+
 import Command = require('../../command');
+
+
+const PERMS = {
+	MAIN: 'commands.ignore',
+	LIST: 'list',
+	CLEAR: 'clear',
+	CHANNEL: 'channel',
+	USER: 'user'
+};
+
+for(var name in PERMS) {
+	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
+}
 
 
 class Ignore extends Command {
@@ -6,9 +22,10 @@ class Ignore extends Command {
 		super('ignore');
 
 		this.description = 'Lets the bot know what to ignore.';
+		this.perms = Object.values(PERMS);
 	}
 
-	public call(params, server, message) {
+	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return Command.info([
 				[ 'Description', this.description ],
@@ -16,6 +33,7 @@ class Ignore extends Command {
 					'Command Usage',
 					[
 						'list', 
+						'clear <all/user/channel>',
 						'channel [#channel]', 
 						'user [@user]', 
 						'[@user/#channel]'
@@ -28,6 +46,8 @@ class Ignore extends Command {
 
 		switch (type) {
 			case 'list':
+				if (!this.hasPerms(message.member, server, PERMS.LIST)) return Command.noPermsMessage('Ignore');
+
 				var mod = server.moderation;
 				return Command.success([
 					[
@@ -42,6 +62,8 @@ class Ignore extends Command {
 							mod.ignoredUsers.map(c => ' - <@' + c + '>').join('\n')]
 				]);
 			case 'clear':
+				if (!this.hasPerms(message.member, server, PERMS.CLEAR)) return Command.noPermsMessage('Ignore');
+
 				var clear = (params[1] || '').toLowerCase();
 
 				if (clear == 'channel') {
@@ -56,6 +78,8 @@ class Ignore extends Command {
 				
 				break;
 			case 'channel':
+				if (!this.hasPerms(message.member, server, PERMS.CHANNEL)) return Command.noPermsMessage('Ignore');
+
 				var id = params[1];
 				if (isMention(id)) {
 					var id = id.slice(2, id.length - 1);
@@ -68,6 +92,8 @@ class Ignore extends Command {
 				}
 				break;
 			case 'user':
+				if (!this.hasPerms(message.member, server, PERMS.USER)) return Command.noPermsMessage('Ignore');
+
 				var id = params[1];
 				if (isMention(id)) {
 					var id = id.slice(2, id.length - 1);
@@ -82,10 +108,13 @@ class Ignore extends Command {
 			case 'role': break;
 			default:
 				if (isMention(type)) {
+					// TODO: server.idType()
 					var isUser = type[1] == '@';
 					var id = type.slice(2, type.length - 1);
 
 					if (isUser) {
+						if (!this.hasPerms(message.member, server, PERMS.USER)) return Command.noPermsMessage('Ignore');
+
 						var member = message.guild.member(id);
 						if (member != null) {
 							server.ignore('member', id);
@@ -93,6 +122,8 @@ class Ignore extends Command {
 							return Command.success([['Ignore', 'I am now ignoring user "' + member.displayName + '"']]);
 						} else return Command.error([['Ignore', 'Unable to find member! Does it Exist?!']]);
 					} else {
+						if (!this.hasPerms(message.member, server, PERMS.CHANNEL)) return Command.noPermsMessage('Ignore');
+
 						var channel = message.guild.channels.get(id);
 						if (channel != null) {
 							server.ignore('channel', id);

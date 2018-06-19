@@ -187,22 +187,28 @@ class Music implements DiscordBot.plugins.Music {
 	}
 
 	public nextInQueue(cb: (song: DiscordBot.plugins.SongGlobal) => any) {
-		if (!this.repeatSong) {
-			MusicQueue.findOne({ server_id: this.guildId }, (err, queue: any) => {
-				var item = queue.items.shift();
+		MusicQueue.findOne({ server_id: this.guildId }, (err, queue: any) => {
+			if (err != null) {
+				console.error(err);
+				return cb(null);
+			}
 
-				if (this.repeatQueue) queue.items.push(item);
+			var item = (!this.repeatSong ? queue.items.shift() : queue.items[0]);
 
-				queue.save(err => {
+			if (item == null) return cb(null);
+
+			if (!this.repeatSong && this.repeatQueue) queue.items.push(item);
+
+			queue.save(err => {
+				if (err != null) { console.error(err); cb(null); return; }
+
+				musicPlugin.getSong(item.id, (err, song) => {
 					if (err != null) { console.error(err); cb(null); return; }
-
-					musicPlugin.getSong(item, (err, song) => {
-						if (err != null) { console.error(err); cb(null); return; }
-						cb(song);
-					});
+					song.addedBy = item.addedBy;
+					cb(song);
 				});
 			});
-		} else throw 'Repeat song not implemented yet!';
+		});
 	}
 
 	public shuffleQueue() {
@@ -216,18 +222,30 @@ class Music implements DiscordBot.plugins.Music {
 
 	// History
 	public addToHistory(song: DiscordBot.plugins.PlayedSong) {
-		new MusicHistory({
-			played_at: song.playedAt,
-			server_id: this.guildId,
-			song: song.id
-		}).save(() => {});
-		// if (this.history.length == maxHistorySize) this.history.splice(0, 1);
-		// this.history.push(song);
+		MusicHistory.updateOne({ server_id: this.guildId }, {
+			$inc: {
+				song_count: 1
+			},
+			$push: {
+				songs: {
+					$each: [
+						{
+							played_at: song.playedAt,
+							song_id: song.id
+						}
+					],
+					$slice: 25,
+					$position: 0
+				}
+			},
+			$setOnInsert: {
+				server_id: this.guildId
+			}
+		}, { upsert: true }).exec();
 	}
 
 	public clearHistory(cb: (err: any) => any) {
-		MusicHistory.remove({ server_id: this.guildId }, err => cb(err));
-		// this.history = [];
+		MusicHistory.updateOne({ server_id: this.guildId }, { $set: { songs: [], song_count: 0 } }, err => cb(err));
 	}
 
 

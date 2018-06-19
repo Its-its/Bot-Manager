@@ -1,14 +1,22 @@
+import Discord = require('discord.js');
+import DiscordServer = require('../../discordserver');
+
 import Command = require('../../command');
 
+const PERMISSIONS = {
+	MAIN: 'commands.nick'
+};
 
 class Nick extends Command {
 	constructor() {
 		super('nick');
 
+		this.perms = Object.values(PERMISSIONS);
+
 		this.description = 'Changes the bots nickname for your discord server.';
 	}
 
-	public call(params, server, message) {
+	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return Command.info([
 				[ 'Description', this.description ],

@@ -49,31 +49,14 @@ function parseMessage(message: string, server: Server, defaultMessage: Discord.M
 		var command = defaultCommands[i];
 
 		if (command.is(messageCommand)) {
-			// TODO: check if user has the perms.
-
+console.log('P1');
 			if (!defaultMessage.member.hasPermission('ADMINISTRATOR')) {
-				var perm = command.perms[0];
-				if (perm != null) {
-					var p = perm.split('.', 2)[0].toLowerCase();
-					var basePerms = server.userHasBasePerm(defaultMessage.member.id, perm);
-
-					// forced perms? doesn't have base perms? return
-					if ((server.plugins[p] == null || server.plugins[p].perms) && !basePerms) return;
-
-					// Admin only command? Doesn't have base perms? return
-					if (command.adminOnly && !basePerms) return;
-				} else if (server.plugins.commands == null || server.plugins.commands.perms || command.adminOnly) return;
+				// TODO: Keep here or put in the command call?
+				// If the member doesn't have any perms for it, return
+				if (!server.rolesHaveAnyChildPerm(defaultMessage.member.roles.keyArray(), command.perms)) return;
 			}
-
-			// var fixedParams = CommandManger.getProperParam(parts, command.params);
+console.log('P2');
 			return command.call(CommandManger.fix(parts), server, defaultMessage);
-
-			// if (command.validate(parts.slice(1))) {
-			// 	var fixedParams = CommandManger.getProperParam(parts, command.params);
-			// 	return command.params[fixedParams.pos].cb(fixedParams.newParams, server, defaultMessage);
-			// } else {
-			// 	return { type: 'echo', message: 'Invalid Params!' };
-			// }
 		}
 	}
 

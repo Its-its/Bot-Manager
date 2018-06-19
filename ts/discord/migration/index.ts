@@ -7,19 +7,19 @@ let migrations: typeof Base[] = [
 	require('./001_phrase_seperation')
 ];
 
-function check(server: Server, cb?: (ok: boolean) => any) {
+function check(server: Server, cb?: (ok: boolean, updated: boolean) => any) {
 	var pos = 0;
 
-	next(true);
+	next(true, false);
 
-	function next(ok) {
-		if (pos == migrations.length || !ok) return (cb && cb(ok));
+	function next(ok, updated) {
+		if (pos == migrations.length || !ok) return (cb && cb(ok, updated));
 		var Clazz = migrations[pos++];
 
 		if (server.migration < Clazz.migration) {
-			new Clazz().up(server, ok => next(ok));
+			new Clazz().up(server, ok => next(ok, true));
 		} else {
-			next(true);
+			next(true, false);
 		}
 	}
 }

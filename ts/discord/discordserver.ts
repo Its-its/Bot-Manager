@@ -47,29 +47,25 @@ class Server implements DiscordBot.Server {
 	intervals: DiscordBot.Interval[];
 	ranks: string[];
 
+	alias: DiscordBot.Alias[];
 	commands: DiscordBot.Command[];
 	phrases: DiscordBot.Phrase[];
 	roles: DiscordBot.Role[];
 	plugins: DiscordBot.Plugin = {
 		commands: {
-			enabled: false,
-			perms: true
+			enabled: true
 		},
 		music: {
-			enabled: false,
-			perms: true
+			enabled: false
 		},
 		interval: {
-			enabled: false,
-			perms: true
+			enabled: false
 		},
 		rssfeed: {
-			enabled: false,
-			perms: true
+			enabled: false
 		},
 		logs: {
-			enabled: false,
-			perms: true
+			enabled: false
 		}
 	};
 	values;
@@ -127,6 +123,9 @@ class Server implements DiscordBot.Server {
 
 	// Plugins
 	public isPluginEnabled(name: 'commands' | 'music' | 'interval' | 'rssfeed' | 'logs') {
+		// Commands is enabled by default even if null.
+		if (name == 'commands') return this.plugins[name] == null || this.plugins[name].enabled;
+
 		return this.plugins[name] != null && this.plugins[name].enabled;
 	}
 
@@ -143,6 +142,7 @@ class Server implements DiscordBot.Server {
 
 		var phrase = {
 			_id: null,
+			sid: this.serverId,
 			pid: uniqueID(2),
 			phrases: phraseText,
 			responses: []
@@ -152,6 +152,7 @@ class Server implements DiscordBot.Server {
 			new Phrases({
 				user_id: doc.id,
 				uid: phrase.pid,
+				sid: phrase.sid,
 				phrases: phrase.phrases,
 				responses: phrase.responses
 			})
@@ -688,10 +689,13 @@ class Server implements DiscordBot.Server {
 
 		if (ps.length >= 25) return false;
 
-		if (ps.indexOf(perm) == -1)
-			ps.push(perm);
+		var permSplit = perm.split('.');
 
-		console.log(this.permissions);
+		for(var i = 0; i < permSplit.length; i++) {
+			if (ps.indexOf(permSplit.slice(0, i + 1).join('.')) != -1) return false;
+		}
+
+		ps.push(perm);
 
 		return true;
 	}
@@ -731,12 +735,81 @@ class Server implements DiscordBot.Server {
 		if (str.length < 3) return null;
 
 		var sub = str.substr(2, str.length - 3);
-		if (sub[0] == '@' || sub[0] == '#') return sub.substr(1);
+
+		// Roles are <@&1234>
+		if (sub[0] == '&') return sub.substr(1);
 		
 		return sub;
 	}
 
-	public userHasBasePerm(id: string, perm: string): boolean {
+	public idType(str: string): 'member' | 'role' | 'channel' {
+		if (str == null || str.length < 3) return null;
+
+		if (str.startsWith('<@&') || str == '@everyone') return 'role';
+		if (str.startsWith('<@')) return 'member';
+		if (str.startsWith('<#')) return 'channel';
+
+		return null;
+	}
+
+
+	// Full Perm, used to detect "commands.bypasstoggle"
+	public memberHasExactPerm(member: Discord.GuildMember, perm: string): boolean {
+		if (member == null) return false;
+		return this.userHasExactPerm(member.id, perm) || this.anyRoleHasExactPerm(member.roles.keyArray(), perm);
+	}
+
+	public rolesHaveAnyChildPerm(roleIds: string[], perms: string[]) {
+		for(var i = 0; i < perms.length; i++) {
+			if (this.anyRoleHasBasePerm(roleIds, perms[i])) return 
+		}
+	}
+
+	public anyRoleHasExactPerm(ids: string[], perm: string) {
+		for(var i = 0; i < ids.length; i++) {
+			if (this.roleHasExactPerm(ids[i], perm)) return true;
+		}
+
+		return false;
+	}
+
+	public roleHasExactPerm(id: string, perm: string): boolean {
+		var rolePerm = this.permissions.roles[id];
+		if (rolePerm == null) return false;
+
+		return rolePerm.perms.indexOf(perm) != -1;
+	}
+
+	public userHasExactPerm(id: string, perm: string): boolean {
+		var userPerm = this.permissions.users[id];
+		if (userPerm == null) return false;
+
+		return userPerm.perms.indexOf(perm) != -1;
+	}
+
+
+	public anyRoleHasBasePerm(ids: string[], perm: string) {
+		for(var i = 0; i < ids.length; i++) {
+			if (this.roleHasBasePerm(ids[i], perm)) return true;
+		}
+
+		return false;
+	}
+
+	public roleHasBasePerm(id: string, perm: string): boolean {
+		var rolePerm = this.permissions.roles[id];
+		if (rolePerm == null) return false;
+
+		var expandedPerm = expandPerm(perm);
+
+		for(var i = 0; i < expandedPerm.length; i++) {
+			if (rolePerm.perms.indexOf(expandedPerm[i]) != -1) return true;
+		}
+
+		return false;
+	}
+
+	public userHasParentPerm(id: string, perm: string): boolean {
 		var userPerm = this.permissions.users[id];
 		if (userPerm == null) return false;
 
@@ -747,13 +820,6 @@ class Server implements DiscordBot.Server {
 		}
 
 		return false;
-	}
-
-	public userHasFullPerm(id: string, perm: string): boolean {
-		var userPerm = this.permissions.users[id];
-		if (userPerm == null) return false;
-
-		return userPerm.perms.indexOf(perm) != -1;
 	}
 
 	public hasPerms(userId: string, roleIds: string[], permItem: string): boolean {
@@ -786,7 +852,12 @@ class Server implements DiscordBot.Server {
 
 	public userHasPerm(user: Discord.GuildMember, perm: string): boolean {
 		if (user.hasPermission('ADMINISTRATOR')) return true;
-		return this.userHasBasePerm(user.id, perm);
+
+		if (this.userHasParentPerm(user.id, perm)) return true;
+
+		if (this.anyRoleHasBasePerm(user.roles.keyArray(), perm)) return true;
+
+		return false;
 	}
 
 

@@ -1,23 +1,32 @@
+import Discord = require('discord.js');
+import DiscordServer = require('../../discordserver');
+
 import Command = require('../../command');
 
-import Discord = require('discord.js');
+
+const PERMS = {
+	MAIN: 'commands.logs',
+	CHANNEL: 'channel',
+	FILTER: 'filter',
+	FILTER_LIST: 'filter.list',
+	FILTER_ADD: 'filter.add',
+	FILTER_REMOVE: 'filter.remove'
+};
+
+for(var name in PERMS) {
+	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
+}
+
 
 class Logs extends Command {
 	constructor() {
 		super('logs');
 
-		this.perms = [
-			'commands.logs'
-		].concat([
-			'channel',
-			'filter',
-			'filter.list',
-			'filter.add',
-			'filter.remove'
-		].map(i => 'commands.logs.' + i));
+		this.perms = Object.values(PERMS);
+		this.description = 'Logs filtered items to specified channel.';
 	}
 
-	public call(params, server, message) {
+	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (!server.isPluginEnabled('logs')) {
 			return Command.error([['Error', 'Please enable Logs!']]);
 		}
@@ -38,6 +47,8 @@ class Logs extends Command {
 
 		switch(params.shift()) {
 			case 'channel':
+				if (!this.hasPerms(message.member, server, PERMS.CHANNEL)) return Command.noPermsMessage('Logs');
+
 				var id = params.shift();
 
 				if (id == null) id = message.channel.id;
@@ -60,7 +71,10 @@ class Logs extends Command {
 
 				server.save();
 				break;
-			case 'filter': break;
+			case 'filter':
+				return Command.error([['Logs', 'Not implemented yet. :/']]);
+				// if (!this.hasPerms(message.member, server, PERMS.MAIN)) return Command.noPermsMessage('Logs');	
+				// break;
 		}
 	}
 }

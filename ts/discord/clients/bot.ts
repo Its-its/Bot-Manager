@@ -62,9 +62,12 @@ client.on('ready', () => {
 		var id = ids[pos++];
 
 		guildClient.get(id, server => {
-			migration.check(server, ok => {
-				logger.info('Finished \'' + id + '\': ' + (ok ? 'Success' : 'Errored'));
-				server.save();
+			migration.check(server, (ok, updated) => {
+				if (updated) {
+					logger.info('Finished \'' + id + '\': ' + (ok ? 'Success' : 'Errored'));
+					server.save();
+				}
+
 				check();
 			});
 		});

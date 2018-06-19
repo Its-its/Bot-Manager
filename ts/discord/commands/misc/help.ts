@@ -1,3 +1,6 @@
+import Discord = require('discord.js');
+import DiscordServer = require('../../discordserver');
+
 import Command = require('../../command');
 
 import Commands = require('../index');
@@ -7,7 +10,7 @@ class Help extends Command {
 		super('help', true, false);
 	}
 
-	public call(params, server, message) {
+	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		var commands = (<{[str: string]: Command[]}>Commands.list());
 		var categoryNames: any = Object.keys(commands).map(c => [ c, c.toLowerCase(), commands[c].length ]);
 
@@ -48,7 +51,10 @@ class Help extends Command {
 
 				var categoryCommands = commands[categoryName[0]];
 				str.push('**' + categoryName[0] + '**');
-				str = str.concat(categoryCommands.map(c => server.getPrefix() + c.commandName[0] + ' | ' + (c.description || 'No Desc.')));
+				str = str.concat(categoryCommands.map(c => 
+					server.getPrefix() + c.commandName[0] + ' | ' + 
+					c.hasPermsCount(message.member, server, c.perms) + '/' + c.perms.length  + ' | ' + 
+					(c.description || 'No Desc.')));
 			}
 
 			return Command.info([[

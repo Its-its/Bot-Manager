@@ -1,0 +1,1 @@
+# Used for tagging embedded images. Premium feature.

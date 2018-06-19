@@ -209,17 +209,25 @@ declare namespace DiscordBot {
 			[id: string]: {
 				displayName: string;
 				name: string;
-				
+
 				perms: string[];
 				groups?: string[];
 			}
 		};
 	}
-	
+
+	interface Alias {
+		pid: string;
+		
+		command: string[];
+		do: string;
+	}
+
 	interface Phrase {
 		_id?: string;
 
 		pid: string;
+		sid: string;
 
 		enabled?: boolean;
 		ignoreCase?: boolean;
@@ -229,7 +237,7 @@ declare namespace DiscordBot {
 	}
 
 
-	type PhraseResponses = PhraseResEcho | PhraseResInterval | PhraseResSet;
+	type PhraseResponses = PhraseResEcho | PhraseResInterval | PhraseResSet | PhraseResAlias;
 
 	interface PhraseResEcho {
 		reply?: boolean;
@@ -242,6 +250,11 @@ declare namespace DiscordBot {
 		type: 'interval';
 		do: string | 'reset';
 		id: string;
+	}
+
+	interface PhraseResAlias {
+		type: 'alias';
+		do: string;
 	}
 
 	interface PhraseResSet {
@@ -299,7 +312,7 @@ declare namespace DiscordBot {
 
 	interface PluginItem {
 		enabled: boolean;
-		perms: boolean;
+		// perms: boolean;
 	}
 	
 	// Role

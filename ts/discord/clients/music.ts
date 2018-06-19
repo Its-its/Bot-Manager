@@ -71,6 +71,10 @@ app.use(bodyParser.json());
 
 app.use(morgan('dev'));
 
+app.post('/restart', (req, res) => {
+	//
+})
+
 app.post('/join', (req, res) => {
 	var { guild_id, channel_id } = req.body;
 	console.log(JSON.stringify(req.body));
@@ -95,7 +99,7 @@ app.post('/play', (req, res) => {
 	var { guild_id, member_id, search } = req.body;
 	console.log(JSON.stringify(req.body));
 	
-	if (search == null) {
+	if (search == null || search.length == 0) {
 		playSong(guild_id, null, (err, newsong, lastSong) => {
 			console.log(err, newsong, lastSong);
 			res.send({
@@ -204,22 +208,29 @@ app.post('/queue/:type', (req, res) => {
 						var items = JSON.parse(resp.body);
 						if (!Array.isArray(items)) items = [items];
 
-						var fields = [
-							[
-								'Music', 
-								'Queued Items: ' + items.length + '\nPage: ' + page + '/' + maxPages
-							]
-						];
-
-						fields = fields.concat(items
-						.map((q, i) => [
-							'ID: ' + (pageSlice + i + 1),
-							[	q.title,
-								idToUrl(q.type || 'youtube', q.id)
-							].join('\n')
-						]));
-
-						return res.send({ embed: fields });
+						guildClient.getMusic(guild_id, music => {
+							var fields = [
+								[
+									'Music', 
+									[
+										'Queued Items: ' + items.length,
+										'Page: ' + page + '/' + maxPages,
+										'**Repeat Queue:** ' + (music.repeatQueue ? 'Yes': 'No'),
+										'**Repeat Song:** ' + (music.repeatSong ? 'Yes': 'No')
+									].join('\n')
+								]
+							];
+	
+							fields = fields.concat(items
+							.map((q, i) => [
+								'ID: ' + (pageSlice + i + 1),
+								[	q.title,
+									idToUrl(q.type || 'youtube', q.id)
+								].join('\n')
+							]));
+	
+							return res.send({ embed: fields });
+						});
 					});
 				});
 			} else {
@@ -227,7 +238,7 @@ app.post('/queue/:type', (req, res) => {
 					if (errMsg != null) return res.send({ error: errMsg });
 
 					res.send({ embed: generateFullSong(
-						'Added to Queue', song.addedBy, 
+						'Added to Queue', song.id, '',
 						song.title, song.thumbnail_url, '' + song.length,
 						song.channel_id, new Date(song.published).toISOString()) });
 				});
@@ -466,11 +477,11 @@ function playSong(
 				}
 
 				var send = generateFullSong(
-					'Now Playing', avatarURL, 
+					'Now Playing', song.id, avatarURL,
 					song.title, song.thumbnail_url, '' + song.length,
 					song.channel_id, new Date(song.published).toISOString());
 
-				console.log(JSON.stringify(send, null, 4));
+				console.log('Message:', send);
 
 				music.sendMessageFromGuild(guild, send);
 
@@ -486,6 +497,10 @@ function playSong(
 	
 				if (reason == 'stopped') {
 					music.save();
+				} else if (reason == 'restarting') { // Play "Stopping" audio.
+					// Song finished, get next song
+					console.log('Grab next song.');
+					playSong(guild_id);
 				} else if (reason != 'next') { // "next" reason is called from "next" function
 					// Song finished, get next song
 					console.log('Grab next song.');
@@ -493,7 +508,7 @@ function playSong(
 				}
 			});
 
-			dispatcher.on('error', (...e) => console.log('dispatcher', ...e));
+			dispatcher.on('error', e => console.log('dispatcher error:', e));
 		}
 	} else {
 		// If the bot is QUICKLY restarted it doesn't leave the voice channel and it doesn't know it's still in it.
@@ -683,13 +698,13 @@ function idToUrl(site: 'youtube', id: string) {
 }
 
 function generateFullSong(
-	title: string, icon: string, 
+	title: string, id: string, icon: string, 
 	videoTitle: string, videoThumb: string, duration: string,
 	channel: string, uploaded: string) {
 	return {
 		embed: {
 			title: videoTitle,
-			url: 'https://youtu.be/',
+			url: 'https://youtu.be/' + id,
 			color: 0x46a0c0,
 			timestamp: uploaded,
 			footer: {

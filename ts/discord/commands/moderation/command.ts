@@ -1,11 +1,30 @@
+import Discord = require('discord.js');
+import DiscordServer = require('../../discordserver');
+
 import Command = require('../../command');
 
-class Create extends Command {
+
+const PERMS = {
+	MAIN: 'commands.command',
+	LIST: 'list',
+	CREATE: 'create',
+	REMOVE: 'remove'
+};
+
+for(var name in PERMS) {
+	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
+}
+
+class Comm extends Command {
 	constructor() {
 		super(['command', 'cmd'], false);
+
+		this.description = 'Create commands that respond with something.';
+
+		this.perms = Object.values(PERMS);
 	}
 
-	public call(params, server, message) {
+	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return Command.info([[
 				'Command',
@@ -23,8 +42,12 @@ class Create extends Command {
 		if (/[a-z0-9_]/i.test(commandName)) return Command.info([['Command', 'Command name must only have A-Z 0-9 _ in it.']]);
 
 		switch(type.toLowerCase()) {
-			case 'list': break;
+			case 'list':
+				if (!this.hasPerms(message.member, server, PERMS.LIST)) return Command.noPermsMessage('Command');
+				break;
 			case 'create':
+				if (!this.hasPerms(message.member, server, PERMS.CREATE)) return Command.noPermsMessage('Command');
+
 				var onCalled = params.join(' ');
 	
 				if (onCalled.length == 0) return;
@@ -35,6 +58,8 @@ class Create extends Command {
 				});
 				break;
 			case 'remove':
+				if (!this.hasPerms(message.member, server, PERMS.REMOVE)) return Command.noPermsMessage('Command');
+
 				var paramId = parseInt(params.shift());
 
 				if (!Number.isInteger(paramId)) paramId = null;
@@ -46,4 +71,4 @@ class Create extends Command {
 	}
 }
 
-export = Create;
+export = Comm;

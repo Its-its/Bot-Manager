@@ -23,6 +23,8 @@ let DiscordServer = new Schema({
 		memberCount: Number,
 		ownerID: String,
 
+		commandPrefix: String,
+
 		permissions: {},
 		intervals: [{ type: Schema.Types.ObjectId, ref: 'discord_intervals' }],
 		ranks: [],
@@ -70,6 +72,8 @@ interface MongooseDoc extends mongoose.Document {
 		createdAt: string;
 		memberCount: string;
 		ownerID: string;
+
+		commandPrefix: string;
 
 		permissions: {};
 		intervals: string[];
