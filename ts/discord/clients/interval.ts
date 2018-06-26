@@ -10,7 +10,7 @@ import config = require('../../site/util/config');
 
 
 (<any>mongoose).Promise = global.Promise;
-mongoose.set('debug', true);
+// mongoose.set('debug', true);
 mongoose.connect(config.database);
 
 
@@ -62,11 +62,16 @@ client.login(config.bot.discord.token);
 setInterval(() => {
 	ModelIntervals.find({ active: true, nextCall: { $lt: Date.now() } })
 	.then(items => {
-		async.every(items, (item: any, cb) => {
-			var guild = client.guilds.get(item.server_id);
+		if (items.length == 0) return;
+
+		console.log('Calling ' + items.length + ' intervals.');
+
+		async.every(items, (item, cb) => {
+			var guild = client.guilds.get(item['server_id']);
 
 			if (guild != null) {
-				var channel = <Discord.TextChannel>guild.channels.get(item.channel_id);
+				var channel = <Discord.TextChannel>guild.channels.get(item['channel_id']);
+
 				if (channel != null) {
 					// try {
 						// if (item.events.onCall) {
@@ -79,28 +84,23 @@ setInterval(() => {
 
 						// 	if (ret === false) return;
 						// } else {
-							channel.send(item.message);
+							channel.send(item['message']);
 						// }
 
-						item.nextCall = Date.now() + (item.every * 1000);
+						item['nextCall'] = Date.now() + (item['every'] * 1000);
 						item.save();
-						cb();
+						return cb();
 					// } catch (error) {
 					// 	console.error(error);
 					// 	channel.send('Error with Interval ' + error);
 					// 	cb();
 					// }
-				} else {
-					item.active = false;
-					item.save();
-					cb();
 				}
-			} else {
-				item.active = false;
-				item.save();
-				cb();
 			}
+
+			item['active'] = false;
+			item.save();
+			cb();
 		});
-	}, e => console.error(e))
-	.catch(err => console.error(err));
+	}, e => console.error(e));
 }, 1000 * 60);

@@ -16,6 +16,9 @@ for(var name in PERMS) {
 }
 
 
+// TODO: Blacklist per channel
+// TODO: Ensure admins aren't blacklisted also.
+
 class Blacklist extends Command {
 	constructor() {
 		super('blacklist');

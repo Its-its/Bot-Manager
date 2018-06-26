@@ -33,6 +33,22 @@ function get(serverId: string, cb: (client: DiscordServer) => any) {
 	});
 }
 
+function remove(serverId: string, cb: (count: number) => any) {
+	var doCb = false;
+
+	redisMusic.del(serverId, fin);
+	redisGuildsClient.del(serverId, fin);
+
+	function fin(err, count) {
+		if (doCb) {
+			if (err != null) { console.error(err); cb(null); return; }
+			return cb(count);
+		}
+
+		doCb = true;
+	}
+}
+
 function updateServer(serverId: string, cb?: () => any) {
 	DiscordServers.findOne({ server_id: serverId })
 	.populate({ path: 'command_ids', select: 'pid alias params' })
@@ -42,6 +58,9 @@ function updateServer(serverId: string, cb?: () => any) {
 		server.server.commands = server.command_ids;
 		server.server.phrases = server.phrase_ids;
 		// server.server.intervals = server.interval_ids;
+
+		server.server.alias = server.server.aliasList;
+		delete server.server['aliasList'];
 
 		put(serverId, server.server, cb);
 	});
@@ -58,6 +77,7 @@ export {
 	exists,
 	put,
 	get,
+	remove,
 	updateServer,
 	getMusic
 };

@@ -49,13 +49,13 @@ function parseMessage(message: string, server: Server, defaultMessage: Discord.M
 		var command = defaultCommands[i];
 
 		if (command.is(messageCommand)) {
-console.log('P1');
 			if (!defaultMessage.member.hasPermission('ADMINISTRATOR')) {
-				// TODO: Keep here or put in the command call?
-				// If the member doesn't have any perms for it, return
-				if (!server.rolesHaveAnyChildPerm(defaultMessage.member.roles.keyArray(), command.perms)) return;
+
+				if (command.perms.length != 0 && 
+					!(server.userHasAnyChildPerm(defaultMessage.member.id, command.perms) || server.rolesHaveAnyChildPerm(defaultMessage.member.roles.keyArray(), command.perms))
+				) return;
 			}
-console.log('P2');
+
 			return command.call(CommandManger.fix(parts), server, defaultMessage);
 		}
 	}
@@ -80,6 +80,8 @@ function get(commandName: string): Command {
 
 function addCommand(command: Command | Array<Command>, category: string) {
 	if (Array.isArray(command)) return command.forEach(c => addCommand(c, category));
+
+	if (command.perms == null || command.perms.length == 0) console.log('No perms for ' + command.commandName[0]);
 
 	validPerms = validPerms.concat(command.perms);
 	defaultCommands.push(command);

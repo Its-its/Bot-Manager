@@ -6,7 +6,7 @@ import Command = require('../../command');
 import utils = require('../../utils');
 
 const PERMS = {
-	MAIN: 'commands.'
+	MAIN: 'commands.info'
 };
 
 for(var name in PERMS) {
@@ -18,6 +18,8 @@ for(var name in PERMS) {
 class Info extends Command {
 	constructor() {
 		super('info', false, false);
+
+		this.perms = Object.values(PERMS);
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
@@ -32,7 +34,7 @@ class Info extends Command {
 		if (type == null) return Command.error([[ 'Info', 'Unknown type' ]]);
 
 		switch(type) {
-			case 'user':
+			case 'member':
 				var member = message.guild.members.get(id);
 				if (member == null) return Command.error([[ 'Info', 'Member not in Guild!' ]]);
 

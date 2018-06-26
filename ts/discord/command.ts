@@ -141,7 +141,7 @@ class Command {
 		if (opts.monospaced) comp = '```' + comp + '```';
 
 
-		if (comp.length > 1024) throw 'Table is too large. ' + comp.length + '/1024';
+		// if (comp.length > 1024) throw 'Table is too large. ' + comp.length + '/1024';
 
 		return comp;
 	}

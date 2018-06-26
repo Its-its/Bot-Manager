@@ -44,23 +44,36 @@ class Help extends Command {
 		var name = params.shift().toLowerCase();
 
 		if (name == 'all') {
-			var str = [ '_Temporary design_' ];
+			var count = 0;
+			var each = [];
 
 			for(var i = 0; i < categoryNames.length; i++) {
 				var categoryName = categoryNames[i];
 
 				var categoryCommands = commands[categoryName[0]];
-				str.push('**' + categoryName[0] + '**');
-				str = str.concat(categoryCommands.map(c => 
-					server.getPrefix() + c.commandName[0] + ' | ' + 
-					c.hasPermsCount(message.member, server, c.perms) + '/' + c.perms.length  + ' | ' + 
-					(c.description || 'No Desc.')));
+
+				count += categoryCommands.length;
+
+				each.push([
+					categoryName[0],
+					Command.table(['Name', 'Perms', 'Description'], 
+						categoryCommands.map(c => 
+							[
+								c.commandName[0],
+								c.hasPermsCount(message.member, server, c.perms) + '/' + c.perms.length,
+								c.description
+							]
+						)
+					)
+				]);
 			}
 
-			return Command.info([[
-				'All Commands',
-				str.join('\n')
-			]]);
+			return Command.info([
+				[
+					'All Commands',
+					count + ' commands.'
+				]
+			].concat(each));
 		}
 
 		// List commands in a category

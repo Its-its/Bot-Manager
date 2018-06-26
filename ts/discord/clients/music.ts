@@ -531,10 +531,10 @@ function findAndPlay(guildId: string, uriOrSearch: string, cb: (errorMessage?: s
 	if (val != null) {
 		var id = val[1];
 
-		musicUtils.getSong(id, (errMsg, song) => {
+		musicUtils.getSong(id, (errMsg, songs) => {
 			if (errMsg != null) return cb(errMsg);
 
-			playSong(guildId, song, (err, next, last) => {
+			playSong(guildId, songs[0], (err, next, last) => {
 				io.to(guildId)
 				.emit('play-start', {
 					error: err,
@@ -543,7 +543,7 @@ function findAndPlay(guildId: string, uriOrSearch: string, cb: (errorMessage?: s
 				});
 			});
 
-			cb(null, song);
+			cb(null, songs[0]);
 		})
 	} else {
 		musicUtils.searchForSong(uriOrSearch, (errMsg, song) => {
@@ -623,10 +623,10 @@ function queueSong(guildId: string, memberId: string, uriOrSearch: string, cb: (
 		if (val != null) {
 			var id = val[1];
 
-			musicUtils.getSong(id, (errMsg, song) => {
+			musicUtils.getSong(id, (errMsg, songs) => {
 				if (errMsg != null) return cb(errMsg);
-				io.to(guildId).emit('queue-item-add', { item: song });
-				music.addToQueue(memberId, song, err => cb(err, song));
+				io.to(guildId).emit('queue-item-add', { item: songs[0] });
+				music.addToQueue(memberId, songs[0], err => cb(err, songs[0]));
 			})
 		} else {
 			musicUtils.searchForSong(uriOrSearch, (errMsg, song) => {

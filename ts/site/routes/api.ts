@@ -238,8 +238,8 @@ export = (app: express.Application) => {
 		});
 	});
 
-	dashboard.post('/create', (req, res) => {
-		if (req['user'].bots.amount >= 2) return res.send({ error: 'Max Bot count reached!' });
+	dashboard.post('/create', (req, res) => { // TODO: "this.listeners is not a funtion"
+		if (req['user'].bots.amount >= 6) return res.send({ error: 'Max Bot count reached!' });
 
 		let bot = new Bots({
 			user_id: req['user'].id,
@@ -402,10 +402,6 @@ export = (app: express.Application) => {
 						return res.send({ error: 'A Command with one or more of those alias\'s exists!' });
 					}
 				}
-			}
-
-			if (!checkCommandParams(params)) {
-				return res.status(500).send({ error: 'Params is not valid.' });
 			}
 
 			new Commands({
@@ -615,7 +611,7 @@ export = (app: express.Application) => {
 	// });
 
 
-	// //! Ranks
+	//! Ranks
 	// bots.get('/:bid/ranks', (req, res) => {
 	// 	var { bid } = req.params;
 	// });
@@ -633,7 +629,7 @@ export = (app: express.Application) => {
 	// });
 
 
-	// //! Roles
+	//! Roles
 	// bots.get('/:bid/roles', (req, res) => {
 	// 	var { bid } = req.params;
 	// });
@@ -651,7 +647,7 @@ export = (app: express.Application) => {
 	// });
 
 
-	// //! Moderation
+	//! Moderation
 	// bots.get('/:bid/moderation', (req, res) => {
 	// 	var { bid } = req.params;
 	// });
@@ -669,7 +665,7 @@ export = (app: express.Application) => {
 	// });
 
 
-	// //! Permissions
+	//! Permissions
 	// bots.get('/:bid/permissions', (req, res) => {
 	// 	var { bid } = req.params;
 	// });
@@ -687,7 +683,7 @@ export = (app: express.Application) => {
 	// });
 
 
-	// //! Intervals
+	//! Intervals
 	// bots.get('/:bid/intervals', (req, res) => {
 	// 	var { bid } = req.params;
 	// });
@@ -756,31 +752,10 @@ export = (app: express.Application) => {
 	app.use('/api', route);
 }
 
-function checkCommandParams(param: any | any[]): boolean {
-	if (Array.isArray(param)) {
-		for(var i = 0; i < param.length; i++) {
-			if (!checkCommandParams(param[i])) return false;
-		}
-		return true;
-	}
 
-	if (typeof param != 'object' || Array.isArray(param)) return false;
-
-	// TODO
-
-	return true;
-}
-
-function confirmID() {
-	return block() + block() + '-' + block() + block() + block() + '-' + block();
-
-	function block() {
-		return Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1);
-	}
-}
 
 function uniqueID() {
-	return generate('0123456789abcdefghijklmnopqrstuvwxyz', 32);
+	return generate('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 32);
 }
 
 

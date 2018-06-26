@@ -6,8 +6,10 @@ import config = require('../site/util/config');
 import DiscordServers = require('./models/servers');
 import DiscordMembers = require('./models/members');
 
-import Commands = require('../models/commands');
+import Command = require('../models/commands');
 import Phrases = require('../models/phrases');
+
+import Commands = require('./commands');
 
 import intervalPlugin = require('./plugins/interval');
 
@@ -23,6 +25,7 @@ const server = {
 };
 
 class Server implements DiscordBot.Server {
+	branch: 'stable' | 'experimental';
 	serverId: string;
 	migration: number;
 
@@ -84,6 +87,7 @@ class Server implements DiscordBot.Server {
 		this.memberCount = options.memberCount;
 		this.ownerID = options.ownerID;
 
+		this.alias = options.alias || [];
 		this.intervals = options.intervals || [];
 		this.ranks = options.ranks || [];
 		this.roles = options.roles || [];
@@ -143,7 +147,7 @@ class Server implements DiscordBot.Server {
 		var phrase = {
 			_id: null,
 			sid: this.serverId,
-			pid: uniqueID(2),
+			pid: uniqueID(4),
 			phrases: phraseText,
 			responses: []
 		};
@@ -230,12 +234,12 @@ class Server implements DiscordBot.Server {
 	public setPhraseResponse(id: number | string, response: DiscordBot.PhraseResponses[]): boolean {
 		if (this.phrases.length < id) return false;
 
-		response.slice(0, server.maxPhraseResponses);
+		response.splice(0, server.maxPhraseResponses);
 
 		if (typeof id == 'string') {
 			for(var i = 0; i < this.phrases.length; i++) {
 				var phrase = this.phrases[i];
-				if (phrase.pid == id) {
+				if (phrase.pid == id || phrase._id == id) {
 					Phrases.updateOne({ _id: phrase._id }, { $set: { responses: response } }).exec();
 					phrase.responses = response;
 					return true;
@@ -250,11 +254,24 @@ class Server implements DiscordBot.Server {
 		return true;
 	}
 
-	public setPhraseIgnoreCase(id: number, ignoreCase: boolean): boolean {
-		if (this.phrases.length < id) return false;
-		var phrase = this.phrases[id - 1];
-		Phrases.updateOne({ _id: phrase._id }, { $set: { ignoreCase: ignoreCase } }).exec();
-		phrase.ignoreCase = ignoreCase;
+	public setPhraseIgnoreCase(id: number | string, ignoreCase: boolean): boolean {
+		if (typeof id == 'string') {
+			for(var i = 0; i < this.phrases.length; i++) {
+				var phrase = this.phrases[i];
+
+				if (phrase.pid == id || phrase._id == id) {
+					Phrases.updateOne({ _id: phrase._id }, { $set: { ignoreCase: ignoreCase } }).exec();
+					phrase.ignoreCase = ignoreCase;
+				}
+			}
+		} else {
+			if (this.phrases.length < id) return false;
+
+			var phrase = this.phrases[id - 1];
+			Phrases.updateOne({ _id: phrase._id }, { $set: { ignoreCase: ignoreCase } }).exec();
+			phrase.ignoreCase = ignoreCase;
+		}
+
 		return true;
 	}
 
@@ -344,16 +361,25 @@ class Server implements DiscordBot.Server {
 
 
 	// Commands
-	public createCommand(member: Discord.GuildMember, commandName: string, resp: DiscordBot.PhraseResponses, cb: (resp: boolean) => any) {
-		commandName = commandName.toLowerCase();
+	public createCommand(
+		member: Discord.GuildMember,
+		commandNames: string | string[],
+		resp: DiscordBot.PhraseResponses | DiscordBot.CommandParam[],
+		cb: (resp: boolean) => any)
+	{
+		if (!Array.isArray(commandNames)) commandNames = [commandNames.toLowerCase()];
+		else commandNames = commandNames.map(c => c.toLowerCase());
 
-		if (this.commandIndex(commandName) != -1) return cb(false);
+		for(var i = 0; i < commandNames.length; i++) {
+			var name = commandNames[i];
+			if (this.commandIndex(name) != -1 || this.aliasIndex(name) != -1 || Commands.is(name)) return cb(false);
+		}
 
 		var comm: DiscordBot.Command = {
 			_id: null,
-			pid: uniqueID(2),
-			alias: [ commandName ],
-			params: [
+			pid: uniqueID(4),
+			alias: commandNames,
+			params: Array.isArray(resp) ? resp : [
 				{
 					response: resp,
 					length: 0
@@ -362,7 +388,7 @@ class Server implements DiscordBot.Server {
 		};
 
 		getOrCreateUser(member, (err, doc) => {
-			new Commands({
+			new Command({
 				user_id: doc.id,
 				uid: comm.pid,
 				alias: comm.alias,
@@ -387,8 +413,8 @@ class Server implements DiscordBot.Server {
 		var index = this.commandIndex(commandName);
 		if (index != -1) {
 			var comm = this.commands.splice(index, 1)[0];
-			Commands.remove({ _id: Types.ObjectId(comm._id) }).exec();
-		};
+			Command.remove({ _id: Types.ObjectId(comm._id) }).exec();
+		}
 
 		return index != -1;
 	}
@@ -402,6 +428,47 @@ class Server implements DiscordBot.Server {
 		return -1;
 	}
 
+
+	// Alias
+
+	public createAlias(alias: string | string[], command: string) {
+		if (!Array.isArray(alias)) alias = [alias.toLowerCase()];
+		else alias = alias.map(c => c.toLowerCase());
+
+		for(var i = 0; i < alias.length; i++) {
+			var name = alias[i];
+			if (this.commandIndex(name) != -1 || this.aliasIndex(name) != -1 || Commands.is(name)) return false;
+		}
+
+		this.alias.push({
+			pid: uniqueID(4),
+			alias: alias,
+			command: command
+		});
+
+		return true;
+	}
+
+	public removeAlias(alias: string) {
+		alias = alias.toLowerCase();
+
+		var index = this.aliasIndex(alias);
+		if (index != -1) {
+			this.alias.splice(index, 1)[0];
+		}
+
+		return index != -1;
+	}
+
+	public aliasIndex(aliasName: string): number {
+		for (var i = 0; i < this.alias.length; i++) {
+			if (this.alias[i].alias.indexOf(aliasName) != -1) {
+				return i;
+			}
+		}
+
+		return -1;
+	}
 
 	// Ranks
 	public addRank(name: string): boolean {
@@ -452,20 +519,24 @@ class Server implements DiscordBot.Server {
 	}
 
 
-	// Interval
+	// 
+	public createInterval(opts: DiscordBot.Interval): number {
+		this.intervals.push(opts);
+		var modelId = intervalPlugin.addInterval(opts);
+		opts._id = modelId;
+
+		return this.intervals.length;
+	}
+
 	public addInterval(seconds: number, guildId: string, channelId: string): number {
-		var params: DiscordBot.Interval = {
-			pid: uniqueID(2),
+		this.createInterval({
+			pid: uniqueID(4),
 			server_id: guildId,
 			channel_id: channelId,
 			every: seconds,
 			active: false,
 			message: 'No message set!'
-		};
-
-		this.intervals.push(params);
-		var modelId = intervalPlugin.addInterval(params);
-		params._id = modelId;
+		});
 
 		return this.intervals.length;
 	}
@@ -761,8 +832,10 @@ class Server implements DiscordBot.Server {
 
 	public rolesHaveAnyChildPerm(roleIds: string[], perms: string[]) {
 		for(var i = 0; i < perms.length; i++) {
-			if (this.anyRoleHasBasePerm(roleIds, perms[i])) return 
+			if (this.anyRoleHasBasePerm(roleIds, perms[i])) return true;
 		}
+
+		return false;
 	}
 
 	public anyRoleHasExactPerm(ids: string[], perm: string) {
@@ -822,6 +895,14 @@ class Server implements DiscordBot.Server {
 		return false;
 	}
 
+	public userHasAnyChildPerm(user_id: string, perms: string[]): boolean {
+		for(var i = 0; i < perms.length; i++) {
+			if (this.userHasParentPerm(user_id, perms[i])) return true;
+		}
+
+		return false;
+	}
+
 	public hasPerms(userId: string, roleIds: string[], permItem: string): boolean {
 		var userPerm = this.permissions.users[userId];
 
@@ -873,6 +954,7 @@ class Server implements DiscordBot.Server {
 			ownerID: this.ownerID,
 			commandPrefix: this.commandPrefix,
 
+			aliasList: this.alias,
 			ranks: this.ranks,
 			moderation: this.moderation,
 			plugins: this.plugins,
@@ -896,6 +978,7 @@ class Server implements DiscordBot.Server {
 			ownerID: this.ownerID,
 			commandPrefix: this.commandPrefix,
 
+			alias: this.alias,
 			ranks: this.ranks,
 			moderation: this.moderation,
 			plugins: this.plugins,

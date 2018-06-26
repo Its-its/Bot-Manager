@@ -181,6 +181,7 @@ declare namespace DiscordBot {
 
 		commandPrefix?: string;
 
+		alias?: Alias[];
 		intervals?: Interval[];
 		ranks?: string[];
 		commands?: Command[];
@@ -219,8 +220,8 @@ declare namespace DiscordBot {
 	interface Alias {
 		pid: string;
 		
-		command: string[];
-		do: string;
+		alias: string[];
+		command: string;
 	}
 
 	interface Phrase {

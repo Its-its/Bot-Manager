@@ -1,6 +1,7 @@
 /.vscode
 /.history
 /yarn.lock
+/yarn-error.log
 
 /src/**
 /node_modules

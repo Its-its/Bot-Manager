@@ -202,10 +202,10 @@ class Music implements DiscordBot.plugins.Music {
 			queue.save(err => {
 				if (err != null) { console.error(err); cb(null); return; }
 
-				musicPlugin.getSong(item.id, (err, song) => {
+				musicPlugin.getSong(item.id, (err, songs) => {
 					if (err != null) { console.error(err); cb(null); return; }
-					song.addedBy = item.addedBy;
-					cb(song);
+					songs[0].addedBy = item.addedBy;
+					cb(songs[0]);
 				});
 			});
 		});

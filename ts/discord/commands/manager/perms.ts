@@ -27,7 +27,8 @@ const PERMISSIONS = {
 	GROUP_LIST: 'group.list',
 	GROUP_CREATE: 'group.create',
 	GROUP_ADD: 'group.add',
-	GROUP_REMOVE: 'group.remove'
+	GROUP_REMOVE: 'group.remove',
+	CHANNELS: 'channels'
 };
 
 for(var name in PERMISSIONS) {
@@ -65,7 +66,9 @@ class Perms extends Command {
 						'group <name>',
 						'group create <Display Name> - A-Z 0-9 spaces',
 						'group <name> add <command/perm>',
-						'group <name> remove <command/perm>'
+						'group <name> remove <command/perm>',
+
+						'channels <@user/@role>'
 					]
 					// .map(b => server.getPrefix() + 'perms ' + b)
 					.join('\n')
@@ -94,6 +97,10 @@ class Perms extends Command {
 				// 	]
 				// ]));
 				break;
+			case 'channels':
+				// if (!this.hasPerms(message.member, server, PERMISSIONS.CHANNELS)) return Command.noPermsMessage('Perms');
+				// TODO: Image table showing read/write/view/etc. of channels
+				return Command.error([['Permissions', 'Not implemented yet.']]);
 			case 'user':
 				if (!this.hasPerms(message.member, server, PERMISSIONS.USER)) return Command.noPermsMessage('Perms');
 
@@ -104,6 +111,8 @@ class Perms extends Command {
 				if (doit != null && perm == null) {
 					return Command.error([['Permissions', 'Invalid Params']]);
 				}
+
+				perm = perm.toLowerCase();
 
 				if (doit == null) {
 					if (!this.hasPerms(message.member, server, PERMISSIONS.USER_LIST)) return Command.noPermsMessage('Perms');
@@ -136,6 +145,8 @@ class Perms extends Command {
 				} else if (doit == 'add') {
 					if (!this.hasPerms(message.member, server, PERMISSIONS.USER_ADD)) return Command.noPermsMessage('Perms');
 
+					if (Commands.validPerms.indexOf(perm) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
+
 					var added = server.addPermTo('users', user, perm);
 
 					if (added) {
@@ -145,6 +156,8 @@ class Perms extends Command {
 					}
 				} else if (doit == 'remove') {
 					if (!this.hasPerms(message.member, server, PERMISSIONS.USER_REMOVE)) return Command.noPermsMessage('Perms');
+
+					if (Commands.validPerms.indexOf(perm) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
 
 					var added = server.removePermFrom('users', user, perm);
 
@@ -216,6 +229,8 @@ class Perms extends Command {
 				} else if (doit == 'add') {
 					if (!this.hasPerms(message.member, server, PERMISSIONS.ROLE_ADD)) return Command.noPermsMessage('Perms');
 
+					if (Commands.validPerms.indexOf(perm) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
+
 					var added = server.addPermTo('roles', roleId, perm);
 
 					// TODO: Ensure perm exists.
@@ -227,6 +242,8 @@ class Perms extends Command {
 					}
 				} else if (doit == 'remove') {
 					if (!this.hasPerms(message.member, server, PERMISSIONS.ROLE_REMOVE)) return Command.noPermsMessage('Perms');
+
+					if (Commands.validPerms.indexOf(perm) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
 
 					var added = server.removePermFrom('roles', roleId, perm);
 

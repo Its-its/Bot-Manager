@@ -133,17 +133,24 @@ function isProperSongUrl(url: string) {
 
 
 
-const getSong: newGetSong = <any>function(uri: string | string[], cb: (errorMessage?: string, song?: SongGlobal | SongGlobal[]) => any) {
+function getSong(uri: string | string[], cb: (errorMessage?: string, song?: SongGlobal[]) => any) {
 	request.get(`http://${config.ytdl.full}/info?force=true&id=` + (typeof uri == 'string' ? uri : uri.join(',')), (err, res) => {
 		if (err != null) return cb(err);
-		var song = JSON.parse(res.body);
-		if (song.error) return cb(song.error);
 
-		song.type = 'youtube';
-		delete song['description'];
-		delete song['download_count'];
-		delete song['stream_count'];
-		cb(null, song);
+		var data = JSON.parse(res.body);
+
+		if (data.error) return cb(data.error);
+
+		var songs = data.songs.map(s => {
+			s.type = 'youtube';
+			delete s['description'];
+			delete s['download_count'];
+			delete s['stream_count'];
+
+			return s;
+		});
+
+		cb(null, songs);
 	});
 }
 
@@ -158,12 +165,6 @@ function searchForSong(search: string, cb: (errorMsg?: any, song?: SongGlobal) =
 		delete song['stream_count'];
 		cb(null, song);
 	});
-}
-
-
-interface newGetSong {
-	(uri: string, cb: (errorMessage?: string, song?: SongGlobal) => any);
-	(uri: string[], cb: (errorMessage?: string, song?: SongGlobal[]) => any);
 }
 
 

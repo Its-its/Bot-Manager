@@ -1,11 +1,11 @@
-let startDate = Date.now();
+const startDate = Date.now();
 
 
-let DefaultColor = 0xb0a79e;
-let SuccessColor = 0x43f104;
-let InfoColor = 0x46a0c0;
-let WarningColor = 0xc4d950;
-let ErrorColor = 0xd91582;
+const DefaultColor = 0xb0a79e;
+const SuccessColor = 0x43f104;
+const InfoColor = 0x46a0c0;
+const WarningColor = 0xc4d950;
+const ErrorColor = 0xd91582;
 
 
 function defCall(color: number, array: string[][]) {
@@ -75,23 +75,29 @@ function tableMsg(header: string[], body: any[][], opts?: { delimiter?: string; 
 
 
 function strpToId(str: string): string {
+	if (str == null) return null;
+
 	if (!str.startsWith('<@') && !str.startsWith('<#')) return str;
 
 	if (str.length < 3) return null;
 
 	var sub = str.substr(2, str.length - 3);
-	if (sub[0] == '@' || sub[0] == '#') return sub.substr(1);
+
+	// Roles are <@&1234>
+	if (sub[0] == '&') return sub.substr(1);
 	
 	return sub;
 }
 
 
-function getIdType(str: string): 'role' | 'user' | 'channel' {
-	if (str == null || str.length < 4 || !str.startsWith('<') || !str.endsWith('>')) return null;
-	if (str[2] == '&') return 'role';
-	if (str[1] == '@') return 'user';
-	if (str[1] == '#') return 'channel';
-	return null;
+function getIdType(str: string): 'role' | 'member' | 'channel' {
+	if (str == null || str.length < 3) return null;
+
+		if (str.startsWith('<@&') || str == '@everyone') return 'role';
+		if (str.startsWith('<@')) return 'member';
+		if (str.startsWith('<#')) return 'channel';
+
+		return null;
 }
 
 

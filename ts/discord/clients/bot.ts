@@ -15,6 +15,8 @@ import Bots = require('../../site/models/bots');
 import commandPlugin = require('../plugins/commands');
 import logsPlugin = require('../plugins/logs');
 
+
+
 import config = require('../../site/util/config');
 
 import guildClient = require('../guildClient');
@@ -45,6 +47,7 @@ let events: NewNode = new Events();
 // http.createServer(app)
 // .listen(app.get('port'), () => logger.info('Started Discord Server Listener.'));
 
+var finishedMigrationCheck = false;
 
 client.on('ready', () => {
 	logger.info(' - Client ID:' + client.user.id);
@@ -58,7 +61,10 @@ client.on('ready', () => {
 
 	check();
 	function check() {
-		if (pos == ids.length) return logger.info('Finished Migration Check.');
+		if (pos == ids.length) {
+			finishedMigrationCheck = true;
+			return logger.info('Finished Migration Check.');
+		}
 		var id = ids[pos++];
 
 		guildClient.get(id, server => {
@@ -75,28 +81,24 @@ client.on('ready', () => {
 });
 
 
-// TODO: Express-ify events?
 // client.on('roleCreate', (role) => {
-// 	roles.roleCreate(role, client);
 // });
 
 // client.on('roleDelete', (role) => {
-// 	roles.roleDelete(role, client);
 // });
 
 // client.on('roleUpdate', (oldRole, newRole) => {
-// 	roles.roleUpdate(oldRole, newRole, client);
 // });
 
 
 
 client.on('message', msg => {
-	if (msg.member == null) logger.error(msg);
+	if (msg.member == null) logger.error('Member null:', msg);
+
+	if (!finishedMigrationCheck) return;
 
 	try {
-		var serverId = msg.member.guild.id;
-
-		guildClient.get(serverId, server => {
+		guildClient.get(msg.member.guild.id, server => {
 			if (server == null) return;
 
 			if (server.channelIgnored(msg.channel.id)) return;
@@ -156,7 +158,7 @@ client.on('guildUpdate', (oldGuild, newGuild) => {
 client.on('guildDelete', (guild) => {
 	logger.info('Left Server: ' + guild.name);
 	DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: true } }).exec();
-	// TODO: Remove from redis & save.
+	guildClient.remove(guild.id, () => {});
 });
 
 // Server joined
@@ -164,7 +166,8 @@ client.on('guildCreate', guild => {
 	logger.info('Joined Server: ' + guild.name);
 
 	Validation.findOneAndRemove({ listener_id: guild.id }, (err, validation: any) => {
-		if (err) return logger.error(err);
+		if (err != null) return logger.error(err);
+
 		if (validation == null) {
 			guild.leave()
 			.then(v => {}, e => logger.error(e))
@@ -172,57 +175,58 @@ client.on('guildCreate', guild => {
 			return;
 		}
 
-		guildClient.exists(guild.id, exist => {
-			if (!exist) {
-				DiscordServers.findOne({ server_id: guild.id }, (err, server) => {
-					if (err != null) logger.error('DiscordServers:', err);
+		guildClient.exists(guild.id, exists => {
+			if (exists) return;
 
-					var newServer = (server == null);
+			DiscordServers.findOne({ server_id: guild.id }, (err, server) => {
+				if (err != null) logger.error('DiscordServers:', err);
 
-					if (!newServer) {
-						DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: false } }).exec();
-						guildClient.updateServer(guild.id, () => {
-							logger.log('Grabbed From DB!');
+				var newServer = (server == null);
+
+				// Server exists? Update DB, update and add to redis.
+				if (!newServer) {
+					DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: false } }).exec();
+					guildClient.updateServer(guild.id, () => {
+						logger.log('Grabbed From DB!');
+					});
+				}
+
+				Bots.findOne({ uid: validation.bot_id }, (err, item) => {
+					if (err != null) logger.error('Bots:', err);
+
+					if (newServer) {
+						server = new DiscordServers({
+							user_id: validation.user_id,
+							bot_id: item.id,
+							server_id: validation.listener_id,
+							key: uniqueID(16)
 						});
 					}
 
-					Bots.findOne({ uid: validation.bot_id }, (err, item) => {
-						if (err != null) logger.error('Bots:', err);
+					item.is_active = true;
 
-						if (server == null) {
-							server = new DiscordServers({
-								user_id: validation.user_id,
-								bot_id: item.id,
-								server_id: validation.listener_id,
-								key: uniqueID(16)
+					item.botType = (<any>Bots).appName('discord');
+					item.botId = server.id;
+
+					item.save((err) => {
+						if (err != null) logger.error('Bots.save:', err);
+
+						if (newServer) {
+							server.save(err => {
+								if (err != null) logger.error('DiscordServers.save:', err);
+								new Server(guild.id, {
+									region: guild.region,
+									name: guild.name,
+									iconURL: guild.iconURL,
+									createdAt: guild.createdTimestamp,
+									memberCount: guild.memberCount,
+									ownerID: guild.ownerID
+								}).save();
 							});
 						}
-
-						item.is_active = true;
-
-						item.botType = (<any>Bots).appName('discord');
-						item.botId = server.id;
-
-						item.save((err) => {
-							if (err != null) logger.error('Bots.save:', err);
-
-							if (newServer) {
-								server.save(err => {
-									if (err != null) logger.error('DiscordServers.save:', err);
-									new Server(guild.id, {
-										region: guild.region,
-										name: guild.name,
-										iconURL: guild.iconURL,
-										createdAt: guild.createdTimestamp,
-										memberCount: guild.memberCount,
-										ownerID: guild.ownerID
-									}).save();
-								});
-							}
-						});
 					});
 				});
-			}
+			});
 		});
 	});
 });

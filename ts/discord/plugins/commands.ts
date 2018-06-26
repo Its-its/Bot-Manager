@@ -15,6 +15,8 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 
 	if (!server.memberIgnored(message.member.id)) {
 		if (CommandManager.isCallingCommand(server.getPrefix(), bot_id, message.content)) {
+			// TODO: limit how fast you can send commands.
+
 			if (message.content.trim() == `<@${bot_id}>`) {
 				message.channel.send(new Discord.RichEmbed({
 					description: 'You can use @bot_name instead of the command prefix if desired.',
@@ -38,6 +40,21 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 			if (commandMessage.length == 0) return true;
 
 			var commName = commandMessage.split(' ', 2)[0].toLowerCase();
+
+			// Check for alias's.
+			if (server.alias.length != 0) {
+				for(var i = 0; i < server.alias.length; i++) {
+					var alias = server.alias[i];
+	
+					if (alias.alias.indexOf(commName) != -1) {
+						console.log(commandMessage.substring(commName.length) + ' == ' + alias.command + commandMessage.substring(commName.length));
+						commandMessage = alias.command + commandMessage.substring(commName.length);
+						// commName = alias.command;
+						break;
+					}
+				}
+			}
+
 
 			// Not enabled? Not "plugin" or "perms"? Doesn't have bypasstoggle perm? return
 			if (!isEnabled(server) && commName != 'plugin' && commName != 'perms' && !server.memberHasExactPerm(message.member, 'commands.bypasstoggle')) return true;
@@ -109,6 +126,8 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 	// Message check otherwise?
 	return false;
 }
+
+// TODO: Role updates
 
 export {
 	isEnabled,

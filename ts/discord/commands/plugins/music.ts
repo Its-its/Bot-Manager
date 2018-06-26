@@ -23,11 +23,53 @@ import request = require('request');
 
 function sendReq(url: string, opts, cb) {
 	return request.post('http://' + config.music.address + ':' + config.music.port + '/' + url, (err, res, body) => {
-		cb(null, body == null ? { error: 'Music portion errored!' } : JSON.parse(body));
+		cb(null, (body == null ? { error: 'Music bot errored!' } : JSON.parse(body)));
 	})
 	.form(opts)
 	.on('error', error => cb(error));
 }
+
+const commandUsage = Command.info([
+	[
+		'Command Usage', 
+		Command.table(['Command', 'Desc'], [
+			['join [@channel/Channel ID]', 'Joins said channel'],
+			['info', 'Shows the current song info'],
+			['play [URL/Name]', 'Instantly plays a song'],
+			['stop', 'Stops playing music'],
+			['skip/next', 'Skips the current song'],
+			['history [page]', 'Shows song history'],
+			['history clear', 'Clears song history']
+		])
+	],
+	[
+		'Queue', 
+		Command.table(['Command', 'Desc'], [
+			['queue [page/URL/Name]', 'View queue/Queue song'],
+			['queue repeat', 'Repeat Queue'],
+			['queue shuffle', 'Shuffle Queue'],
+			['queue clear', 'Clear Queue'],
+			['queue playlist <pid>', 'Queue Playlist'],
+			['queue remove <ID/URL>', 'Remove item from queue']
+		])
+	],
+	[
+		'Playlist', 
+		Command.table(['Command', 'Desc'], [
+			['playlist create', 'Create new playlist'],
+			['playlist <pid/default> info', 'View playlist info'],
+			['playlist <pid/default> list [page]', 'View playlist songs'],
+			['playlist <pid> delete', 'Delete playlist'],
+			['playlist <pid/default> add <id>', 'Add item to playlist'],
+			['playlist <pid/default> remove <id>', 'Remove item from playlist'],
+			['playlist <pid/default> clear', 'Clear Playlist'],
+			['playlist <pid/default> title <title>', 'Change title'],
+			['playlist <pid/default> description <desc>', 'Change description'],
+			['playlist <pid/default> thumbnail <url>', 'Change thumbnail']
+		])
+	],
+	// [ 'Listen Online', 'https://bots.its.rip/music/' ]
+]);
 
 
 const PERMS = {
@@ -67,7 +109,6 @@ for(var name in PERMS) {
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
-// if (!this.hasPerms(message.member, server, PERMS.MAIN)) return Command.noPermsMessage('Music');
 
 class Music extends Command {
 	constructor() {
@@ -81,44 +122,7 @@ class Music extends Command {
 		if (!server.isPluginEnabled('music'))
 			return Command.error([['Music', 'Music isn\'t enabled! Please enable the plugin!\n' + server.getPrefix() + 'plugin enable music' ]]);
 
-		if (params.length == 0) {
-			return Command.info([
-				[
-					'Command Usage', 
-					Command.table(['Command', 'Desc'], [
-						['join [@channel/Channel ID]', 'Joins said channel'],
-						['info', 'Shows the current song info'],
-						['play [URL/Name]', 'Instantly plays a song'],
-						['stop', 'Stops playing music'],
-						['skip/next', 'Skips the current song'],
-						['history [page]', 'Shows song history'],
-						['history clear', 'Clears song history'],
-						['queue [page/URL/Name]', 'View queue/Queue song'],
-						['queue repeat', 'Repeat Queue'],
-						['queue shuffle', 'Shuffle Queue'],
-						['queue clear', 'Clear Queue'],
-						['queue playlist <pid>', 'Queue Playlist'],
-						['queue remove <ID/URL>', 'Remove item from queue']
-					])
-				],
-				[
-					'Command Usage', 
-					Command.table(['Command', 'Desc'], [
-						['playlist create', 'Create new playlist'],
-						['playlist <pid/default> info', 'View playlist info'],
-						['playlist <pid/default> list [page]', 'View playlist songs'],
-						['playlist <pid> delete', 'Delete playlist'],
-						['playlist <pid/default> add <id>', 'Add item to playlist'],
-						['playlist <pid/default> remove <id>', 'Remove item from playlist'],
-						['playlist <pid/default> clear', 'Clear Playlist'],
-						['playlist <pid/default> title <title>', 'Change title'],
-						['playlist <pid/default> description <desc>', 'Change description'],
-						['playlist <pid/default> thumbnail <url>', 'Change thumbnail']
-					])
-				],
-				// [ 'Listen Online', 'https://bots.its.rip/music/' ]
-			]);
-		}
+		if (params.length == 0) return commandUsage;
 
 		// TODO: Fix this crap... whatever it was used for.
 		// music.lastTextChannelId = message.channel.id;
@@ -151,8 +155,8 @@ class Music extends Command {
 						'Options',
 						[
 							// 'Playing From: ' + music.playingFrom,
-							'Repeat Queue: ' + music.repeatQueue,
-							'Repeat song: ' + music.repeatSong
+							'Repeat Queue: ' + (music.repeatQueue ? 'Yes' : 'No'),
+							'Repeat song: ' + (music.repeatSong ? 'Yes' : 'No')
 						].join('\n')
 					]);
 
