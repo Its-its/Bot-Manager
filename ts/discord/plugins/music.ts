@@ -47,7 +47,7 @@ function addToPlaylist(guildId: string, discordMemberId: string, playlistPublicI
 				addTo(song);
 			});
 		} else {
-			searchForSong(songId, (errMsg, song) => {
+			findFirstSong(songId, (errMsg, song) => {
 				if (errMsg != null) return cb(errMsg);
 				addTo(song);
 			});
@@ -154,15 +154,58 @@ function getSong(uri: string | string[], cb: (errorMessage?: string, song?: Song
 	});
 }
 
-function searchForSong(search: string, cb: (errorMsg?: any, song?: SongGlobal) => any) {
+interface SongSearch {
+	nextPageToken?: string;
+	previousPageToken?: string;
+
+	totalResults: number;
+	resultsPerPage: number;
+
+	items: {
+		type: string;
+		id: string;
+		published: number;
+		title: string;
+		channel: {
+			id: string;
+			title: string;
+		};
+		thumbnail: {
+			url: string;
+			width: number;
+			height: number;
+		};
+	}[];
+}
+
+function searchForSong(search: string, page: string, cb: (errorMsg?: any, data?: SongSearch) => any) {
+	request.get(`http://${config.ytdl.full}/search?query=${search}${page == null ? '' : '&pageToken=' + page}`, (err, res) => {
+		if (err != null) return cb(err);
+
+		var data = JSON.parse(res.body);
+
+		if (data.error) return cb(data.error);
+
+		cb(null, data);
+	});
+}
+
+function findFirstSong(search: string, cb: (errorMsg?: any, song?: SongGlobal) => any) {
 	request.get(`http://${config.ytdl.full}/info?search=${search}`, (err, res) => {
 		if (err != null) return cb(err);
 		var song = JSON.parse(res.body);
+
 		if (song.error) return cb(song.error);
+
+		song = song.songs[0];
+
+		if (song == null) return cb('No song found.');
+
 		song.type = 'youtube';
 		delete song['description'];
 		delete song['download_count'];
 		delete song['stream_count'];
+
 		cb(null, song);
 	});
 }
@@ -179,5 +222,6 @@ export {
 
 	isProperSongUrl,
 	getSong,
-	searchForSong
+	searchForSong,
+	findFirstSong
 };

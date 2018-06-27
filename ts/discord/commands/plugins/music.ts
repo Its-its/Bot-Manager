@@ -13,12 +13,15 @@ import Playlists = require('../../../music/models/playlists');
 import musicPlugin = require('../../plugins/music');
 import musicPermissions = require('../../../music/permissions');
 
-
 import request = require('request');
+
+import chatUtils = require('../../utils/chat');
+
+import utils = require('../../utils');
 
 
 // TODO: Check if in voice channel after restart.
-// TODO: Repeat/previous
+// TODO: pause/previous
 // TODO: Transfer most of these things to plugins/music for web view functionality.
 
 function sendReq(url: string, opts, cb) {
@@ -38,6 +41,7 @@ const commandUsage = Command.info([
 			['play [URL/Name]', 'Instantly plays a song'],
 			['stop', 'Stops playing music'],
 			['skip/next', 'Skips the current song'],
+			['search <query>', 'Search for a video and play/queue it'],
 			['history [page]', 'Shows song history'],
 			['history clear', 'Clears song history']
 		])
@@ -45,7 +49,8 @@ const commandUsage = Command.info([
 	[
 		'Queue', 
 		Command.table(['Command', 'Desc'], [
-			['queue [page/URL/Name]', 'View queue/Queue song'],
+			['queue list [page]', 'View queue'],
+			['queue add <URL/Name>', 'Queue song'],
 			['queue repeat', 'Repeat Queue'],
 			['queue shuffle', 'Shuffle Queue'],
 			['queue clear', 'Clear Queue'],
@@ -81,11 +86,12 @@ const PERMS = {
 	PLAY: 'play',
 	STOP: 'stop',
 	SKIP: 'skip',
+	SEARCH: 'search',
 	HISTORY: 'history',
 	HISTORY_LIST: 'history.list',
 	HISTORY_CLEAR: 'history.clear',
 	QUEUE: 'queue',
-	QUEUE_ITEM: 'queue.item',
+	QUEUE_ADD: 'queue.add',
 	QUEUE_PLAYLIST: 'queue.playlist',
 	QUEUE_LIST: 'queue.list',
 	QUEUE_REPEAT: 'queue.repeat',
@@ -146,7 +152,7 @@ class Music extends Command {
 							[
 								'The Current song is:',
 								'Title: ' + music.playing.title,
-								'Link: ' + idToUrl(music.playing.type, music.playing.id)
+								'Link: ' + utils.videoIdToUrl(music.playing.type, music.playing.id)
 							].join('\n')
 						]);
 					} else items.push([ 'Song', 'Not currently playing any music.' ]);
@@ -178,8 +184,6 @@ class Music extends Command {
 					guild_id: message.guild.id,
 					channel_id: voiceChannel
 				}, (err, res) => {
-					console.log(res);
-
 					if (err) { console.error(err); send(Command.error([['Music', 'An error occured.']])); return; }
 					if (res.error) { console.error(err); send(Command.error([['Music', res.error]])); return; }
 					if (res.msg) send(Command.success([['Music', res.msg]]));
@@ -198,20 +202,87 @@ class Music extends Command {
 				});
 				break;
 
+			case 'search':
+				if (!this.hasPerms(message.member, server, PERMS.SEARCH)) return Command.noPermsMessage('Music');
+				var search = params.join(' ').trim();
+
+				message.channel.send(Command.info([['Music', 'Searching for videos please wait...']]))
+				.then((m: any) => {
+					const selector = chatUtils.createPageSelector(message.member.id, message.channel);
+					selector.setEditing(m);
+
+					nextPage(selector, search, null, () => selector.display());
+
+
+					var self = this;
+
+					function nextPage(pager: chatUtils.MessagePage, query, page, cb) {
+						sendReq('search', { query: query, page: page }, (err, res: { error: any, data: SongSearch; }) => {
+							if (err) { console.error(err); pager.temporaryMessage(Command.error([['Music', 'An error occured.']]), 3000); return; }
+							if (res.error) { console.error(err); pager.temporaryMessage(Command.error([['Music', res.error]]), 3000); return; }
+
+							var data = res.data;
+
+							data.items.forEach((song, p) => {
+								pager.addSelection(String(p + 1), song.title, (newPage, display) => {
+									newPage.setFormat([
+										'ID: ' + song.id,
+										'Title: ' + song.title,
+										'Uploaded: ' + new Date(song.published).toDateString(),
+										'What would you like to do?\n',
+										'{page_items}'
+									]);
+
+									newPage.addSpacer();
+
+									if (self.hasPerms(message.member, server, PERMS.PLAY)) {
+										newPage.addSelection('Play', 'Play it now.', () => {
+											newPage.edit(Command.info([['Music', 'Playing song please wait.']]), () => {
+												sendPlay(message.guild.id, message.member.id, song.id, msg => {
+													if (msg != null) return newPage.temporaryMessage(msg, 3000);
+													newPage.close('delete');
+												});
+											});
+										});
+									}
+
+									if (self.hasPerms(message.member, server, PERMS.QUEUE_ADD)) {
+										newPage.addSelection('Queue', 'Queue it for later.', () => {
+											newPage.edit(Command.info([['Music', 'Queueing song...']]), () => {
+												sendQueue('add', message.guild.id, message.member.id, message.channel.id, [song.id], msg => {
+													console.log(msg);
+													if (msg != null) return newPage.temporaryMessage(msg, 3000);
+													newPage.close('delete');
+												});
+											});
+										});
+									}
+
+									display();
+								});
+							});
+
+							pager.addSpacer();
+
+							if (data.nextPageToken) {
+								pager.addSelection('Next', 'Next Page', (newPage, display) => {
+									nextPage(newPage, query, data.nextPageToken, () => display());
+								});
+							}
+
+							cb();
+						});
+					}
+				})
+				.catch(e => console.error(e));
+				break;
+
 			case 'play':
 				if (!this.hasPerms(message.member, server, PERMS.PLAY)) return Command.noPermsMessage('Music');
 
 				var joined = params.join(' ').trim();
 
-				sendReq('play', {
-					guild_id: message.guild.id,
-					member_id: message.member.id,
-					search: joined.length == 0 ? null : joined
-				}, (err, res) => {
-					if (err) { console.error(err); send(Command.error([['Music', 'An error occured.']])); return; }
-					if (res.error) { console.error(err); send(Command.error([['Music', res.error]])); return; }
-					// send(Command.success([['Music', 'Playing song.']]));
-				});
+				sendPlay(message.guild.id, message.member.id, joined.length == 0 ? null : joined, (value) => Command.error(value));
 				break;
 
 			case 'stop':
@@ -283,13 +354,25 @@ class Music extends Command {
 							]
 						];
 
-						musicPlugin.getSong(item.songs.map(s => s.song_id), (err, songs) => {
+						var songIds = item.songs.map(s => s.song_id);
+
+						musicPlugin.getSong(songIds.filter((item, pos) => songIds.indexOf(item) == pos), (err, songs) => {
 							if (err != null) return send(Command.error([['Music', err]]));
 
-							fields = fields.concat(songs.map((q, i) => [
-								'ID: ' + i,
-								q.title + '\nhttps://youtu.be/' + q.id + '\nListened to: ' + timeSince(item.songs[i].played_at) + ' ago'
-							]));
+							fields = fields.concat(songIds.map((id, pos) => {
+								for(var i = 0; i < songs.length; i++) {
+									var song = songs[i];
+
+									if (song.id == id) {
+										return [
+											'ID: ' + pos,
+											song.title + '\nhttps://youtu.be/' + song.id + '\nListened to: ' + utils.timeSince(item.songs[pos].played_at) + ' ago'
+										];
+									}
+								}
+
+								return [ 'ID: ' + i, 'Unknown.' ];
+							}));
 	
 							send(Command.info(fields));
 						});
@@ -300,21 +383,12 @@ class Music extends Command {
 			case 'queue':
 				var paramToDo = (params.shift() || 'list').toLowerCase();
 
-				if (['list', 'item', 'playlist', 'repeat', 'shuffle', 'clear', 'remove'].indexOf(paramToDo)) return Command.error([['Music', 'Not a valid option: ' + paramToDo]]);
+				if (['list', 'add', 'playlist', 'repeat', 'shuffle', 'clear', 'remove'].indexOf(paramToDo) == -1) return Command.error([['Music', 'Not a valid option: ' + paramToDo]]);
 
 				if (!this.hasPerms(message.member, server, PERMS['QUEUE_' + paramToDo.toUpperCase()])) return Command.noPermsMessage('Music');
 
-
-				sendReq('queue/' + paramToDo, {
-					guild_id: message.guild.id,
-					member_id: message.member.id,
-					channel_id: voiceChannel,
-					params: params
-				}, (err, res) => {
-					if (err) { console.error(err); send(Command.error([['Music', 'An error occured.']])); return; }
-					if (res.error) { console.error(err); send(Command.error([['Music', res.error]])); return; }
-					if (res.msg) send(Command.success([['Music', res.msg]]));
-					if (res.embed) send(Command.success(res.embed));
+				sendQueue(paramToDo, message.guild.id, message.member.id, voiceChannel, params, (msg) => {
+					send(msg);
 				});
 				break;
 
@@ -429,7 +503,7 @@ class Music extends Command {
 										.map((q: any, i) => [
 											'ID: ' + (((page - 1) * 5) + i + 1),
 											[	q.title,
-												idToUrl(q.type || 'youtube', q.id)
+												utils.videoIdToUrl(q.type || 'youtube', q.id)
 											].join('\n')
 										]));
 
@@ -497,27 +571,37 @@ class Music extends Command {
 	}
 }
 
-function timeSince(time: number) {
-	var seconds = Math.floor((new Date().getTime() - time) / 1000);
+// Sends
 
-	var interval = Math.floor(seconds / 31536000);
+function sendQueue(doe: string, guild_id: string, member_id: string, channel_id: string, params: string[], cb: (msg?) => any) {
+	sendReq('queue/' + doe, {
+		guild_id: guild_id,
+		member_id: member_id,
+		channel_id: channel_id,
+		params: params
+	}, (err, res) => {
+		if (err) { console.error(err); cb(Command.error([['Music', 'An error occured.']])); return; }
+		if (res.error) { console.error(err); cb(Command.error([['Music', res.error]])); return; }
+		if (res.msg) return (Command.success([['Music', res.msg]]));
+		if (res.embed) return cb(Command.success(res.embed));
 
-	if (interval > 1) return interval + ' years';
-
-	interval = Math.floor(seconds / 2592000);
-	if (interval > 1) return interval + ' months';
-
-	interval = Math.floor(seconds / 86400);
-	if (interval > 1) return interval + ' days';
-
-	interval = Math.floor(seconds / 3600);
-	if (interval > 1) return interval + ' hours';
-
-	interval = Math.floor(seconds / 60);
-	if (interval > 1) return interval + ' minutes';
-
-	return Math.floor(seconds) + ' seconds';
+		cb();
+	});
 }
+
+function sendPlay(guild_id: string, member_id: string, search: string, cb: (msg?) => any) {
+	sendReq('play', {
+		guild_id: guild_id,
+		member_id: member_id,
+		search: search
+	}, (err, res) => {
+		if (err) { console.error(err); cb(Command.error([['Music', 'An error occured.']])); return; }
+		if (res.error) { console.error(err); cb(Command.error([['Music', res.error]])); return; }
+		cb();
+		// send(Command.success([['Music', 'Playing song.']]));
+	});
+}
+
 
 function uniqueID(size: number): string {
 	var bloc = [];
@@ -528,9 +612,30 @@ function uniqueID(size: number): string {
 	return bloc.join('');
 }
 
-function idToUrl(site: 'youtube', id: string) {
-	if (site == 'youtube') return 'https://youtu.be/' + id;
-	return 'Unknwon: ' + id + ' - ' + site;
+
+
+interface SongSearch {
+	nextPageToken?: string;
+	previousPageToken?: string;
+
+	totalResults: number;
+	resultsPerPage: number;
+
+	items: {
+		type: string;
+		id: string;
+		published: number;
+		title: string;
+		channel: {
+			id: string;
+			title: string;
+		};
+		thumbnail: {
+			url: string;
+			width: number;
+			height: number;
+		};
+	}[];
 }
 
 

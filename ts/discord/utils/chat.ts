@@ -2,7 +2,9 @@ import Discord = require('discord.js');
 
 import Command = require('../command');
 
-function createPageSelector(responder: string, channel: Discord.TextChannel, cb?: (value: MessagePage) => any) {
+type GChannel = Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel;
+
+function createPageSelector(responder: string, channel: GChannel, cb?: (value: MessagePage) => any) {
 	if (cb == null) return new MessagePage({ author_id: responder, channel: channel });
 
 	channel.send('Please wait...')
@@ -12,7 +14,7 @@ function createPageSelector(responder: string, channel: Discord.TextChannel, cb?
 interface MessagePageConfig {
 	author_id: string;
 
-	channel: Discord.TextChannel;
+	channel: GChannel;
 	editingMessage?: Discord.Message;
 
 	parent?: MessagePage;
@@ -42,7 +44,7 @@ const formatReplaceValues = [
 class MessagePage {
 	public author_id: string;
 
-	public channel: Discord.TextChannel;
+	public channel: GChannel;
 	public editingMessage: Discord.Message;
 
 	public collector: Discord.MessageCollector;
@@ -106,13 +108,18 @@ class MessagePage {
 	}
 
 	public onEnd(reason: string) {
+		console.log('End: ' + reason);
 		if (reason == 'time') {
 			this.editingMessage.delete();
 			this.temporaryMessage(Command.error([[ 'Time limit exceeded.', 'Removing page selections...' ]]), 3000);
 		} else if (reason == 'exit') {
 			this.edit(Command.error([['Pages', 'Exiting...']]), () => {
-				this.editingMessage.delete(3000);
+				this.editingMessage.delete(3000)
+				.catch(e => console.error(e));
 			});
+		} else if (reason == 'delete') {
+			this.editingMessage.delete()
+			.catch(e => console.error(e));
 		}
 	}
 
@@ -142,7 +149,7 @@ class MessagePage {
 		return this;
 	}
 
-	public close(reason = 'close') {
+	public close(reason: 'close' | 'delete' | 'time' | string = 'close') {
 		if (this.collector != null && !this.collector.ended) {
 			this.collector.stop(reason); 
 		}
@@ -187,7 +194,7 @@ class MessagePage {
 		if (this.selectionCalls[inputValue] == null) return false;
 
 		const doDisplayCrap = (dontDisplay: boolean) => {
-			if (dontDisplay) return;
+			if (dontDisplay) return; // TODO: Remove
 
 			this.close();
 			newPage.display();
@@ -201,7 +208,10 @@ class MessagePage {
 	}
 
 	public temporaryMessage(contents, deletion: number, cb?: () => any) {
-		this.editingMessage.channel.send(contents)
+		this.close(); // No need to select anything anymore.
+
+		// channel.send
+		this.editingMessage.edit(contents)
 		.then((msg: Discord.Message) => {
 			msg.delete(deletion)
 			.then(() => cb && cb())
@@ -211,8 +221,10 @@ class MessagePage {
 	}
 
 	public edit(newMessage, cb: (value: Discord.Message) => any) {
+		this.close(); // No need to select anything anymore.
+
 		this.editingMessage.edit(newMessage)
-		.then(m => { this.editingMessage = m; cb(m);})
+		.then(m => { this.setEditing(m); cb(m);})
 		.catch(e => console.error(e));
 	}
 

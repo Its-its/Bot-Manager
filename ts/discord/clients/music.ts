@@ -18,6 +18,7 @@ import Playlists = require('../../music/models/playlists');
 import config = require('../../site/util/config');
 import guildClient = require('../guildClient');
 import musicUtils = require('../plugins/music');
+import utils = require('../utils');
 
 
 (<any>mongoose).Promise = global.Promise;
@@ -77,7 +78,6 @@ app.post('/restart', (req, res) => {
 
 app.post('/join', (req, res) => {
 	var { guild_id, channel_id } = req.body;
-	console.log(JSON.stringify(req.body));
 
 	joinVoiceChannel(guild_id, channel_id, err => {
 		if (err) return res.send({ error: err });
@@ -87,7 +87,6 @@ app.post('/join', (req, res) => {
 
 app.post('/leave', (req, res) => {
 	var { guild_id } = req.body;
-	console.log(JSON.stringify(req.body));
 
 	leaveVoiceChannel(guild_id, err => {
 		if (err) return res.send({ error: err });
@@ -97,11 +96,11 @@ app.post('/leave', (req, res) => {
 
 app.post('/play', (req, res) => {
 	var { guild_id, member_id, search } = req.body;
-	console.log(JSON.stringify(req.body));
 	
 	if (search == null || search.length == 0) {
 		playSong(guild_id, null, (err, newsong, lastSong) => {
-			console.log(err, newsong, lastSong);
+			if (err != null) console.error(err);
+
 			res.send({
 				error: err,
 				newSong: newsong,
@@ -110,7 +109,8 @@ app.post('/play', (req, res) => {
 		});
 	} else {
 		findAndPlay(guild_id, search, (err, song) => {
-			console.log(err, song);
+			if (err != null) console.error(err);
+
 			res.send({
 				error: err,
 				song: song
@@ -121,13 +121,11 @@ app.post('/play', (req, res) => {
 
 app.post('/playing', (req, res) => {
 	var { guild_id } = req.body;
-	console.log(JSON.stringify(req.body));
 	res.send({ msg: isPlaying(guild_id) });
 });
 
 app.post('/stop', (req, res) => {
 	var { guild_id, reason } = req.body;
-	console.log(JSON.stringify(req.body));
 
 	stop(guild_id, reason, (err, msg) => {
 		if (err) return res.send({ error: err });
@@ -136,8 +134,7 @@ app.post('/stop', (req, res) => {
 });
 
 app.post('/next', (req, res) => {
-	var { guild_id  } = req.body;
-	console.log(JSON.stringify(req.body));
+	var { guild_id } = req.body;
 
 	next(guild_id, (err, res) => {
 		if (err) return res.send({ error: err });
@@ -149,7 +146,7 @@ app.post('/queue/:type', (req, res) => {
 	var type = req.params.type;
 	var { guild_id, member_id, channel_id, params } = req.body;
 	if (params == null) params = [];
-	console.log(JSON.stringify(req.body));
+	console.log(`[Queue] [${type}]:`, JSON.stringify(req.body));
 
 	switch(type) {
 		case 'playlist':
@@ -180,8 +177,20 @@ app.post('/queue/:type', (req, res) => {
 				res.send({ msg: 'Removed Item from queue.' });
 			});	
 			break;
+		case 'add':
+			queueSong(guild_id, member_id, params.join(' '), (errMsg, song) => {
+				if (errMsg != null) return res.send({ error: errMsg });
+
+				res.send({ embed: utils.generateFullSong(
+					'Added to Queue', song.id, '',
+					song.title, song.thumbnail_url, song.length,
+					song.channel_id, new Date(song.published).toISOString()) });
+			});	
+			break;
 		default:
 			if (type == 'list' || /^[0-9]+$/g.test(type)) {
+				if (type != 'list') params.push(type);
+
 				Queues.findOne({ server_id: guild_id }, (err, queue: any) => {
 					if (queue.items.length == 0) return res.send({ error: 'Nothing Queued!' })
 
@@ -203,54 +212,45 @@ app.post('/queue/:type', (req, res) => {
 
 					if (itemsToSearch.length == 0) return res.send({ error: 'No more items.' });
 
-					request.get(`http://${config.ytdl.full}/info?force=true&id=${itemsToSearch.join(',')}`, (err, resp) => {
-						if (err != null) return console.error(err);
-						var items = JSON.parse(resp.body);
-						if (!Array.isArray(items)) items = [items];
-
+					musicUtils.getSong(itemsToSearch, (err, songs) => {
 						guildClient.getMusic(guild_id, music => {
 							var fields = [
 								[
 									'Music', 
 									[
-										'Queued Items: ' + items.length,
+										'Queued Items: ' + songs.length,
 										'Page: ' + page + '/' + maxPages,
 										'**Repeat Queue:** ' + (music.repeatQueue ? 'Yes': 'No'),
 										'**Repeat Song:** ' + (music.repeatSong ? 'Yes': 'No')
 									].join('\n')
 								]
 							];
-	
-							fields = fields.concat(items
+
+							fields = fields.concat(songs
 							.map((q, i) => [
 								'ID: ' + (pageSlice + i + 1),
-								[	q.title,
-									idToUrl(q.type || 'youtube', q.id)
+								[	`[${q.title}](${utils.videoIdToUrl(q.type || 'youtube', q.id)})`,
+									'Uploaded: ' + new Date(q.published).toDateString(),
+									'Length: ' + utils.secondsToHMS(q.length)
 								].join('\n')
 							]));
-	
+
 							return res.send({ embed: fields });
 						});
 					});
 				});
-			} else {
-				queueSong(guild_id, member_id, type + ' ' + params.join(' '), (errMsg, song) => {
-					if (errMsg != null) return res.send({ error: errMsg });
-
-					res.send({ embed: generateFullSong(
-						'Added to Queue', song.id, '',
-						song.title, song.thumbnail_url, '' + song.length,
-						song.channel_id, new Date(song.published).toISOString()) });
-				});
-				break;
 			}
 			break;
 	}
 });
 
-// app.post('/', (req, res) => {
-// 	//
-// });
+app.post('/search', (req, res) => {
+	var { query, page } = req.body;
+
+	musicUtils.searchForSong(query, page, (err, data) => {
+		res.send({ error: err, data: data });
+	});
+});
 
 http.createServer(app)
 .listen(app.get('port'), () => console.log('Started Discord Music Listener.'));
@@ -476,12 +476,10 @@ function playSong(
 					if (member != null) avatarURL = member.avatarURL;
 				}
 
-				var send = generateFullSong(
+				var send = utils.generateFullSong(
 					'Now Playing', song.id, avatarURL,
-					song.title, song.thumbnail_url, '' + song.length,
+					song.title, song.thumbnail_url, song.length,
 					song.channel_id, new Date(song.published).toISOString());
-
-				console.log('Message:', send);
 
 				music.sendMessageFromGuild(guild, send);
 
@@ -525,8 +523,8 @@ function playSong(
 
 // Core
 
-function findAndPlay(guildId: string, uriOrSearch: string, cb: (errorMessage?: string, song?: DiscordBot.plugins.SongGlobal) => any) {
-	var val = /(?:(?:https?:\/\/)(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11})/g.exec(uriOrSearch);
+function findAndPlay(guildId: string, search: string, cb: (errorMessage?: string, song?: DiscordBot.plugins.SongGlobal) => any) {
+	var val = /(?:(?:https?:\/\/)(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11})/g.exec(search);
 
 	if (val != null) {
 		var id = val[1];
@@ -534,32 +532,32 @@ function findAndPlay(guildId: string, uriOrSearch: string, cb: (errorMessage?: s
 		musicUtils.getSong(id, (errMsg, songs) => {
 			if (errMsg != null) return cb(errMsg);
 
-			playSong(guildId, songs[0], (err, next, last) => {
-				io.to(guildId)
-				.emit('play-start', {
-					error: err,
-					nextSong: next,
-					lastSong: last
+			if (songs[0] == null) {
+				console.log('Unable to find "' + id + '" searching for it instead.');
+				musicUtils.findFirstSong(id, (errMsg, song) => {
+					if (errMsg != null) return cb(errMsg);
+					playIt(song);
 				});
-			});
-
-			cb(null, songs[0]);
-		})
-	} else {
-		musicUtils.searchForSong(uriOrSearch, (errMsg, song) => {
-			if (errMsg != null) return cb(errMsg);
-
-			playSong(guildId, song, (err, next, last) => {
-				io.to(guildId)
-				.emit('play-start', {
-					error: err,
-					nextSong: next,
-					lastSong: last
-				});
-			});
-
-			cb(null, song);
+			} else playIt(songs[0]);
 		});
+	} else {
+		musicUtils.findFirstSong(search, (errMsg, song) => {
+			if (errMsg != null) return cb(errMsg);
+			playIt(song);
+		});
+	}
+
+	function playIt(song: DiscordBot.plugins.SongGlobal) {
+		playSong(guildId, song, (err, next, last) => {
+			io.to(guildId)
+			.emit('play-start', {
+				error: err,
+				nextSong: next,
+				lastSong: last
+			});
+		});
+
+		cb(null, song);
 	}
 }
 
@@ -629,7 +627,7 @@ function queueSong(guildId: string, memberId: string, uriOrSearch: string, cb: (
 				music.addToQueue(memberId, songs[0], err => cb(err, songs[0]));
 			})
 		} else {
-			musicUtils.searchForSong(uriOrSearch, (errMsg, song) => {
+			musicUtils.findFirstSong(uriOrSearch, (errMsg, song) => {
 				if (errMsg != null) return cb(errMsg);
 				io.to(guildId).emit('queue-item-add', { item: song });
 				music.addToQueue(memberId, song, err => cb(err, song));
@@ -664,78 +662,4 @@ function queuePlaylist(guildId: string, playlistId: string, cb: (err?: any, coun
 			});
 		});
 	});
-}
-
-
-//
-
-function timeSince(time: number) {
-	var seconds = Math.floor((new Date().getTime() - time) / 1000);
-
-	var interval = Math.floor(seconds / 31536000);
-
-	if (interval > 1) return interval + ' years';
-
-	interval = Math.floor(seconds / 2592000);
-	if (interval > 1) return interval + ' months';
-
-	interval = Math.floor(seconds / 86400);
-	if (interval > 1) return interval + ' days';
-
-	interval = Math.floor(seconds / 3600);
-	if (interval > 1) return interval + ' hours';
-
-	interval = Math.floor(seconds / 60);
-	if (interval > 1) return interval + ' minutes';
-
-	return Math.floor(seconds) + ' seconds';
-}
-
-
-function idToUrl(site: 'youtube', id: string) {
-	if (site == 'youtube') return 'https://youtu.be/' + id;
-	return 'Unkown: ' + id + ' - ' + site;
-}
-
-function generateFullSong(
-	title: string, id: string, icon: string, 
-	videoTitle: string, videoThumb: string, duration: string,
-	channel: string, uploaded: string) {
-	return {
-		embed: {
-			title: videoTitle,
-			url: 'https://youtu.be/' + id,
-			color: 0x46a0c0,
-			timestamp: uploaded,
-			footer: {
-				icon_url: 'https://cdn.discordapp.com/embed/avatars/0.png',
-				text: 'Youtube'
-			},
-			thumbnail: {
-				url: videoThumb
-			},
-			author: {
-				name: title,
-				url: 'https://its.rip/for/bots',
-				icon_url: icon
-			},
-			fields: [
-				{
-					name: 'Duration',
-					value: duration,
-					inline: true
-				},
-				{
-					name: 'Channel',
-					value: channel,
-					inline: true
-				}
-				// {
-				// 	name: "Position",
-				// 	value: "best",
-				// 	inline: true
-				// }
-			]
-		}
-	};
 }
