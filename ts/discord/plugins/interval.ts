@@ -1,12 +1,19 @@
 import ModelIntervals = require('../../models/intervals');
 
+
 function getAllFromGuild(id: string, cb: (err, items) => any) {
-	ModelIntervals.find({ server_id: id }, (err, items) => cb(err, items));
+	ModelIntervals.find({ $or: [ { _id: id }, { guild_id: id } ] }, (err, items) => cb(err, items));
 }
 
-function editInterval(server_id: string, newObj: Interval) {
-	ModelIntervals.findOneAndUpdate({ _id: server_id }, { $set: newObj }, err => err && console.error(err));
+
+function editInterval(guild_id: string, newObj: Interval) {
+	ModelIntervals.findOneAndUpdate(
+		{ $or: [ { _id: guild_id }, { guild_id: guild_id } ] }, 
+		{ $set: newObj }, 
+		err => err && console.error(err)
+	);
 }
+
 
 function addInterval(params: Interval) {
 	if (params.active && params.nextCall == null && params.every != null) {
@@ -14,12 +21,13 @@ function addInterval(params: Interval) {
 	}
 
 	var model = new ModelIntervals(params);
-	model.save((err, item) => {});
+	model.save(() => {});
 	return model._id;
 }
 
+
 function removeInterval(id: string) {
-	ModelIntervals.remove({ _id: id }, () => {});
+	ModelIntervals.remove({ $or: [ { _id: id }, { guild_id: id } ] }, () => {});
 }
 
 
@@ -28,7 +36,7 @@ interface Interval {
 
 	pid?: string;
 
-	server_id?: string;
+	guild_id?: string;
 	channel_id?: string;
 
 	displayName?: string;

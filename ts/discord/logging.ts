@@ -1,4 +1,4 @@
-const { createLogger, format, transports } = require('winston');
+import { createLogger, format, transports } from 'winston';
 const { combine, timestamp, label, printf } = format;
 
 const myFormat = printf(info => {
@@ -22,7 +22,7 @@ const logger = createLogger({
         myFormat
     ),
     transports: [
-        new transports.Console({
+        new transports.Console(<any>{
             timestamp: () => new Date().toDateString()
         })
     ]

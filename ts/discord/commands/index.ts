@@ -39,6 +39,7 @@ process.nextTick(() => {
 	addCommand(require('./moderator'), 'Moderator');
 	addCommand(require('./plugins'), 'Plugins');
 	addCommand(require('./roles'), 'Roles');
+	addCommand(require('./owner'), 'Owner');
 });
 
 function parseMessage(message: string, server: Server, defaultMessage: Discord.Message) {
@@ -55,6 +56,8 @@ function parseMessage(message: string, server: Server, defaultMessage: Discord.M
 					!(server.userHasAnyChildPerm(defaultMessage.member.id, command.perms) || server.rolesHaveAnyChildPerm(defaultMessage.member.roles.keyArray(), command.perms))
 				) return;
 			}
+
+			console.log('[DefComm]: ' + message);
 
 			return command.call(CommandManger.fix(parts), server, defaultMessage);
 		}
@@ -78,8 +81,8 @@ function get(commandName: string): Command {
 	return null;
 }
 
-function addCommand(command: Command | Array<Command>, category: string) {
-	if (Array.isArray(command)) return command.forEach(c => addCommand(c, category));
+function addCommand(command: Command | Command[], category: string, hidden?: boolean) {
+	if (Array.isArray(command)) return command.forEach(c => addCommand(c, category, hidden));
 
 	if (command.perms == null || command.perms.length == 0) console.log('No perms for ' + command.commandName[0]);
 

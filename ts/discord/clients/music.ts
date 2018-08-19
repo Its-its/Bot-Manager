@@ -1,7 +1,7 @@
 import * as Discord from 'discord.js';
 import * as bodyParser from 'body-parser';
 import { PassThrough } from 'stream';
-import * as mongoose from 'mongoose';
+import mongoose = require('mongoose');
 
 
 import http = require('http');
@@ -21,9 +21,9 @@ import musicUtils = require('../plugins/music');
 import utils = require('../utils');
 
 
-(<any>mongoose).Promise = global.Promise;
-mongoose.set('debug', true);
-mongoose.connect(config.database);
+mongoose.Promise = global.Promise;
+if (config.debug) mongoose.set('debug', true);
+mongoose.connect(config.database, { useNewUrlParser: true });
 
 
 let server = http.createServer();
@@ -295,6 +295,9 @@ let client = new Discord.Client({
 		'RELATIONSHIP_REMOVE'
 	]
 });
+
+
+client.on('error', e => console.error(e));
 
 
 client.on('channelDelete', (channel) => {

@@ -3,7 +3,7 @@ import mongoose = require('mongoose');
 let Schema = mongoose.Schema;
 
 let DiscordIntervals = new Schema({
-	server_id: String,
+	guild_id: String,
 	channel_id: String,
 
 	displayName: String,

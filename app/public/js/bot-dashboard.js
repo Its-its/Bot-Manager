@@ -856,15 +856,15 @@
 		document.getElementById('bot-info').appendChild(status);
 
 		var bc = document.getElementById('bot-container');
+		var dd = document.getElementById('dropdown');
 
 		if (bot.app != null) {
 			listeners[bot.app.type].display();
 
-			var dd = document.getElementById('dropdown');
-			var li = createElement('li');
-			var a = createElement('a', { href: 'javascript:void()', innerText: 'Listener' }, li);
+			var liL = createElement('li');
+			var aL = createElement('a', { href: 'javascript:void()', innerText: 'Listener' }, liL);
 
-			a.addEventListener('click', () => {
+			aL.addEventListener('click', () => {
 				if (appSelection.parentElement) {
 					bc.removeChild(appSelection);
 					bc.removeChild(listenerContainer);
@@ -874,11 +874,27 @@
 				}
 			});
 
-			dd.insertBefore(li, dd.firstChild);
+			dd.insertBefore(liL, dd.firstChild);
 		} else {
 			bc.appendChild(appSelection);
 			bc.appendChild(listenerContainer);
 		}
+
+		var liD = createElement('li');
+		var aD = createElement('a', { href: 'javascript:void()', innerText: 'Listener' }, liD);
+
+		aD.addEventListener('click', () => {
+			$.ajax({
+				method: 'DELETE',
+				url: '/api/bots/' + botId
+			})
+			.done(function(msg) {
+				console.log(msg);
+				// window.redirect('');
+			});
+		});
+
+		dd.insertBefore(liD, dd.firstChild);
 	});
 
 	function editApp(app) {

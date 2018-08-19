@@ -1,0 +1,274 @@
+html, body {
+	margin: 0;
+	width: 100%;
+	height: 100%;
+}
+
+$bg_color: #15161b;
+
+
+$button_bg: #6e6e6e;
+$button_bg_hover: $button_bg * 0.8;
+
+$button_invite_bg: #02a80b;
+$button_invite_bg_hover: $button_invite_bg * 0.8;
+
+$button_docs_bg: #3a4ebd;
+$button_docs_bg_hover: $button_docs_bg * 0.8;
+
+
+body {
+	font-family: Verdana, Geneva, Tahoma, sans-serif;
+	background-color: $bg_color;
+	width: 100%;
+	height: 100%;
+	color: #cacaca;
+}
+
+.center-container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100%;
+
+	> .centered {
+		// 
+	}
+}
+
+
+.navigation {
+	display: flex;
+	padding: .5rem;
+
+	.nav-left,
+	.nav-right {
+		height: 100%;
+		width: auto;
+		flex-wrap: wrap;
+	}
+
+	.nav-left {
+		// 
+	}
+
+	.nav-right {
+		order: 2;
+		display: flex;
+		margin-left: auto;
+		direction: rtl;
+	}
+
+	.nav-menu {
+		list-style-type: none;
+		margin-block-start: 0px;
+		margin-block-end: 0px;
+		padding-inline-start: 0px;
+
+		.menu-item {
+			display: table-cell;
+		}
+	}
+
+	a {
+		margin: 0;
+	}
+
+	a,
+	span {
+		vertical-align: middle;
+	}
+
+	.title {
+		padding: .7rem 1rem;
+	}
+}
+
+.button {
+	display: inline-block;
+	text-align: center;
+	line-height: 1;
+	cursor: pointer;
+
+	transition: background-color .25s ease-out, color .25s ease-out;
+
+	font-size: .9rem;
+	background-color: $button_bg;
+	color: #fefefe;
+
+	vertical-align: middle;
+	border: 1px solid transparent;
+	border-radius: 0;
+	padding: .85em 1em;
+	margin: 0 0 1rem;
+
+	text-decoration: none;
+
+	&:hover {
+		background: $button_bg_hover;
+	}
+
+	&.invite {
+		background: $button_invite_bg;
+
+		&:hover {
+			background: $button_invite_bg_hover;
+		}
+	}
+
+	&.docs {
+		background: $button_docs_bg;
+
+		&:hover {
+			background: $button_docs_bg_hover;
+		}
+	}
+}
+
+.welcome-container {
+	height: 50em;
+	background: linear-gradient(to bottom, ($bg_color * 0.6) 0%, $bg_color 100%);
+
+	.welcome {
+		max-width: 400px;
+		text-align: center;
+
+		> * {
+			margin: 6px 0px;
+		}
+
+		.bold {
+			font-weight: bold;
+		}
+
+		.title {
+			margin: 0px;
+			color: white;
+		}
+
+		.desc {
+			// 
+		}
+
+		.bot-container {
+			color: white;
+
+			.avail {
+				// 
+			}
+
+			.bots {
+				font-weight: bold;
+			}
+
+			.more {
+				font-size: 12px;
+				color: #cacaca;
+			}
+		}
+	
+		.buttons {
+			text-align: center;
+
+			.button {
+				&:not(:last-child) {
+					margin-right: 10px;
+				}
+			}
+		}
+	}
+}
+
+
+.invite-container {
+	background: linear-gradient(to bottom, ($bg_color * 0.7) 0%, $bg_color 100%);
+	padding-top: 10em;
+
+	.invites {
+		max-width: 70em;
+		width: 75%;
+
+		.invite-option {
+			display: flex;
+			width: 100%;
+
+			.option-left,
+			.option-right {
+				padding: 1em;
+			}
+
+			.red {
+				color: #bd4040;
+			}
+
+			.green {
+				color: #46a546;
+			}
+
+			.option-left {
+				border-right: solid 1px #2d2d3b;
+				width: 10em;
+				min-width: 10em;
+				max-width: 10em;
+
+				.title {
+					font-size: 25px;
+					font-weight: bold;
+					float: right;
+					margin-bottom: 1em;
+				}
+
+				.description {
+					display: block;
+					margin-bottom: 5px;
+				}
+			}
+
+			.option-right {
+				width: 100%;
+
+				.title {
+					color: white;
+					display: block;
+					font-size: 20px;
+					font-weight: bold;
+					margin-bottom: 1em;
+				}
+
+				.under {
+					display: block;
+					margin-bottom: 5px;
+				}
+
+				.description {
+					display: block;
+					margin-bottom: 5px;
+				}
+
+				.button {
+					vertical-align: bottom;
+				}
+			}
+
+			.container-buttons {
+				margin-top: 1em;
+
+				.button {
+					margin: 0;
+				}
+			}
+
+			.row-container {
+				display: flex;
+				flex-direction: row;
+
+				.row {
+					width: 100%;
+					&:not(:last-child) {
+						margin-right: 0.5em;
+					}
+				}
+			}
+		}
+	}
+}

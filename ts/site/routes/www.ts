@@ -16,6 +16,11 @@ export = (app: express.Application, socketio) => {
 		res.render('dashboard');
 	});
 
+	render('/login');
+	render('/invite');
+	render('/docs');
+	render('/status');
+
 	app.get('/bot/:id([0-9A-Za-z]{24,32})', authed, (req, res) => {
 		if (!(<any>req).isAuthenticated()) return res.redirect('/');
 		res.render('bot-dashboard');
@@ -36,6 +41,11 @@ export = (app: express.Application, socketio) => {
 		(<any>req).logout();
 		res.redirect('/');
 	});
+
+	function render(url: string, fileName?: string) {
+		fileName = fileName || url.replace('/', '');
+		app.get(url, (_, res) => res.render(fileName));
+	}
 }
 
 function authed(req, res, next) {

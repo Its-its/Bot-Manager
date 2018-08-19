@@ -8,12 +8,17 @@ import generate = require('nanoid/generate');
 import Commands = require('../../models/commands');
 import DiscordServers = require('../../discord/models/servers');
 import DiscordMembers = require('../../discord/models/members');
+import Users = require('../models/users');
 import Bots = require('../models/bots');
+
+import discordUtils = require('../../discord/utils');
 
 import config = require('../util/config');
 
 let redisGuildsClient = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.guildsDB });
 
+
+const MAX_BOTS = 3;
 
 // Layout
 // /api
@@ -192,35 +197,39 @@ export = (app: express.Application) => {
 		if (botType != null) {
 			botType = botType.toLowerCase();
 
-			if (validBots.indexOf(botType) == -1) return res.send({ error: 'Invalid.' });
+			console.error('uhhh, ' + botType);
+			res.send({ error: 'Unknown.' });
 
-			var botParam = botType + '_bots';
+			// if (validBots.indexOf(botType) == -1) return res.send({ error: 'Invalid.' });
 
-			req['user']
-			.populate(botParam, (err, resp) => {
-				if (err != null) return res.send({ error: err });
+			// var botParam = botType + '_bots';
 
-				res.send({
-					data: {
-						bots: resp[botParam].map(item => {
-							return {
-								created_at: item.created_at,
-								// custom_token: item.custom_token,
-								server_id: item.server_id,
-								edited_at: item.edited_at,
-								is_active: item.is_active,
-								is_disconnected: item.is_disconnected,
-								is_registered: item.is_registered,
-								displayName: item.displayName
-							};
-						})
-					}
-				});
-			});
+			// req['user']
+			// .populate(botParam, (err, resp) => {
+			// 	if (err != null) return res.send({ error: err });
+
+			// 	res.send({
+			// 		data: {
+			// 			bots: resp[botParam].map(item => {
+			// 				return {
+			// 					created_at: item.created_at,
+			// 					// custom_token: item.custom_token,
+			// 					server_id: item.server_id,
+			// 					edited_at: item.edited_at,
+			// 					is_active: item.is_active,
+			// 					is_disconnected: item.is_disconnected,
+			// 					is_registered: item.is_registered,
+			// 					displayName: item.displayName
+			// 				};
+			// 			})
+			// 		}
+			// 	});
+			// });
 
 			return;
 		}
 
+		console.log('/status populate lis');
 		// Main Dashboard
 		req['user'].populate('listeners', (err, resp) => {
 			res.send({
@@ -231,7 +240,7 @@ export = (app: express.Application) => {
 						uid: b.uid,
 						is_active: b.is_active,
 						created_at: b.created_at,
-						selectedBot: (<any>Bots).collectionToName(b.botType)
+						selectedBot: Bots.collectionToName(b.botType)
 					};
 				})
 			});
@@ -239,18 +248,21 @@ export = (app: express.Application) => {
 	});
 
 	dashboard.post('/create', (req, res) => { // TODO: "this.listeners is not a funtion"
-		if (req['user'].bots.amount >= 6) return res.send({ error: 'Max Bot count reached!' });
+		console.log('/create pre');
+		var user = req['user'];
 
-		let bot = new Bots({
-			user_id: req['user'].id,
+		if (!user.admin && user.bots.amount >= MAX_BOTS) return res.send({ error: 'Max Bot count reached!' });
+
+		const bot = new Bots({
+			user_id: user.id,
 			uid: uniqueID()
 		});
 
 		bot.save((err) => {
 			if (err != null) return res.send({ error: err });
 
-			req['user'].bots.amount++;
-			req['user'].save(() => {
+			Users.updateOne({ _id: user._id }, { $inc: { 'bots.amount': 1 } }).exec(() => {
+				console.log('/create post');
 				res.send({ data: 'Created!' });
 			});
 		});
@@ -266,6 +278,7 @@ export = (app: express.Application) => {
 
 		Bots.findOne({ uid: id }, (err, bot) => {
 			if (err == null && bot != null) {
+				// TODO: Remove
 				DiscordMembers.findOne({ user_id: req['user'].id }, (err, member) => {
 					var data = {
 						user: {
@@ -275,7 +288,7 @@ export = (app: express.Application) => {
 							discord: {
 								linked: req['user'].discord.id != null,
 								guilds: member['guilds']
-									.filter(g => new Permissions(g.permissions).has(Permissions.FLAGS.ADMINISTRATOR))
+									.filter(g => discordUtils.getPermissions(g.permissions).has(discordUtils.Permissions.FLAGS.ADMINISTRATOR))
 									.map(g => { return { id: g.id, name: g.name }})
 							},
 							youtube: {
@@ -292,7 +305,8 @@ export = (app: express.Application) => {
 						}
 					};
 	
-					bot.getBot((err, app) => { // TODO: Remove? Just send type of bot?
+					// TODO: Remove? Just send type of bot?
+					bot.getBot((err, app) => {
 						if (app != null) {
 							delete app['__v'];
 							delete app['_id'];
@@ -321,9 +335,19 @@ export = (app: express.Application) => {
 	// });
 
 	// Delete Bot
-	// bots.delete('/:bid', (req, res) => {
-	// 	// 
-	// });
+	bots.delete('/:bid', (req, res) => {
+		Bots.findOneAndRemove({ uid: req.params.bid }, (err, bot) => {
+			if (err != null) return res.status(500).send({ error: err });
+			if (bot == null) return res.status(500).send({ error: 'Bot doesn\'t exist.' });
+
+			// TODO: Disable.
+
+			var user = req['user'];
+			
+			Users.updateOne({ _id: user._id }, { $inc: { 'bots.amount': -1 } })
+			.exec(() => res.send({ res: 'success' }));
+		});
+	});
 
 
 	//! Commands
@@ -709,45 +733,10 @@ export = (app: express.Application) => {
 		});
 	}
 
-	// bots.post('/set', (req, res) => {
-	// 	let id = req.body.id;
-	// 	let name = req.body.name;
-
-	// 	Bots.findOne({ uid: id }, (err, bot: any) => {
-	// 		if (err != null) return res.send({ error: 'Error! ID not found!' });
-
-	// 		if (bot.app == null) {
-	// 			var modelName = Bots['appName'](name);
-
-	// 			if (modelName == null) return res.send({ error: 'Incorrect Listener Name' });
-
-	// 			var Model = mongoose.model(modelName);
-				
-	// 			var listener = <any>new Model({
-	// 				user_id: req['user'].id,
-	// 				bot_id: bot.id,
-	// 				uid: uniqueID()
-	// 			});
-
-	// 			listener.save(() => {
-	// 				bot.app = {
-	// 					name: name,
-	// 					id: listener.uid
-	// 				};
-
-	// 				bot.save(() => {
-	// 					res.send({ data: 'Success!' });
-	// 				});
-	// 			});
-	// 		} else {
-	// 			//
-	// 		}
-	// 	});
-	// });
-
 
 	route.use('/bots', bots);
 	route.use('/dashboard', dashboard);
+
 
 	app.use('/api', route);
 }
@@ -756,113 +745,4 @@ export = (app: express.Application) => {
 
 function uniqueID() {
 	return generate('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 32);
-}
-
-
-class Permissions {
-	public bitfield;
-
-	constructor(permissions) {
-		this.bitfield = Permissions.resolve(permissions);
-	}
-
-	has(permission, checkAdmin = true) {
-		if (permission instanceof Array) return permission.every(p => this.has(p, checkAdmin));
-			permission = Permissions.resolve(permission);
-		if (checkAdmin && (this.bitfield & Permissions.FLAGS.ADMINISTRATOR) > 0) return true;
-			return (this.bitfield & permission) === permission;
-	}
-
-	missing(permissions, checkAdmin = true) {
-		if (!(permissions instanceof Array)) permissions = new Permissions(permissions).toArray(false);
-			return permissions.filter(p => !this.has(p, checkAdmin));
-	}
-
-	freeze() {
-		return Object.freeze(this);
-	}
-
-	add(...permissions) {
-		let total = 0;
-		for (let p = permissions.length - 1; p >= 0; p--) {
-			const perm = Permissions.resolve(permissions[p]);
-			total |= perm;
-		}
-		if (Object.isFrozen(this)) return new Permissions(this.bitfield | total);
-		this.bitfield |= total;
-		return this;
-	}
-
-	remove(...permissions) {
-		let total = 0;
-		for (let p = permissions.length - 1; p >= 0; p--) {
-			const perm = Permissions.resolve(permissions[p]);
-			total |= perm;
-		}
-		if (Object.isFrozen(this)) return new Permissions(this.bitfield & ~total);
-		this.bitfield &= ~total;
-		return this;
-	}
-
-	serialize(checkAdmin = true) {
-		const serialized = {};
-		for (const perm in Permissions.FLAGS)
-			serialized[perm] = this.has(perm, checkAdmin);
-		return serialized;
-	}
-
-	toArray(checkAdmin = true) {
-		return Object.keys(Permissions.FLAGS).filter(perm => this.has(perm, checkAdmin));
-	}
-
-	*[Symbol.iterator]() {
-		const keys = this.toArray();
-		while (keys.length) yield keys.shift();
-	}
-
-	static resolve(permission: number | Permissions | Array<string> | string): number {
-		if (typeof permission === 'number' && permission >= 0) return permission;
-		if (permission instanceof Permissions) return permission.bitfield;
-		if (Array.isArray(permission)) return permission.map(p => this.resolve(p)).reduce((prev, p) => prev | p, 0);
-		if (typeof permission === 'string') return this.FLAGS[permission];
-		throw new Error('PERMISSIONS_INVALID');
-	}
-
-	static FLAGS = {
-		CREATE_INSTANT_INVITE: 1 << 0,
-		KICK_MEMBERS: 1 << 1,
-		BAN_MEMBERS: 1 << 2,
-		ADMINISTRATOR: 1 << 3,
-		MANAGE_CHANNELS: 1 << 4,
-		MANAGE_GUILD: 1 << 5,
-		ADD_REACTIONS: 1 << 6,
-		VIEW_AUDIT_LOG: 1 << 7,
-
-		VIEW_CHANNEL: 1 << 10,
-		SEND_MESSAGES: 1 << 11,
-		SEND_TTS_MESSAGES: 1 << 12,
-		MANAGE_MESSAGES: 1 << 13,
-		EMBED_LINKS: 1 << 14,
-		ATTACH_FILES: 1 << 15,
-		READ_MESSAGE_HISTORY: 1 << 16,
-		MENTION_EVERYONE: 1 << 17,
-		USE_EXTERNAL_EMOJIS: 1 << 18,
-
-		CONNECT: 1 << 20,
-		SPEAK: 1 << 21,
-		MUTE_MEMBERS: 1 << 22,
-		DEAFEN_MEMBERS: 1 << 23,
-		MOVE_MEMBERS: 1 << 24,
-		USE_VAD: 1 << 25,
-
-		CHANGE_NICKNAME: 1 << 26,
-		MANAGE_NICKNAMES: 1 << 27,
-		MANAGE_ROLES: 1 << 28,
-		MANAGE_WEBHOOKS: 1 << 29,
-		MANAGE_EMOJIS: 1 << 30,
-	};
-
-	static ALL = (<any>Object).values(Permissions.FLAGS).reduce((all, p) => all | p, 0);
-
-	static DEFAULT = 104324097;
 }

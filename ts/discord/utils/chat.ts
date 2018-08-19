@@ -74,11 +74,11 @@ class MessagePage {
 		this.removeReply = config.removeReply;
 		this.timeoutMS = config.timeoutMS;
 
-		this.format = [
+		this.setFormat([
 			'Pages are here:',
 			'{page_items}',
 			'Please select responsibly.'
-		];
+		]);
 	}
 
 	public init() {
@@ -86,10 +86,8 @@ class MessagePage {
 		this.initiated = true;
 
 		this.collector = this.editingMessage.channel.createMessageCollector(m => m.author.id == this.author_id, { time: this.timeoutMS });
-
 		this.collector.on('collect', (collectedMsg) => this.onCollect(collectedMsg));
-
-		this.collector.on('end', (collected, reason) => this.onEnd(reason));
+		this.collector.on('end', (_, reason) => this.onEnd(reason));
 	}
 
 	public onCollect(userMessage: Discord.Message) {
@@ -102,9 +100,21 @@ class MessagePage {
 
 		if (this.select(input)) return;
 
-		this.temporaryMessage(Command.error([[ 'Input Error', `"${input}" is not a valid selection input.` ]]), 3000, () => {
-			// 
-		});
+		// Stops current one, creates new one to refresh the time.
+		this.collector.stop('invalid-input');
+
+		this.collector = this.editingMessage.channel.createMessageCollector(m => m.author.id == this.author_id, { time: this.timeoutMS });
+		this.collector.on('collect', (collectedMsg) => this.onCollect(collectedMsg));
+		this.collector.on('end', (_, reason) => this.onEnd(reason));
+
+		// TODO: Ignore non-valid selection.
+
+		// this.temporaryMessage(Command.error([[ 'Input Error', `"${input}" is not a valid selection input.` ]]), 3000, () => {
+		// 	// 
+		// });
+		this.editingMessage.channel.send(Command.error([[ 'Input Error', `"${input}" is not a valid selection input.` ]]))
+		.then((m: Discord.Message) => m.delete(2000).catch(e => console.error(e)))
+		.catch(e => console.error(e));
 	}
 
 	public onEnd(reason: string) {

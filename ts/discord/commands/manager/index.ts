@@ -8,7 +8,10 @@ import Prefix = require('./prefix');
 import Backup = require('./backup');
 import Restore = require('./restore');
 
+import Options = require('./options');
+
 export = [
+	new Options(),
 	new Plugin(),
 	new Rank(),
 	new Perms(),

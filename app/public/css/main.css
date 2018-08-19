@@ -1,0 +1,153 @@
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%; }
+
+body {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  background-color: #15161b;
+  width: 100%;
+  height: 100%;
+  color: #cacaca; }
+
+.center-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%; }
+
+.navigation {
+  display: flex;
+  padding: .5rem; }
+  .navigation .nav-left,
+  .navigation .nav-right {
+    height: 100%;
+    width: auto;
+    flex-wrap: wrap; }
+  .navigation .nav-right {
+    order: 2;
+    display: flex;
+    margin-left: auto;
+    direction: rtl; }
+  .navigation .nav-menu {
+    list-style-type: none;
+    margin-block-start: 0px;
+    margin-block-end: 0px;
+    padding-inline-start: 0px; }
+    .navigation .nav-menu .menu-item {
+      display: table-cell; }
+  .navigation a {
+    margin: 0; }
+  .navigation a,
+  .navigation span {
+    vertical-align: middle; }
+  .navigation .title {
+    padding: .7rem 1rem; }
+
+.button {
+  display: inline-block;
+  text-align: center;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color .25s ease-out, color .25s ease-out;
+  font-size: .9rem;
+  background-color: #6e6e6e;
+  color: #fefefe;
+  vertical-align: middle;
+  border: 1px solid transparent;
+  border-radius: 0;
+  padding: .85em 1em;
+  margin: 0 0 1rem;
+  text-decoration: none; }
+  .button:hover {
+    background: #585858; }
+  .button.invite {
+    background: #02a80b; }
+    .button.invite:hover {
+      background: #028609; }
+  .button.docs {
+    background: #3a4ebd; }
+    .button.docs:hover {
+      background: #2e3e97; }
+
+.welcome-container {
+  height: 50em;
+  background: linear-gradient(to bottom, #0d0d10 0%, #15161b 100%); }
+  .welcome-container .welcome {
+    max-width: 400px;
+    text-align: center; }
+    .welcome-container .welcome > * {
+      margin: 6px 0px; }
+    .welcome-container .welcome .bold {
+      font-weight: bold; }
+    .welcome-container .welcome .title {
+      margin: 0px;
+      color: white; }
+    .welcome-container .welcome .bot-container {
+      color: white; }
+      .welcome-container .welcome .bot-container .bots {
+        font-weight: bold; }
+      .welcome-container .welcome .bot-container .more {
+        font-size: 12px;
+        color: #cacaca; }
+    .welcome-container .welcome .buttons {
+      text-align: center; }
+      .welcome-container .welcome .buttons .button:not(:last-child) {
+        margin-right: 10px; }
+
+.invite-container {
+  background: linear-gradient(to bottom, #0f0f13 0%, #15161b 100%);
+  padding-top: 10em; }
+  .invite-container .invites {
+    max-width: 70em;
+    width: 75%; }
+    .invite-container .invites .invite-option {
+      display: flex;
+      width: 100%; }
+      .invite-container .invites .invite-option .option-left,
+      .invite-container .invites .invite-option .option-right {
+        padding: 1em; }
+      .invite-container .invites .invite-option .red {
+        color: #bd4040; }
+      .invite-container .invites .invite-option .green {
+        color: #46a546; }
+      .invite-container .invites .invite-option .option-left {
+        border-right: solid 1px #2d2d3b;
+        width: 10em;
+        min-width: 10em;
+        max-width: 10em; }
+        .invite-container .invites .invite-option .option-left .title {
+          font-size: 25px;
+          font-weight: bold;
+          float: right;
+          margin-bottom: 1em; }
+        .invite-container .invites .invite-option .option-left .description {
+          display: block;
+          margin-bottom: 5px; }
+      .invite-container .invites .invite-option .option-right {
+        width: 100%; }
+        .invite-container .invites .invite-option .option-right .title {
+          color: white;
+          display: block;
+          font-size: 20px;
+          font-weight: bold;
+          margin-bottom: 1em; }
+        .invite-container .invites .invite-option .option-right .under {
+          display: block;
+          margin-bottom: 5px; }
+        .invite-container .invites .invite-option .option-right .description {
+          display: block;
+          margin-bottom: 5px; }
+        .invite-container .invites .invite-option .option-right .button {
+          vertical-align: bottom; }
+      .invite-container .invites .invite-option .container-buttons {
+        margin-top: 1em; }
+        .invite-container .invites .invite-option .container-buttons .button {
+          margin: 0; }
+      .invite-container .invites .invite-option .row-container {
+        display: flex;
+        flex-direction: row; }
+        .invite-container .invites .invite-option .row-container .row {
+          width: 100%; }
+          .invite-container .invites .invite-option .row-container .row:not(:last-child) {
+            margin-right: 0.5em; }

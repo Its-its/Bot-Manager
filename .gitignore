@@ -8,3 +8,6 @@
 
 /app/config/config.json
 /tests
+
+pnpm-debug.log
+shrinkwrap.yaml

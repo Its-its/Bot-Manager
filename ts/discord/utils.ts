@@ -8,7 +8,7 @@ const WarningColor = 0xc4d950;
 const ErrorColor = 0xd91582;
 
 
-function defCall(color: number, array: string[][]) {
+function defCall(color: number, array: [string, string][]) {
 	return {
 		type: 'echo',
 		embed: {
@@ -18,23 +18,23 @@ function defCall(color: number, array: string[][]) {
 	};
 }
 
-function defaultMsg(array: string[][]) {
+function defaultMsg(array: [string, string][]) {
 	return defCall(DefaultColor, array);
 }
 
-function successMsg(array: string[][]) {
+function successMsg(array: [string, string][]) {
 	return defCall(SuccessColor, array);
 }
 
-function errorMsg(array: string[][]) {
+function errorMsg(array: [string, string][]) {
 	return defCall(ErrorColor, array);
 }
 
-function warningMsg(array: string[][]) {
+function warningMsg(array: [string, string][]) {
 	return defCall(WarningColor, array);
 }
 
-function infoMsg(array: string[][]) {
+function infoMsg(array: [string, string][]) {
 	return defCall(InfoColor, array);
 }
 
@@ -182,8 +182,125 @@ function generateFullSong(
 	};
 }
 
+const DISCORD_FLAGS = {
+	CREATE_INSTANT_INVITE: 1 << 0,
+	KICK_MEMBERS: 1 << 1,
+	BAN_MEMBERS: 1 << 2,
+	ADMINISTRATOR: 1 << 3,
+	MANAGE_CHANNELS: 1 << 4,
+	MANAGE_GUILD: 1 << 5,
+	ADD_REACTIONS: 1 << 6,
+	VIEW_AUDIT_LOG: 1 << 7,
+
+	VIEW_CHANNEL: 1 << 10,
+	SEND_MESSAGES: 1 << 11,
+	SEND_TTS_MESSAGES: 1 << 12,
+	MANAGE_MESSAGES: 1 << 13,
+	EMBED_LINKS: 1 << 14,
+	ATTACH_FILES: 1 << 15,
+	READ_MESSAGE_HISTORY: 1 << 16,
+	MENTION_EVERYONE: 1 << 17,
+	USE_EXTERNAL_EMOJIS: 1 << 18,
+
+	CONNECT: 1 << 20,
+	SPEAK: 1 << 21,
+	MUTE_MEMBERS: 1 << 22,
+	DEAFEN_MEMBERS: 1 << 23,
+	MOVE_MEMBERS: 1 << 24,
+	USE_VAD: 1 << 25,
+
+	CHANGE_NICKNAME: 1 << 26,
+	MANAGE_NICKNAMES: 1 << 27,
+	MANAGE_ROLES: 1 << 28,
+	MANAGE_WEBHOOKS: 1 << 29,
+	MANAGE_EMOJIS: 1 << 30,
+};
+
+class Permissions {
+	public bitfield: number;
+
+	constructor(permissions: number | Permissions | Array<string> | string) {
+		this.bitfield = Permissions.resolve(permissions);
+	}
+
+	has(permission: number | Permissions | Array<string> | string, checkAdmin = true) {
+		if (permission instanceof Array) return permission.every(p => this.has(p, checkAdmin));
+			permission = Permissions.resolve(permission);
+		if (checkAdmin && (this.bitfield & Permissions.FLAGS.ADMINISTRATOR) > 0) return true;
+			return (this.bitfield & permission) === permission;
+	}
+
+	missing(permissions: number | Permissions | Array<string> | string, checkAdmin = true) {
+		if (!(permissions instanceof Array)) permissions = new Permissions(permissions).toArray(false);
+			return permissions.filter(p => !this.has(p, checkAdmin));
+	}
+
+	freeze() {
+		return Object.freeze(this);
+	}
+
+	add(...permissions) {
+		let total = 0;
+		for (let p = permissions.length - 1; p >= 0; p--) {
+			const perm = Permissions.resolve(permissions[p]);
+			total |= perm;
+		}
+		if (Object.isFrozen(this)) return new Permissions(this.bitfield | total);
+		this.bitfield |= total;
+		return this;
+	}
+
+	remove(...permissions) {
+		let total = 0;
+		for (let p = permissions.length - 1; p >= 0; p--) {
+			const perm = Permissions.resolve(permissions[p]);
+			total |= perm;
+		}
+		if (Object.isFrozen(this)) return new Permissions(this.bitfield & ~total);
+		this.bitfield &= ~total;
+		return this;
+	}
+
+	serialize(checkAdmin = true) {
+		const serialized = {};
+		for (const perm in Permissions.FLAGS)
+			serialized[perm] = this.has(perm, checkAdmin);
+		return serialized;
+	}
+
+	toArray(checkAdmin = true): string[] {
+		return Object.keys(Permissions.FLAGS).filter(perm => this.has(perm, checkAdmin));
+	}
+
+	*[Symbol.iterator]() {
+		const keys = this.toArray();
+		while (keys.length) yield keys.shift();
+	}
+
+	static resolve(permission: number | Permissions | Array<string> | string): number {
+		if (typeof permission === 'number' && permission >= 0) return permission;
+		if (permission instanceof Permissions) return permission.bitfield;
+		if (Array.isArray(permission)) return permission.map(p => this.resolve(p)).reduce((prev, p) => prev | p, 0);
+		if (typeof permission === 'string') return this.FLAGS[permission];
+		throw new Error('PERMISSIONS_INVALID');
+	}
+
+	static FLAGS = DISCORD_FLAGS;
+
+	static ALL = (<any>Object).values(Permissions.FLAGS).reduce((all, p) => all | p, 0);
+
+	static DEFAULT = 104324097;
+}
+
+
+function getPermissions(p: number | Permissions | Array<string> | string) {
+	return new Permissions(p);
+}
 
 export {
+	getPermissions,
+	Permissions,
+
 	DefaultColor,
 	SuccessColor,
 	InfoColor,

@@ -1,15 +1,15 @@
 import mongoose = require('mongoose');
 
-let Schema = mongoose.Schema;
+const Schema = mongoose.Schema;
 
-let User = new Schema({
+const User = new Schema({
 	is_active: Boolean,
 
 	bots: {
-		amount: Number,
-		twitch_amount: Number,
-		youtube_amount: Number,
-		discord_amount: Number
+		amount: { type: Number, default: 0 },
+		twitch_amount: { type: Number, default: 0 },
+		youtube_amount: { type: Number, default: 0 },
+		discord_amount: { type: Number, default: 0 }
 	},
 
 	twitch: {
@@ -41,18 +41,18 @@ User.virtual('listeners', {
 });
 
 
-User.virtual('twitch_bots', {
-	ref: 'twitch_bots',
-	localField: '_id',
-	foreignField: 'user_id'
-});
+// User.virtual('twitch_bots', {
+// 	ref: 'twitch_bots',
+// 	localField: '_id',
+// 	foreignField: 'user_id'
+// });
 
 
-User.virtual('youtube_bots', {
-	ref: 'youtube_bots',
-	localField: '_id',
-	foreignField: 'user_id'
-});
+// User.virtual('youtube_bots', {
+// 	ref: 'youtube_bots',
+// 	localField: '_id',
+// 	foreignField: 'user_id'
+// });
 
 
 export = mongoose.model('users', User);

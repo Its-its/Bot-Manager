@@ -18,14 +18,13 @@ import mongoose = require('mongoose');
 import config = require('./util/config');
 
 let app = express();
-let redisClient = redis.createClient();
 let MongoStore = connectMongo(session);
 let server = http.createServer(app);
 
 
 let io = socketio(server);
 
-mongoose.set('debug', true);
+if (config.debug) mongoose.set('debug', true);
 
 mongoose.Promise = global.Promise;
 mongoose.connect(config.database);

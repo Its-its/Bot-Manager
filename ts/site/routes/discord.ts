@@ -11,29 +11,43 @@ export = (app: express.Application) => {
 
 		// TODO: Check to see if user.id/botId is already being used.
 
-		var validate = new Validation({
-			user_id: req['user'].id,
-			bot_id: botId,
-			listener_id: guildId
-		});
-
-		validate.save(err => {
+		Validation.findOne({
+			$or: [
+				{ bot_id: botId },
+				{ listener_id: guildId }
+			]
+		}, (err, item) => {
 			if (err != null) {
 				console.error(err);
-				res.send({ error: 'Error while saving Validation.' });
-				return;
+				return res.send({ error: 'An error occured.' });
 			}
 
-			var params = [
-				'client_id=' + config.bot.discord.id,
-				'scope=bot',
-				'permissions=8',
-				'guild_id=' + guildId,//314946214523174913
-				'response_type=code',
-				'redirect_uri=' + encodeURIComponent(config.passport.discord.callbackURL)
-			].join('&');
+			if (item != null) return res.send({ error: 'There is already a pending invite. Please wait 5 minutes and try again.' });
 
-			res.send('https://discordapp.com/oauth2/authorize?' + params);
+			var validate = new Validation({
+				user_id: req['user'].id,
+				bot_id: botId,
+				listener_id: guildId
+			});
+
+			validate.save(err => {
+				if (err != null) {
+					console.error(err);
+					res.send({ error: 'Error while saving Validation.' });
+					return;
+				}
+
+				var params = [
+					'client_id=' + config.bot.discord.id,
+					'scope=bot',
+					'permissions=8',
+					'guild_id=' + guildId,//314946214523174913
+					'response_type=code',
+					'redirect_uri=' + encodeURIComponent(config.passport.discord.callbackURL)
+				].join('&');
+
+				res.send('https://discordapp.com/oauth2/authorize?' + params);
+			});
 		});
 	});
 }

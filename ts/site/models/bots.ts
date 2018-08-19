@@ -73,6 +73,13 @@ interface MongooseDoc extends mongoose.Document {
 	edited_at: Date;
 }
 
-let model: mongoose.Model<MongooseDoc> = mongoose.model('bots', Bots);
+
+interface Model<T extends mongoose.Document> extends mongoose.Model<T> {
+	collectionToName?: (collection: string) => string;
+	appName?: (bot: string) => string;
+	getBot?: (cb: (err: Error, res?: any) => any) => any;
+}
+
+let model: Model<MongooseDoc> = mongoose.model('bots', Bots);
 
 export = model;

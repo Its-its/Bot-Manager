@@ -1,11 +1,43 @@
 import mongoose = require('mongoose');
 
-let Schema = mongoose.Schema;
+const Schema = mongoose.Schema;
 
 const DiscordFeeds = new Schema({
 	pid: String,
 
-	feeds: [{ ref: 'rssfeeds', type: Schema.Types.ObjectId }]
+	// Custom
+	format: String,
+
+
+	active: Boolean,
+
+	guild_id: String,
+	channel_id: String,
+
+	last_check: Date,
+
+	feeds: [
+		{
+			items: [ String ],
+			feed: { ref: 'rssfeeds', type: Schema.Types.ObjectId }
+		}
+	]
 });
 
-export = mongoose.model('discord_feeds', DiscordFeeds);
+interface FeedFix extends mongoose.Document {
+	pid: string;
+	format: string;
+	active: boolean;
+	guild_id: string;
+	channel_id: string;
+	last_check: Date;
+	feeds: {
+		items: string[];
+		feed: any;
+	}[];
+}
+
+
+const adsf: mongoose.Model<FeedFix> = mongoose.model('discord_feeds', DiscordFeeds);
+
+export = adsf;

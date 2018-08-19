@@ -24,21 +24,75 @@ const server = {
 	maxPhraseText: 5
 };
 
-class Server implements DiscordBot.Server {
-	branch: 'stable' | 'experimental';
-	serverId: string;
-	migration: number;
+// TODO: extend Server with class to find edited items. || Mark items edited. Only save edited items to db.
 
-	region: string;
-	name: string;
-	iconURL: string;
-	createdAt: number;
-	memberCount: number;
-	ownerID: string;
+class Changes {
+	public defaults = {};
 
-	commandPrefix: string;
+	constructor() {
+		// 
+	}
 
-	moderation: DiscordBot.Moderation = {
+	init_changes() {
+		var i = 0;
+		// for (const value in this) {
+		// 	if (this.hasOwnProperty(value)) {
+		// 		// const element = this[value];
+		// 		console.log((i++) + ' ' + value);
+		// 	}
+		// }
+	}
+
+	public copy(value: any): any {
+		var type = typeof value;
+
+		switch(typeof value) {
+			case 'string': return String(value);
+			case 'undefined':
+			case 'boolean':
+			case 'number':
+				return value;
+
+			case 'object':
+				if (Array.isArray(value)) {
+					return value.map(v => this.copy(v));
+				} else {
+					if (value instanceof Date) {
+						return new Date(value.getDate());
+					}
+
+					var clonedObj = new value.constructor();
+					for(var prop in value) {
+						if(value.hasOwnProperty(prop)){
+							clonedObj[prop] = this.copy(value[prop]);
+						}
+					}
+
+					return clonedObj;
+				}
+			case 'symbol': break;
+			case 'function': break;
+		}
+	}
+}
+
+class Server extends Changes implements DiscordBot.Server {
+	public branch: number;
+	public serverId: string;
+	public migration: number;
+
+	public region: string;
+	public name: string;
+	public iconURL: string;
+	public createdAt: number;
+	public memberCount: number;
+	public ownerID: string;
+
+	public commandPrefix: string;
+
+	public channels: DiscordBot.Channels;
+
+	public moderation: DiscordBot.Moderation = {
 		blacklisted: [],
 		whitelisted: [],
 		ignoredChannels: [],
@@ -47,14 +101,15 @@ class Server implements DiscordBot.Server {
 		disabledCustomCommands: []
 	};
 
-	intervals: DiscordBot.Interval[];
-	ranks: string[];
+	public leveling: DiscordBot.Leveling;
+	public intervals: DiscordBot.Interval[];
+	public ranks: string[];
 
-	alias: DiscordBot.Alias[];
-	commands: DiscordBot.Command[];
-	phrases: DiscordBot.Phrase[];
-	roles: DiscordBot.Role[];
-	plugins: DiscordBot.Plugin = {
+	public alias: DiscordBot.Alias[];
+	public commands: DiscordBot.Command[];
+	public phrases: DiscordBot.Phrase[];
+	public roles: DiscordBot.Role[];
+	public plugins: DiscordBot.Plugin = {
 		commands: {
 			enabled: true
 		},
@@ -71,13 +126,15 @@ class Server implements DiscordBot.Server {
 			enabled: false
 		}
 	};
-	values;
+	public values;
 
-	permissions: DiscordBot.Permissions = {
+	public permissions: DiscordBot.Permissions = {
 		roles: {}, users: {}, groups: {}
 	};
 
 	constructor(serverID: string, options?: DiscordBot.ServerOptions) {
+		super();
+
 		this.serverId = serverID;
 
 		this.region = options.region;
@@ -96,14 +153,18 @@ class Server implements DiscordBot.Server {
 		this.plugins = options.plugins || {};
 		this.values = options.values || {};
 		this.migration = options.version == null ? server.lastestVersion : options.version;
-
+		
 		this.commandPrefix = options.commandPrefix;
-
+		
+		if (options.leveling) this.leveling = options.leveling;
 		if (options.moderation) this.moderation = options.moderation;
 		if (options.permissions) this.permissions = options.permissions;
+
+		this.init_changes();
 	}
 
-	public save(cb?: redis.Callback<'OK'>) { // TODO: Mark items edited. Only save edited items to db.
+
+	public save(cb?: redis.Callback<'OK'>) {
 		redisGuildsClient.set(this.serverId, this.toString(), cb);
 		DiscordServers.findOneAndUpdate( 
 			{ server_id: this.serverId },
@@ -125,8 +186,9 @@ class Server implements DiscordBot.Server {
 		);
 	}
 
+
 	// Plugins
-	public isPluginEnabled(name: 'commands' | 'music' | 'interval' | 'rssfeed' | 'logs') {
+	public isPluginEnabled(name: DiscordBot.PLUGIN_NAMES) {
 		// Commands is enabled by default even if null.
 		if (name == 'commands') return this.plugins[name] == null || this.plugins[name].enabled;
 
@@ -135,6 +197,73 @@ class Server implements DiscordBot.Server {
 
 	public getPrefix() {
 		return this.commandPrefix == null ? '!' : this.commandPrefix;
+	}
+
+
+	// Leveling
+	public keepPreviousRoles() {
+		return this.leveling != null || (this.leveling.keepPreviousRoles == null ? false : this.leveling.keepPreviousRoles);
+	}
+
+	public roleForLevel(level: number) {
+		if (this.leveling == null || this.leveling.roles.length == 0) return null;
+	
+		for(var i = this.leveling.roles.length - 1; i >= 0; i--) {
+			var role = this.leveling.roles[i];
+			if (role.level <= level) return role.id;
+		}
+
+		return null;
+	}
+
+	public addLevelingRole(id: string, level: number) {
+		if (this.leveling != null) {
+			for(var i = 0; i < this.leveling.roles.length; i++) {
+				var role = this.leveling.roles[i];
+				if (role.id == id) return false;
+			}
+		} else {
+			this.leveling = {
+				roles: [],
+				keepPreviousRoles: false
+			};
+		}
+
+		this.leveling.roles.push({
+			id: id,
+			level: level
+		});
+
+		return true;
+	}
+
+	public removeLevelingRole(id: string) {
+		if (this.leveling == null) return false;
+
+		for(var i = 0; i < this.leveling.roles.length; i++) {
+			var role = this.leveling.roles[i];
+			if (role.id == id) {
+				this.leveling.roles.splice(i, 1);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public editLevelingRole(id: string, level: number) {
+		if (this.leveling == null) return false;
+
+		for(var i = 0; i < this.leveling.roles.length; i++) {
+			var role = this.leveling.roles[i];
+			if (role.id == id) {
+				if (role.level == level) return false;
+				role.level = level;
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 
@@ -531,7 +660,7 @@ class Server implements DiscordBot.Server {
 	public addInterval(seconds: number, guildId: string, channelId: string): number {
 		this.createInterval({
 			pid: uniqueID(4),
-			server_id: guildId,
+			guild_id: guildId,
 			channel_id: channelId,
 			every: seconds,
 			active: false,

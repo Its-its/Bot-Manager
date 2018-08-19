@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Invite | Bot Manager</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link href="/css/main.css" rel="stylesheet">
+	</head>
+	<body>
+		<%- include('template/navbar') %>
+		<div class="invite-container">
+			<div class="center-container">
+				<div class="centered invites">
+					<!-- Discord -->
+					<div class="invite-option">
+						<div class="option-left">
+							<span class="title">Discord</span>
+							<span class="description"></span>
+						</div>
+						<div class="option-right">
+							<div class="row-container">
+								<div class="row">
+									<span class="title">Log in & Invite</span>
+									<span class="under green">Recommended</span>
+									<span class="description">You can manage the bot online and view more detailed statistics about it.</span>
+								</div>
+								<div class="row">
+									<span class="title">Invite</span>
+									<span class="under red">Not Recommended</span>
+									<span class="description">You cannot manage the bot online and you have basic statistics about it until you authenticate it online.</span>
+									<span class="description" style="color: #dbdb4f;">Currently doesn't work. You have to log in.</span>
+								</div>
+							</div>
+							<div class="row-container container-buttons">
+								<div class="row">
+									<a class="button" href="/login">Log in</a>
+								</div>
+								<div class="row">
+									<a class="button" href="#">Invite</a>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- Twitch -->
+					<div class="invite-option">
+							<div class="option-left">
+								<span class="title">Twitch.tv</span>
+								<span class="description"></span>
+							</div>
+							<div class="option-right">
+								<div class="row-container">
+									<div class="row">
+										<span class="title">Log in & Invite</span>
+										<span class="under green">Recommended</span>
+										<span class="description">You can manage the bot online and view more detailed statistics about it.</span>
+									</div>
+									<div class="row">
+										<span class="title">Invite</span>
+										<span class="under red">Not Recommended</span>
+										<span class="description">You cannot manage the bot online and you have basic statistics about it until you authenticate it online.</span>
+										<span class="description" style="color: #dbdb4f;">Currently doesn't work. You have to log in.</span>
+									</div>
+								</div>
+								<div class="row-container container-buttons">
+									<div class="row">
+										<a class="button" href="/login">Log in</a>
+									</div>
+									<div class="row">
+										<a class="button" href="#">Invite</a>
+									</div>
+								</div>
+							</div>
+						</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

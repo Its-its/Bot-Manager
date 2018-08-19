@@ -25,6 +25,8 @@ function parseMessage(defaultCommands: DefaultCommands, userConfig, message: str
 				//TODO: check if user has the perms.
 
 				var fixedParams = getProperParam(parts, command.params);
+
+				console.log('[CommMan]: Command: ' + message);
 				
 				var calls = dealWithOnCalled(
 					userConfig.commands,

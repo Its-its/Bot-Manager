@@ -1,6 +1,8 @@
 import Base = require('./base');
 import Server = require('../discordserver');
 
+import Bots = require('../../site/models/bots');
+
 import Phrases = require('../../models/phrases');
 import Commands = require('../../models/commands');
 import DiscordServers = require('../models/servers');
@@ -27,7 +29,7 @@ class PhraseSeperation extends Base {
 						edited_at: Date.now()
 					})
 					.save((err, res) => {
-						DiscordServers.updateOne({ server_id: server.serverId }, { $addToSet: { phrase_ids: res._id } }).exec();
+						Bots.updateOne({ 'bot.server': server.serverId }, { $addToSet: { 'bot.phrase_ids': res._id } }).exec();
 					});
 				}
 			});
@@ -47,7 +49,7 @@ class PhraseSeperation extends Base {
 						edited_at: Date.now()
 					})
 					.save((err, res) => {
-						DiscordServers.updateOne({ server_id: server.serverId }, { $addToSet: { command_ids: res._id } }).exec();
+						Bots.updateOne({ 'bot.server_id': server.serverId }, { $addToSet: { 'bot.command_ids': res._id } }).exec();
 					});
 				}
 			});

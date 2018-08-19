@@ -15,6 +15,7 @@ export = config;
 
 
 interface Config {
+	debug: boolean;
 	port: number;
 	urlProtocol: string;
 	baseUrl: string;
@@ -34,6 +35,7 @@ interface Config {
 		port: number;
 		guildsDB: number;
 		musicDB: number;
+		xpDB: number;
 	}
 	socketIO: {
 		discordPort: number;

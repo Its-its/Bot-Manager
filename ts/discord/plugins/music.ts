@@ -89,8 +89,8 @@ function removeFromPlaylist(guildId: string, discordMemberId: string, playlistPu
 	Playlists.updateOne(
 		{ public_id: playlistPublicId, 'songs.song': songId }, 
 		{
-			$dec: {
-				song_count: 1
+			$inc: {
+				song_count: -1
 			},
 			$pull: {
 				songs: { song: songId }

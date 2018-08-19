@@ -181,6 +181,9 @@ declare namespace DiscordBot {
 
 		commandPrefix?: string;
 
+		channels?: Channels;
+
+		leveling?: Leveling;
 		alias?: Alias[];
 		intervals?: Interval[];
 		ranks?: string[];
@@ -191,6 +194,19 @@ declare namespace DiscordBot {
 		values?: any;
 		moderation?: Moderation;
 		permissions?: Permissions;
+	}
+
+	interface Channels {
+		admin: string;
+	}
+
+	interface Leveling {
+		roles: {
+			id: string;
+			level: number;
+		}[];
+		
+		keepPreviousRoles: boolean;
 	}
 
 	interface Permissions {
@@ -238,12 +254,12 @@ declare namespace DiscordBot {
 	}
 
 
-	type PhraseResponses = PhraseResEcho | PhraseResInterval | PhraseResSet | PhraseResAlias;
+	type PhraseResponses = PhraseResEcho | PhraseResInterval | PhraseResAlias | PhraseResSet | PhraseResRank;
 
 	interface PhraseResEcho {
-		reply?: boolean;
 		type: 'echo';
 		message: string;
+		reply?: boolean;
 		embed?: any;
 	}
 
@@ -265,6 +281,12 @@ declare namespace DiscordBot {
 		oldValue: PhraseResponses;
 		newValue: PhraseResponses;
 	}
+
+	interface PhraseResRank {
+		type: 'rank';
+		id: string;
+		do: 'add' | 'remove' | string;
+	}
 	
 	interface Moderation {
 		disabledDefaultCommands: string[];
@@ -281,7 +303,7 @@ declare namespace DiscordBot {
 
 		pid?: string;
 	
-		server_id?: string;
+		guild_id?: string;
 		channel_id?: string;
 	
 		displayName?: string;
@@ -296,6 +318,8 @@ declare namespace DiscordBot {
 			onReset?: string;
 		};
 	}
+
+	type PLUGIN_NAMES = 'commands' | 'music' | 'interval' | 'rssfeed' | 'logs' | 'leveling';
 	
 	interface Plugin {
 		[name: string]: PluginItem;
@@ -303,6 +327,7 @@ declare namespace DiscordBot {
 		music?: PluginItem;
 		interval?: PluginItem;
 		rssfeed?: PluginItem;
+		leveling?: PluginItem;
 		logs?: PluginLogs;
 	}
 

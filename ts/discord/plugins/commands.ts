@@ -47,7 +47,6 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 					var alias = server.alias[i];
 	
 					if (alias.alias.indexOf(commName) != -1) {
-						console.log(commandMessage.substring(commName.length) + ' == ' + alias.command + commandMessage.substring(commName.length));
 						commandMessage = alias.command + commandMessage.substring(commName.length);
 						// commName = alias.command;
 						break;

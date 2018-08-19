@@ -1,6 +1,8 @@
 import Discord = require('discord.js');
 import DiscordServer = require('../../discordserver');
 
+import utils = require('../../utils');
+
 import Command = require('../../command');
 
 const maxBulkDeleteTime = (1000 * 60 * 60 * 24 * 14);
@@ -166,22 +168,32 @@ class Prune extends Command {
 			.then((editMessage: any) => {
 				editMessage = Array.isArray(editMessage) ? editMessage[0] : editMessage;
 
-				channel.clone(channel.name, true, true, 'Recreating channel.')
+				channel.clone(channel.name, true, true, '[PRUNE] Recreating channel.')
 				.then(newChannel => {
 					editMessage.edit(Command.success([['Prune', 'Setting Channel Position']]));
 
-					newChannel.setParent(channel.parent, 'Recreating channel.');
-
-					// TODO: Permissions
-
-					channel.delete('Recreating Channel')
+					newChannel.setParent(channel.parent, '[PRUNE] Recreating channel.')
 					.then(() => {
+						channel.permissionOverwrites
+						.forEach(perm => {
+							var obj = {};
+		
+							utils.getPermissions(perm.allow).toArray().forEach(p => obj[p] = true);
+							utils.getPermissions(perm.deny).toArray().forEach(p => obj[p] = false);
+		
+							channel.overwritePermissions(perm.id, obj, '[PRUNE] Recreating channel')
+							.catch(e => console.error(e));
+						});
 
-						newChannel.setPosition(channel.position)
+						channel.delete('Recreating Channel')
 						.then(() => {
-							editMessage.edit(Command.success([['Prune', 'Recreated channel']]));
+
+							newChannel.setPosition(channel.position)
+							.then(() => {
+								editMessage.edit(Command.success([['Prune', 'Recreated channel']]));
+							}, e => console.error(e));
 						}, e => console.error(e));
-					}, e => console.error(e));
+					});
 				}, e => console.error(e));
 			}, e => console.error(e));
 		}
