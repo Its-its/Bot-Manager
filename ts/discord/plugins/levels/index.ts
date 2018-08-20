@@ -2,17 +2,22 @@ import Discord = require('discord.js');
 import Server = require('../../discordserver');
 
 import redis = require('redis');
+import async = require('async');
 
 import util = require('./util');
 import UserLevel = require('./models/userlevel');
 import config = require('../../../site/util/config');
 
-import async = require('async');
 
 // const redisXP = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.xpDB });
 
 
-function onMessage(message: Discord.Message, server: Server) {
+function announceNewLevel(member: Discord.GuildMember, level: number, server: Server) {
+	member.guild.defaultChannel.send('<@' + member.id + '> just advanced to level ' + level + '! Congrats!');
+}
+
+
+function onMessage(message: Discord.Message, server: Server): boolean {
 	if (!server.isPluginEnabled('leveling')) return false;
 
 	UserLevel.findOneAndUpdate({
@@ -25,18 +30,21 @@ function onMessage(message: Discord.Message, server: Server) {
 		$setOnInsert: {
 			server_id: message.guild.id,
 			member_id: message.member.id,
-			level: 0
+			level: 1
 		}
 	}, { upsert: true }, (err, item) => {
 		if (err != null) {
 			console.error(err);
-			return;
+			return false;
 		}
+
+		if (item == null) return true;
 
 		var newLevel = util.expToLevels(item['xp']);
 
-		if (item['level'] != newLevel) {
+		if (item['level'] < newLevel) {
 			UserLevel.updateOne({ server_id: message.guild.id, member_id: message.member.id }, { $set: { level: newLevel } }).exec();
+			announceNewLevel(message.member, newLevel, server);
 		}
 	});
 
@@ -71,7 +79,7 @@ function roleRemove(role: Discord.Role, server: Server) {
 					// All the users who had this role.
 
 					async.eachLimit(items, 10, (item, callback) => {
-						var member = role.guild.member(item['user_id']);
+						var member = role.guild.member(item['member_id']);
 						if (member == null) return callback();
 
 						member.addRole(prevRole.id)
@@ -105,9 +113,14 @@ function onReactionAdd(user: Discord.User, reaction: Discord.MessageReaction, se
 				member_id: user.id
 			}, {
 				$inc: {
-					level: util.XP_FOR_REACTION_GIVE.value()
+					xp: util.XP_FOR_REACTION_GIVE.value()
+				},
+				$setOnInsert: {
+					server_id: reaction.message.guild.id,
+					member_id: user.id,
+					level: 1
 				}
-			}).exec();
+			}, { upsert: true }).exec();
 		}
 
 		if (!reaction.message.member.user.bot) {
@@ -117,9 +130,14 @@ function onReactionAdd(user: Discord.User, reaction: Discord.MessageReaction, se
 				member_id: reaction.message.member.id
 			}, {
 				$inc: {
-					level: util.XP_FOR_REACTION_RECEIVE.value()
+					xp: util.XP_FOR_REACTION_RECEIVE.value()
+				},
+				$setOnInsert: {
+					server_id: reaction.message.guild.id,
+					member_id: reaction.message.member.id,
+					level: 1
 				}
-			}).exec();
+			}, { upsert: true }).exec();
 		}
 	}
 }
@@ -135,9 +153,14 @@ function onReactionRemove(user: Discord.User, reaction: Discord.MessageReaction,
 				member_id: user.id
 			}, {
 				$inc: {
-					level: -util.XP_FOR_REACTION_GIVE.value()
+					xp: -util.XP_FOR_REACTION_GIVE.value()
+				},
+				$setOnInsert: {
+					server_id: reaction.message.guild.id,
+					member_id: user.id,
+					level: 1
 				}
-			}).exec();
+			}, { upsert: true }).exec();
 		}
 
 		if (!reaction.message.member.user.bot) {
@@ -147,9 +170,14 @@ function onReactionRemove(user: Discord.User, reaction: Discord.MessageReaction,
 				member_id: reaction.message.member.id
 			}, {
 				$inc: {
-					level: -util.XP_FOR_REACTION_RECEIVE.value()
+					xp: -util.XP_FOR_REACTION_RECEIVE.value()
+				},
+				$setOnInsert: {
+					server_id: reaction.message.guild.id,
+					member_id: reaction.message.member.id,
+					level: 1
 				}
-			}).exec();
+			}, { upsert: true }).exec();
 		}
 	}
 }

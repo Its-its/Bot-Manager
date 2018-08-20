@@ -9,7 +9,8 @@ let pluginNames = [
 	'Music',
 	'Interval',
 	'RSSFeed',
-	'Logs'
+	'Logs',
+	'Leveling'
 ];
 
 let plugins = pluginNames.map(p => p.toLowerCase());
@@ -57,11 +58,12 @@ class Plugin extends Command {
 				message.channel.send(Command.info([
 					[
 						'Plugin List',
-						Command.table(['Name', 'Active'], plugins.map((name, i) => {
+						Command.table(['Name', 'Active', '...'], plugins.map((name, i) => {
 							var plugin = server.plugins[name];
 							return [
 								pluginNames[i],
-								(server.isPluginEnabled(<any>name) ? 'Enabled' : 'Disabled')
+								(server.isPluginEnabled(<any>name) ? 'Enabled' : 'Disabled'),
+								'...'
 							]
 						}))
 					]

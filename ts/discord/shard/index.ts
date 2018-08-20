@@ -9,9 +9,11 @@ let manager: ShardingManager;
 function launch(client: string) {
 	if (clients.indexOf(client) == -1) throw new Error('Client "' + client + '" is not a valid client.');
 
+	console.log('Launching ' + client.toUpperCase());
+
 	let finished = false;
 
-	manager = new ShardingManager(`src/discord/clients/interval.js`, {
+	manager = new ShardingManager(`src/discord/clients/${client}.js`, {
 		totalShards: 'auto',
 		respawn: true,
 		token: config.bot.discord.token
@@ -29,7 +31,7 @@ function launch(client: string) {
 	
 	manager.spawn();
 
-	if (client == 'bot') botCreated();
+	// if (client == 'bot') botCreated();
 }
 
 function botCreated() {
