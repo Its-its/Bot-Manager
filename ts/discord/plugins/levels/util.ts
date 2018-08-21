@@ -15,6 +15,8 @@ class RandValue {
 	}
 }
 
+const MAX_LEVEL = 999;
+const MAX_EXP = levelsToExp(MAX_LEVEL);
 
 const CHECK_IF_ONLINE = 15;
 
@@ -71,8 +73,29 @@ function remainingExp(totalXp: number) {
 	return totalXp - xp + expToNextLevel(level);
 }
 
+function regularArcData(cx, cy, radius, startDegrees, endDegrees, isCounterClockwise) {
+	var offsetRadians = Math.PI/2;
+	var sweepFlag = (isCounterClockwise) ? 0 : 1;
+	var startRadians = offsetRadians + startDegrees * Math.PI / 180;
+	var endRadians = offsetRadians + (startDegrees + endDegrees) * Math.PI / 180;
+	var largeArc = ((endRadians - startRadians) % (2 * Math.PI)) > Math.PI ? 1 : 0;
+	var startX = parseInt(cx + radius * Math.cos(startRadians));
+	var startY = parseInt(cy + radius * Math.sin(startRadians));
+	var endX = parseInt(cx + radius * Math.cos(endRadians));
+	var endY = parseInt(cy + radius * Math.sin(endRadians));
+	var space = " ";
+	var arcData = "";
+
+	arcData += "M" + space + startX + space + startY + space;
+	arcData += "A" + space + radius + space + radius + space + offsetRadians + space + largeArc + space + sweepFlag + space + endX + space + endY;
+	return (arcData);
+}
+
 
 export {
+	MAX_LEVEL,
+	MAX_EXP,
+
 	COOLDOWN_FOR_MESSAGE,
 	XP_FOR_MESSAGE,
 	XP_FOR_MESSAGE_COUNT,
@@ -89,5 +112,7 @@ export {
 	expToNextLevel,
 	levelsToExp,
 	expToLevels,
-	remainingExp
+	remainingExp,
+
+	regularArcData
 };

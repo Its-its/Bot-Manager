@@ -4,12 +4,14 @@ import Help = require('./help');
 import Leaderboard = require('./leaderboard');
 import Rank = require('./rank');
 import Set = require('./set');
+import Remove = require('./remove');
 
 export = {
-	Add,
-	Config,
-	Help,
-	Leaderboard,
 	Rank,
-	Set
+	Leaderboard,
+	Help,
+	Config,
+	Add,
+	Remove,
+	Set,
 };

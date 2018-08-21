@@ -6,7 +6,7 @@ import util = require('../../../../plugins/levels/util');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (params.length != 3) {
-		message.channel.send('set <id> <amount> <xp/level>');
+		message.channel.send('remove <id> <amount> <xp/level>');
 		return;
 	}
 
@@ -17,7 +17,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	if (isNaN(amount) || 
 		(type != 'lvl' && type != 'xp') || 
 		(type == 'lvl' && amount > util.MAX_LEVEL)
-	) return message.channel.send('Invalid opts. Use set <id> <amount> <xp/level>');
+	) return message.channel.send('Invalid opts. Use remove <id> <amount> <xp/level>');
 
 	var idType = server.idType(user);
 
@@ -51,17 +51,15 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		}
 
 		if (type == 'xp') {
-			xp = amount;
+			xp -= amount;
 
 			if (xp < 0) xp = 0;
-			if (xp > util.MAX_EXP) xp = util.MAX_EXP;
 
 			level = util.expToLevels(xp);
 		} else {
-			level = amount;
+			level -= amount;
 
 			if (level < 0) level = 0;
-			if (level > util.MAX_LEVEL) level = util.MAX_LEVEL;
 
 			xp = util.levelsToExp(level);
 		}

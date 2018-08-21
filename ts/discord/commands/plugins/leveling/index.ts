@@ -35,11 +35,12 @@ class Leveling extends Command {
 		switch(callType == null ? null : callType.toLowerCase()) {
 			case 'rank': return comm.Rank.call(params, server, message);
 			case 'leaderboard': return comm.Leaderboard.call(params, server, message);
-			case 'set': return comm.Set.call(params, server, message);
 			case 'config': return comm.Config.call(params, server, message);
+			case 'set': return comm.Set.call(params, server, message);
+			case 'add': return comm.Add.call(params, server, message);
+			case 'remove': return comm.Remove.call(params, server, message);
 			case 'help':
-			default:
-				comm.Help.call(params, server, message);
+			default: return comm.Help.call(params, server, message);
 		}
 	}
 }
