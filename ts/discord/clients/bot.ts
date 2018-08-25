@@ -125,7 +125,7 @@ client.on('message', msg => {
 			if (server.channelIgnored(msg.channel.id)) return;
 
 			if (!commandPlugin.onMessage(client.user.id, msg, server)) {
-				if (server.hasBlacklistedWord(msg.content)) {
+				if (server.hasBlacklistedWord(msg.channel.id, msg.content)) {
 					msg.reply('Blacklisted.');
 				} else {
 					levelsPlugin.onMessage(msg, server);

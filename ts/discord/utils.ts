@@ -93,11 +93,11 @@ function strpToId(str: string): string {
 function getIdType(str: string): 'role' | 'member' | 'channel' {
 	if (str == null || str.length < 3) return null;
 
-		if (str.startsWith('<@&') || str == '@everyone') return 'role';
-		if (str.startsWith('<@')) return 'member';
-		if (str.startsWith('<#')) return 'channel';
+	if (str.startsWith('<@&') || str == '@everyone') return 'role';
+	if (str.startsWith('<@')) return 'member';
+	if (str.startsWith('<#')) return 'channel';
 
-		return null;
+	return null;
 }
 
 

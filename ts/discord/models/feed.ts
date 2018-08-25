@@ -5,11 +5,7 @@ const Schema = mongoose.Schema;
 const DiscordFeeds = new Schema({
 	pid: String,
 
-	// Custom
-	format: String,
-
-
-	active: Boolean,
+	active: { type: Boolean, default: true },
 
 	guild_id: String,
 	channel_id: String,
@@ -18,6 +14,8 @@ const DiscordFeeds = new Schema({
 
 	feeds: [
 		{
+			format: String,
+			active: { type: Boolean, default: true },
 			items: [ String ],
 			feed: { ref: 'rssfeeds', type: Schema.Types.ObjectId }
 		}
@@ -26,12 +24,14 @@ const DiscordFeeds = new Schema({
 
 interface FeedFix extends mongoose.Document {
 	pid: string;
-	format: string;
 	active: boolean;
 	guild_id: string;
 	channel_id: string;
 	last_check: Date;
+	
 	feeds: {
+		format: string;
+		active: boolean;
 		items: string[];
 		feed: any;
 	}[];

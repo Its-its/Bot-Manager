@@ -109,17 +109,45 @@ client.on('channelDelete', (channel: Discord.TextChannel) => {
 const callAgain = 1000 * 60 * 5;
 
 
+interface FeedItem {
+	id: string;
+	title: string;
+	description: string;
+	date: Date;
+	link: string;
+	guid: string;
+	author: string;
+	generator: string;
+	categories: string[];
+};
+
+interface Feed extends mongoose.Document {
+	url: string;
+	link: string;
+	xmlUrl: string;
+
+	sending_to: number;
+
+	items: FeedItem[];
+
+	last_called: Date;
+}
+
+interface ChannelFeedItem {
+	format: string;
+	active: boolean;
+	items: string[];
+	feed: Feed;
+};
+
+
 interface FeedFix extends mongoose.Document {
 	pid: string;
-	format: string;
 	active: boolean;
 	guild_id: string;
 	channel_id: string;
 	last_check: Date;
-	feeds: {
-		items: string[];
-		feed: any;
-	}[];
+	feeds: ChannelFeedItem[];
 }
 
 
@@ -142,17 +170,22 @@ setInterval(() => {
 		for(var i = 0; i < count; i++) {
 			grouped.push(feedDocs.splice(0, 10));
 		}
+		
+		// TODO: Fix everyLimit
 
 		async.every(grouped, (docs, cbEvery) => {
 			// Execute simultaneously.
-			async.each(docs, (doc: any, cbEach) => {
+			async.each(docs, (doc, cbEach) => {
 				if (doc.feeds.length == 0) {
 					ModelDiscordFeed.updateOne({ _id: doc._id }, { $set: { active: false } })
 					.exec(() => cbEach());
 					return;
 				}
 
-				var newFeeds = [];
+				var newFeeds: {
+					feed: ChannelFeedItem,
+					item: FeedItem
+				}[] = [];
 
 				var feedItems = {};
 
@@ -161,7 +194,10 @@ setInterval(() => {
 
 					feeds.feed.items.forEach(item => {
 						if (feeds.items.indexOf(item.id) == -1) {
-							newFeeds.push(item);
+							newFeeds.push({
+								feed: feeds,
+								item: item
+							});
 						}
 					});
 
@@ -199,14 +235,15 @@ setInterval(() => {
 						return;
 					}				
 
-					newFeeds.forEach(feed => {
-						channel.send(util.compileFormat(doc.format == null ? ':newspaper:  **{title}**\n\n{link}' : doc.format, {
-							title: feed.title,
-							date: feed.date,
-							author: feed.author,
-							description: feed.description,
-							link: feed.link,
-							guid: feed.guid
+					newFeeds.forEach(opts => {
+						var { item, feed } = opts;
+						channel.send(util.compileFormat(feed.format == null ? util.DEFAULT_FORMAT : feed.format, {
+							title: item.title,
+							date: item.date,
+							author: item.author,
+							description: item.description,
+							link: item.link,
+							guid: item.guid
 							// tags: feed.tags
 						}))
 						.catch(e => console.error(e));

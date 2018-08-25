@@ -69,7 +69,7 @@ class Plugin extends Command {
 					]
 				]));
 				return;
-			case 'enable': // TODO: add params.length checks instead of null checks.
+			case 'enable':
 				if (!this.hasPerms(message.member, server, PERMISSIONS.ENABLE)) return Command.noPermsMessage('Plugin');
 
 				var type = params.shift();
@@ -112,7 +112,7 @@ class Plugin extends Command {
 					}
 				}
 				break;
-			case 'disable': // TODO: add params.length checks instead of null checks.
+			case 'disable':
 				if (!this.hasPerms(message.member, server, PERMISSIONS.DISABLE)) return Command.noPermsMessage('Plugin');
 
 				var type = params.shift();

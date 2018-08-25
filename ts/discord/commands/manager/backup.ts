@@ -425,7 +425,7 @@ interface Compiled {
 		roles: string[];
 	}[];
 
-	blacklists?: string[];
+	blacklists?: { [value: string]: string[] };
 	disabled_custom_comm?: string[];
 	disabled_default_comm?: string[];
 	ignored_channels?: string[];

@@ -5,18 +5,13 @@ import generate = require('nanoid/generate');
 import DiscordServer = require('../../../../discordserver');
 import DiscordFeeds = require('../../../../models/feed');
 
-import utils = require('../../../../../rssgrabber/utils');
+import RSSFeeds = require('../../../../../models/rssfeed');
 
+import utils = require('../../../../../rssgrabber/utils');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	var url = params.join(' ');
 	console.log('Url: ' + url);
-
-	if (!url.startsWith('http')) {
-		url = 'http://' + url;
-	}
-
-	// TODO: Check if links are the same (https/http)
 
 	utils.addNewFeed(url, null, null, (err, isNew, feedDoc, article) => {
 		if (err != null) return console.error(err);
@@ -46,6 +41,8 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 					// 
 				}
 			);
+		} else {
+			RSSFeeds.updateOne({ _id: feedDoc._id }, { $inc: { sending_to: 1 } }).exec();
 		}
 	});
 }

@@ -100,7 +100,7 @@ class Command {
 		return Command.defCall(Command.InfoColor, array);
 	}
 
-	// TODO: Text is different widths if not in code blocks.
+	//! Text is different widths if not in code blocks.
 	static table(header: string[], body: any[][], opts?: { delimiter?: string; spacing?: number; monospaced?: boolean; }): string {
 		opts = Object.assign({
 			delimiter: ' ',
@@ -145,6 +145,27 @@ class Command {
 
 		return comp;
 	}
+
+	// Channels
+	static onChannelDelete(channel: Discord.Channel, server: Server) { return false; }
+
+	// Users
+	static onGuildMemberAdd(channel: Discord.Channel, server: Server) { return false; }
+	static onGuildMemberRemove(channel: Discord.Channel, server: Server) { return false; }
+
+	// Roles
+	static onRoleDelete(role: Discord.Role, server: Server) { return false; }
+	static onRoleCreate(role: Discord.Role, server: Server) { return false; }
+	static onRoleUpdate(oldRole: Discord.Role, newRole: Discord.Role, server: Server) { return false; }
+	
+	//
+	static onReactionAdd(reaction: Discord.MessageReaction, user: Discord.User, server: Server) { return false; }
+	static onReactionRemove(reaction: Discord.MessageReaction, user: Discord.User, server: Server) { return false; }
+
+	static onMessage(message: Discord.Message, server: Server) { return false; }
+	static onMessageDelete(message: Discord.Message, server: Server) { return false; }
+	static onMessageDeleteBulk(messages: Discord.Collection<string, Discord.Message>, server: Server) { return false; }
+	static onMessageUpdate(oldMessage: Discord.Message, newMessage: Discord.Message, server: Server) { return false; }
 }
 
 export = Command;

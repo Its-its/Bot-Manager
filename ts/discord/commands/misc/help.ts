@@ -12,25 +12,24 @@ class Help extends Command {
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		var commands = (<{[str: string]: Command[]}>Commands.list());
-		var categoryNames: any = Object.keys(commands).map(c => [ c, c.toLowerCase(), commands[c].length ]);
+		var categoryNames: any[] = Object.keys(commands).map(c => [ c, c.toLowerCase(), commands[c].length ]);
 
+		var commandTotal = 0;
+
+		categoryNames.forEach(c => commandTotal += c[2]);
+	
 		if (params.length == 0) {
-			var commandTotal = 0;
-
 			var lines = [
 				'Total Commands: ',
 				'_Excluding custom commands._',
 				server.getPrefix() + 'help all'
 			];
 
-
 			for(var i = 0; i < categoryNames.length; i++) {
 				var cat = categoryNames[i];
-
-				commandTotal += cat[2];
 				lines.push(server.getPrefix() + 'help ' + cat[1]);
 			}
-			
+
 			lines[0] += commandTotal;
 
 			return Command.info([
@@ -44,18 +43,22 @@ class Help extends Command {
 		var name = params.shift().toLowerCase();
 
 		if (name == 'all') {
-			var count = 0;
-			var each = [];
+			var each = [
+				[
+					'**All Commands**',
+					commandTotal + ' commands.'
+				].join('\n')
+			];
+
+			var length = each[0].length;
 
 			for(var i = 0; i < categoryNames.length; i++) {
 				var categoryName = categoryNames[i];
 
 				var categoryCommands = commands[categoryName[0]];
 
-				count += categoryCommands.length;
-
 				each.push([
-					categoryName[0],
+					`**${categoryName[0]}**`,
 					Command.table(['Name', 'Perms', 'Description'], 
 						categoryCommands.map(c => 
 							[
@@ -65,15 +68,19 @@ class Help extends Command {
 							]
 						)
 					)
-				]);
+				].join('\n'));
+
+				length += each[each.length - 1].length;
+
+				if (length >= 1950) {
+					message.channel.send(each.splice(0, each.length - 1).join('\n'));
+					length = each[0].length;
+				}
 			}
 
-			return Command.info([
-				[
-					'All Commands',
-					count + ' commands.'
-				]
-			].concat(each));
+			message.channel.send(each.join('\n'));
+
+			return;
 		}
 
 		// List commands in a category

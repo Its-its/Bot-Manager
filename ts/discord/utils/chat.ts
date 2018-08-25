@@ -31,18 +31,20 @@ interface PageSelection {
 
 const defaultConfigValues = {
 	removeReply: true,
-	timeoutMS: 1000 * 60 * 2
+	timeoutMS: 1000 * 60 * 2,
 }
 
 // const pageReplaceValues = [ '{input}', '{name}' ];
 
-const formatReplaceValues = [
-	'{page_items}',
-	'{pagination}'
-];
+const formatReplaceValues = {
+	'{page_items}': (page: MessagePage) => page.selections.map(s => s == null ? '' : page.pageSelectionFormat(s)).join('\n'),
+	'{pagination}': (page: MessagePage) => '_Pagination goes here_'
+};
 
 class MessagePage {
 	public author_id: string;
+
+	public onMessage: (value: string) => boolean = null;
 
 	public channel: GChannel;
 	public editingMessage: Discord.Message;
@@ -59,9 +61,8 @@ class MessagePage {
 
 	public initiated = false;
 
-	// 
 	public format: string[];
-	public pageSelectionFormat = (item: PageSelection) => item.input + ') ' + item.description;
+	public pageSelectionFormat = (item: PageSelection) => item.input + ' > ' + item.description;
 
 	constructor(config: MessagePageConfig) {
 		Object.assign(config, defaultConfigValues);
@@ -95,7 +96,7 @@ class MessagePage {
 
 		if (this.removeReply) {
 			userMessage.delete()
-			.catch(e => console.error(e));
+			.catch(e => console.error('removeReply:', e));
 		}
 
 		if (this.select(input)) return;
@@ -113,28 +114,37 @@ class MessagePage {
 		// 	// 
 		// });
 		this.editingMessage.channel.send(Command.error([[ 'Input Error', `"${input}" is not a valid selection input.` ]]))
-		.then((m: Discord.Message) => m.delete(2000).catch(e => console.error(e)))
-		.catch(e => console.error(e));
+		.then((m: Discord.Message) => m.delete(2000).catch(e => console.error('del-2000:', e)))
+		.catch(e => console.error('collect:', e));
 	}
 
 	public onEnd(reason: string) {
 		console.log('End: ' + reason);
+
 		if (reason == 'time') {
+			if (this.editingMessage == null) return;
 			this.editingMessage.delete();
+			this.editingMessage = null;
 			this.temporaryMessage(Command.error([[ 'Time limit exceeded.', 'Removing page selections...' ]]), 3000);
 		} else if (reason == 'exit') {
 			this.edit(Command.error([['Pages', 'Exiting...']]), () => {
 				this.editingMessage.delete(3000)
-				.catch(e => console.error(e));
+				.catch(e => console.error('exit:', e));
+				this.editingMessage = null;
 			});
 		} else if (reason == 'delete') {
 			this.editingMessage.delete()
-			.catch(e => console.error(e));
+			.catch(e => console.error('delete:', e));
+			this.editingMessage = null;
 		}
 	}
 
 	public display() {
-		if (this.parent != null) this.addSelection('Back', 'Return to previous page.', (page, cb) => { cb(true); this.back(); });
+		if (this.parent != null) {
+			this.parent.close('delete');
+			this.addSelection('Back', 'Return to previous page.', (page, cb) => { cb(true); this.back(); });
+		}
+
 		this.addSelection('Exit', 'Exits out of the selection.', (page, cb) => { cb(true); this.close('exit'); });
 
 		this.refresh();
@@ -149,7 +159,7 @@ class MessagePage {
 				this.editingMessage = c;
 				this.init();
 			})
-			.catch(e => console.error(e));
+			.catch(e => console.error('refresh:', e));
 		} else {
 			this.edit(this.compileMessage(), () => {
 				this.init();
@@ -162,6 +172,11 @@ class MessagePage {
 	public close(reason: 'close' | 'delete' | 'time' | string = 'close') {
 		if (this.collector != null && !this.collector.ended) {
 			this.collector.stop(reason); 
+		} else {
+			if (this.editingMessage != null && reason != 'close') {
+				this.editingMessage.delete();
+				this.editingMessage = null;
+			}
 		}
 
 		this.collector = null;
@@ -171,7 +186,7 @@ class MessagePage {
 	public back() {
 		if (this.parent == null) return;
 
-		this.close();
+		this.close('delete');
 		this.parent.display();
 	}
 
@@ -200,8 +215,15 @@ class MessagePage {
 		return this;
 	}
 
+	public listen(cb: (value: string) => boolean) {
+		this.onMessage = cb;
+	}
+
 	public select(inputValue: string): boolean {
-		if (this.selectionCalls[inputValue] == null) return false;
+		if (this.selectionCalls[inputValue] == null) {
+			if (this.onMessage && this.onMessage(inputValue)) return true;
+			return false;
+		}
 
 		const doDisplayCrap = (dontDisplay: boolean) => {
 			if (dontDisplay) return; // TODO: Remove
@@ -210,7 +232,7 @@ class MessagePage {
 			newPage.display();
 		};
 
-		const newPage = new MessagePage({ author_id: this.author_id, editingMessage: this.editingMessage, channel: this.channel, parent: this });
+		const newPage = new MessagePage({ author_id: this.author_id, channel: this.channel, parent: this });
 
 		this.selectionCalls[inputValue](newPage, doDisplayCrap);
 
@@ -225,17 +247,17 @@ class MessagePage {
 		.then((msg: Discord.Message) => {
 			msg.delete(deletion)
 			.then(() => cb && cb())
-			.catch(e => console.error(e));
+			.catch(e => console.error('temp1:', e));
 		})
-		.catch(e => console.error(e));
+		.catch(e => console.error('temp0:', e));
 	}
 
 	public edit(newMessage, cb: (value: Discord.Message) => any) {
-		this.close(); // No need to select anything anymore.
+		// this.close(); // No need to select anything anymore.
 
 		this.editingMessage.edit(newMessage)
-		.then(m => { this.setEditing(m); cb(m);})
-		.catch(e => console.error(e));
+		.then(m => { this.setEditing(m); cb(m); })
+		.catch(e => console.error('edit:', e));
 	}
 
 
@@ -243,9 +265,9 @@ class MessagePage {
 		return Command.info([[
 			'Pages',
 			this.format.map(f => {
-				if (f == '{page_items}') return this.selections.map(s => s == null ? '\n' : this.pageSelectionFormat(s)).join('\n');
-				if (f == '{pagination}') return '_Pagination goes here_';
-
+				for(var format in formatReplaceValues) {
+					if (f == format) return formatReplaceValues[format](this);
+				}
 				return f;
 			}).join('\n')
 		]]);
@@ -262,6 +284,7 @@ class MessagePage {
 	}
 
 	public setEditing(message: Discord.Message) {
+		if (this.parent != null) this.parent.setEditing(message);
 		this.editingMessage = message;
 		return this;
 	}

@@ -417,7 +417,10 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 				}
 
 				if (isImporting('blacklists')) {
-					items.blacklists.forEach(b => server.blacklist(b));
+					for(var cid in items.blacklists) {
+						var items = items.blacklists[cid];
+						items.forEach(b => server.blacklist(cid, b));
+					}
 				}
 
 				if (isImporting('disabled_custom_comm')) {
@@ -585,7 +588,7 @@ interface Compiled {
 		roles: string[];
 	}[];
 
-	blacklists?: string[];
+	blacklists?: { [value: string]: string[] };
 	disabled_custom_comm?: string[];
 	disabled_default_comm?: string[];
 	ignored_channels?: string[];

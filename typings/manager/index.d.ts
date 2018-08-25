@@ -131,9 +131,9 @@ declare namespace DiscordBot {
 		setPhraseResponse(id: number, response: DiscordBot.PhraseResponses[]): boolean;
 		findPhrase(text: string[] | string): Phrase;
 
-		hasBlacklistedWord(content: string): boolean;
-		isBlacklistedItem(item: string): boolean;
-		blacklist(item: string): boolean;
+		hasBlacklistedWord(id: string, content: string): boolean;
+		isBlacklistedItem(id: string, item: string): boolean;
+		blacklist(id: string, item: string): boolean;
 
 		ignore(type: 'member' | 'channel', id: string): boolean;
 		clearIgnoreList(list: 'member' | 'channel' | 'all');
@@ -291,7 +291,7 @@ declare namespace DiscordBot {
 	interface Moderation {
 		disabledDefaultCommands: string[];
 		disabledCustomCommands: string[];
-		blacklisted: string[];
+		blacklisted: { [value: string]: string[] };
 		whitelisted: string[];
 		ignoredChannels: string[];
 		ignoredUsers: string[];

@@ -34,7 +34,7 @@ class RSSFeed extends Command {
 
 		var callType = params.shift();
 
-		if (params.length == 0 || callType.toLowerCase() == 'help') return comm.Help.call(params, server, message);
+		if (callType == null || callType.toLowerCase() == 'help') return comm.Help.call(params, server, message);
 
 		switch(callType.toLowerCase()) {
 			case 'add': return comm.Add.call(params, server, message);

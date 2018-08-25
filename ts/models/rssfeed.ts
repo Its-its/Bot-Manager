@@ -32,9 +32,11 @@ const RSSFeeds = new Schema({
 
 interface FeedFix extends mongoose.Document {
 	url: string;
-	xmlUrl: string;
 	link: string;
+	xmlUrl: string;
+
 	sending_to: number;
+
 	items: {
 		id: string;
 		title: string;
@@ -46,6 +48,7 @@ interface FeedFix extends mongoose.Document {
 		generator: string;
 		categories: string[];
 	}[];
+
 	last_called: Date;
 }
 

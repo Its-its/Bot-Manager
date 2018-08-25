@@ -13,6 +13,8 @@ import Commands = require('./commands');
 
 import intervalPlugin = require('./plugins/interval');
 
+import utils = require('./utils');
+
 import { Document, Types } from 'mongoose';
 
 
@@ -93,7 +95,7 @@ class Server extends Changes implements DiscordBot.Server {
 	public channels: DiscordBot.Channels;
 
 	public moderation: DiscordBot.Moderation = {
-		blacklisted: [],
+		blacklisted: {},
 		whitelisted: [],
 		ignoredChannels: [],
 		ignoredUsers: [],
@@ -428,30 +430,62 @@ class Server extends Changes implements DiscordBot.Server {
 
 
 	// Whitelisted/Blacklisted
-	public hasBlacklistedWord(content: string): boolean {
+	public hasBlacklistedWord(id: string, content: string): boolean {
 		var splt = content.toLowerCase().split(' '); // TODO: URL Check
 
-		for (let i = 0; i < splt.length; i++) {
-			if (this.moderation.blacklisted.indexOf(splt[i]) != -1) {
-				return true;
-			}
+		var blacklisted = this.moderation.blacklisted;
+
+		if (Array.isArray(blacklisted)) {
+			blacklisted = this.moderation.blacklisted = {};
 		}
+
+		var items = blacklisted[id];
+
+		if (items == null || items.length == 0) return false;
+
+		for (let i = 0; i < splt.length; i++) {
+			if (items.indexOf(splt[i]) != -1) return true;
+		}
+
 		return false;
 	}
 
-	public isBlacklistedItem(item: string): boolean {
-		return this.moderation.blacklisted.indexOf(item) != -1;
+	public isBlacklistedItem(id: string, item: string): boolean {
+		var blacklisted = this.moderation.blacklisted;
+
+		if (Array.isArray(blacklisted)) {
+			blacklisted = this.moderation.blacklisted = {};
+		}
+
+		var items = blacklisted[id];
+
+		if (items == null || items.length == 0) return false;
+
+		return items.indexOf(item) != -1;
 	}
 
-	public blacklist(item: string): boolean {
-		var indexOf = this.moderation.blacklisted.indexOf(item);
+	public blacklist(id: string, item: string): boolean {
+		var blacklisted = this.moderation.blacklisted;
+
+		if (Array.isArray(blacklisted)) {
+			blacklisted = this.moderation.blacklisted = {};
+		}
+
+		var items = blacklisted[id];
+
+		if (items == null || items.length == 0) return false;
+
+		var indexOf = items.indexOf(item);
 
 		if (indexOf != -1) {
-			this.moderation.blacklisted.splice(indexOf, 1);
+			items.splice(indexOf, 1);
 			return false;
 		}
 
-		this.moderation.blacklisted.push(item);
+		items.push(item);
+
+		this.moderation.blacklisted[id] = items;
+
 		return true;
 	}
 
@@ -928,28 +962,11 @@ class Server extends Changes implements DiscordBot.Server {
 	}
 
 	public strpToId(str: string): string {
-		if (str == null) return null;
-
-		if (!str.startsWith('<@') && !str.startsWith('<#')) return str;
-
-		if (str.length < 3) return null;
-
-		var sub = str.substr(2, str.length - 3);
-
-		// Roles are <@&1234>
-		if (sub[0] == '&') return sub.substr(1);
-		
-		return sub;
+		return utils.strpToId(str);
 	}
 
-	public idType(str: string): 'member' | 'role' | 'channel' {
-		if (str == null || str.length < 3) return null;
-
-		if (str.startsWith('<@&') || str == '@everyone') return 'role';
-		if (str.startsWith('<@')) return 'member';
-		if (str.startsWith('<#')) return 'channel';
-
-		return null;
+	public idType(str: string) {
+		return utils.getIdType(str);
 	}
 
 

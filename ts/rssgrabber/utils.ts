@@ -1,12 +1,18 @@
 import { Document } from 'mongoose';
 
 import crypto = require('crypto');
+import md5 = require('md5');
+
 import request = require('request');
 import FeedParser = require('feedparser');
 
 import RSSFeeds = require('../models/rssfeed');
 
 import cheerio = require('cheerio');
+
+import { URL } from 'url';
+
+const DEFAULT_FORMAT = ':newspaper:  **{title}**\n\n{link}';
 
 
 interface ArticleDB {
@@ -70,65 +76,81 @@ function getFeedItems(url: string, cookies: any, cb: (err?: Error, items?: FeedP
 	});
 }
 
-function addNewFeed(url: string, cookies: any, title: string, cb: (err?: Error, newFeed?: boolean, feed?: Document, article?: ArticleDB) => any) {
+
+function addNewFeed(uri: string, cookies: any, title: string, cb: (err?: string, newFeed?: boolean, feed?: Document, article?: ArticleDB) => any) {
 	// Find db from url
 	//   - Not found? Get items, Check again with one of the items xml urls (usually more proper) if not found, register as new.
 
+	if (!uri.startsWith('http')) uri = 'http://' + uri;
 
-	RSSFeeds.findOne({ $or: [ { xmlUrl: url }, { link: url } ] }, (err, feed) => {
+	try {
+		new URL(uri);
+	} catch(e) {
+		return cb('Invalid URL.');
+	}
+
+	// TODO: Check if links are the same (https/http) | I believe I did it partially.
+
+	RSSFeeds.findOne({ $or: [ { xmlUrl: uri }, { link: uri } ] }, (err, feed) => {
 		if (err != null) return cb(err);
 
-		if (feed != null) {
-			RSSFeeds.updateOne({ _id: feed['id'] }, { $set: { active: true }, $inc: { sending_to: 1 } }).exec();
-			cb(null, false, feed);
-		} else {
-			getFeedItems(url, cookies, (err, items) => {
-				if (err != null) return cb(err);
+		if (feed != null) return cb(null, false, feed);
+	
 
-				var fItem = items[0];
+		getFeedItems(uri, cookies, (err, items) => {
+			if (err != null) return cb('An error occured while trying to grab Feed Items.');
 
-				if (fItem != null) {
-					if (fItem.meta != null && fItem.meta.xmlurl != null && fItem.meta.xmlurl.toLowerCase() != url.toLowerCase()) {
-						// Check DB again for xmlurl this time.
-						RSSFeeds.findOne({ xmlUrl: fItem.meta.xmlurl }, (err, feed) => {
-							if (err != null) return cb(err);
+			var fItem = items[0];
 
-							if (feed != null) {
-								RSSFeeds.updateOne({ _id: feed['id'] }, { $set: { active: true }, $inc: { sending_to: 1 } }).exec();
-								cb(null, false, feed);
-							} else createFeed();
-						});
-					} else createFeed();
-				} else cb(new Error('XML page didn\'t have any items on it.'));
-				
+			if (fItem == null) return cb('XML page didn\'t have any items on it.');
 
-				function createFeed() {
-					var articles = articlesToDB(url, items);
+			if (fItem.meta != null && fItem.meta.xmlurl != null && fItem.meta.xmlurl.toLowerCase() != uri.toLowerCase()) {
+				uri = fItem.meta.xmlurl;
 
-					new RSSFeeds(articles)
-					.save((err, feed) => {
-						if (err != null) return cb(err);
-						cb(null, true, feed, articles);
-					});
+				if (fItem.meta.link == null || fItem.meta.link.length == 0) {
+					fItem.meta.link = fItem.meta.xmlurl;
 				}
 
-				// console.log(JSON.stringify(items[0], null, 2));
-		
-				// for(var i = 0; i < items.length; i++) {
-				// 	console.log('ID: ' + getArticleId(items[i], items));
-				// }
-			}); 
-		}
+				// Check DB again for xmlurl this time.
+				RSSFeeds.findOne({ $or: [ { xmlUrl: uri }, { link: fItem.meta.link.replace(/https?:\/\//i, '') } ] }, (err, feed) => {
+					if (err != null) return cb('Error contacting DB. Please try again in a minute.');
+
+					if (feed != null) cb(null, false, feed);
+					else createFeed();
+				});
+			} else createFeed();
+			
+
+			function createFeed() {
+				var articles = articlesToDB(uri, items);
+
+				new RSSFeeds(articles)
+				.save((err, feed) => {
+					if (err != null) return cb(err);
+					cb(null, true, feed, articles);
+				});
+			}
+
+			// console.log(JSON.stringify(items[0], null, 2));
+	
+			// for(var i = 0; i < items.length; i++) {
+			// 	console.log('ID: ' + getArticleId(items[i], items));
+			// }
+		}); 
 	});
 }
 
 function articlesToDB(url: string, items: FeedParser.Item[]): ArticleDB {
 	var fItem = items[0];
 
+	if (fItem.meta.link == null || fItem.meta.link.length == 0) {
+		fItem.meta.link = fItem.meta.xmlurl;
+	}
+
 	return {
 		url: url,
 		xmlUrl: fItem.meta.xmlurl,
-		link: fItem.meta.link,
+		link: fItem.meta.link.replace(/https?:\/\//i, ''),
 
 		sending_to: 1,
 
@@ -214,6 +236,7 @@ function compileFormat(format: string, opts: FormatOpts) {
 
 
 export = {
+	DEFAULT_FORMAT,
 	returnArticlesAfter,
 	articleItemsToDB,
 	articlesToDB,
