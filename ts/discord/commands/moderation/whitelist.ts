@@ -14,6 +14,8 @@ for(var name in PERMS) {
 
 // if (!this.hasPerms(message.member, server, PERMS.MAIN)) return Command.noPermsMessage('');
 
+// Don't know what this is for.
+
 class Whitelist extends Command {
 	constructor() {
 		super('whitelist');

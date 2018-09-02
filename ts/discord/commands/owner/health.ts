@@ -16,6 +16,8 @@ class Health extends Command {
 	constructor() {
 		super('health');
 
+		this.perms = [ 'commands.health' ];
+
 		this.description = 'Checks the health of the bot.';
 	}
 
@@ -33,7 +35,7 @@ class Health extends Command {
 					var shard = shards[i];
 					output.push(`Shard ${shard.id}: ${statuses[shard.status]}, serving ${shard.guildCount} guilds`);
 				}
-				
+
 				message.channel.send(output, { code: 'http' });
 			})
 			.catch(e => console.error(e));

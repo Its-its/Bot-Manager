@@ -108,11 +108,10 @@ class Ignore extends Command {
 			case 'role': break;
 			default:
 				if (isMention(type)) {
-					// TODO: server.idType()
-					var isUser = type[1] == '@';
-					var id = type.slice(2, type.length - 1);
+					var idType = server.idType(type);
+					var id = server.strpToId(type);
 
-					if (isUser) {
+					if (idType == 'member') {
 						if (!this.hasPerms(message.member, server, PERMS.USER)) return Command.noPermsMessage('Ignore');
 
 						var member = message.guild.member(id);
@@ -121,7 +120,7 @@ class Ignore extends Command {
 							server.save();
 							return Command.success([['Ignore', 'I am now ignoring user "' + member.displayName + '"']]);
 						} else return Command.error([['Ignore', 'Unable to find member! Does it Exist?!']]);
-					} else {
+					} else if (idType == 'channel') {
 						if (!this.hasPerms(message.member, server, PERMS.CHANNEL)) return Command.noPermsMessage('Ignore');
 
 						var channel = message.guild.channels.get(id);
@@ -130,6 +129,8 @@ class Ignore extends Command {
 							server.save();
 							return Command.success([['Ignore', 'I am now ignoring channel "#' + channel.name + '"']]);
 						} else return Command.error([['Ignore', 'Unable to find channel! Does it Exist?!']]);
+					} else {
+						return Command.error([['Ignore', 'ID Type not valid.']]);
 					}
 				}
 				break;

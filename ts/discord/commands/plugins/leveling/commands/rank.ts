@@ -68,17 +68,21 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 					cb(err);
 					return;
 				}
-	
+
 				cb(null, level == null ? null : level.toJSON());
 			});
 		}
 	}
 
 	function sendImage(member: Discord.GuildMember, level: Level) {
-		var prevXP = util.levelsToExp(level.level);
-		var nextXP = util.expToNextLevel(level.level);
+		// Level 1: 105
+		// Level 2: 325
+		// Level 3: 670
 
-		var currentXP = prevXP - level.xp;
+		var prevXP = util.levelsToExp(level.level);		// 325
+		var nextXP = util.levelsToExp(level.level + 1);	// 670
+
+		var currentXP = level.xp - prevXP; // 426 - 325 = 101
 
 		var image = [];
 
@@ -92,17 +96,15 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				return;
 			}
 
-			const url = message.member.user.displayAvatarURL.replace(/\.webp.*/i, '.png').replace(/\.gif.*/i, '.png');
-
-			console.log(url);
+			const url = member.user.displayAvatarURL.replace(/\.webp.*/i, '.png').replace(/\.gif.*/i, '.png');
 
 			addPath('none', '#223', 10, util.regularArcData(cx, cy, 250, 40, 280, false));
-			addPath('none', 'yellow', 12, util.regularArcData(cx, cy, 250, 40, currentXP/nextXP * 280, false), 'filter="url(#glow)"');
+			addPath('none', 'yellow', 12, util.regularArcData(cx, cy, 250, 40, (level.xp/nextXP) * 280, false), 'filter="url(#glow)"');
 
 			addText('Member Level', '30px', 'bold', '50%', '280px', null, 'alignment-baseline="middle" text-anchor="middle"');
 			addText(level.level, '180px', 'bold', '50%', '70%', null, 'alignment-baseline="middle" text-anchor="middle"');
 
-			var xpText = `${currentXP} / ${nextXP} XP`;
+			var xpText = `${currentXP} / ${nextXP - prevXP} XP`;
 			addText(xpText, '20px', 'normal', '50%', 600, null, 'alignment-baseline="middle" text-anchor="middle"');
 
 			addText(member.user.username + `<tspan font-size="23px" font-weight="400">#${member.user.discriminator}</tspan>`, '35px', 'bold', '130px', '45px', null, 'textLength="300" lengthAdjust="spacing"');
@@ -113,12 +115,11 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			const imgHeight = 640;
 
 			const avatar = sharp();
-			
+
 
 			request.get(url + '?size=256')
 			.on('end', () => {
 				// Create Avatar
-				console.log('Avatar');
 				avatar
 				.background({ r: 0, g: 0, b: 0, alpha: 0 })
 				.overlayWith(Buffer.from(`
@@ -130,7 +131,6 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				.toBuffer()
 				.then(avatarBuffer => {
 					// Create Base
-					console.log('Base');
 					sharp(<any>{
 						create: {
 							width: imgWidth,
@@ -157,7 +157,6 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 					.toBuffer()
 					.then(baseBuffer => {
 						// Combine -> Output
-						console.log('Output');
 						sharp(baseBuffer)
 						.overlayWith(avatarBuffer, { top: 10, left: 10 })
 						.png()
@@ -171,19 +170,17 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				})
 				.catch(e => console.error(e));
 			})
-			.on('error', (e) => {
-				console.error(e);
-			})
+			.on('error', (e) => console.error(e))
 			.pipe(avatar);
 		});
 
 		function addText(text, size, weight, x, y, color, extra?) {
 			image.push(`<text
-				${extra == null ? '' : extra} 
-				fill="${color == null ? '#EEE' : color}" 
-				x="${x}" 
-				y="${y}" 
-				font-size="${size}" 
+				${extra == null ? '' : extra}
+				fill="${color == null ? '#EEE' : color}"
+				x="${x}"
+				y="${y}"
+				font-size="${size}"
 				font-weight="${weight}">${text}</text>`);
 		}
 

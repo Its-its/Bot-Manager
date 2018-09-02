@@ -43,9 +43,9 @@ declare namespace DiscordBot {
 
 			repeatQueue: boolean;
 			repeatSong: boolean;
-			
+
 			constructor(guildId: string, save: MusicOptions);
-			
+
 			save(cb?);
 			play(cb?: (err: string, newSong?: DiscordBot.plugins.SongGlobal, lastSong?: DiscordBot.plugins.SongGlobal) => any, trys?: number);
 			sendStop(reason: 'stopped' | 'next', cb?: (reason: string) => any);
@@ -70,7 +70,7 @@ declare namespace DiscordBot {
 			lastTextChannelId: string;
 			repeatQueue: boolean;
 			repeatSong: boolean;
-			
+
 			playing: PlayedSong;
 
 			defaultPlaylist?: string;
@@ -80,7 +80,7 @@ declare namespace DiscordBot {
 
 			playingFrom: number;
 		}
-		
+
 		interface PlayedSong extends SongGlobal {
 			playedAt: number;
 		}
@@ -88,10 +88,10 @@ declare namespace DiscordBot {
 		interface SongYT extends SongType<'youtube'> {
 			channel_id: string;
 		}
-		
+
 		interface SongType<T> {
 			type: T;
-			
+
 			id: string;
 			title: string;
 			length: number;
@@ -103,7 +103,7 @@ declare namespace DiscordBot {
 		}
 
 		type SongGlobal = SongYT;
-		
+
 		interface Playlist {
 		}
 	}
@@ -111,16 +111,22 @@ declare namespace DiscordBot {
 
 	export class Server {
 		public serverId: string;
+
 		public region: string;
 		public moderation: Moderation;
+
 		public intervals: Interval[];
 		public ranks: string[];
 		public commands: Command[];
 		public phrases: Phrase[];
 		public roles: Role[];
+
 		public plugins: any;
 		public values: any;
+
+		public punishments: Punishments;
 		public permissions: Permissions;
+		public channels: Channels;
 
 		constructor(serverID: string, options: ServerOptions);
 		save(cb?);
@@ -183,6 +189,7 @@ declare namespace DiscordBot {
 
 		channels?: Channels;
 
+		events?: ListenEvents[];
 		leveling?: Leveling;
 		alias?: Alias[];
 		intervals?: Interval[];
@@ -194,10 +201,60 @@ declare namespace DiscordBot {
 		values?: any;
 		moderation?: Moderation;
 		permissions?: Permissions;
+		punishments?: Punishments;
+	}
+
+	interface Punishments {
+		role_mute_id?: string;
+	}
+
+	type DoEvents = DoGroupEvent | DoMessageEvent | DoDirectMessageEvent;
+	type ListenEvents = ReactAddEvent | MemberAddEvent | MemberRemoveEvent;
+
+	interface ListenEvent {
+		uid: string;
+		type: string;
+		event?: DoEvents;
+	}
+
+	interface ReactAddEvent extends ListenEvent {
+		type: 'react_add';
+		message_id: string;
+		emoji_id: string;
+	}
+
+	interface MemberAddEvent extends ListenEvent {
+		type: 'member_add';
+	}
+
+	interface MemberRemoveEvent extends ListenEvent {
+		type: 'member_remove';
+	}
+
+
+	interface DoEvent {
+		type: string;
+	}
+
+	interface DoGroupEvent extends DoEvent {
+		type: 'role';
+		do?: 'add' | 'remove';
+		role_id?: string;
+	}
+
+	interface DoMessageEvent extends DoEvent {
+		type: 'message';
+		message?: string;
+		channel_id?: string;
+	}
+
+	interface DoDirectMessageEvent extends DoEvent {
+		type: 'dm';
+		message?: string;
 	}
 
 	interface Channels {
-		admin: string;
+		admin?: string;
 	}
 
 	interface Leveling {
@@ -205,7 +262,7 @@ declare namespace DiscordBot {
 			id: string;
 			level: number;
 		}[];
-		
+
 		keepPreviousRoles: boolean;
 	}
 
@@ -235,7 +292,7 @@ declare namespace DiscordBot {
 
 	interface Alias {
 		pid: string;
-		
+
 		alias: string[];
 		command: string;
 	}
@@ -287,7 +344,7 @@ declare namespace DiscordBot {
 		id: string;
 		do: 'add' | 'remove' | string;
 	}
-	
+
 	interface Moderation {
 		disabledDefaultCommands: string[];
 		disabledCustomCommands: string[];
@@ -296,31 +353,31 @@ declare namespace DiscordBot {
 		ignoredChannels: string[];
 		ignoredUsers: string[];
 	}
-	
-	
+
+
 	interface Interval {
 		_id?: string;
 
 		pid?: string;
-	
+
 		guild_id?: string;
 		channel_id?: string;
-	
+
 		displayName?: string;
 		message?: string;
 		active?: boolean;
-	
+
 		every?: number;
 		nextCall?: number;
-	
+
 		events?: {
 			onCall?: string;
 			onReset?: string;
 		};
 	}
 
-	type PLUGIN_NAMES = 'commands' | 'music' | 'interval' | 'rssfeed' | 'logs' | 'leveling';
-	
+	type PLUGIN_NAMES = 'commands' | 'music' | 'interval' | 'rssfeed' | 'logs' | 'leveling' | 'events';
+
 	interface Plugin {
 		[name: string]: PluginItem;
 		commands?: PluginItem;
@@ -328,6 +385,7 @@ declare namespace DiscordBot {
 		interval?: PluginItem;
 		rssfeed?: PluginItem;
 		leveling?: PluginItem;
+		events?: PluginItem;
 		logs?: PluginLogs;
 	}
 
@@ -340,7 +398,7 @@ declare namespace DiscordBot {
 		enabled: boolean;
 		// perms: boolean;
 	}
-	
+
 	// Role
 	interface Role {
 		id: string;
@@ -352,24 +410,24 @@ declare namespace DiscordBot {
 		managed: boolean;
 		mentionable: boolean;
 	}
-	
+
 	// Command
 	interface Command {
 		_id?: string;
-	
+
 		pid: string;
 		alias: string[];
 		params: CommandParam[];
 	}
-	
+
 	interface CommandParam {
 		onCalled?: PhraseResponses;
 		response?: PhraseResponses;
-	
+
 		length?: number;
 		minLength?: number;
 		maxLength?: number;
-	
+
 		paramReg?: string;
 		minPerms?: number;
 		cb?: (params: string[], userOptions: any, message: any) => any;

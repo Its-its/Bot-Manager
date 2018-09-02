@@ -8,13 +8,14 @@ const PERMS = {
 	MAIN: 'commands.blacklist',
 	IGNORE: 'ignore',
 	LIST: 'list',
-	CLEAR: 'clear',
+	CLEAR: 'remove',
 	ADD: 'add'
 };
 
 for(var name in PERMS) {
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
+
 
 class Blacklist extends Command {
 	constructor() {
@@ -33,12 +34,13 @@ class Blacklist extends Command {
 		if (param_1 == null) {
 			return Command.info([
 				[ 'Description', this.description ],
-				[ 
+				[
 					'Command Usage',
 					[
-						'list', 
-						'clear <#/id>', 
-						'<word/url>'
+						'list',
+						'add <word/url>',
+						'remove <#/id>',
+						// 'action <#/id> <censor/delete/tempmute/warn>', // Paged
 					].map(b => server.getPrefix() + 'blacklist ' + b)
 					.join('\n')
 				]
@@ -55,30 +57,30 @@ class Blacklist extends Command {
 
 				return Command.info([
 					[
-						'Channels with Blacklists', 
+						'Channels with Blacklists',
 						channels_ids.length == 0 ? 'None' : channels_ids.map(b => ` - <#${b}> - Blacklisted Count: ${blacklisted[b].length}`).join('\n')
 					]
 				]);
 			} else {
 				var channel_id = server.strpToId(channel);
-				
+
 				var items = blacklisted[channel_id];
 
 				return Command.info([
 					[
-						'Blacklisted Items:', 
+						'Blacklisted Items:',
 						items == null || items.length == 0 ? 'None' : items.map(b => ` - ${b}`).join('\n')
 					]
 				]);
 			}
-		} else if (param_1 == 'clear') {
+		} else if (param_1 == 'remove') {
 			if (!this.hasPerms(message.member, server, PERMS.CLEAR)) return Command.noPermsMessage('Blacklist');
 
 			var channel = params.shift();
-			if (channel == null) return Command.info([[ 'Blacklist', 'Invalid opts. Use clear <id/#/all>' ]]);
+			if (channel == null) return Command.info([[ 'Blacklist', 'Invalid opts. Use remove <id/#/all>' ]]);
 
 			var channel_id = server.strpToId(channel);
-				
+
 			var items = blacklisted[channel_id];
 
 			if (items == null || items.length == 0) {
@@ -92,35 +94,34 @@ class Blacklist extends Command {
 			} else {
 				delete server.moderation.blacklisted[channel_id];
 			}
-			
+
 			server.save();
 
 			return Command.info([
 				[
-					'Blacklist', 
+					'Blacklist',
 					`Cleared ${channel_id == 'all' ? 'all' : '<#' + channel_id + '>'} items from blacklist.`
 				]
 			]);
+		} else if (param_1 == 'add') {
+			if (!this.hasPerms(message.member, server, PERMS.ADD)) return Command.noPermsMessage('Blacklist');
+
+			var word = params.join(' ').trim();
+
+			var resp = 'Successfully blacklisted "' + word + '"';
+
+			if (!server.blacklist(message.channel.id, word)) {
+				resp = 'Successfully removed "' + word + '" from blacklist.';
+			}
+
+			server.save();
+
+			return Command.success([['Blacklist', resp]]);
 		}
-
-		if (!this.hasPerms(message.member, server, PERMS.ADD)) return Command.noPermsMessage('Blacklist');
-
-		var word = param_1 + ' ' + params.join(' ').trim();
-
-		var resp = 'Successfully blacklisted "' + word + '"';
-
-		if (!server.blacklist(message.channel.id, word)) {
-			resp = 'Successfully removed "' + word + '" from blacklist.';
-		}
-
-		server.save();
-
-		return Command.success([['Blacklist', resp]]);
 	}
 
 	static onMessage(message: Discord.Message, server: DiscordServer) {
 		if (!server.userHasPerm(message.member, PERMS.IGNORE)) return false;
-		// TODO: Ignore Blacklist perms.
 
 		var blacklisted = server.moderation.blacklisted[message.channel.id];
 
@@ -141,7 +142,11 @@ class Blacklist extends Command {
 	}
 
 	static onChannelDelete(channel: Discord.Channel, server: DiscordServer) {
-		// 
+		if (server.moderation.blacklisted[channel.id] != null) {
+			delete server.moderation.blacklisted[channel.id];
+			server.save();
+		}
+
 		return false;
 	}
 }

@@ -18,7 +18,7 @@ import config = require('../util/config');
 let redisGuildsClient = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.guildsDB });
 
 
-const MAX_BOTS = 3;
+const MAX_BOTS = 5;
 
 // Layout
 // /api
@@ -135,7 +135,7 @@ function ensure(opts: EnsureOpts) {
 					if (value != 'true' && value != 'false') return { err: 'Field "%s" is supposed to be a boolean!' };
 					value = (value == 'true');
 				}
-				if (typeof value != 'boolean') return { err: 'Field "%s" is supposed to be a boolean!' };	
+				if (typeof value != 'boolean') return { err: 'Field "%s" is supposed to be a boolean!' };
 				break;
 			case 'array':
 				if (!Array.isArray(value)) return { err: 'Field "%s" is supposed to be an array!' };
@@ -247,7 +247,7 @@ export = (app: express.Application) => {
 		});
 	});
 
-	dashboard.post('/create', (req, res) => { // TODO: "this.listeners is not a funtion"
+	dashboard.post('/create', (req, res) => {
 		console.log('/create pre');
 		var user = req['user'];
 
@@ -304,7 +304,7 @@ export = (app: express.Application) => {
 							edited: bot.edited_at
 						}
 					};
-	
+
 					// TODO: Remove? Just send type of bot?
 					bot.getBot((err, app) => {
 						if (app != null) {
@@ -314,9 +314,9 @@ export = (app: express.Application) => {
 							delete app['server_id'];
 							delete app['bot_id'];
 						}
-	
+
 						data.bot.app = app;
-	
+
 						res.send({ data: data });
 					});
 				});
@@ -326,12 +326,12 @@ export = (app: express.Application) => {
 
 	// Get Bot
 	// bots.get('/:bid', (req, res) => {
-	// 	// 
+	// 	//
 	// });
 
 	// Update Bot
 	// bots.put('/:bid', (req, res) => {
-	// 	// 
+	// 	//
 	// });
 
 	// Delete Bot
@@ -343,7 +343,7 @@ export = (app: express.Application) => {
 			// TODO: Disable.
 
 			var user = req['user'];
-			
+
 			Users.updateOne({ _id: user._id }, { $inc: { 'bots.amount': -1 } })
 			.exec(() => res.send({ res: 'success' }));
 		});
@@ -448,7 +448,7 @@ export = (app: express.Application) => {
 				}
 
 				DiscordServers.updateOne(
-					{ _id: doc.id }, 
+					{ _id: doc.id },
 					{ $addToSet: addTo }
 				).exec();
 
@@ -476,7 +476,7 @@ export = (app: express.Application) => {
 
 	// Get Single Bot Command
 	// bots.get('/:bid/commands/:cid', (req, res) => {
-	// 	// 
+	// 	//
 	// });
 
 	// Update Bot Command
@@ -525,7 +525,7 @@ export = (app: express.Application) => {
 			if (server == null) return res.status(500).send({ error: 'Server does not exist!' });
 
 			Commands.findOneAndUpdate(
-				{ uid: cid }, 
+				{ uid: cid },
 				{
 					$set: {
 						alias: alias,
@@ -606,7 +606,7 @@ export = (app: express.Application) => {
 
 				var index = server.command_ids.indexOf(comm._id);
 				if (index != -1) server.command_ids.splice(index, 1);
-				
+
 
 				server.save(() => {
 					res.send({});

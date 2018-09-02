@@ -1,7 +1,6 @@
 import Rank = require('./rank');
 import Plugin = require('./plugin');
 import Perms = require('./perms');
-import Raw = require('./raw');
 import Nick = require('./nick');
 import Prefix = require('./prefix');
 
@@ -18,6 +17,5 @@ export = [
 	new Nick(),
 	new Prefix(),
 	new Backup(),
-	new Restore(),
-	new Raw()
+	new Restore()
 ];

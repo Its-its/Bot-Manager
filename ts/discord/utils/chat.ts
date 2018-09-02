@@ -51,7 +51,7 @@ class MessagePage {
 
 	public collector: Discord.MessageCollector;
 
-	public selectionCalls: { [name: string]: (value: MessagePage, fin: (dontDisplay?: boolean) => any) => any } = {};
+	public selectionCalls: { [name: string]: (value: MessagePage) => any } = {};
 	public selections: PageSelection[] = [];
 
 	public removeReply: boolean;
@@ -108,11 +108,6 @@ class MessagePage {
 		this.collector.on('collect', (collectedMsg) => this.onCollect(collectedMsg));
 		this.collector.on('end', (_, reason) => this.onEnd(reason));
 
-		// TODO: Ignore non-valid selection.
-
-		// this.temporaryMessage(Command.error([[ 'Input Error', `"${input}" is not a valid selection input.` ]]), 3000, () => {
-		// 	// 
-		// });
 		this.editingMessage.channel.send(Command.error([[ 'Input Error', `"${input}" is not a valid selection input.` ]]))
 		.then((m: Discord.Message) => m.delete(2000).catch(e => console.error('del-2000:', e)))
 		.catch(e => console.error('collect:', e));
@@ -142,10 +137,10 @@ class MessagePage {
 	public display() {
 		if (this.parent != null) {
 			this.parent.close('delete');
-			this.addSelection('Back', 'Return to previous page.', (page, cb) => { cb(true); this.back(); });
+			this.addSelection('Back', 'Return to previous page.', (page) => { this.back(); });
 		}
 
-		this.addSelection('Exit', 'Exits out of the selection.', (page, cb) => { cb(true); this.close('exit'); });
+		this.addSelection('Exit', 'Exits out of the selection.', (page) => { this.close('exit'); });
 
 		this.refresh();
 
@@ -190,7 +185,7 @@ class MessagePage {
 		this.parent.display();
 	}
 
-	public addSelection(inputValue: string, description: string, setup: (value: MessagePage, fin: (dontDisplay?: boolean) => any) => any): MessagePage {
+	public addSelection(inputValue: string, description: string, setup: (value: MessagePage) => any): MessagePage {
 		if (this.selectionCalls[inputValue.toLowerCase()] == null) {
 			this.selectionCalls[inputValue.toLowerCase()] = setup;
 			this.selections.push({ input: inputValue, description: description });
@@ -225,16 +220,10 @@ class MessagePage {
 			return false;
 		}
 
-		const doDisplayCrap = (dontDisplay: boolean) => {
-			if (dontDisplay) return; // TODO: Remove
-
-			this.close();
-			newPage.display();
-		};
 
 		const newPage = new MessagePage({ author_id: this.author_id, channel: this.channel, parent: this });
 
-		this.selectionCalls[inputValue](newPage, doDisplayCrap);
+		this.selectionCalls[inputValue](newPage);
 
 		return true;
 	}

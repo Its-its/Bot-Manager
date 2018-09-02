@@ -6,8 +6,8 @@ import Commands = require('../index');
 
 /*
 * The permissions system works like this:
-* 		If you have "commands.perms.user" then you have access to "commands.perms.user.*"
-*		If you have "commands" then you have access to "commands.*" except for "commands.bypasstoggle"
+* 	If you have "commands.perms.user" then you have access to "commands.perms.user.*"
+*	If you have "commands" then you have access to "commands.*" except for "commands.bypasstoggle"
 */
 
 // TODO: Ensure "Groups" is working properly.
@@ -52,17 +52,22 @@ class Perms extends Command {
 				[
 					'Command Usage',
 					[
-						// 'list <@user/@role/group>',
+						'list <@user/@role>',
+						'list group <id>',
+						'list command <name>',
+
 						'user <@user>',
 						'user <@user> add <command/perm>',
 						'user <@user> remove <command/perm>',
-						// 'user <@user> group add <command/perm>',
-						// 'user <@user> group remove <name>',
+						'user <@user> group add <command/perm>',
+						'user <@user> group remove <name>',
+
 						'role <@role>',
 						'role <@role> add <command/perm>',
 						'role <@role> remove <command/perm>',
-						// 'role <@role> group add <command/perm>',
-						// 'role <@role> group remove <name>',
+						'role <@role> group add <command/perm>',
+						'role <@role> group remove <name>',
+
 						'group <name>',
 						'group create <Display Name> - A-Z 0-9 spaces',
 						'group <name> add <command/perm>',
@@ -81,22 +86,45 @@ class Perms extends Command {
 		switch (comm) {
 			case 'list':
 				if (!this.hasPerms(message.member, server, PERMISSIONS.LIST)) return Command.noPermsMessage('Perms');
-				// var id = params.shift();
-				// var type = getType(id);
-				// if (type == null) return;
+				var id = params.shift();
 
-				// var permi = server.permissions[type][id];
-				// if (permi == null) return;
+				if (id == 'command') {
+					var name = params.shift();
+					if (name == null) return;
 
-				// message.channel.send(Command.info([
-				// 	[	'Permissions',
-				// 		[
-				// 			type + ': ' + id
-				// 		].concat(permi.perms.map(p => ' - ' + p))
-				// 		.join('\n')
-				// 	]
-				// ]));
-				break;
+					var command = Commands.get(name);
+					if (command == null) return;
+
+					message.channel.send(Command.info([
+						[
+							'Permissions',
+							'```' + command.perms.map(p => ' - ' + p).join('\n') + '```'
+						]
+					]));
+				} else {
+					if (id == 'group') id = params.shift();
+
+					var type = server.idType(id);
+					if (type == null) return;
+
+					var permis = null;
+
+					if (type == 'member') {
+						permis = server.permissions.users[id];
+					} else if (type == 'role') {
+						permis = server.permissions.roles[id];
+					}
+
+					if (permis == null) return;
+
+					message.channel.send(Command.info([
+						[
+							'Permissions',
+							'```' + [ type + ': ' + id ].concat(permis.perms.map(p => ' - ' + p)).join('\n') + '```'
+						]
+					]));
+				}
+				return;
 			case 'channels':
 				// if (!this.hasPerms(message.member, server, PERMISSIONS.CHANNELS)) return Command.noPermsMessage('Perms');
 				// TODO: Image table showing read/write/view/etc. of channels
@@ -166,29 +194,28 @@ class Perms extends Command {
 					} else {
 						message.channel.send(Command.error([['Permissions', 'Failed']]));
 					}
-				} 
-				// else if (doit == 'group') {
-				// 	var groupName = params.shift();
-				// 	if (perm == null || groupName == null) return Command.error([['Permissions', 'Invalid Params']]);
+				} else if (doit == 'group') {
+					var groupName = params.shift();
+					if (perm == null || groupName == null) return Command.error([['Permissions', 'Invalid Params']]);
 
-				// 	if (perm == 'add') {
-				// 		var added = server.addGroupTo('users', user, groupName.toLowerCase());
+					if (perm == 'add') {
+						var added = server.addGroupTo('users', user, groupName.toLowerCase());
 
-				// 		if (added) {
-				// 			message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + user]]));
-				// 		} else {
-				// 			message.channel.send(Command.error([['Permissions', 'Invalid Group name']]));
-				// 		}
-				// 	} else if (perm == 'remove') {
-				// 		var added = server.removeGroupFrom('users', user, groupName.toLowerCase());
+						if (added) {
+							message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + user]]));
+						} else {
+							message.channel.send(Command.error([['Permissions', 'Invalid Group name']]));
+						}
+					} else if (perm == 'remove') {
+						var added = server.removeGroupFrom('users', user, groupName.toLowerCase());
 
-				// 		if (added) {
-				// 			message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + user]]));
-				// 		} else {
-				// 			message.channel.send(Command.error([['Permissions', 'Group does not exist']]));
-				// 		}
-				// 	} else return Command.error([['Permissions', 'Invalid Params']]);
-				// }
+						if (added) {
+							message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + user]]));
+						} else {
+							message.channel.send(Command.error([['Permissions', 'Group does not exist']]));
+						}
+					} else return Command.error([['Permissions', 'Invalid Params']]);
+				}
 
 				break;
 			case 'role':
@@ -233,8 +260,6 @@ class Perms extends Command {
 
 					var added = server.addPermTo('roles', roleId, perm);
 
-					// TODO: Ensure perm exists.
-
 					if (added) {
 						message.channel.send(Command.error([['Permissions', 'Added ' + perm + ' to ' + role]]));
 					} else {
@@ -252,87 +277,84 @@ class Perms extends Command {
 					} else {
 						message.channel.send(Command.error([['Permissions', 'Failed']]));
 					}
-				} 
-				// else if (doit == 'group') {
-				// 	var groupName = params.shift();
-				// 	if (perm == null || groupName == null) return Command.error([['Permissions', 'Invalid Params']]);
+				} else if (doit == 'group') {
+					var groupName = params.shift();
+					if (perm == null || groupName == null) return Command.error([['Permissions', 'Invalid Params']]);
 
-				// 	if (perm == 'add') {
-				// 		var added = server.addGroupTo('roles', roleId, groupName.toLowerCase());
+					if (perm == 'add') {
+						var added = server.addGroupTo('roles', roleId, groupName.toLowerCase());
 
-				// 		if (added) {
-				// 			message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + role]]));
-				// 		} else {
-				// 			message.channel.send(Command.error([['Permissions', 'Invalid Group name']]));
-				// 		}
-				// 	} else if (perm == 'remove') {
-				// 		var added = server.removeGroupFrom('roles', roleId, groupName.toLowerCase());
+						if (added) {
+							message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + role]]));
+						} else {
+							message.channel.send(Command.error([['Permissions', 'Invalid Group name']]));
+						}
+					} else if (perm == 'remove') {
+						var added = server.removeGroupFrom('roles', roleId, groupName.toLowerCase());
 
-				// 		if (added) {
-				// 			message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + role]]));
-				// 		} else {
-				// 			message.channel.send(Command.error([['Permissions', 'Group does not exist']]));
-				// 		}
-				// 	} else return Command.error([['Permissions', 'Invalid Params']]);
-				// }
+						if (added) {
+							message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + role]]));
+						} else {
+							message.channel.send(Command.error([['Permissions', 'Group does not exist']]));
+						}
+					} else return Command.error([['Permissions', 'Invalid Params']]);
+				}
 
 				break;
 			case 'group':
-				return Command.info([['Perms', 'Groups aren\'t implemented yet. Sorry :/']]);
+				if (!this.hasPerms(message.member, server, PERMISSIONS.GROUP)) return Command.noPermsMessage('Perms');
 
-				// if (!this.hasPerms(message.member, server, PERMISSIONS.GROUP)) return Command.noPermsMessage('Perms');
-
-				// var name = params.shift();
+				var name = params.shift();
 				
-				// if (name == 'create') {
-				// 	if (!this.hasPerms(message.member, server, PERMISSIONS.GROUP_CREATE)) return Command.noPermsMessage('Perms');
+				if (name == 'create') {
+					if (!this.hasPerms(message.member, server, PERMISSIONS.GROUP_CREATE)) return Command.noPermsMessage('Perms');
 
-				// 	if (params.length == 0) return Command.error([['Permissions', 'Invalid Params']]);
-				// 	var displayName = params.join(' ');
+					if (params.length == 0) return Command.error([['Permissions', 'Invalid Params']]);
+					var displayName = params.join(' ');
 
-				// 	if (!/^[a-z0-9 ]+$/i.test(displayName)) return Command.error([['Permissions', 'Invalid Display Name. A-Z, 0-9, spaces only.']]);
-				// 	if (!server.createGroup(displayName)) return Command.error([['Permissions', 'Group with that name already exists!']]);
+					if (!/^[a-z0-9 ]+$/i.test(displayName)) return Command.error([['Permissions', 'Invalid Display Name. A-Z, 0-9, spaces only.']]);
+					if (!server.createGroup(displayName)) return Command.error([['Permissions', 'Group with that name already exists!']]);
 
-				// 	return Command.success([
-				// 		[
-				// 			'Permissions',
-				// 			[
-				// 				'Sucessfully created Group',
-				// 				'Display Name: ' + displayName,
-				// 				'Name: ' + displayName.replace(/\s/, '').toLowerCase()
-				// 			].join('\n')
-				// 		]
-				// 	]);
-				// } else {
-				// 	if (params.length != 2) return Command.error([['Permissions', 'Invalid Params']]);
+					return Command.success([
+						[
+							'Permissions',
+							[
+								'Sucessfully created Group',
+								'Display Name: ' + displayName,
+								'Name: ' + displayName.replace(/\s/, '').toLowerCase()
+							].join('\n')
+						]
+					]);
+				} else {
+					if (params.length != 2) return Command.error([['Permissions', 'Invalid Params']]);
 
-				// 	var doit = params.shift();
-				// 	var perm = params.shift();
+					var doit = params.shift();
+					var perm = params.shift();
 
-				// 	if (doit == null) {
-				// 		if (!this.hasPerms(message.member, server, PERMISSIONS.GROUP_LIST)) return Command.noPermsMessage('Perms');
+					if (doit == null) {
+						if (!this.hasPerms(message.member, server, PERMISSIONS.GROUP_LIST)) return Command.noPermsMessage('Perms');
 
-				// 		var permis: any = server.getPermsFrom('groups', name);
-				// 		if (permis == null) return Command.error([['Permissions', 'Group not valid']]);
+						var permis: any = server.getPermsFrom('groups', name);
+						if (permis == null) return Command.error([['Permissions', 'Group not valid']]);
 
-				// 		message.channel.send(Command.info([
-				// 			[	'Permissions',
-				// 				[ 'Group: ' + permis.displayName, 'Name: ' + permis.name, 'Perms:' ]
-				// 				.concat(permis.perms.map(p => ' - ' + p))
-				// 				.join('\n')
-				// 			]
-				// 		]));
+						message.channel.send(Command.info([
+							[	'Permissions',
+								[ 'Group: ' + permis.displayName, 'Name: ' + permis.name, 'Perms:' ]
+								.concat(permis.perms.map(p => ' - ' + p))
+								.join('\n')
+							]
+						]));
 
-				// 		return;
-				// 	} else if (doit == 'add') {
-				// 		if (!this.hasPerms(message.member, server, PERMISSIONS.GROUP_ADD)) return Command.noPermsMessage('Perms');
-				// 		server.addPermTo('groups', name, perm);
-				// 	} else if (doit == 'remove') {
-				// 		if (!this.hasPerms(message.member, server, PERMISSIONS.GROUP_REMOVE)) return Command.noPermsMessage('Perms');
-				// 		server.removePermFrom('groups', name, perm);
-				// 	}
-				// }
-				// break;
+						return;
+					} else if (doit == 'add') {
+						if (!this.hasPerms(message.member, server, PERMISSIONS.GROUP_ADD)) return Command.noPermsMessage('Perms');
+						server.addPermTo('groups', name, perm);
+					} else if (doit == 'remove') {
+						if (!this.hasPerms(message.member, server, PERMISSIONS.GROUP_REMOVE)) return Command.noPermsMessage('Perms');
+						server.removePermFrom('groups', name, perm);
+					}
+				}
+				break;
 			default: return Command.error([['Permissions', 'Nope.']]);
 		}
 

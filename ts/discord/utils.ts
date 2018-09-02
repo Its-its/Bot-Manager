@@ -38,7 +38,6 @@ function infoMsg(array: [string, string][]) {
 	return defCall(InfoColor, array);
 }
 
-// TODO: Text is different widths
 function tableMsg(header: string[], body: any[][], opts?: { delimiter?: string; spacing?: number; }): string {
 	opts = Object.assign({
 		delimiter: ' ',
@@ -85,7 +84,10 @@ function strpToId(str: string): string {
 
 	// Roles are <@&1234>
 	if (sub[0] == '&') return sub.substr(1);
-	
+
+	// Nicks are <@!1234>
+	if (sub[0] == '!') return sub.substr(1);
+
 	return sub;
 }
 
@@ -140,7 +142,7 @@ function videoIdToUrl(site: Sites, id: string) {
 
 
 function generateFullSong(
-	title: string, id: string, icon: string, 
+	title: string, id: string, icon: string,
 	videoTitle: string, videoThumb: string, duration: number,
 	channel: string, uploaded: string) {
 	return {

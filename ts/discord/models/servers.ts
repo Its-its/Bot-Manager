@@ -15,7 +15,8 @@ let DiscordServer = new Schema({
 	phrase_ids: [{ type: Schema.Types.ObjectId, ref: 'phrases' }],
 	interval_ids: [{ type: Schema.Types.ObjectId, ref: 'discord_intervals' }],
 
-	server: {
+	// TODO: Change to string.
+	server: Schema.Types.Mixed,/*{
 		region: String,
 		name: String,
 		iconURL: String,
@@ -46,7 +47,7 @@ let DiscordServer = new Schema({
 		// Added by populate()
 		commands: [],
 		phrases: []
-	},
+	},*/
 
 	created_at: { type: Date, default: Date.now },
 	edited_at: { type: Date, default: Date.now }

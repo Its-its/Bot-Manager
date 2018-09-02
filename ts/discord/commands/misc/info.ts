@@ -24,8 +24,15 @@ class Info extends Command {
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
-			//
+			return Command.info([
+				[
+					'Info',
+					'info'
+				]
+			]);
 		}
+
+		// TODO: Finish
 
 		var id = params.shift();
 		var type = utils.getIdType(id);

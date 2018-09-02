@@ -17,7 +17,7 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 		if (CommandManager.isCallingCommand(server.getPrefix(), bot_id, message.content)) {
 			// TODO: limit how fast you can send commands.
 
-			if (message.content.trim() == `<@${bot_id}>`) {
+			if (message.content.trim() == `<@${bot_id}>` || message.content.trim() == `<@!${bot_id}>`) {
 				message.channel.send(new Discord.RichEmbed({
 					description: 'You can use @bot_name instead of the command prefix if desired.',
 					fields: [
@@ -45,7 +45,7 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 			if (server.alias.length != 0) {
 				for(var i = 0; i < server.alias.length; i++) {
 					var alias = server.alias[i];
-	
+
 					if (alias.alias.indexOf(commName) != -1) {
 						commandMessage = alias.command + commandMessage.substring(commName.length);
 						// commName = alias.command;
@@ -87,12 +87,12 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 						} else {
 							message.channel.send(value.message, value.embed ? new Discord.RichEmbed(value.embed) : undefined);
 						}
-	
+
 						return;
 					case 'interval':
 						var id = value.id;
 						var type = value.do;
-	
+
 						if (type == 'reset') {
 							server.resetInterval(id);
 							server.save();
@@ -105,12 +105,12 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 					// 	var command = value.command;
 					// 	var paramId = value.paramId;
 					// 	var newValue = value.newValue;
-			
+
 					// 	var param = CommandManager.getCommandParam(command, paramId, server.commands);
 					// 	param.onCalled = newValue;
-			
+
 					// 	server.save(() => message.reply(`Successfully edited command "${command}"`));
-			
+
 					// 	return;
 				}
 			}

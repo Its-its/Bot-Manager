@@ -9,8 +9,6 @@ export = (app: express.Application) => {
 		var guildId = req.body.guildId;
 		if (botId == null || guildId == null) return res.send('error');
 
-		// TODO: Check to see if user.id/botId is already being used.
-
 		Validation.findOne({
 			$or: [
 				{ bot_id: botId },

@@ -1,4 +1,4 @@
-// THIS IS A NICER WAY FOR V V V V 
+// THIS IS A NICER WAY FOR V V V V
 // {
 // 	commandName: [ 'ip' ],
 // 	disabled: false,
@@ -26,9 +26,9 @@ import Server = require('../discordserver');
 
 
 let categoryCommands: { [category: string]: Command[] } = {};
-let defaultCommands: Array<Command> = [];
+let defaultCommands: Command[] = [];
 
-let validPerms: Array<string> = [
+let validPerms: string[] = [
 	'commands.bypasstoggle'
 ];
 
@@ -36,14 +36,27 @@ process.nextTick(() => {
 	addCommand(require('./misc'), 'Misc');
 	addCommand(require('./moderation'), 'Moderation');
 	addCommand(require('./manager'), 'Manager');
-	addCommand(require('./moderator'), 'Moderator');
 	addCommand(require('./plugins'), 'Plugins');
 	addCommand(require('./roles'), 'Roles');
 	addCommand(require('./owner'), 'Owner');
 });
 
 function parseMessage(message: string, server: Server, defaultMessage: Discord.Message) {
-	var parts = message.split(' ');
+	var parts = [];
+	var toFix = message.split(' ');
+
+	// fixes \n ex: "!replace list\n```\nitem\n```" https://i.thick.at/HydrographicalFrances.png
+	for(var i = 0; i < toFix.length; i++) {
+		var part = toFix[i];
+
+		if (part.includes('\n')) {
+			var split = part.split('\n');
+			parts.push(...split);
+		} else {
+			parts.push(part);
+		}
+	}
+
 	var messageCommand = parts[0].toLowerCase();
 
 	for (var i = 0; i < defaultCommands.length; i++) {
@@ -52,7 +65,7 @@ function parseMessage(message: string, server: Server, defaultMessage: Discord.M
 		if (command.is(messageCommand)) {
 			if (!defaultMessage.member.hasPermission('ADMINISTRATOR')) {
 
-				if (command.perms.length != 0 && 
+				if (command.perms.length != 0 &&
 					!(server.userHasAnyChildPerm(defaultMessage.member.id, command.perms) || server.rolesHaveAnyChildPerm(defaultMessage.member.roles.keyArray(), command.perms))
 				) return;
 			}
@@ -100,8 +113,8 @@ function list(flat = false) {
 
 export {
 	validPerms,
-	parseMessage, 
-	is, 
+	parseMessage,
+	is,
 	get,
 	list
 };

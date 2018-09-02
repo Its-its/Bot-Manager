@@ -16,7 +16,8 @@ import commandPlugin = require('../plugins/commands');
 import logsPlugin = require('../plugins/logs');
 import levelsPlugin = require('../plugins/levels');
 
-
+// Commands
+import BlacklistCmd = require('../commands/moderation/blacklist');
 
 import config = require('../../site/util/config');
 
@@ -99,7 +100,7 @@ function shardListener() {
 client.on('roleDelete', role => {
 	guildClient.get(role.guild.id, server => {
 		if (server == null) return;
-		
+
 		levelsPlugin.roleRemove(role, server);
 	});
 });
@@ -114,7 +115,8 @@ client.on('roleDelete', role => {
 
 
 client.on('message', msg => {
-	if (msg.member == null) logger.error('Member null:', msg);
+	// Possible b/c of webhooks ??
+	if (msg.member == null) return;
 
 	if (!finishedMigrationCheck) return;
 
@@ -125,11 +127,9 @@ client.on('message', msg => {
 			if (server.channelIgnored(msg.channel.id)) return;
 
 			if (!commandPlugin.onMessage(client.user.id, msg, server)) {
-				if (server.hasBlacklistedWord(msg.channel.id, msg.content)) {
-					msg.reply('Blacklisted.');
-				} else {
-					levelsPlugin.onMessage(msg, server);
-				}
+				BlacklistCmd.onMessage(msg, server);
+
+				levelsPlugin.onMessage(msg, server);
 			}
 		});
 	} catch (error) {
@@ -191,21 +191,21 @@ client.on('guildCreate', guild => {
 	try {
 		Validation.findOneAndRemove({ listener_id: guild.id }, (err, validation: any) => {
 			if (err != null) return logger.error(err);
-	
+
 			if (validation == null) {
 				guild.leave()
 				.catch(e => logger.error(e));
 				return;
 			}
-	
+
 			guildClient.exists(guild.id, exists => {
 				if (exists) return;
-	
+
 				DiscordServers.findOne({ server_id: guild.id }, (err, server) => {
 					if (err != null) logger.error('DiscordServers:', err);
-	
+
 					var newServer = (server == null);
-	
+
 					// Server exists? Update DB, update and add to redis.
 					if (!newServer) {
 						DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: false } }).exec();
@@ -213,10 +213,10 @@ client.on('guildCreate', guild => {
 							logger.info('Grabbed From DB!');
 						});
 					}
-	
+
 					Bots.findOne({ uid: validation.bot_id }, (err, item) => {
 						if (err != null) logger.error('Bots:', err);
-	
+
 						if (newServer) {
 							server = new DiscordServers({
 								user_id: validation.user_id,
@@ -225,16 +225,16 @@ client.on('guildCreate', guild => {
 								key: uniqueID(16)
 							});
 						}
-	
+
 						item.is_active = true;
-	
+
 						item.botType = (<any>Bots).appName('discord');
 						item.botId = server.id;
 						item.displayName = guild.name;
-	
+
 						item.save((err) => {
 							if (err != null) logger.error('Bots.save:', err);
-	
+
 							if (newServer) {
 								server.save(err => {
 									if (err != null) logger.error('DiscordServers.save:', err);
@@ -255,6 +255,15 @@ client.on('guildCreate', guild => {
 		});
 	} catch (error) {
 		console.error(error);
+	}
+});
+
+
+client.on('channelDelete', (channel) => {
+	if (channel.type == 'text' || channel.type == 'category' || channel.type == 'voice') {
+		guildClient.get((<Discord.GuildChannel>channel).guild.id, server => {
+			BlacklistCmd.onChannelDelete(channel, server);
+		});
 	}
 });
 
@@ -317,7 +326,6 @@ function uniqueID(size: number): string {
 
 
 // client.on('channelCreate', (channel) => logger.info(' - channelCreate', channel));
-// client.on('channelDelete', (channel) => logger.info(' - channelDelete', channel));
 // client.on('channelPinsUpdate', (channel, time) => logger.info(' - channelPinsUpdate', channel, time));
 // client.on('channelUpdate', (oldChannel, newChannel) => logger.info(' - channelUpdate', oldChannel, newChannel));
 // client.on('clientUserGuildSettingsUpdate', (settings) => logger.info(' - clientUserGuildSettingsUpdate', settings));

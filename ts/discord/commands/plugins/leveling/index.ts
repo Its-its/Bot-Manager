@@ -7,17 +7,19 @@ import comm = require('./commands');
 
 
 const PERMS = {
-	MAIN: 'commands.rssfeed'
+	MAIN: 'commands.leveling',
+	RANK: 'rank',
+	LEADERBOARD: 'leaderboard',
+	CONFIG: 'config',
+	SET: 'set',
+	ADD: 'add',
+	REMOVE: 'remove',
+	HELP: 'help'
 };
 
 for(var name in PERMS) {
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
-
-
-// for(var name in comm) {
-// 	var perms = comm[name].PERMS;
-// }
 
 class Leveling extends Command {
 	constructor() {
@@ -31,6 +33,10 @@ class Leveling extends Command {
 		if (!server.isPluginEnabled('leveling')) return Command.error([['Error', 'Please enable the Leveling Plugin!']]);
 
 		var callType = params.shift();
+
+		if (callType != null && PERMS[callType.toUpperCase()] != null) {
+			if (!this.hasPerms(message.member, server, PERMS[callType.toUpperCase()])) return Command.noPermsMessage('Leveling');
+		}
 
 		switch(callType == null ? null : callType.toLowerCase()) {
 			case 'rank': return comm.Rank.call(params, server, message);

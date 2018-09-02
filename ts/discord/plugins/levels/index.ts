@@ -13,7 +13,7 @@ import config = require('../../../site/util/config');
 
 
 function announceNewLevel(member: Discord.GuildMember, level: number, server: Server) {
-	member.guild.defaultChannel.send('<@' + member.id + '> just advanced to level ' + level + '! Congrats!');
+	// member.guild.defaultChannel.send('<@' + member.id + '> just advanced to level ' + level + '! Congrats!');
 }
 
 
@@ -30,7 +30,7 @@ function onMessage(message: Discord.Message, server: Server): boolean {
 		$setOnInsert: {
 			server_id: message.guild.id,
 			member_id: message.member.id,
-			level: 1
+			level: 0
 		}
 	}, { upsert: true }, (err, item) => {
 		if (err != null) {
@@ -118,7 +118,7 @@ function onReactionAdd(user: Discord.User, reaction: Discord.MessageReaction, se
 				$setOnInsert: {
 					server_id: reaction.message.guild.id,
 					member_id: user.id,
-					level: 1
+					level: 0
 				}
 			}, { upsert: true }).exec();
 		}
@@ -135,7 +135,7 @@ function onReactionAdd(user: Discord.User, reaction: Discord.MessageReaction, se
 				$setOnInsert: {
 					server_id: reaction.message.guild.id,
 					member_id: reaction.message.member.id,
-					level: 1
+					level: 0
 				}
 			}, { upsert: true }).exec();
 		}
@@ -144,7 +144,7 @@ function onReactionAdd(user: Discord.User, reaction: Discord.MessageReaction, se
 
 function onReactionRemove(user: Discord.User, reaction: Discord.MessageReaction, server: Server) {
 	if (!server.isPluginEnabled('leveling')) return;
-	
+
 	if (!reaction.me) {
 		if (!user.bot) {
 			// redisXP.zincrby(reaction.message.guild.id, -util.XP_FOR_REACTION_GIVE.value(), user.id);
@@ -158,7 +158,7 @@ function onReactionRemove(user: Discord.User, reaction: Discord.MessageReaction,
 				$setOnInsert: {
 					server_id: reaction.message.guild.id,
 					member_id: user.id,
-					level: 1
+					level: 0
 				}
 			}, { upsert: true }).exec();
 		}
@@ -175,7 +175,7 @@ function onReactionRemove(user: Discord.User, reaction: Discord.MessageReaction,
 				$setOnInsert: {
 					server_id: reaction.message.guild.id,
 					member_id: reaction.message.member.id,
-					level: 1
+					level: 0
 				}
 			}, { upsert: true }).exec();
 		}

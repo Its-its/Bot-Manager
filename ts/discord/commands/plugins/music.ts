@@ -34,7 +34,7 @@ function sendReq(url: string, opts, cb) {
 
 const commandUsage = Command.info([
 	[
-		'Command Usage', 
+		'Command Usage',
 		Command.table(['Command', 'Desc'], [
 			['join [@channel/Channel ID]', 'Joins said channel'],
 			['info', 'Shows the current song info'],
@@ -47,7 +47,7 @@ const commandUsage = Command.info([
 		])
 	],
 	[
-		'Queue', 
+		'Queue',
 		Command.table(['Command', 'Desc'], [
 			['queue list [page]', 'View queue'],
 			['queue add <URL/Name>', 'Queue song'],
@@ -59,7 +59,7 @@ const commandUsage = Command.info([
 		])
 	],
 	[
-		'Playlist', 
+		'Playlist',
 		Command.table(['Command', 'Desc'], [
 			['playlist create', 'Create new playlist'],
 			['playlist <pid/default> info', 'View playlist info'],
@@ -148,7 +148,7 @@ class Music extends Command {
 				guildClient.getMusic(message.guild.id, (music) => {
 					if (music.playing != null) {
 						items.push([
-							'Song', 
+							'Song',
 							[
 								'The Current song is:',
 								'Title: ' + music.playing.title,
@@ -224,7 +224,7 @@ class Music extends Command {
 							var data = res.data;
 
 							data.items.forEach((song, p) => {
-								pager.addSelection(String(p + 1), song.title, (newPage, display) => {
+								pager.addSelection(String(p + 1), song.title, (newPage) => {
 									newPage.setFormat([
 										'ID: ' + song.id,
 										'Title: ' + song.title,
@@ -258,15 +258,15 @@ class Music extends Command {
 										});
 									}
 
-									display();
+									newPage.display();
 								});
 							});
 
 							pager.addSpacer();
 
 							if (data.nextPageToken) {
-								pager.addSelection('Next', 'Next Page', (newPage, display) => {
-									nextPage(newPage, query, data.nextPageToken, () => display());
+								pager.addSelection('Next', 'Next Page', (newPage) => {
+									nextPage(newPage, query, data.nextPageToken, () => newPage.display());
 								});
 							}
 
@@ -349,7 +349,7 @@ class Music extends Command {
 
 						var fields = [
 							[
-								'Music', 
+								'Music',
 								'Items In History: ' + item.song_count + '\nPage: ' + page + '/' + maxPages
 							]
 						];
@@ -373,7 +373,7 @@ class Music extends Command {
 
 								return [ 'ID: ' + i, 'Unknown.' ];
 							}));
-	
+
 							send(Command.info(fields));
 						});
 					});
@@ -438,7 +438,7 @@ class Music extends Command {
 				if (playlistId == null) todo = 'info';
 
 				if (['info', 'list', 'delete', 'add', 'remove', 'clear', 'title', 'description', 'thumbnail'].indexOf(todo) == -1) return Command.error([['Music', 'Unknown Usage: ' + todo]]);
-				
+
 				if (!this.hasPerms(message.member, server, PERMS['PLAYLIST_' + todo.toUpperCase()])) return Command.noPermsMessage('Music');
 
 				switch (todo) {
@@ -469,8 +469,8 @@ class Music extends Command {
 						guildClient.getMusic(message.guild.id, (music) => {
 							if (defaultPlaylist) playlistId = music.currentPlaylist;
 
-							var paramPage = params.shift();		
-					
+							var paramPage = params.shift();
+
 							if (paramPage == null || /^[0-9]+$/g.test(paramPage)) {
 								var page = 1;
 								var maxItems = 5;
@@ -494,7 +494,7 @@ class Music extends Command {
 
 										var fields = [
 											[
-												'Playlist', 
+												'Playlist',
 												'Items: ' + item.song_count + '\nPage: ' + page + '/' + maxPages
 											]
 										]

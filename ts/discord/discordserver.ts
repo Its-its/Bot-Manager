@@ -32,7 +32,7 @@ class Changes {
 	public defaults = {};
 
 	constructor() {
-		// 
+		//
 	}
 
 	init_changes() {
@@ -92,7 +92,9 @@ class Server extends Changes implements DiscordBot.Server {
 
 	public commandPrefix: string;
 
+
 	public channels: DiscordBot.Channels;
+	public punishments: DiscordBot.Punishments;
 
 	public moderation: DiscordBot.Moderation = {
 		blacklisted: {},
@@ -103,6 +105,7 @@ class Server extends Changes implements DiscordBot.Server {
 		disabledCustomCommands: []
 	};
 
+	public events: DiscordBot.ListenEvents[];
 	public leveling: DiscordBot.Leveling;
 	public intervals: DiscordBot.Interval[];
 	public ranks: string[];
@@ -115,18 +118,21 @@ class Server extends Changes implements DiscordBot.Server {
 		commands: {
 			enabled: true
 		},
-		music: {
-			enabled: false
-		},
-		interval: {
-			enabled: false
-		},
-		rssfeed: {
-			enabled: false
-		},
-		logs: {
-			enabled: false
-		}
+		// music: {
+		// 	enabled: false
+		// },
+		// interval: {
+		// 	enabled: false
+		// },
+		// rssfeed: {
+		// 	enabled: false
+		// },
+		// logs: {
+		// 	enabled: false
+		// },
+		// events: {
+		// 	enabled: false
+		// }
 	};
 	public values;
 
@@ -146,6 +152,7 @@ class Server extends Changes implements DiscordBot.Server {
 		this.memberCount = options.memberCount;
 		this.ownerID = options.ownerID;
 
+		this.events = options.events || [];
 		this.alias = options.alias || [];
 		this.intervals = options.intervals || [];
 		this.ranks = options.ranks || [];
@@ -154,10 +161,13 @@ class Server extends Changes implements DiscordBot.Server {
 		this.phrases = options.phrases || [];
 		this.plugins = options.plugins || {};
 		this.values = options.values || {};
+		this.channels = options.channels || {};
+		this.punishments = options.punishments || {};
+
 		this.migration = options.version == null ? server.lastestVersion : options.version;
-		
+
 		this.commandPrefix = options.commandPrefix;
-		
+
 		if (options.leveling) this.leveling = options.leveling;
 		if (options.moderation) this.moderation = options.moderation;
 		if (options.permissions) this.permissions = options.permissions;
@@ -165,10 +175,13 @@ class Server extends Changes implements DiscordBot.Server {
 		this.init_changes();
 	}
 
+	public regrab(cb: (server: Server) => any) {
+		getServer(this.serverId, server => cb(server));
+	}
 
 	public save(cb?: redis.Callback<'OK'>) {
 		redisGuildsClient.set(this.serverId, this.toString(), cb);
-		DiscordServers.findOneAndUpdate( 
+		DiscordServers.findOneAndUpdate(
 			{ server_id: this.serverId },
 			{
 				$set: {
@@ -202,6 +215,43 @@ class Server extends Changes implements DiscordBot.Server {
 	}
 
 
+	// Events
+	public addOrEditEvent(listener: DiscordBot.ListenEvents) {
+		for(var i = 0; i < this.events.length; i++) {
+			if (this.events[i].uid == listener.uid) {
+				this.events[i].event = listener.event;
+				return true;
+			}
+		}
+
+		this.events.push(listener);
+
+		return false;
+	}
+
+	public editEvent(id: string, event: DiscordBot.DoEvents) {
+		for(var i = 0; i < this.events.length; i++) {
+			if (this.events[i].uid == id) {
+				this.events[i].event = event;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public removeEvent(id: string) {
+		for(var i = 0; i < this.events.length; i++) {
+			if (this.events[i].uid == id) {
+				this.events.splice(i, 1);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
 	// Leveling
 	public keepPreviousRoles() {
 		return this.leveling != null || (this.leveling.keepPreviousRoles == null ? false : this.leveling.keepPreviousRoles);
@@ -209,7 +259,7 @@ class Server extends Changes implements DiscordBot.Server {
 
 	public roleForLevel(level: number) {
 		if (this.leveling == null || this.leveling.roles.length == 0) return null;
-	
+
 		for(var i = this.leveling.roles.length - 1; i >= 0; i--) {
 			var role = this.leveling.roles[i];
 			if (role.level <= level) return role.id;
@@ -296,9 +346,9 @@ class Server extends Changes implements DiscordBot.Server {
 				this.phrases.push(phrase);
 
 				cb(phrase);
-	
+
 				DiscordServers.updateOne(
-					{ server_id: this.serverId }, 
+					{ server_id: this.serverId },
 					{ $addToSet: { phrase_ids: [ prod.id ] } });
 			});
 		});
@@ -409,7 +459,7 @@ class Server extends Changes implements DiscordBot.Server {
 	public findPhrase(text: string[] | string): DiscordBot.Phrase {
 		if (Array.isArray(text)) {
 			text = text.slice(0, server.maxPhraseText);
-			
+
 			for(var i = 0; i < text.length; i++) {
 				var phrase = this.findPhrase(text[i]);
 				if (phrase != null) return phrase;
@@ -562,9 +612,9 @@ class Server extends Changes implements DiscordBot.Server {
 				this.commands.push(comm);
 
 				cb(true);
-	
+
 				DiscordServers.updateOne(
-					{ server_id: this.serverId }, 
+					{ server_id: this.serverId },
 					{ $addToSet: { command_ids: [ prod.id ] } });
 			});
 		});
@@ -646,7 +696,7 @@ class Server extends Changes implements DiscordBot.Server {
 		this.ranks.splice(index, 1);
 		return true;
 	}
-	
+
 	public isRank(name: string) {
 		return this.ranks.indexOf(name) != -1;
 	}
@@ -658,7 +708,7 @@ class Server extends Changes implements DiscordBot.Server {
 			this.roles.push(role);
 			this.roles.sort((r1, r2) => r2.position - r1.position);
 		}
-	
+
 		return this.roles;
 	}
 
@@ -677,12 +727,12 @@ class Server extends Changes implements DiscordBot.Server {
 		for (var i = 0; i < this.roles.length; i++) {
 			if (this.roles[i].id == roleId) return i;
 		}
-	
+
 		return -1;
 	}
 
 
-	// 
+	//
 	public createInterval(opts: DiscordBot.Interval): number {
 		this.intervals.push(opts);
 		var modelId = intervalPlugin.addInterval(opts);
@@ -824,7 +874,7 @@ class Server extends Changes implements DiscordBot.Server {
 
 	public resetInterval(id: number | string): boolean {
 		var interval = null;
-		
+
 		if (typeof id == 'string') {
 			for(var i = 0; i < this.intervals.length; i++) {
 				if (this.intervals[i].pid == id) {
@@ -835,7 +885,7 @@ class Server extends Changes implements DiscordBot.Server {
 		} else interval = this.intervals[id - 1];
 
 		if (interval == null) return false;
-		
+
 		this.setIntervalTime(id, interval.every);
 		return true;
 	}
@@ -846,7 +896,7 @@ class Server extends Changes implements DiscordBot.Server {
 		var tounique = displayName.replace(/ /, '').toLowerCase();
 
 		if (Object.keys(this.permissions.groups).length >= 15) return false;
-		
+
 		if (this.permissions.groups[tounique] != null) return false;
 
 		this.permissions.groups[tounique] = {
@@ -884,8 +934,24 @@ class Server extends Changes implements DiscordBot.Server {
 		return this.permissions[type][this.strpToId(id)];
 	}
 
-	public addGroupTo(type: 'roles' | 'users', id: string, groupId: string): boolean {
+	public isGroupsRecursive(id: string, saved: string[] = []) {
+		if (saved.indexOf(id) != -1) return true;
+
+		saved.push(id);
+
+		var group = this.permissions.groups[id];
+
+		for(var i = 0; i < group.groups.length; i++) {
+			if (this.isGroupsRecursive(group.groups[i], saved)) return true;
+		}
+
+		return false;
+	}
+
+	public addGroupTo(type: 'roles' | 'users' | 'groups', id: string, groupId: string): boolean {
 		var perms = this.permissions[type];
+
+		if (this.permissions.groups[groupId] == null) return false;
 
 		if (perms[id] == null) {
 			if (type == 'roles' || type == 'users') {
@@ -896,11 +962,13 @@ class Server extends Changes implements DiscordBot.Server {
 			} else return false;
 		}
 
+		if (type == 'groups' && this.isGroupsRecursive(id, [ groupId ])) return false;
+
 		var groups = perms[id].groups;
 
 		if (groups.length >= 5) return false;
 
-		if (groups.indexOf(groupId) == -1) 
+		if (groups.indexOf(groupId) == -1)
 			groups.push(groupId);
 
 		return true;
@@ -941,7 +1009,7 @@ class Server extends Changes implements DiscordBot.Server {
 		if (perms[id] == null) return false;
 
 		var index = perms[id].perms.indexOf(perm);
-		
+
 		if (index == -1) return false;
 		perms[id].perms.splice(index, 1);
 
@@ -954,7 +1022,7 @@ class Server extends Changes implements DiscordBot.Server {
 
 		if (perms[id] == null) return false;
 		var index = perms[id].groups.indexOf(group);
-		
+
 		if (index == -1) return false;
 		perms[id].groups.splice(index, 1);
 
@@ -1061,7 +1129,7 @@ class Server extends Changes implements DiscordBot.Server {
 				if (group.perms.indexOf(permItem) != -1) return true;
 			}
 		}
-		
+
 		for(var i = 0; i < roleIds.length; i++) {
 			var id = roleIds[i];
 			var role = this.permissions.roles[id];
@@ -1100,6 +1168,7 @@ class Server extends Changes implements DiscordBot.Server {
 			ownerID: this.ownerID,
 			commandPrefix: this.commandPrefix,
 
+			punishments: this.punishments,
 			aliasList: this.alias,
 			ranks: this.ranks,
 			moderation: this.moderation,
@@ -1123,6 +1192,8 @@ class Server extends Changes implements DiscordBot.Server {
 			memberCount: this.memberCount,
 			ownerID: this.ownerID,
 			commandPrefix: this.commandPrefix,
+
+			punishments: this.punishments,
 
 			alias: this.alias,
 			ranks: this.ranks,
@@ -1160,6 +1231,12 @@ function getOrCreateUser(member: Discord.GuildMember, cb: (err: any, doc: Docume
 	});
 }
 
+function getServer(serverId: string,  cb: (music: Server) => any) {
+	redisGuildsClient.get(serverId, (err, str) => {
+		if (err != null) { console.error(err); cb(null); }
+		cb(new Server(serverId, str == null ? {} : JSON.parse(str)));
+	});
+}
 
 function expandPerm(perm: string): string[] {
 	var splt = perm.split('.');

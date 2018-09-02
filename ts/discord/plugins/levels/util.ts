@@ -36,7 +36,8 @@ const XP_FOR_MESSAGE_COUNT = new RandValue(0.3);
 // TODO: The more you talk in a day = the more xp you get. | message_count * 0.3
 // TODO: Ignore if sent a message a second after the last one.
 
-function expToNextLevel(level: number) {
+// rename to XP amount for Level
+function xpAmountForLevel(level: number) {
 	return 5 * (Math.pow(level, 2) + (20 * level));
 }
 
@@ -45,19 +46,21 @@ function levelsToExp(levels: number) {
 	var xp = 0;
 
 	for(var level = 0; level <= levels; level++) {
-		xp += expToNextLevel(level);
+		xp += xpAmountForLevel(level);
 	}
 
 	return xp;
 }
 
-function expToLevels(totalXp: number) {
+function expToLevels(user_total_xp: number) {
 	var level = 0;
 
-	while(true) {
-		var xp = levelsToExp(level);
+	var total_xp = 0;
 
-		if (totalXp < xp) return level;
+	while(true) {
+		total_xp += levelsToExp(level);
+
+		if (user_total_xp < total_xp) return level;
 
 		level++;
 	}
@@ -70,7 +73,7 @@ function remainingExp(totalXp: number) {
 
 	var xp = levelsToExp(level);
 
-	return totalXp - xp + expToNextLevel(level);
+	return totalXp - xp + xpAmountForLevel(level);
 }
 
 function regularArcData(cx, cy, radius, startDegrees, endDegrees, isCounterClockwise) {
@@ -103,13 +106,13 @@ export {
 	COOLDOWN_FOR_REACTION,
 	XP_FOR_REACTION_GIVE,
 	XP_FOR_REACTION_RECEIVE,
-	
+
 	XP_FOR_VOICE_PER_MINUTE,
 	XP_FOR_ONLINE_STATUS,
 
 	CHECK_IF_ONLINE,
 
-	expToNextLevel,
+	xpAmountForLevel,
 	levelsToExp,
 	expToLevels,
 	remainingExp,

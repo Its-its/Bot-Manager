@@ -14,8 +14,8 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	var amount = parseInt(params.shift());
 	var type = params.shift();
 
-	if (isNaN(amount) || 
-		(type != 'lvl' && type != 'xp') || 
+	if (isNaN(amount) ||
+		(type != 'lvl' && type != 'xp') ||
 		(type == 'lvl' && amount > util.MAX_LEVEL)
 	) return message.channel.send('Invalid opts. Use add <id> <amount> <xp/level>');
 

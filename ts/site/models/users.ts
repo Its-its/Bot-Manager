@@ -5,6 +5,8 @@ const Schema = mongoose.Schema;
 const User = new Schema({
 	is_active: Boolean,
 
+	admin: { type: Boolean, default: false },
+
 	bots: {
 		amount: { type: Number, default: 0 },
 		twitch_amount: { type: Number, default: 0 },

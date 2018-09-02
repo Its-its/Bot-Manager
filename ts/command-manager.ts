@@ -1,3 +1,5 @@
+// TODO: Completely seperate from discord.
+
 interface DefaultCommands {
 	parseMessage: (message: string, userConfig, extra: any) => any;
 	get: (commandName: string) => any;
@@ -27,7 +29,7 @@ function parseMessage(defaultCommands: DefaultCommands, userConfig, message: str
 				var fixedParams = getProperParam(parts, command.params);
 
 				console.log('[CommMan]: Command: ' + message);
-				
+
 				var calls = dealWithOnCalled(
 					userConfig.commands,
 					fixedParams.newParams,
@@ -55,9 +57,9 @@ function hasPermissions(defaultCommands: DefaultCommands, message: string, isAdm
 }
 
 function dealWithOnCalled(
-	commands: Array<Command>, 
-	messageParams: Array<string>, 
-	usedParam: CommandParam, 
+	commands: Array<Command>,
+	messageParams: Array<string>,
+	usedParam: CommandParam,
 	allParams?: Array<CommandParam>): DiscordBot.PhraseResponses {
 
 	var response = usedParam.onCalled || usedParam.response;
@@ -86,7 +88,7 @@ function dealWithOnCalled(
 	// 			var oldValue = commandParam.onCalled;
 
 	// 			commandParam.onCalled = newValue;
-		
+
 	// 			return {
 	// 				type: 'set',
 	// 				command: command,
@@ -95,7 +97,7 @@ function dealWithOnCalled(
 	// 				newValue: newValue
 	// 			};
 	// 	}
-	// } else 
+	// } else
 	return response;
 }
 
@@ -164,15 +166,18 @@ function getCommandParam(commandName: string, id: number, commands: Array<Comman
 }
 
 function isCallingCommand(prefix: string, userId: string, message: string) {
-	return message[0] == prefix || message.indexOf(`<@${userId}>`) == 0;
+	return message[0] == prefix || message.indexOf(`<@${userId}>`) == 0 || message.indexOf(`<@!${userId}>`) == 0;
 }
 
 function getCommandMessage(prefix: string, userId: string, message: string) {
 	if (message[0] == prefix) return message.substr(1);
-	
+
 	var myId = `<@${userId}>`;
 
-	if (message.indexOf(myId) != 0) return null;
+	if (message.indexOf(myId) != 0) {
+		myId = `<@!${userId}>`;
+		if (message.indexOf(myId) != 0) return null;
+	}
 
 	return message.substr(myId.length).trim();
 }

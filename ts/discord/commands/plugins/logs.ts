@@ -36,7 +36,7 @@ class Logs extends Command {
 				[
 					'Command Usage',
 					[
-						'channel [id/@channel]',
+						'output [id/@channel]',
 						'filter list',
 						'filter add',
 						'filter remove'
@@ -46,7 +46,7 @@ class Logs extends Command {
 		}
 
 		switch(params.shift()) {
-			case 'channel':
+			case 'output':
 				if (!this.hasPerms(message.member, server, PERMS.CHANNEL)) return Command.noPermsMessage('Logs');
 
 				var id = params.shift();
@@ -73,7 +73,7 @@ class Logs extends Command {
 				break;
 			case 'filter':
 				return Command.error([['Logs', 'Not implemented yet. :/']]);
-				// if (!this.hasPerms(message.member, server, PERMS.MAIN)) return Command.noPermsMessage('Logs');	
+				// if (!this.hasPerms(message.member, server, PERMS.MAIN)) return Command.noPermsMessage('Logs');
 				// break;
 		}
 	}

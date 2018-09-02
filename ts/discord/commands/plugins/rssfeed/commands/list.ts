@@ -46,7 +46,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				// TODO: Check to see if channel still exists for selection name.
 				// TODO: Permission checks
 
-				selector.addSelection(String(i + 1), `<#${feed.channel_id}> (Feeds: ${feed.feeds.length})`, (page, display) => {
+				selector.addSelection(String(i + 1), `<#${feed.channel_id}> (Feeds: ${feed.feeds.length})`, (page) => {
 					DiscordFeeds.findOne({ guild_id: guild.id, channel_id: feed.channel_id })
 					.populate('feeds.feed')
 					.exec((err, feed) => {

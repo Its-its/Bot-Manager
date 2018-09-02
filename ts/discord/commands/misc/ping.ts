@@ -5,9 +5,9 @@ import Command = require('../../command');
 
 import Commands = require('../index');
 
-class Help extends Command {
+class Ping extends Command {
 	constructor() {
-		super('help', true, false);
+		super('ping', true, false);
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
@@ -34,4 +34,4 @@ class Help extends Command {
 	}
 }
 
-export = Help;
+export = Ping;

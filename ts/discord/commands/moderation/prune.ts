@@ -39,6 +39,7 @@ class Prune extends Command {
 				[
 					'Command Usage',
 					[
+						'#channel [all/<=100]',
 						// 'user <id/@> [<=100]',
 						'channel [id/#] [all/<=100]'
 					].map(b => server.getPrefix() + 'prune ' + b).join('\n')
@@ -46,8 +47,16 @@ class Prune extends Command {
 			]);
 		}
 
+		if (params[0] != 'user' && params[0] != 'channel') {
+			var type = server.idType(params[0]);
+			if (type != null) {
+				if (type == 'channel') params = ['channel'].concat(params);
+				else if (type == 'member') params = ['user'].concat(params);
+			}
+		}
+
 		switch(params.shift()) {
-			case 'user': // TODO: 
+			case 'user': // TODO:
 				if (!this.hasPerms(message.member, server, PERMS.USER)) return Command.noPermsMessage('Prune');
 				return Command.error([['Prune', 'Not implemented yet.']]);
 				// break;
@@ -115,8 +124,8 @@ class Prune extends Command {
 							[
 								'Prune',
 								[
-									'An error occured bulk deleting!', 
-									e.message, 
+									'An error occured bulk deleting!',
+									e.message,
 									'Attempting normal deletion in 5 seconds.'
 								].join('\n')
 							]
@@ -154,7 +163,7 @@ class Prune extends Command {
 						[
 							'Prune',
 							[
-								'An error occured deleting singles!', 
+								'An error occured deleting singles!',
 								e.message
 							].join('\n')
 						]
@@ -177,10 +186,10 @@ class Prune extends Command {
 						channel.permissionOverwrites
 						.forEach(perm => {
 							var obj = {};
-		
+
 							utils.getPermissions(perm.allow).toArray().forEach(p => obj[p] = true);
 							utils.getPermissions(perm.deny).toArray().forEach(p => obj[p] = false);
-		
+
 							channel.overwritePermissions(perm.id, obj, '[PRUNE] Recreating channel')
 							.catch(e => console.error(e));
 						});
