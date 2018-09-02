@@ -32,17 +32,18 @@ class Ignore extends Command {
 				[
 					'Command Usage',
 					[
-						'list', 
+						'list',
 						'clear <all/user/channel>',
-						'channel [#channel]', 
-						'user [@user]', 
+						'channel [#channel]',
+						'user [@user]',
+						'role [@role] (Not implemented yet)',
 						'[@user/#channel]'
 					].map(s => server.getPrefix() + 'ignore ' + s).join('\n')
 				]
 			]);
 		}
 
-		var type = params[0];
+		var type = params.shift();
 
 		switch (type) {
 			case 'list':
@@ -51,20 +52,20 @@ class Ignore extends Command {
 				var mod = server.moderation;
 				return Command.success([
 					[
-						'Ignored Channels', 
-						mod.ignoredChannels.length == 0 ? 
-							'None' : 
+						'Ignored Channels',
+						mod.ignoredChannels.length == 0 ?
+							'None' :
 							mod.ignoredChannels.map(c => ' - <#' + c + '>').join('\n')],
 					[
-						'Ignored Users', 
-						mod.ignoredUsers.length == 0 ? 
-							'None' : 
+						'Ignored Users',
+						mod.ignoredUsers.length == 0 ?
+							'None' :
 							mod.ignoredUsers.map(c => ' - <@' + c + '>').join('\n')]
 				]);
 			case 'clear':
 				if (!this.hasPerms(message.member, server, PERMS.CLEAR)) return Command.noPermsMessage('Ignore');
 
-				var clear = (params[1] || '').toLowerCase();
+				var clear = (params.shift() || '').toLowerCase();
 
 				if (clear == 'channel') {
 					server.clearIgnoreList('channel');
@@ -75,12 +76,12 @@ class Ignore extends Command {
 				} else return Command.error([['Error on Clearing', 'Unknown clear option "' + clear + '" Use: "channel", "user", "all"']]);
 
 				server.save();
-				
+
 				break;
 			case 'channel':
 				if (!this.hasPerms(message.member, server, PERMS.CHANNEL)) return Command.noPermsMessage('Ignore');
 
-				var id = params[1];
+				var id = params.shift();
 				if (isMention(id)) {
 					var id = id.slice(2, id.length - 1);
 					var channel = message.guild.channels.get(id);
@@ -94,7 +95,7 @@ class Ignore extends Command {
 			case 'user':
 				if (!this.hasPerms(message.member, server, PERMS.USER)) return Command.noPermsMessage('Ignore');
 
-				var id = params[1];
+				var id = params.shift();
 				if (isMention(id)) {
 					var id = id.slice(2, id.length - 1);
 					var member = message.guild.member(id);
@@ -107,31 +108,32 @@ class Ignore extends Command {
 				break;
 			case 'role': break;
 			default:
-				if (isMention(type)) {
-					var idType = server.idType(type);
+				var idType = server.idType(type);
+
+				if (idType == 'member') {
+					if (!this.hasPerms(message.member, server, PERMS.USER)) return Command.noPermsMessage('Ignore');
+
 					var id = server.strpToId(type);
 
-					if (idType == 'member') {
-						if (!this.hasPerms(message.member, server, PERMS.USER)) return Command.noPermsMessage('Ignore');
+					var member = message.guild.member(id);
+					if (member != null) {
+						server.ignore('member', id);
+						server.save();
+						return Command.success([['Ignore', 'I am now ignoring user "' + member.displayName + '"']]);
+					} else return Command.error([['Ignore', 'Unable to find member! Does it Exist?!']]);
+				} else if (idType == 'channel') {
+					if (!this.hasPerms(message.member, server, PERMS.CHANNEL)) return Command.noPermsMessage('Ignore');
 
-						var member = message.guild.member(id);
-						if (member != null) {
-							server.ignore('member', id);
-							server.save();
-							return Command.success([['Ignore', 'I am now ignoring user "' + member.displayName + '"']]);
-						} else return Command.error([['Ignore', 'Unable to find member! Does it Exist?!']]);
-					} else if (idType == 'channel') {
-						if (!this.hasPerms(message.member, server, PERMS.CHANNEL)) return Command.noPermsMessage('Ignore');
+					var id = server.strpToId(type);
 
-						var channel = message.guild.channels.get(id);
-						if (channel != null) {
-							server.ignore('channel', id);
-							server.save();
-							return Command.success([['Ignore', 'I am now ignoring channel "#' + channel.name + '"']]);
-						} else return Command.error([['Ignore', 'Unable to find channel! Does it Exist?!']]);
-					} else {
-						return Command.error([['Ignore', 'ID Type not valid.']]);
-					}
+					var channel = message.guild.channels.get(id);
+					if (channel != null) {
+						server.ignore('channel', id);
+						server.save();
+						return Command.success([['Ignore', 'I am now ignoring channel "#' + channel.name + '"']]);
+					} else return Command.error([['Ignore', 'Unable to find channel! Does it Exist?!']]);
+				} else {
+					return Command.error([['Ignore', 'ID Type not valid.']]);
 				}
 				break;
 		}

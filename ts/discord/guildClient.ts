@@ -8,7 +8,7 @@ import DiscordMusic = require('./discordmusic');
 import DiscordServer = require('./discordserver');
 
 
-
+// TODO: Cache Server even though it takes milliseconds to JSON.parse each get.
 
 let redisGuildsClient = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.guildsDB });
 let redisMusic = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.musicDB });

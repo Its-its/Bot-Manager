@@ -30,8 +30,8 @@ class Backup extends Command {
 					[ 'Description', this.description ],
 					[
 						'Backups',
-						backups.length == 0 
-						? 'None' 
+						backups.length == 0
+						? 'None'
 						: backups.map(b => `**ID:** ${b.pid}\n**Created:** ${b.created_at.toUTCString()}\n**Items:** ${b.items}`).join('\n\n')
 					],
 					[
@@ -86,8 +86,8 @@ class Backup extends Command {
 						'Backups',
 						[
 							'**Server ID:** ' + params,
-							backups.length == 0 
-							? 'None' 
+							backups.length == 0
+							? 'None'
 							: backups.map(b => `**ID:** ${b.pid}\n**Created:** ${b.created_at.toUTCString()}\n**Items:** ${b.items}`).join('\n\n')
 						].join('\n')
 					]
@@ -191,12 +191,12 @@ class Backup extends Command {
 
 							function parseChannel(channel: Discord.GuildChannel): CompiledChannel {
 								oldIdsToNew[channel.id] = tempID();
-							
+
 								var opt: CompiledChannel = {
 									id: oldIdsToNew[channel.id],
 									name: channel.name,
 									type: channel.type,
-									perms: channel.permissionOverwrites.map(p => { 
+									perms: channel.permissionOverwrites.map(p => {
 										return {
 											id: oldIdsToNew[p.id],
 											allow: p.allow,
@@ -215,7 +215,7 @@ class Backup extends Command {
 								if (channel.type == 'category') {
 									opt.children = (<Discord.CategoryChannel>channel).children.map(c => parseChannel(c));
 								}
-							
+
 								return opt;
 							}
 						}
@@ -305,7 +305,7 @@ class Backup extends Command {
 
 						if (inParams('perms')) {
 							var perms = compiled['perms'] = server.permissions;
-	
+
 							if (inParams('roles')) {
 								for(var id in perms.roles) {
 									perms.roles[oldIdsToNew[id]] = perms.roles[id];
@@ -315,7 +315,7 @@ class Backup extends Command {
 						}
 
 						if (inParams('prefix')) compiled['prefix'] = server.commandPrefix;
-	
+
 						if (inParams('ranks') && inParams('roles')) {
 							compiled['ranks'] = server.ranks.map(r => oldIdsToNew[r]);
 						}
@@ -425,7 +425,7 @@ interface Compiled {
 		roles: string[];
 	}[];
 
-	blacklists?: { [value: string]: string[] };
+	blacklists?: { [value: string]: { punishment: DiscordBot.PunishmentTypes, items: string[] } };
 	disabled_custom_comm?: string[];
 	disabled_default_comm?: string[];
 	ignored_channels?: string[];

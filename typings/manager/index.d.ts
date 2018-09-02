@@ -109,71 +109,71 @@ declare namespace DiscordBot {
 	}
 
 
-	export class Server {
-		public serverId: string;
+	// export class Server {
+	// 	public serverId: string;
 
-		public region: string;
-		public moderation: Moderation;
+	// 	public region: string;
+	// 	public moderation: Moderation;
 
-		public intervals: Interval[];
-		public ranks: string[];
-		public commands: Command[];
-		public phrases: Phrase[];
-		public roles: Role[];
+	// 	public intervals: Interval[];
+	// 	public ranks: string[];
+	// 	public commands: Command[];
+	// 	public phrases: Phrase[];
+	// 	public roles: Role[];
 
-		public plugins: any;
-		public values: any;
+	// 	public plugins: any;
+	// 	public values: any;
 
-		public punishments: Punishments;
-		public permissions: Permissions;
-		public channels: Channels;
+	// 	public punishments: Punishments;
+	// 	public permissions: Permissions;
+	// 	public channels: Channels;
 
-		constructor(serverID: string, options: ServerOptions);
-		save(cb?);
+	// 	constructor(serverID: string, options: ServerOptions);
+	// 	save(cb?);
 
-		createPhrase(member, phraseText: string[], cb: (phrase: Phrase) => any);
-		removePhrase(id: number, phrases?: string[]): Phrase;
-		addPhrase(id: number, phrases: string[]): boolean;
-		setPhraseResponse(id: number, response: DiscordBot.PhraseResponses[]): boolean;
-		findPhrase(text: string[] | string): Phrase;
+	// 	createPhrase(member, phraseText: string[], cb: (phrase: Phrase) => any);
+	// 	removePhrase(id: number, phrases?: string[]): Phrase;
+	// 	addPhrase(id: number, phrases: string[]): boolean;
+	// 	setPhraseResponse(id: number, response: DiscordBot.PhraseResponses[]): boolean;
+	// 	findPhrase(text: string[] | string): Phrase;
 
-		hasBlacklistedWord(id: string, content: string): boolean;
-		isBlacklistedItem(id: string, item: string): boolean;
-		blacklist(id: string, item: string): boolean;
+	// 	hasBlacklistedWord(id: string, content: string): boolean;
+	// 	isBlacklistedItem(id: string, item: string): boolean;
+	// 	blacklist(id: string, item: string): boolean;
 
-		ignore(type: 'member' | 'channel', id: string): boolean;
-		clearIgnoreList(list: 'member' | 'channel' | 'all');
-		channelIgnored(id: string): boolean;
-		memberIgnored(id: string): boolean;
+	// 	ignore(type: 'member' | 'channel', id: string): boolean;
+	// 	clearIgnoreList(list: 'member' | 'channel' | 'all');
+	// 	channelIgnored(id: string): boolean;
+	// 	memberIgnored(id: string): boolean;
 
-		createCommand(member, commandName: string, onCalled: PhraseResponses, cb: (resp: boolean) => any);
-		removeCommand(commandName: string, paramId: number): boolean;
-		commandIndex(commandName: string): number;
+	// 	createCommand(member, commandName: string, onCalled: PhraseResponses, cb: (resp: boolean) => any);
+	// 	removeCommand(commandName: string, paramId: number): boolean;
+	// 	commandIndex(commandName: string): number;
 
-		addRank(name: string): boolean;
-		removeRank(name: string): boolean;
-		isRank(name: string): boolean;
+	// 	addRank(name: string): boolean;
+	// 	removeRank(name: string): boolean;
+	// 	isRank(name: string): boolean;
 
-		addRole(role: Role): Role[];
-		removeRole(roleId: string): Role[];
-		getRole(roleId: string): Role;
-		getRoleIndex(roleId: string): number;
+	// 	addRole(role: Role): Role[];
+	// 	removeRole(roleId: string): Role[];
+	// 	getRole(roleId: string): Role;
+	// 	getRoleIndex(roleId: string): number;
 
-		addInterval(seconds: number, guildId: string, channelId: string): number;
-		removeInterval(id: number);
-		toggleInterval(id: number): boolean;
-		setIntervalTime(id: number, minutes: number);
-		setIntervalName(id: number, name: string);
-		setIntervalMessage(id: number, name: string);
-		// setIntervalEvent(id: number, event: 'onCall' | 'onReset', content: string);
-		resetInterval(id: number): boolean;
+	// 	addInterval(seconds: number, guildId: string, channelId: string): number;
+	// 	removeInterval(id: number);
+	// 	toggleInterval(id: number): boolean;
+	// 	setIntervalTime(id: number, minutes: number);
+	// 	setIntervalName(id: number, name: string);
+	// 	setIntervalMessage(id: number, name: string);
+	// 	// setIntervalEvent(id: number, event: 'onCall' | 'onReset', content: string);
+	// 	resetInterval(id: number): boolean;
 
-		// runIntervalOnCall();
-		// runIntervalOnReset();
+	// 	// runIntervalOnCall();
+	// 	// runIntervalOnReset();
 
-		toDBPrint(): any;
-		toString(): string;
-	}
+	// 	toDBPrint(): any;
+	// 	toString(): string;
+	// }
 
 	interface ServerOptions {
 		version?: number;
@@ -206,6 +206,45 @@ declare namespace DiscordBot {
 
 	interface Punishments {
 		role_mute_id?: string;
+	}
+
+	type PunishmentTypes = CensorPunishment | DeletePunishment | WarnPunishment | TempmutePunishment | MutePunishment | TempbanPunishment | BanPunishment;
+
+	interface Punishment {
+		type: string;
+		reason?: string;
+	}
+
+	interface TimedPunishment extends Punishment {
+		length: number;
+	}
+
+	interface CensorPunishment extends Punishment {
+		type: 'censor';
+	}
+
+	interface DeletePunishment extends Punishment {
+		type: 'delete';
+	}
+
+	interface WarnPunishment extends Punishment {
+		type: 'warn';
+	}
+
+	interface TempmutePunishment extends TimedPunishment {
+		type: 'tempmute';
+	}
+
+	interface MutePunishment extends Punishment {
+		type: 'mute';
+	}
+
+	interface TempbanPunishment extends TimedPunishment {
+		type: 'tempban';
+	}
+
+	interface BanPunishment extends Punishment {
+		type: 'ban';
 	}
 
 	type DoEvents = DoGroupEvent | DoMessageEvent | DoDirectMessageEvent;
@@ -348,7 +387,7 @@ declare namespace DiscordBot {
 	interface Moderation {
 		disabledDefaultCommands: string[];
 		disabledCustomCommands: string[];
-		blacklisted: { [value: string]: string[] };
+		blacklisted: { [value: string]: { punishment: PunishmentTypes, items: string[] } };
 		whitelisted: string[];
 		ignoredChannels: string[];
 		ignoredUsers: string[];

@@ -417,8 +417,9 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 				if (isImporting('blacklists')) {
 					for(var cid in items.blacklists) {
-						var items = items.blacklists[cid];
-						items.forEach(b => server.blacklist(cid, b));
+						var item = items.blacklists[cid];
+						item.items.forEach(b => server.blacklist(cid, b));
+						server.blacklistPunishment(cid, item.punishment);
 					}
 				}
 
@@ -587,7 +588,7 @@ interface Compiled {
 		roles: string[];
 	}[];
 
-	blacklists?: { [value: string]: string[] };
+	blacklists?: { [value: string]: { punishment: DiscordBot.PunishmentTypes, items: string[] } };
 	disabled_custom_comm?: string[];
 	disabled_default_comm?: string[];
 	ignored_channels?: string[];

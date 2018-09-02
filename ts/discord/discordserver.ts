@@ -78,7 +78,7 @@ class Changes {
 	}
 }
 
-class Server extends Changes implements DiscordBot.Server {
+class Server extends Changes {
 	public branch: number;
 	public serverId: string;
 	public migration: number;
@@ -172,7 +172,32 @@ class Server extends Changes implements DiscordBot.Server {
 		if (options.moderation) this.moderation = options.moderation;
 		if (options.permissions) this.permissions = options.permissions;
 
+		this.init();
+
 		this.init_changes();
+	}
+
+	public init() {
+		// Blacklisted Fix. Make sure it's proper.
+		if (Array.isArray(this.moderation.blacklisted)) {
+			this.moderation.blacklisted = {
+				'global': {
+					punishment: { type: 'censor' },
+					items: this.moderation.blacklisted
+				}
+			};
+		} else if (this.moderation.blacklisted) {
+			for(var name in this.moderation.blacklisted) {
+				var item = this.moderation.blacklisted[name];
+
+				if (Array.isArray(item)) {
+					this.moderation.blacklisted[name] = {
+						punishment: { type: 'censor' },
+						items: item
+					}
+				}
+			}
+		}
 	}
 
 	public regrab(cb: (server: Server) => any) {
@@ -485,16 +510,12 @@ class Server extends Changes implements DiscordBot.Server {
 
 		var blacklisted = this.moderation.blacklisted;
 
-		if (Array.isArray(blacklisted)) {
-			blacklisted = this.moderation.blacklisted = {};
-		}
+		var channelBlacklist = blacklisted[id];
 
-		var items = blacklisted[id];
-
-		if (items == null || items.length == 0) return false;
+		if (channelBlacklist == null || channelBlacklist.items.length == 0) return false;
 
 		for (let i = 0; i < splt.length; i++) {
-			if (items.indexOf(splt[i]) != -1) return true;
+			if (channelBlacklist.items.indexOf(splt[i]) != -1) return true;
 		}
 
 		return false;
@@ -503,38 +524,38 @@ class Server extends Changes implements DiscordBot.Server {
 	public isBlacklistedItem(id: string, item: string): boolean {
 		var blacklisted = this.moderation.blacklisted;
 
-		if (Array.isArray(blacklisted)) {
-			blacklisted = this.moderation.blacklisted = {};
-		}
+		var channelBlacklist = blacklisted[id];
 
-		var items = blacklisted[id];
+		if (channelBlacklist == null || channelBlacklist.items.length == 0) return false;
 
-		if (items == null || items.length == 0) return false;
-
-		return items.indexOf(item) != -1;
+		return channelBlacklist.items.indexOf(item) != -1;
 	}
 
 	public blacklist(id: string, item: string): boolean {
 		var blacklisted = this.moderation.blacklisted;
 
-		if (Array.isArray(blacklisted)) {
-			blacklisted = this.moderation.blacklisted = {};
-		}
+		var channelBlacklist = blacklisted[id];
 
-		var items = blacklisted[id];
+		if (channelBlacklist == null || channelBlacklist.items.length == 0) return false;
 
-		if (items == null || items.length == 0) return false;
-
-		var indexOf = items.indexOf(item);
+		var indexOf = channelBlacklist.items.indexOf(item);
 
 		if (indexOf != -1) {
-			items.splice(indexOf, 1);
+			// items.splice(indexOf, 1);
 			return false;
 		}
 
-		items.push(item);
+		channelBlacklist.items.push(item);
 
-		this.moderation.blacklisted[id] = items;
+		return true;
+	}
+
+	public blacklistPunishment(id: string, punishment: DiscordBot.PunishmentTypes): boolean {
+		var channelBlacklist = this.moderation.blacklisted[id];
+
+		if (channelBlacklist == null) return false;
+
+		channelBlacklist.punishment = punishment;
 
 		return true;
 	}
