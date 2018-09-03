@@ -23,7 +23,35 @@ class Warn extends Command {
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
-		//
+		if (params.length == 0) {
+			return Command.info([
+				[ 'Description', this.description ],
+				[
+					'Warn',
+					'@user <reason>'
+				]
+			]);
+		}
+
+		var user_str = params.shift();
+
+		var type_user = server.idType(user_str);
+
+		if (type_user != 'member') return Command.error([[ 'Mute', 'Invalid args. Please refer to warn help.' ]]);
+
+		var user_id = server.strpToId(user_str);
+		var reason = params.join(' ');
+
+		// TODO: Return punishment count, and improve stuffs.
+		return Command.success([
+			[
+				'Mute',
+				[
+					'**Warned:** <@' + user_id + '>',
+					'**Reason:** ' + reason
+				].join('\n')
+			]
+		]);
 	}
 }
 

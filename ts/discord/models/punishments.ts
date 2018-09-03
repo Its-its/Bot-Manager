@@ -9,7 +9,7 @@ const Punishments = new Schema({
 
 	punisher_id: String,
 
-	type: Number, // warn, mute, tempmute, ban, tempban
+	type: String, // warn, mute, tempmute, ban, tempban
 	length: Number,
 
 	reason: String,
