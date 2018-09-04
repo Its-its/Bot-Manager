@@ -16,7 +16,7 @@ class Command {
 		this.commandName = (typeof commandName == 'string' ? [commandName] : commandName);
 		this.togglable = (togglable == null ? true : togglable);
 		this.adminOnly = adminOnly;
-		
+
 		this.description = 'Nothing written yet.';
 	}
 
@@ -147,25 +147,27 @@ class Command {
 	}
 
 	// Channels
-	static onChannelDelete(channel: Discord.Channel, server: Server) { return false; }
+	public onChannelDelete(channel: Discord.Channel, server?: Server) { return false; }
 
 	// Users
-	static onGuildMemberAdd(channel: Discord.Channel, server: Server) { return false; }
-	static onGuildMemberRemove(channel: Discord.Channel, server: Server) { return false; }
+	public onGuildMemberAdd(member: Discord.GuildMember, server?: Server) { return false; }
+	public onGuildMemberRemove(member: Discord.GuildMember, server?: Server) { return false; }
+	public onGuildMemberRoleAdd(member: Discord.GuildMember, roles: Discord.Role[], server?: Server) { return false; }
+	public onGuildMemberRoleRemove(member: Discord.GuildMember, roles: Discord.Role[], server?: Server) { return false; }
 
 	// Roles
-	static onRoleDelete(role: Discord.Role, server: Server) { return false; }
-	static onRoleCreate(role: Discord.Role, server: Server) { return false; }
-	static onRoleUpdate(oldRole: Discord.Role, newRole: Discord.Role, server: Server) { return false; }
-	
-	//
-	static onReactionAdd(reaction: Discord.MessageReaction, user: Discord.User, server: Server) { return false; }
-	static onReactionRemove(reaction: Discord.MessageReaction, user: Discord.User, server: Server) { return false; }
+	public onRoleDelete(role: Discord.Role, server?: Server) { return false; }
+	public onRoleCreate(role: Discord.Role, server?: Server) { return false; }
+	public onRoleUpdate(oldRole: Discord.Role, newRole: Discord.Role, server?: Server) { return false; }
 
-	static onMessage(message: Discord.Message, server: Server) { return false; }
-	static onMessageDelete(message: Discord.Message, server: Server) { return false; }
-	static onMessageDeleteBulk(messages: Discord.Collection<string, Discord.Message>, server: Server) { return false; }
-	static onMessageUpdate(oldMessage: Discord.Message, newMessage: Discord.Message, server: Server) { return false; }
+	//
+	public onReactionAdd(reaction: Discord.MessageReaction, user: Discord.User, server?: Server) { return false; }
+	public onReactionRemove(reaction: Discord.MessageReaction, user: Discord.User, server?: Server) { return false; }
+
+	public onMessage(message: Discord.Message, server?: Server) { return false; }
+	public onMessageDelete(message: Discord.Message, server?: Server) { return false; }
+	public onMessageDeleteBulk(messages: Discord.Collection<string, Discord.Message>, server?: Server) { return false; }
+	public onMessageUpdate(oldMessage: Discord.Message, newMessage: Discord.Message, server?: Server) { return false; }
 }
 
 export = Command;

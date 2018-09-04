@@ -17,7 +17,8 @@ import logsPlugin = require('../plugins/logs');
 import levelsPlugin = require('../plugins/levels');
 
 // Commands
-import BlacklistCmd = require('../commands/moderation/blacklist');
+const BlacklistCmd = commandPlugin.defaultCommands.get('blacklist');
+const PunishmentCmd = commandPlugin.defaultCommands.get('punishment');
 
 import config = require('../../site/util/config');
 
@@ -28,11 +29,11 @@ mongoose.Promise = global.Promise;
 if (config.debug) mongoose.set('debug', true);
 mongoose.connect(config.database, { useNewUrlParser: true });
 
-const client = new Discord.Client({
-	disabledEvents: [
-		'TYPING_START'
-	]
-});
+import client = require('./discord');
+client.options.disabledEvents = [
+	'TYPING_START'
+];
+
 let events: NewNode = new Events();
 
 // let app = express();
@@ -101,6 +102,7 @@ client.on('roleDelete', role => {
 	guildClient.get(role.guild.id, server => {
 		if (server == null) return;
 
+		PunishmentCmd.onRoleDelete(role, server);
 		levelsPlugin.roleRemove(role, server);
 	});
 });
@@ -268,7 +270,6 @@ client.on('channelDelete', (channel) => {
 });
 
 
-
 client.on('messageDelete', (message) => {
 	logsPlugin.messageDelete(message);
 });
@@ -309,7 +310,29 @@ client.on('messageReactionRemove', (reaction, user) => {
 
 client.on('guildMemberRemove', guildMember => {
 	levelsPlugin.memberLeave(guildMember);
+	PunishmentCmd.onGuildMemberRemove(guildMember);
 	// logsPlugin.guildMemberRemove(guildMember);
+});
+
+client.on('guildMemberUpdate', (oldUser, newUser) => {
+	if (oldUser.roles.size != newUser.roles.size) {
+		try {
+			guildClient.get(oldUser.guild.id, server => {
+				if (server == null) return;
+
+				if (newUser.roles.size < oldUser.roles.size) {
+					var removed = oldUser.roles.filterArray(role => !newUser.roles.has(role.id));
+					PunishmentCmd.onGuildMemberRoleRemove(newUser, removed, server);
+					console.log(removed);
+				} else {
+					var added = newUser.roles.filterArray(role => !oldUser.roles.has(role.id));
+					console.log(added);
+				}
+			});
+		} catch (error) {
+			logger.error(error);
+		}
+	}
 });
 
 
@@ -337,7 +360,6 @@ client.on('error', (error) => logger.info(' - error', error));
 // client.on('guildMemberAvailable', (user) => logger.info(' - guildMemberAvailable', user));
 // client.on('guildMembersChunk', (members, guild) => logger.info(' - guildMembersChunk', members, guild));
 // client.on('guildMemberSpeaking', (user, speaking) => logger.info(' - guildMemberSpeaking', speaking, user));
-// client.on('guildMemberUpdate', (oldUser, newUser) => logger.info(' - guildMemberUpdate', oldUser, newUser));
 client.on('guildUnavailable', (guild) => logger.info(' - guildUnavailable', guild));
 // client.on('messageReactionRemoveAll', (message) => logger.info(' - messageReactionRemoveAll', message));
 client.on('reconnecting', () => logger.info(' - reconnecting'));

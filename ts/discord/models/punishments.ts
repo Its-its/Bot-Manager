@@ -7,14 +7,14 @@ const Punishments = new Schema({
 
 	member_id: String,
 
-	punisher_id: String,
+	creator_id: String,
 
 	type: String, // warn, mute, tempmute, ban, tempban
 	length: Number,
 
 	reason: String,
 
-	//
+	expires: Date
 }, {
 	timestamps: {
 		createdAt: 'created_at',

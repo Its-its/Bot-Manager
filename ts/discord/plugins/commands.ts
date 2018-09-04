@@ -130,5 +130,6 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 
 export {
 	isEnabled,
-	onMessage
+	onMessage,
+	defaultCommands
 };

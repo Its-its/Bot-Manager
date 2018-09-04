@@ -10,11 +10,11 @@
 			"node_modules/@types",
 			"typings"
 		],
-		// "baseUrl": "src",
+		// "baseUrl": ".",
 		// "paths": {
-		// 	"@discord/*": ["discord/*"],
-		// 	"@music/*": ["music/*"],
-		// 	"@site/*": ["site/*"]
+		// 	"@discord/*": ["ts/discord/*"],
+		// 	"@music/*": ["ts/music/*"],
+		// 	"@site/*": ["ts/site/*"]
 		// }
 	},
 	"include": [

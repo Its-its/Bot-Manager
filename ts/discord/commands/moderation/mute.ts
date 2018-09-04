@@ -1,7 +1,11 @@
 import Discord = require('discord.js');
 import DiscordServer = require('../../discordserver');
 
+
 import Command = require('../../command');
+
+import Punishments = require('../../models/punishments');
+import TempPunishments = require('../../models/temp_punishments');
 
 
 const PERMS = {
@@ -12,6 +16,9 @@ for(var name in PERMS) {
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
+
+const MAX_TIME = parseTime('1y');
+const MIN_TIME = parseTime('5m');
 
 class Mute extends Command {
 	constructor() {
@@ -57,11 +64,49 @@ class Mute extends Command {
 
 		var time = parseTime(time_str);
 
-		if (time == -1) reason = time_str + reason;
-
-		if (time != -1) {
-			// Save to redis also.
+		if (time == null) {
+			reason = time_str + reason;
+		} else {
+			if (time > MAX_TIME) return Command.error([[ 'Mute', 'Max mute time is 1 year.' ]]);
+			if (time < MIN_TIME) return Command.error([[ 'Mute', 'Minimum mute time is 5 minutes.' ]]);
 		}
+
+		new Punishments({
+			server_id: message.guild.id,
+			member_id: user_id,
+			creator_id: message.member.id,
+
+			type: 'mute',
+			length: time == null ? undefined : time,
+			expires: time == null ? undefined : Date.now() + time,
+
+			reason: reason
+		}).save((err, item) => {
+			if (err != null) {
+				return console.error(err);
+			}
+
+			if (time != null) {
+				// IDEA: Check to see if punishment uses same role (if currently punished)
+				TempPunishments.updateOne(
+					{
+						server_id: message.guild.id,
+						member_id: user_id
+					},
+					{
+						$set: {
+							server_id: message.guild.id,
+							member_id: user_id,
+							punishment: item._id,
+							expires: Date.now() + time
+						}
+					},
+					{
+						upsert: true
+					}
+				).exec();
+			}
+		});
 
 		// TODO: Return punishment count, and improve stuffs.
 		return Command.success([
@@ -83,11 +128,13 @@ function parseTime(time: string): number {
 	for(var i = 0; i < time.length; i++) {
 		var p = time[i];
 
-		if (p == 'w' || p == 'd' || p == 'h' || p == 'm') {
+		if (p == 'y' || p == 'w' || p == 'd' || p == 'h' || p == 'm') {
 			var parsed = parseInt(cached);
-			if (isNaN(parsed)) return -1;
+			if (isNaN(parsed)) return null;
 
-			if (p == 'w') {
+			if (p == 'y') {
+				seconds += parsed * 60 * 60 * 24 * 7 * 54;
+			} else if (p == 'w') {
 				seconds += parsed * 60 * 60 * 24 * 7;
 			} else if (p == 'd') {
 				seconds += parsed * 60 * 60 * 24;

@@ -213,7 +213,7 @@ class Blacklist extends Command {
 		}
 	}
 
-	static onMessage(message: Discord.Message, server: DiscordServer) {
+	public onMessage(message: Discord.Message, server: DiscordServer) {
 		if (!server.userHasPerm(message.member, PERMS.IGNORE)) return false;
 
 
@@ -230,7 +230,7 @@ class Blacklist extends Command {
 		return false;
 	}
 
-	static onChannelDelete(channel: Discord.Channel, server: DiscordServer) {
+	public onChannelDelete(channel: Discord.Channel, server: DiscordServer) {
 		if (server.moderation.blacklisted[channel.id] != null) {
 			delete server.moderation.blacklisted[channel.id];
 			server.save();

@@ -20,10 +20,11 @@ import { Document, Types } from 'mongoose';
 
 let redisGuildsClient = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.guildsDB });
 
-const server = {
-	lastestVersion: 1,
-	maxPhraseResponses: 2,
-	maxPhraseText: 5
+const SERVER = {
+	LATEST_VERSION: 1,
+
+	MAX_PHRASE_RESPONSES: 2,
+	MAX_PHRASE_TEXT: 5
 };
 
 // TODO: extend Server with class to find edited items. || Mark items edited. Only save edited items to db.
@@ -78,6 +79,7 @@ class Changes {
 	}
 }
 
+
 class Server extends Changes {
 	public branch: number;
 	public serverId: string;
@@ -114,6 +116,7 @@ class Server extends Changes {
 	public commands: DiscordBot.Command[];
 	public phrases: DiscordBot.Phrase[];
 	public roles: DiscordBot.Role[];
+
 	public plugins: DiscordBot.Plugin = {
 		commands: {
 			enabled: true
@@ -134,6 +137,7 @@ class Server extends Changes {
 		// 	enabled: false
 		// }
 	};
+
 	public values;
 
 	public permissions: DiscordBot.Permissions = {
@@ -164,7 +168,7 @@ class Server extends Changes {
 		this.channels = options.channels || {};
 		this.punishments = options.punishments || {};
 
-		this.migration = options.version == null ? server.lastestVersion : options.version;
+		this.migration = options.version == null ? SERVER.LATEST_VERSION : options.version;
 
 		this.commandPrefix = options.commandPrefix;
 
@@ -346,7 +350,7 @@ class Server extends Changes {
 
 	// Phrases
 	public createPhrase(member: Discord.GuildMember, phraseText: string[], cb: (phrase: DiscordBot.Phrase) => any) {
-		phraseText.slice(0, server.maxPhraseText);
+		phraseText.slice(0, SERVER.MAX_PHRASE_TEXT);
 
 		if (this.findPhrase(phraseText) != null) return null;
 
@@ -424,14 +428,14 @@ class Server extends Changes {
 				var phrase = this.phrases[i];
 				if (phrase.pid == id) {
 					Phrases.updateOne({ _id: phrase._id }, { $push: { phrases: { $each: phrases } } }).exec();
-					phrase.phrases = phrase.phrases.concat(phrases).slice(0, server.maxPhraseText);
+					phrase.phrases = phrase.phrases.concat(phrases).slice(0, SERVER.MAX_PHRASE_TEXT);
 					return true;
 				}
 			}
 		} else {
 			var phrase = this.phrases[id - 1];
 			Phrases.updateOne({ _id: phrase._id }, { $push: { phrases: { $each: phrases } } }).exec();
-			phrase.phrases = phrase.phrases.concat(phrases).slice(0, server.maxPhraseText);
+			phrase.phrases = phrase.phrases.concat(phrases).slice(0, SERVER.MAX_PHRASE_TEXT);
 		}
 
 		return true;
@@ -440,7 +444,7 @@ class Server extends Changes {
 	public setPhraseResponse(id: number | string, response: DiscordBot.PhraseResponses[]): boolean {
 		if (this.phrases.length < id) return false;
 
-		response.splice(0, server.maxPhraseResponses);
+		response.splice(0, SERVER.MAX_PHRASE_RESPONSES);
 
 		if (typeof id == 'string') {
 			for(var i = 0; i < this.phrases.length; i++) {
@@ -483,7 +487,7 @@ class Server extends Changes {
 
 	public findPhrase(text: string[] | string): DiscordBot.Phrase {
 		if (Array.isArray(text)) {
-			text = text.slice(0, server.maxPhraseText);
+			text = text.slice(0, SERVER.MAX_PHRASE_TEXT);
 
 			for(var i = 0; i < text.length; i++) {
 				var phrase = this.findPhrase(text[i]);

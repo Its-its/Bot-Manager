@@ -3,6 +3,8 @@ import DiscordServer = require('../../discordserver');
 
 import Command = require('../../command');
 
+import Punishments = require('../../models/punishments');
+
 
 const PERMS = {
 	MAIN: 'commands.warn'
@@ -41,6 +43,16 @@ class Warn extends Command {
 
 		var user_id = server.strpToId(user_str);
 		var reason = params.join(' ');
+
+		new Punishments({
+			server_id: message.guild.id,
+			member_id: user_id,
+			creator_id: message.member.id,
+
+			type: 'warn',
+
+			reason: reason
+		}).save();
 
 		// TODO: Return punishment count, and improve stuffs.
 		return Command.success([
