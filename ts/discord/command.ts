@@ -146,6 +146,9 @@ class Command {
 		return comp;
 	}
 
+	public onGuildRemove(guild: Discord.Guild, server?: Server) { return false; }
+	public onGuildCreate(guild: Discord.Guild, server?: Server) { return false; }
+
 	// Channels
 	public onChannelDelete(channel: Discord.Channel, server?: Server) { return false; }
 

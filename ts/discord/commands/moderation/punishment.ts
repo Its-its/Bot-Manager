@@ -68,6 +68,11 @@ class Punishment extends Command {
 		}
 	}
 
+	public onGuildRemove(guild: Discord.Guild, server?: DiscordServer) {
+		TempPunishments.remove({ server_id: guild.id }).exec();
+		return true;
+	}
+
 	public onGuildMemberRemove(member: Discord.GuildMember) {
 		TempPunishments.remove({ server_id: member.guild.id, member_id: member.id }).exec();
 		return true;

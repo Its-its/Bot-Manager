@@ -183,6 +183,7 @@ client.on('guildUpdate', (oldGuild, newGuild) => {
 client.on('guildDelete', (guild) => {
 	logger.info('Left Server: ' + guild.name);
 	DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: true } }).exec();
+	PunishmentCmd.onGuildRemove(guild);
 	guildClient.remove(guild.id, () => {});
 });
 
