@@ -1,3 +1,6 @@
+import Command = require('../command');
+
+
 import mongoose = require('mongoose');
 import * as Discord from 'discord.js';
 import * as Events from 'events';
@@ -16,14 +19,25 @@ import commandPlugin = require('../plugins/commands');
 import logsPlugin = require('../plugins/logs');
 import levelsPlugin = require('../plugins/levels');
 
-// Commands
-const BlacklistCmd = commandPlugin.defaultCommands.get('blacklist');
-const PunishmentCmd = commandPlugin.defaultCommands.get('punishment');
 
 import config = require('../../site/util/config');
 
 import guildClient = require('../guildClient');
 import Server = require('../discordserver');
+
+import limits = require('../limits');
+
+
+// Commands
+let BlacklistCmd: Command = null;
+let PunishmentCmd: Command = null;
+
+process.nextTick(() => {
+	BlacklistCmd = commandPlugin.defaultCommands.get('blacklist');
+	PunishmentCmd = commandPlugin.defaultCommands.get('punishment');
+});
+
+
 
 mongoose.Promise = global.Promise;
 if (config.debug) mongoose.set('debug', true);
@@ -84,9 +98,7 @@ client.on('ready', () => {
 });
 
 
-if (client.shard != null && client.shard.count != 0) {
-	shardListener();
-}
+if (client.shard != null && client.shard.count != 0) shardListener();
 
 
 function shardListener() {
@@ -115,6 +127,10 @@ client.on('roleDelete', role => {
 // });
 
 
+client.on('rateLimit', rateLimit => {
+	console.log('Rate Limit:', rateLimit);
+});
+
 
 client.on('message', msg => {
 	// Possible b/c of webhooks ??
@@ -123,10 +139,12 @@ client.on('message', msg => {
 	if (!finishedMigrationCheck) return;
 
 	try {
-		guildClient.get(msg.member.guild.id, server => {
+		guildClient.get(msg.guild.id, server => {
 			if (server == null) return;
 
 			if (server.channelIgnored(msg.channel.id)) return;
+
+			if (!limits.canCallCommand(msg.guild.id)) return;
 
 			if (!commandPlugin.onMessage(client.user.id, msg, server)) {
 				BlacklistCmd.onMessage(msg, server);
@@ -179,9 +197,11 @@ client.on('guildUpdate', (oldGuild, newGuild) => {
 	});
 });
 
-// Server Deleted
 client.on('guildDelete', (guild) => {
 	logger.info('Left Server: ' + guild.name);
+
+	limits.guildDelete(guild.id);
+
 	DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: true } }).exec();
 	PunishmentCmd.onGuildRemove(guild);
 	guildClient.remove(guild.id, () => {});
@@ -261,11 +281,18 @@ client.on('guildCreate', guild => {
 	}
 });
 
-
-client.on('channelDelete', (channel) => {
-	if (channel.type == 'text' || channel.type == 'category' || channel.type == 'voice') {
+client.on('channelDelete', channel => {
+	if (channel.type != 'dm' && channel.type != 'group') {
 		guildClient.get((<Discord.GuildChannel>channel).guild.id, server => {
-			BlacklistCmd.onChannelDelete(channel, server);
+			BlacklistCmd.onChannelDelete(<Discord.GuildChannel>channel, server);
+		});
+	}
+});
+
+client.on('channelCreate', channel => {
+	if (channel.type != 'dm' && channel.type != 'group') {
+		guildClient.get((<Discord.GuildChannel>channel).guild.id, server => {
+			PunishmentCmd.onChannelCreate(<Discord.GuildChannel>channel, server);
 		});
 	}
 });
@@ -324,10 +351,10 @@ client.on('guildMemberUpdate', (oldUser, newUser) => {
 				if (newUser.roles.size < oldUser.roles.size) {
 					var removed = oldUser.roles.filterArray(role => !newUser.roles.has(role.id));
 					PunishmentCmd.onGuildMemberRoleRemove(newUser, removed, server);
-					console.log(removed);
+					// console.log(removed);
 				} else {
 					var added = newUser.roles.filterArray(role => !oldUser.roles.has(role.id));
-					console.log(added);
+					// console.log(added);
 				}
 			});
 		} catch (error) {
@@ -349,7 +376,6 @@ function uniqueID(size: number): string {
 // client.on('debug', debug => logger.info(debug));
 
 
-// client.on('channelCreate', (channel) => logger.info(' - channelCreate', channel));
 // client.on('channelPinsUpdate', (channel, time) => logger.info(' - channelPinsUpdate', channel, time));
 // client.on('channelUpdate', (oldChannel, newChannel) => logger.info(' - channelUpdate', oldChannel, newChannel));
 // client.on('clientUserGuildSettingsUpdate', (settings) => logger.info(' - clientUserGuildSettingsUpdate', settings));

@@ -87,9 +87,11 @@ const PERMS = {
 	STOP: 'stop',
 	SKIP: 'skip',
 	SEARCH: 'search',
+
 	HISTORY: 'history',
 	HISTORY_LIST: 'history.list',
 	HISTORY_CLEAR: 'history.clear',
+
 	QUEUE: 'queue',
 	QUEUE_ADD: 'queue.add',
 	QUEUE_PLAYLIST: 'queue.playlist',
@@ -98,6 +100,7 @@ const PERMS = {
 	QUEUE_SHUFFLE: 'queue.shuffle',
 	QUEUE_CLEAR: 'queue.clear',
 	QUEUE_REMOVE: 'queue.remove',
+
 	PLAYLIST: 'playlist',
 	PLAYLIST_CREATE: 'playlist.create',
 	PLAYLIST_INFO: 'playlist.info',
@@ -129,15 +132,6 @@ class Music extends Command {
 			return Command.error([['Music', 'Music isn\'t enabled! Please enable the plugin!\n' + server.getPrefix() + 'plugin enable music' ]]);
 
 		if (params.length == 0) return commandUsage;
-
-		// TODO: Fix this crap... whatever it was used for.
-		// music.lastTextChannelId = message.channel.id;
-		// if (music.lastVoiceChannelId != null) {
-		// 	if (message.guild.channels.get(music.lastVoiceChannelId) == null) {
-		// 		music.lastVoiceChannelId = null;
-		// 		console.log('Voice channel is non-existent now');
-		// 	}
-		// }
 
 		switch (params.shift().toLowerCase()) {
 			case 'info':

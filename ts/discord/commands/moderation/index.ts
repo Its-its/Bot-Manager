@@ -8,17 +8,19 @@ import Mute = require('./mute');
 import Warn = require('./warn');
 import Ignore = require('./ignore');
 import Prune = require('./prune');
+import Punishment = require('./punishment');
 
 export = [
-	// new Mute(),
-	// new Warn(),
+	Mute,
+	Warn,
+	Punishment,
 
-	new Command(),
-	new Blacklist(),
-	new Interval(),
-	new Phrase(),
-	new Alias(),
+	Command,
+	Blacklist,
+	Interval,
+	Phrase,
+	Alias,
 
-	new Ignore(),
-	new Prune()
+	Ignore,
+	Prune
 ];

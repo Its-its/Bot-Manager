@@ -8,13 +8,13 @@ const WarningColor = 0xc4d950;
 const ErrorColor = 0xd91582;
 
 
-function defCall(color: number, array: [string, string][]) {
+function defCall(color: number, array: any[][] | { embed: any; }) {
 	return {
 		type: 'echo',
-		embed: {
+		embed: Array.isArray(array) ? {
 			color: color,
 			fields: array.map(a => { return { name: a[0], value: a[1] } })
-		}
+		} : array.embed
 	};
 }
 
@@ -38,10 +38,12 @@ function infoMsg(array: [string, string][]) {
 	return defCall(InfoColor, array);
 }
 
-function tableMsg(header: string[], body: any[][], opts?: { delimiter?: string; spacing?: number; }): string {
+//! Text is different widths if not in code blocks.
+function tableMsg(header: string[], body: any[][], opts?: { delimiter?: string; spacing?: number; monospaced?: boolean; }): string {
 	opts = Object.assign({
 		delimiter: ' ',
-		spacing: 2
+		spacing: 2,
+		monospaced: true
 	}, opts);
 
 	var largestCell: number[] = [];
@@ -62,14 +64,24 @@ function tableMsg(header: string[], body: any[][], opts?: { delimiter?: string; 
 		});
 	});
 
-	//
 	rows.push(header.map((h, i) => h + ' '.repeat(largestCell[i] - String(h).length + opts.spacing)).join(opts.delimiter));
+
+	rows.push('='.repeat(rows[0].length));
 
 	body.forEach(ro => {
 		rows.push(ro.map((c, i) => c + ' '.repeat(largestCell[i] - String(c).length + opts.spacing)).join(opts.delimiter));
 	});
 
-	return rows.join('\n');
+
+	var comp = rows.join('\n');
+
+
+	if (opts.monospaced) comp = '```' + comp + '```';
+
+
+	// if (comp.length > 1024) throw 'Table is too large. ' + comp.length + '/1024';
+
+	return comp;
 }
 
 

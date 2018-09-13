@@ -124,7 +124,7 @@ class Random extends Command {
 						lists.push(lines);
 					}
 
-					var compiled: string[][] = [];
+					var compiled: [string, string][] = [];
 					var total = 0;
 
 					for(var i = 0; i < lists.length; i++) {

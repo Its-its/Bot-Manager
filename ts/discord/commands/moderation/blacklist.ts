@@ -230,7 +230,7 @@ class Blacklist extends Command {
 		return false;
 	}
 
-	public onChannelDelete(channel: Discord.Channel, server: DiscordServer) {
+	public onChannelDelete(channel: Discord.GuildChannel, server: DiscordServer) {
 		if (server.moderation.blacklisted[channel.id] != null) {
 			delete server.moderation.blacklisted[channel.id];
 			server.save();

@@ -32,14 +32,16 @@ let validPerms: string[] = [
 	'commands.bypasstoggle'
 ];
 
-process.nextTick(() => {
-	addCommand(require('./misc'), 'Misc');
-	addCommand(require('./moderation'), 'Moderation');
-	addCommand(require('./manager'), 'Manager');
-	addCommand(require('./plugins'), 'Plugins');
-	addCommand(require('./roles'), 'Roles');
-	addCommand(require('./owner'), 'Owner');
-});
+
+
+addCommand(require('./misc'), 'Misc');
+addCommand(require('./moderation'), 'Moderation');
+addCommand(require('./manager'), 'Manager');
+addCommand(require('./plugins'), 'Plugins');
+// addCommand(require('./roles'), 'Roles');
+addCommand(require('./owner'), 'Owner');
+
+
 
 function parseMessage(message: string, server: Server, defaultMessage: Discord.Message) {
 	var parts = [];
@@ -94,16 +96,20 @@ function get(commandName: string): Command {
 	return null;
 }
 
-function addCommand(command: Command | Command[], category: string, hidden?: boolean) {
-	if (Array.isArray(command)) return command.forEach(c => addCommand(c, category, hidden));
+function addCommand(Cmd: typeof Command | typeof Command[], category: string, hidden?: boolean) {
+	if (Array.isArray(Cmd)) return Cmd.forEach(c => addCommand(c, category, hidden));
+
+	const command = new Cmd();
 
 	if (command.perms == null || command.perms.length == 0) console.log('No perms for ' + command.commandName[0]);
 
 	validPerms = validPerms.concat(command.perms);
 	defaultCommands.push(command);
 
-	if (categoryCommands[category] == null)
+	if (categoryCommands[category] == null) {
 		categoryCommands[category] = [];
+	}
+
 	categoryCommands[category].push(command);
 }
 

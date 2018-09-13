@@ -1,6 +1,8 @@
 import Discord = require('discord.js');
 import DiscordServer = require('../../discordserver');
 
+import generate = require('nanoid/generate');
+
 import Command = require('../../command');
 
 import Punishments = require('../../models/punishments');
@@ -48,6 +50,8 @@ class Warn extends Command {
 			server_id: message.guild.id,
 			member_id: user_id,
 			creator_id: message.member.id,
+
+			pid: generate('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 6),
 
 			type: 'warn',
 

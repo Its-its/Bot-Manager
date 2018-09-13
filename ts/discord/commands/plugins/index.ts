@@ -5,9 +5,9 @@ import Leveling = require('./leveling');
 import Events = require('./events');
 
 export = [
-	new Leveling(),
-	new Music(),
-	new Logs(),
-	new RSSFeed(),
-	new Events()
+	Leveling,
+	Music,
+	Logs,
+	RSSFeed,
+	Events
 ];

@@ -37,40 +37,31 @@ setInterval(() => {
 		if (err != null) return console.error(err);
 		if (feedDocs.length == 0) return console.log('None.');
 
-		// Split into groups of 10.
-		var grouped: FeedFix[][] = [];
 
-		var count = Math.ceil(feedDocs.length/10);		
-		for(var i = 0; i < count; i++) {
-			grouped.push(feedDocs.splice(0, 10));
-		}
+		async.everyLimit(feedDocs, 10, (doc, cbEvery) => {
+			utils.getFeedItems(doc.url, null, (err, items) => {
+				if (err != null) return console.error(err);
 
-		async.every(grouped, (docs, cbEvery) => {
-			// Execute simultaneously.
-			async.each(docs, (doc, cbEach) => {
-				utils.getFeedItems(doc.url, null, (err, items) => {
-					if (err != null) return console.error(err);
-				
-					var newItems = utils.articleItemsToDB(items);
-					var oldIds = doc.items.map(i => i.id);
+				var newItems = utils.articleItemsToDB(items);
+				var oldIds = doc.items.map(i => i.id);
 
-					var hasNew = false;
+				var hasNew = false;
 
-					for(var i = 0; i < newItems.length; i++) {
-						var index = oldIds.indexOf(newItems[i].id);
-						if (index == -1) {
-							hasNew = true;
-							break;
-						}
+				for(var i = 0; i < newItems.length; i++) {
+					var index = oldIds.indexOf(newItems[i].id);
+					// TODO: Ensure correct.
+					if (index == -1 && newItems[i].date >= doc.last_called.getTime() - (1000 * 60 * 60)/*Date.now() * TWO_DAYS*/) {
+						hasNew = true;
+						break;
 					}
+				}
 
-					if (hasNew) doc.items = <any>newItems;
+				if (hasNew) doc.items = <any>newItems;
 
-					doc.last_called = <any>Date.now();
+				doc.last_called = <any>Date.now();
 
-					doc.save(() => cbEach());
-				});
-			}, () => cbEvery());
+				doc.save(() => cbEvery());
+			});
 		});
 	});
 }, 1000 * 60);

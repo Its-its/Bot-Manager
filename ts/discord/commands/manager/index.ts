@@ -10,12 +10,12 @@ import Restore = require('./restore');
 import Options = require('./options');
 
 export = [
-	new Options(),
-	new Plugin(),
-	new Rank(),
-	new Perms(),
-	new Nick(),
-	new Prefix(),
-	new Backup(),
-	new Restore()
+	Options,
+	Plugin,
+	Rank,
+	Perms,
+	Nick,
+	Prefix,
+	Backup,
+	Restore
 ];

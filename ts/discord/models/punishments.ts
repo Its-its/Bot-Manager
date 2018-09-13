@@ -4,10 +4,10 @@ let Schema = mongoose.Schema;
 
 const Punishments = new Schema({
 	server_id: String,
-
 	member_id: String,
-
 	creator_id: String,
+
+	pid: String,
 
 	type: String, // warn, mute, tempmute, ban, tempban
 	length: Number,

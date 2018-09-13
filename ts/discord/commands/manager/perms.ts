@@ -38,9 +38,9 @@ for(var name in PERMISSIONS) {
 
 class Perms extends Command {
 	constructor() {
-		super(['perms', 'permissions']);
+		super(['perm', 'perms']);
 
-		this.description = 'A permissions system for the bot.';
+		this.description = 'The permissions system for the bot.';
 
 		this.perms = Object.values(PERMISSIONS);
 	}
@@ -55,29 +55,29 @@ class Perms extends Command {
 						'list <@user/@role>',
 						'list group <id>',
 						'list command <name>',
-
+						'',
 						'user <@user>',
 						'user <@user> add <command/perm>',
 						'user <@user> remove <command/perm>',
 						'user <@user> group add <command/perm>',
 						'user <@user> group remove <name>',
-
+						'',
 						'role <@role>',
 						'role <@role> add <command/perm>',
 						'role <@role> remove <command/perm>',
 						'role <@role> group add <command/perm>',
 						'role <@role> group remove <name>',
-
+						'',
 						'group <name>',
 						'group create <Display Name> - A-Z 0-9 spaces',
 						'group <name> add <command/perm>',
 						'group <name> remove <command/perm>',
-
+						'',
 						'channels <@user/@role>'
 					]
-					// .map(b => server.getPrefix() + 'perms ' + b)
 					.join('\n')
-				]]);
+				]
+			]);
 		}
 
 
@@ -95,12 +95,7 @@ class Perms extends Command {
 					var command = Commands.get(name);
 					if (command == null) return;
 
-					message.channel.send(Command.info([
-						[
-							'Permissions',
-							'```' + command.perms.map(p => ' - ' + p).join('\n') + '```'
-						]
-					]));
+					message.channel.send('**Permissions**\n```' + command.perms.join('\n') + '```');
 				} else {
 					if (id == 'group') id = params.shift();
 
@@ -153,7 +148,7 @@ class Perms extends Command {
 					var member = message.guild.members.get(server.strpToId(user));
 
 					return Command.info([
-						[	
+						[
 							'Permissions',
 							[ 'User: ' + user, 'Perms:' ]
 							.concat(permi.perms.map(p => ' - ' + p))
@@ -163,9 +158,9 @@ class Perms extends Command {
 						],
 						[
 							'Commands',
-							commands.map(c => 
-								server.getPrefix() + c.commandName[0] + ' | ' + 
-								c.hasPermsCount(member, server, c.perms) + '/' + c.perms.length  + ' | ' + 
+							commands.map(c =>
+								server.getPrefix() + c.commandName[0] + ' | ' +
+								c.hasPermsCount(member, server, c.perms) + '/' + c.perms.length  + ' | ' +
 								c.description
 							).join('\n')
 						]
@@ -237,7 +232,7 @@ class Perms extends Command {
 					var first = message.guild.roles.first();
 					roleId = first.id;
 				}
-				
+
 				if (doit == null) {
 					if (!this.hasPerms(message.member, server, PERMISSIONS.ROLE_LIST)) return Command.noPermsMessage('Perms');
 
@@ -305,7 +300,7 @@ class Perms extends Command {
 				if (!this.hasPerms(message.member, server, PERMISSIONS.GROUP)) return Command.noPermsMessage('Perms');
 
 				var name = params.shift();
-				
+
 				if (name == 'create') {
 					if (!this.hasPerms(message.member, server, PERMISSIONS.GROUP_CREATE)) return Command.noPermsMessage('Perms');
 

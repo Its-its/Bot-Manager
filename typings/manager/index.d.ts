@@ -175,6 +175,27 @@ declare namespace DiscordBot {
 	// 	toString(): string;
 	// }
 
+	interface CommandDoc {
+		title: string;
+		categories: string[];
+		alias: string[];
+		permission: string;
+		description: string;
+		items?: {
+			name: string;
+			permission: string;
+			description: string;
+			opts?: {
+				description: string;
+				items?: {
+					name: string;
+					description: string;
+					default?: string;
+				}[];
+			}[];
+		}[];
+	}
+
 	interface ServerOptions {
 		version?: number;
 
@@ -205,7 +226,7 @@ declare namespace DiscordBot {
 	}
 
 	interface Punishments {
-		role_mute_id?: string;
+		punished_role_id?: string;
 	}
 
 	type PunishmentTypes = CensorPunishment | DeletePunishment | WarnPunishment | TempmutePunishment | MutePunishment | TempbanPunishment | BanPunishment;

@@ -2,6 +2,8 @@ import Discord = require('discord.js');
 import DiscordServer = require('../../discordserver');
 
 
+import generate = require('nanoid/generate');
+
 import Command = require('../../command');
 
 import Punishments = require('../../models/punishments');
@@ -17,8 +19,8 @@ for(var name in PERMS) {
 }
 
 
-const MAX_TIME = parseTime('1y');
-const MIN_TIME = parseTime('5m');
+const MAX_SECONDS = parseTime('1y');
+const MIN_SECONDS = parseTime('5m');
 
 class Mute extends Command {
 	constructor() {
@@ -40,11 +42,27 @@ class Mute extends Command {
 						'@user <duration> [reason]',
 						'',
 						'**Duration Examples:**',
-						' - **1w2d** - 1 Week 2 Days',
-						' - **1w** - 1 Week',
-						' - **1d** - 1 Day',
-						' - **24h** - 1 Day',
-						' - **5m** - 5 Minutes'
+						' — **1w2d** - 1 Week 2 Days',
+						' — **1w** - 1 Week',
+						' — **1d** - 1 Day',
+						' — **24h** - 1 Day',
+						' — **5m** - 5 Minutes'
+					].join('\n')
+				]
+			]);
+		}
+
+		if (server.punishments.punished_role_id == null) {
+			return Command.error([
+				[
+					'Mute',
+					[
+						'Unable to mute anybody since the punished role is not set.',
+						'There are _two ways_ you can set up the punished role:',
+						' — **Manually**',
+						' — \tpunishment settings punished_role @role/id',
+						' — **Automatically**',
+						' — \tpunishment settings punished_role auto'
 					].join('\n')
 				]
 			]);
@@ -62,23 +80,28 @@ class Mute extends Command {
 
 		var reason = params.join(' ');
 
-		var time = parseTime(time_str);
+		var seconds = parseTime(time_str);
 
-		if (time == null) {
+		if (seconds == null) {
 			reason = time_str + reason;
 		} else {
-			if (time > MAX_TIME) return Command.error([[ 'Mute', 'Max mute time is 1 year.' ]]);
-			if (time < MIN_TIME) return Command.error([[ 'Mute', 'Minimum mute time is 5 minutes.' ]]);
+			if (seconds < MIN_SECONDS) return Command.error([[ 'Mute', 'Minimum mute time is 5 minutes.' ]]);
+			if (seconds > MAX_SECONDS) return Command.error([[ 'Mute', 'Max mute time is 1 year.' ]]);
 		}
+
+		message.guild.member(user_id)
+		.addRole(server.punishments.punished_role_id, 'Punished [Mute]');
 
 		new Punishments({
 			server_id: message.guild.id,
 			member_id: user_id,
 			creator_id: message.member.id,
 
+			pid: generate('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 6),
+
 			type: 'mute',
-			length: time == null ? undefined : time,
-			expires: time == null ? undefined : Date.now() + time,
+			length: seconds == null ? undefined : seconds,
+			expires: seconds == null ? undefined : Date.now() + (seconds * 1000),
 
 			reason: reason
 		}).save((err, item) => {
@@ -86,7 +109,7 @@ class Mute extends Command {
 				return console.error(err);
 			}
 
-			if (time != null) {
+			if (seconds != null) {
 				// IDEA: Check to see if punishment uses same role (if currently punished)
 				TempPunishments.updateOne(
 					{
@@ -98,7 +121,7 @@ class Mute extends Command {
 							server_id: message.guild.id,
 							member_id: user_id,
 							punishment: item._id,
-							expires: Date.now() + time
+							expires: Date.now() + (seconds * 1000)
 						}
 					},
 					{
@@ -114,7 +137,7 @@ class Mute extends Command {
 				'Mute',
 				[
 					'**Muted:** <@' + user_id + '>',
-					'**Length:** ' + (time == -1 ? 'Forever' : time_str),
+					'**Length:** ' + (seconds == -1 ? 'Forever' : time_str),
 					'**Reason:** ' + reason
 				].join('\n')
 			]
