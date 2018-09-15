@@ -17,6 +17,8 @@ class Raw extends Command {
 		this.description = 'For testing. Displaying the message unformatted.';
 
 		this.perms = Object.values(PERMS);
+
+		this.ownerOnly = true;
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {

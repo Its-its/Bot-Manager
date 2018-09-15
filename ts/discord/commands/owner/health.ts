@@ -19,6 +19,8 @@ class Health extends Command {
 		this.perms = [ 'commands.health' ];
 
 		this.description = 'Checks the health of the bot.';
+
+		this.ownerOnly = true;
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {

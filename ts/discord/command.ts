@@ -9,6 +9,7 @@ class Command {
 	public togglable: boolean;
 	public description: string;
 
+	public ownerOnly: boolean;
 	public adminOnly: boolean;
 	public perms: string[] = [];
 
@@ -16,6 +17,7 @@ class Command {
 		this.commandName = (typeof commandName == 'string' ? [commandName] : commandName);
 		this.togglable = (togglable == null ? true : togglable);
 		this.adminOnly = adminOnly;
+		this.ownerOnly = false;
 
 		this.description = 'Nothing written yet.';
 	}

@@ -32,14 +32,14 @@ let validPerms: string[] = [
 	'commands.bypasstoggle'
 ];
 
-
+const OWNER_ID = '96318357472550912';
 
 addCommand(require('./misc'), 'Misc');
 addCommand(require('./moderation'), 'Moderation');
 addCommand(require('./manager'), 'Manager');
 addCommand(require('./plugins'), 'Plugins');
-// addCommand(require('./roles'), 'Roles');
 addCommand(require('./owner'), 'Owner');
+// addCommand(require('./roles'), 'Roles');
 
 
 
@@ -65,6 +65,8 @@ function parseMessage(message: string, server: Server, defaultMessage: Discord.M
 		var command = defaultCommands[i];
 
 		if (command.is(messageCommand)) {
+			if (command.ownerOnly && defaultMessage.member.id != OWNER_ID) return;
+
 			if (!defaultMessage.member.hasPermission('ADMINISTRATOR')) {
 
 				if (command.perms.length != 0 &&

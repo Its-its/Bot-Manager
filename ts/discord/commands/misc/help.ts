@@ -17,7 +17,7 @@ class Help extends Command {
 		var commandTotal = 0;
 
 		categoryNames.forEach(c => commandTotal += c[2]);
-	
+
 		if (params.length == 0) {
 			var lines = [
 				'Total Commands: ',
@@ -27,7 +27,7 @@ class Help extends Command {
 
 			for(var i = 0; i < categoryNames.length; i++) {
 				var cat = categoryNames[i];
-				lines.push(server.getPrefix() + 'help ' + cat[1]);
+				if (cat[1] != 'owner') lines.push(server.getPrefix() + 'help ' + cat[1]);
 			}
 
 			lines[0] += commandTotal;
@@ -55,12 +55,14 @@ class Help extends Command {
 			for(var i = 0; i < categoryNames.length; i++) {
 				var categoryName = categoryNames[i];
 
+				if (categoryName[1] == 'owner') continue;
+
 				var categoryCommands = commands[categoryName[0]];
 
 				each.push([
 					`**${categoryName[0]}**`,
-					Command.table(['Name', 'Perms', 'Description'], 
-						categoryCommands.map(c => 
+					Command.table(['Name', 'Perms', 'Description'],
+						categoryCommands.map(c =>
 							[
 								c.commandName[0],
 								c.hasPermsCount(message.member, server, c.perms) + '/' + c.perms.length,
@@ -82,6 +84,8 @@ class Help extends Command {
 
 			return;
 		}
+
+		if (name == 'owner') return;
 
 		// List commands in a category
 		for(var i = 0; i < categoryNames.length; i++) {
