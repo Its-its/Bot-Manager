@@ -4,28 +4,33 @@ import DiscordServer = require('../../discordserver');
 import Command = require('../../command');
 
 const PERMISSIONS = {
-	MAIN: 'commands.options'
+	MAIN: 'commands.link'
 };
 
-const DEFAULTS = {
-	//
-};
+const USAGE = Command.table(
+	[ 'Opt', 'Description' ],
+	[
+		[ '_none_', 'If you\'re **the owner of the GUILD**' ],
+		[ '', 'You will get a DM with the auth link.' ]
+	]
+);
 
 
-class Options extends Command {
+// Link bot to website if it wasn't invited from my website.
+class Link extends Command {
 	constructor() {
-		super('options');
+		super('link');
 
 		this.perms = Object.values(PERMISSIONS);
 
-		this.description = 'Change/View some of the bots core options.';
+		this.description = 'Used to link the bot to the website.';
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return Command.info([
 				[ 'Description', this.description ],
-				[ 'Command Usage', 'view' ]
+				[ 'Command Usage', USAGE ]
 			]);
 		}
 
@@ -35,4 +40,4 @@ class Options extends Command {
 	}
 }
 
-export = Options;
+export = Link;

@@ -193,37 +193,76 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 	var startTime = Date.now();
 
+	var failed = [];
+
 	message.edit(Command.info([['Restore', 'Starting restore process...\n__' + backup.items.join(',') + '__']]))
 	.then(() => {
 		asdf([
 			// Roles || Required for: perms.roles, ranks
 			function(next) {
 				if (isImporting('roles')) {
-					message.edit(Command.info([['Restore', 'Restoring Roles...']]))
+					message.edit(Command.info([
+						[
+							'Restore',
+							'Restoring Roles...\n' + items.roles.length + ' roles will take ~' + Math.round(items.roles.length * 1.5) + ' seconds.'
+						]
+					]))
 					.then(() => nextRole(0))
 					.catch(e => console.error(e));
+
+					// 0, 1, 2, 3
+					items.roles = items.roles.sort((r1, r2) => r1.position - r2.position);
+
+					function nextWait(pos) {
+						setTimeout(() => nextRole(pos), 1000);
+					}
 
 					function nextRole(pos) {
 						if (items.roles.length == pos) return next();
 
 						var or = items.roles[pos];
 
-						guild.createRole({
-							name: or.name,
-							color: or.color,
-							hoist: or.hoist,
-							position: or.position,
-							permissions: <any>utils.getPermissions(or.permissions).toArray(),
-							mentionable: or.mentionable
-						})
-						.then(r => {
-							tempIdToNew[or.id] =  r.id;
-							nextRole(pos + 1);
-						})
-						.catch(e => {
-							console.error(e);
-							nextRole(pos + 1);
-						})
+						if (or.name == '@everyone' && or.position == 0) {
+							var roles = guild.roles.array();
+							for(var i = 0; i < roles.length; i++) {
+								var role = roles[i];
+								if (role.position == 0) {
+									role.edit({
+										permissions: or.permissions,//<any>utils.getPermissions(or.permissions).toArray()
+									})
+									.then(r => {
+										console.log(`[Roles]: ${or.id} - ${r.id}`);
+										tempIdToNew[or.id] =  r.id;
+										nextWait(pos + 1);
+									})
+									.catch(e => {
+										console.log(`[Roles]: ${or.id} - catch`);
+										console.error(e);
+										nextWait(pos + 1);
+									});
+									break;
+								}
+							}
+						} else {
+							guild.createRole({
+								name: or.name,
+								color: or.color,
+								hoist: or.hoist,
+								// position: or.position, // No need b/c it appends roles and I sort it from 0+
+								permissions: or.permissions,//<any>utils.getPermissions().toArray(),
+								mentionable: or.mentionable
+							})
+							.then(r => {
+								console.log(`[Roles]: ${or.id} - ${r.id}`);
+								tempIdToNew[or.id] =  r.id;
+								nextWait(pos + 1);
+							})
+							.catch(e => {
+								console.log(`[Roles]: ${or.id} - catch`);
+								console.error(e);
+								nextWait(pos + 1);
+							});
+						}
 					}
 
 				} else next();
@@ -245,6 +284,10 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 					create(0);
 
+					function nextWait(pos) {
+						setTimeout(() => create(pos), 1000);
+					}
+
 					function create(pos: number) {
 						if (channels.length == pos) return fin && fin();
 
@@ -252,9 +295,12 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 						guild.createChannel(c.name, c.type)
 						.then(channel => {
+							console.log(`[Channels]: ${c.id} - ${channel.id}`);
 							tempIdToNew[c.id] = channel.id;
 
 							c.perms.forEach(p => {
+								if (tempIdToNew[p.id] == null) return console.log('Channel Perms: ' + p);
+
 								var obj = {};
 
 								utils.getPermissions(p.allow).toArray().forEach(p => obj[p] = true);
@@ -274,24 +320,26 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 							//TODO: temp save channel name. (ignored channels)
 							createChannels(c.children, () => {
-								create(pos + 1);
+								nextWait(pos + 1);
 							});
 						})
 						.catch(e => {
 							console.error(e);
-							create(pos + 1);
+							nextWait(pos + 1);
 						})
 					}
 				}
 			},
 			// Overview
 			function(next) {
+				if (!isImporting('moderation') && !isImporting('overview')) return next();
+
 				message.edit(Command.info([['Restore', 'Restoring Overview/Moderation...']]))
 				.then(() => {
 					if (isImporting('overview')) {
 						var overview = items.overview;
 
-						async.map([
+						async.mapSeries([
 							guild.setName(overview.server_name),
 							guild.setRegion(overview.server_region),
 							guild.setAFKTimeout(overview.afk_timeout),
@@ -301,8 +349,8 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 							overview.new_member_channel ? guild.setSystemChannel(overview.new_member_channel) : null
 						], (promise, callback) => {
 							if (promise != null) {
-								promise.then(callback)
-								.catch(callback);
+								promise.then(() => setTimeout(() => callback(), 500))
+								.catch(() => setTimeout(() => callback(), 500));
 							}
 						}, (err, res) => {
 							if (err != null) console.error(err);
@@ -321,13 +369,13 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 			// Moderation
 			function(next) {
 				if (isImporting('moderation')) {
-					async.map([
+					async.mapSeries([
 						guild.setVerificationLevel(items.moderation.verification),
 						guild.setExcplicitContentFilter(items.moderation.content_filter)
 					], (promise, callback) => {
 						if (promise != null) {
-							promise.then(callback)
-							.catch(callback);
+							promise.then(() => setTimeout(() => callback(), 500))
+							.catch(() => setTimeout(() => callback(), 500));
 						}
 					}, (err, res) => {
 						if (err != null) console.error(err);
@@ -353,20 +401,29 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 			// Bans
 			function(next) {
 				if (isImporting('bans')) {
-					message.edit(Command.info([['Restore', 'Restoring Bans...']]))
+					message.edit(Command.info([
+						[
+							'Restore',
+							'Restoring Bans...\n' + items.roles.length + ' bans may take ~' + Math.round(items.roles.length * 1.5) + ' seconds.'
+						]
+					]))
 					.then(() => nextBan(0))
 					.catch(e => console.error(e));
+
+					function nextWait(pos: number) {
+						setTimeout(() => nextBan(pos), 500);
+					}
 
 					function nextBan(pos: number) {
 						if (items.bans.length == pos) return next();
 
 						var b = items.bans[pos];
 
-						guild.ban(b)
-						.then(b => nextBan(pos + 1))
+						guild.ban(b/*, { days: null, reason: null }*/)
+						.then(b => nextWait(pos + 1))
 						.catch(e => {
 							console.error(e);
-							nextBan(pos + 1);
+							nextWait(pos + 1);
 						});
 					}
 				} else next();

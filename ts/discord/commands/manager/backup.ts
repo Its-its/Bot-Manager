@@ -32,7 +32,7 @@ class Backup extends Command {
 						'Backups',
 						backups.length == 0
 						? 'None'
-						: backups.map(b => `**ID:** ${b.pid}\n**Created:** ${b.created_at.toUTCString()}\n**Items:** ${b.items}`).join('\n\n')
+						: backups.map(b => `**ID:** ${b.pid}\n**Created:** ${b.created_at.toUTCString()}\n**Items:** \`\`${b.items}\`\``).join('\n\n')
 					],
 					[
 						'Command Usage',

@@ -72,22 +72,22 @@ client.on('ready', () => {
 	client.user.setActivity('the spacetime continuum', { type: 'LISTENING' });
 
 	// Migration Check
-	var ids = client.guilds.map(g => g.id);
+	var guilds = client.guilds.array();
 	var pos = 0;
 
 	check();
 	function check() {
-		if (pos == ids.length) {
+		if (pos == guilds.length) {
 			finishedMigrationCheck = true;
 			return logger.info('Finished Migration Check.');
 		}
 
-		var id = ids[pos++];
+		var guild = guilds[pos++];
 
-		guildClient.get(id, server => {
+		guildClient.getOrCreate(guild, server => {
 			migration.check(server, (ok, updated) => {
 				if (updated) {
-					logger.info('Finished \'' + id + '\': ' + (ok ? 'Success' : 'Errored'));
+					logger.info('Finished \'' + guild.id + '\': ' + (ok ? 'Success' : 'Errored'));
 					server.save();
 				}
 
@@ -140,7 +140,14 @@ client.on('message', msg => {
 
 	try {
 		guildClient.get(msg.guild.id, server => {
-			if (server == null) return;
+			if (server == null) return new Server(msg.guild.id, {
+				region: msg.guild.region,
+				name: msg.guild.name,
+				iconURL: msg.guild.iconURL,
+				createdAt: msg.guild.createdTimestamp,
+				memberCount: msg.guild.memberCount,
+				ownerID: msg.guild.ownerID
+			}).save();
 
 			if (server.channelIgnored(msg.channel.id)) return;
 
@@ -215,11 +222,11 @@ client.on('guildCreate', guild => {
 		Validation.findOneAndRemove({ listener_id: guild.id }, (err, validation: any) => {
 			if (err != null) return logger.error(err);
 
-			if (validation == null) {
-				guild.leave()
-				.catch(e => logger.error(e));
-				return;
-			}
+			// if (validation == null) {
+			// 	guild.leave()
+			// 	.catch(e => logger.error(e));
+			// 	return;
+			// }
 
 			guildClient.exists(guild.id, exists => {
 				if (exists) return;
@@ -237,42 +244,66 @@ client.on('guildCreate', guild => {
 						});
 					}
 
-					Bots.findOne({ uid: validation.bot_id }, (err, item) => {
-						if (err != null) logger.error('Bots:', err);
+					if (validation != null) {
+						Bots.findOne({ uid: validation.bot_id }, (err, item) => {
+							if (err != null) logger.error('Bots:', err);
+							if (item == null) return // TODO: Create without bot.
 
+							if (newServer) {
+								server = new DiscordServers({
+									user_id: validation.user_id,
+									bot_id: item.id,
+									server_id: validation.listener_id,
+									key: uniqueID(16)
+								});
+							}
+
+							item.is_active = true;
+
+							item.botType = (<any>Bots).appName('discord');
+							item.botId = server.id;
+							item.displayName = guild.name;
+
+							item.save((err) => {
+								if (err != null) logger.error('Bots.save:', err);
+
+								if (newServer) {
+									server.save(err => {
+										if (err != null) logger.error('DiscordServers.save:', err);
+										new Server(guild.id, {
+											region: guild.region,
+											name: guild.name,
+											iconURL: guild.iconURL,
+											createdAt: guild.createdTimestamp,
+											memberCount: guild.memberCount,
+											ownerID: guild.ownerID
+										}).save();
+									});
+								}
+							});
+						});
+					} else {
 						if (newServer) {
 							server = new DiscordServers({
 								user_id: validation.user_id,
-								bot_id: item.id,
+								// bot_id: item.id,
 								server_id: validation.listener_id,
 								key: uniqueID(16)
 							});
+
+							server.save(err => {
+								if (err != null) logger.error('DiscordServers.save:', err);
+								new Server(guild.id, {
+									region: guild.region,
+									name: guild.name,
+									iconURL: guild.iconURL,
+									createdAt: guild.createdTimestamp,
+									memberCount: guild.memberCount,
+									ownerID: guild.ownerID
+								}).save();
+							});
 						}
-
-						item.is_active = true;
-
-						item.botType = (<any>Bots).appName('discord');
-						item.botId = server.id;
-						item.displayName = guild.name;
-
-						item.save((err) => {
-							if (err != null) logger.error('Bots.save:', err);
-
-							if (newServer) {
-								server.save(err => {
-									if (err != null) logger.error('DiscordServers.save:', err);
-									new Server(guild.id, {
-										region: guild.region,
-										name: guild.name,
-										iconURL: guild.iconURL,
-										createdAt: guild.createdTimestamp,
-										memberCount: guild.memberCount,
-										ownerID: guild.ownerID
-									}).save();
-								});
-							}
-						});
-					});
+					}
 				});
 			});
 		});
@@ -284,6 +315,7 @@ client.on('guildCreate', guild => {
 client.on('channelDelete', channel => {
 	if (channel.type != 'dm' && channel.type != 'group') {
 		guildClient.get((<Discord.GuildChannel>channel).guild.id, server => {
+			if (server == null) return;
 			BlacklistCmd.onChannelDelete(<Discord.GuildChannel>channel, server);
 		});
 	}
@@ -292,6 +324,7 @@ client.on('channelDelete', channel => {
 client.on('channelCreate', channel => {
 	if (channel.type != 'dm' && channel.type != 'group') {
 		guildClient.get((<Discord.GuildChannel>channel).guild.id, server => {
+			if (server == null) return;
 			PunishmentCmd.onChannelCreate(<Discord.GuildChannel>channel, server);
 		});
 	}

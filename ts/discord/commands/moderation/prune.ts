@@ -156,7 +156,7 @@ class Prune extends Command {
 				var message = messages[pos++];
 
 				message.delete()
-				.then(() => doSingles(),
+				.then(() => setTimeout(() => doSingles(), 500),
 				(e) => {
 					console.error(e);
 					editMessage.edit(Command.error([
@@ -174,12 +174,18 @@ class Prune extends Command {
 
 		function recreateChannel(channel: Discord.TextChannel) {
 			send(Command.success([['Prune', 'Cloning channel']]))
-			.then((editMessage: any) => {
+			.then((editMessage: Discord.Message) => {
 				editMessage = Array.isArray(editMessage) ? editMessage[0] : editMessage;
 
-				channel.clone(channel.name, true, true, '[PRUNE] Recreating channel.')
+				console.log('Clone');
+
+				channel.clone(channel.name, false, true, '[PRUNE] Recreating channel.')
 				.then(newChannel => {
-					editMessage.edit(Command.success([['Prune', 'Setting Channel Position']]));
+					console.log('Pos');
+					editMessage.edit(Command.success([['Prune', 'Setting Channel Position']]))
+					.catch(e => error(editMessage, e, '4'));
+
+					console.log('Parent');
 
 					newChannel.setParent(channel.parent, '[PRUNE] Recreating channel.')
 					.then(() => {
@@ -190,8 +196,8 @@ class Prune extends Command {
 							utils.getPermissions(perm.allow).toArray().forEach(p => obj[p] = true);
 							utils.getPermissions(perm.deny).toArray().forEach(p => obj[p] = false);
 
-							channel.overwritePermissions(perm.id, obj, '[PRUNE] Recreating channel')
-							.catch(e => console.error(e));
+							newChannel.overwritePermissions(perm.id, obj, '[PRUNE] Recreating channel')
+							.catch(e => error(editMessage, e, '6'));
 						});
 
 						channel.delete('Recreating Channel')
@@ -199,12 +205,23 @@ class Prune extends Command {
 
 							newChannel.setPosition(channel.position)
 							.then(() => {
-								editMessage.edit(Command.success([['Prune', 'Recreated channel']]));
-							}, e => console.error(e));
-						}, e => console.error(e));
-					});
-				}, e => console.error(e));
-			}, e => console.error(e));
+								// editMessage.edit(Command.success([['Prune', 'Recreated channel']]));
+							})
+							.catch(e => error(editMessage, e, '7'));
+						})
+						.catch(e => error(editMessage, e, '3'));
+					})
+					.catch(e => error(editMessage, e, '5'));
+				})
+				.catch(e => error(editMessage, e, '2'))
+			})
+			.catch(e => console.error(e));
+
+			function error(editMessage: Discord.Message, e, p) {
+				console.log('Error: ' + p);
+				console.error(e);
+				editMessage.edit('An error occured.\n' + e.message);
+			}
 		}
 
 		function send(str: any, cb?: (err: Error, message?: Discord.Message | Discord.Message[]) => any) {
