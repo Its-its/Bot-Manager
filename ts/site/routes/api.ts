@@ -13,7 +13,7 @@ import Bots = require('../models/bots');
 
 import discordUtils = require('../../discord/utils');
 
-import config = require('../util/config');
+import config = require('../../config');
 
 let redisGuildsClient = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.guildsDB });
 

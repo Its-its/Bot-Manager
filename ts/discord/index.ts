@@ -1,4 +1,4 @@
-import sharding = require('./shard');
+import sharding = require('./shards');
 
 const argv = require('minimist')(process.argv.slice(2));
 

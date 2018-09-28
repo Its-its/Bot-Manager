@@ -27,6 +27,8 @@
     "request": "^2.88.0",
     "sharp": "^0.20.7",
     "socket.io": "^2.1.1",
+    "socket.io-client": "^2.1.1",
+    "socket.io-stream": "^0.9.1",
     "uws": "^99.0.0",
     "vhost": "^3.0.2",
     "winston": "^3.0.0-rc2",
@@ -45,6 +47,7 @@
     "@types/request": "^2.47.1",
     "@types/sharp": "^0.17.10",
     "@types/socket.io": "^1.4.38",
+    "@types/socket.io-client": "^1.4.32",
     "@types/winston": "^2.4.4"
   }
 }

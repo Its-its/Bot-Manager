@@ -15,7 +15,7 @@ import connectMongo = require('connect-mongo');
 import mongoose = require('mongoose');
 // import vhost = require('vhost');
 
-import config = require('./util/config');
+import config = require('../config');
 
 let app = express();
 let MongoStore = connectMongo(session);

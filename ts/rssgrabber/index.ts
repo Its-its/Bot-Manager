@@ -1,7 +1,7 @@
 import mongoose = require('mongoose');
 import async = require('async');
 
-import config = require('../site/util/config');
+import config = require('../config');
 
 import RSSFeed = require('../models/rssfeed');
 

@@ -82,9 +82,9 @@ let musicPlayer = (function() {
 
 	var titleElement = document.createElement('a');
 	titleElement.className = 'title';
-	
+
 	var thumbElement = document.createElement('img');
-	
+
 	var infoContainer = document.createElement('div');
 	infoContainer.className = 'player-info-container';
 	infoContainer.appendChild(titleElement);
@@ -93,7 +93,7 @@ let musicPlayer = (function() {
 
 	var controlsContainer = document.createElement('div');
 	controlsContainer.className = 'controls-container';
-	
+
 	var volume = document.createElement('i');
 	volume.className = 'fas fa-volume-up volume-control';
 	volume.title = 'Change Volume';
@@ -144,22 +144,22 @@ let musicPlayer = (function() {
 
 	function time(seconds) { // FIX
 		var items = [];
-	
+
 		var sec = '' + (seconds % 60);
 		if (sec.length == 1) sec = '0' + sec;
 		items.push(sec);
-	
+
 		var min = '' + Math.floor(seconds/60 % 60);
-		
+
 		if (min.length == 1) min = '0' + min;
 		items.push(min);
-	
+
 		var hour = Math.floor(seconds/60/60);
 		if (hour != 0) {
 			if (('' + hour).length == 1) hour = '0' + hour;
 			items.push(hour);
 		}
-	
+
 		return items.reverse().join(':');
 	}
 
@@ -179,7 +179,7 @@ let musicPlayer = (function() {
 			titleElement.href = 'https://youtu.be/' + uid;
 			titleElement.setAttribute('title', title);
 			titleElement.innerText = title;
-			
+
 			maxTime.innerText = time(length);
 
 			thumbElement.src = thumb;
@@ -196,17 +196,17 @@ let musicPlayer = (function() {
 (function() {
 	let socket = io();
 	let listeningTo = null;
-	let last
+	let last = null;
 
 	socket.on('listen', function(info) {
 		if (listeningTo && listeningTo == info.serverId) {
 			musicPlayer.play(
 				info.playing.type,
-				info.playing.title, 
-				info.playing.thumb, 
-				info.playing.channelId, 
-				info.playing.uid, 
-				info.playing.length, 
+				info.playing.title,
+				info.playing.thumb,
+				info.playing.channelId,
+				info.playing.uid,
+				info.playing.length,
 				info.playing.playedAt
 			);
 			console.log('Listen:', info);
@@ -220,11 +220,11 @@ let musicPlayer = (function() {
 
 		musicPlayer.play(
 			info.nextSong.type,
-			info.nextSong.title, 
-			info.nextSong.thumb, 
-			info.nextSong.channelId, 
-			info.nextSong.uid, 
-			info.nextSong.length, 
+			info.nextSong.title,
+			info.nextSong.thumb,
+			info.nextSong.channelId,
+			info.nextSong.uid,
+			info.nextSong.length,
 			info.nextSong.playedAt
 		);
 	});
@@ -239,11 +239,11 @@ let musicPlayer = (function() {
 
 		musicPlayer.play(
 			info.nextSong.type,
-			info.nextSong.title, 
-			info.nextSong.thumb, 
-			info.nextSong.channelId, 
-			info.nextSong.uid, 
-			info.nextSong.length, 
+			info.nextSong.title,
+			info.nextSong.thumb,
+			info.nextSong.channelId,
+			info.nextSong.uid,
+			info.nextSong.length,
 			info.nextSong.playedAt
 		);
 	});
@@ -283,10 +283,10 @@ let musicPlayer = (function() {
 
 			$.post('/music/playlist/list', function(res) {
 				if (res.error != null) return console.error(res.error);
-				
+
 				var playlists = document.getElementById('playlists');
 				while(playlists.firstChild) playlists.removeChild(playlists.firstChild);
-				
+
 				res.items.forEach(function(playlist) {
 					var item = clickable(playlist.title, '/music/playlist/' + playlist.public_id);
 					// TODO: Save to array.
@@ -297,7 +297,7 @@ let musicPlayer = (function() {
 					$.post('/music/playlist/create', function(res) {
 						if (res.error != null) return console.error(res.error);
 						playlists.insertBefore(
-							clickable(res.item.title, '/music/playlist/' + res.item.public_id), 
+							clickable(res.item.title, '/music/playlist/' + res.item.public_id),
 							playlists.children[playlists.children.length - 1]);
 					});
 				});
@@ -538,11 +538,11 @@ let musicPlayer = (function() {
 						});
 						rightSide.appendChild(listenTo);
 					}
-					
+
 
 					items.appendChild(rightSide);
 				});
-				
+
 				socket.emit('bot-playing', { id: self.server_id });
 			});
 		}

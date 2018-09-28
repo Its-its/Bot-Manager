@@ -1,6 +1,6 @@
 import * as express from 'express';
 
-import config = require('../util/config');
+import config = require('../../config');
 import Validation = require('../models/validation');
 
 export = (app: express.Application) => {

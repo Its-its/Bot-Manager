@@ -3,12 +3,12 @@ import { Guild } from 'discord.js';
 
 import * as redis from 'redis';
 
-import config = require('../site/util/config');
+import config = require('../config');
 
 import DiscordServers = require('./models/servers');
 
-import DiscordMusic = require('./discordmusic');
-import DiscordServer = require('./discordserver');
+import DiscordMusic = require('./music/discordmusic');
+import DiscordServer = require('./bot/discordserver');
 
 
 // TODO: Cache Server even though it takes milliseconds to JSON.parse each get.

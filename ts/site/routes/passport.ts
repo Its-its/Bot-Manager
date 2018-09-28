@@ -8,7 +8,7 @@ import Bots = require('../models/bots');
 import DiscordServers = require('../../discord/models/servers');
 import DiscordMembers = require('../../discord/models/members');
 
-import config = require('../util/config');
+import config = require('../../config');
 
 let GoogleStrategy = passportGoogleOauth.OAuth2Strategy;
 let DiscordStrategy = passportDiscord.Strategy;
@@ -37,14 +37,14 @@ export = (app: express.Application) => {
 	// 			Users.findOne({ 'google.id' : profile.id }, (err, user) => {
 	// 				if (err) return done(err);
 	// 				if (user) return done(null, user);
-		
+
 	// 				user = new Users({
 	// 					'google.id': profile.id,
 	// 					'google.token': token,
 	// 					'google.name': profile.displayName,
 	// 					'google.email': profile.emails[0].value
 	// 				});
-		
+
 	// 				user.save((err) => {
 	// 					if (err) {
 	// 						console.log(err);
@@ -81,7 +81,7 @@ export = (app: express.Application) => {
 	// 			if (bot == null) {
 	// 				DiscordServers.findOne({ server_id: guild_id }, (err, server) => {
 	// 					if (err != null) return console.error(err);
-		
+
 	// 					if (server == null) {
 	// 						server = new DiscordServers({
 	// 							user_id: req['user'].id,
@@ -89,7 +89,7 @@ export = (app: express.Application) => {
 	// 							server_id: guild_id,
 	// 							permission: permissions
 	// 						});
-							
+
 	// 						bot.app.name = 'disc';
 	// 						bot.app.uid = server['server_id'];
 
@@ -125,7 +125,7 @@ export = (app: express.Application) => {
 
 				if (user != null) {
 					DiscordMembers.updateOne(
-						{ user_id: user._id }, 
+						{ user_id: user._id },
 						{
 							$set: {
 								guilds: profile.guilds
@@ -152,7 +152,7 @@ export = (app: express.Application) => {
 				});
 
 				// guilds: [{ owner: Boolean, permissions: Number, icon: String, id: String, name: String }]
-	
+
 				user.save((err, doc) => {
 					if (err) {
 						console.log(err);
