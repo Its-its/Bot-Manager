@@ -197,6 +197,7 @@ declare namespace DiscordBot {
 	}
 
 	interface ServerOptions {
+		linked?: boolean;
 		version?: number;
 
 		region: string;
@@ -212,6 +213,7 @@ declare namespace DiscordBot {
 
 		events?: ListenEvents[];
 		leveling?: Leveling;
+		aliasList?: Alias[];
 		alias?: Alias[];
 		intervals?: Interval[];
 		ranks?: string[];

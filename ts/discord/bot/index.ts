@@ -21,19 +21,19 @@ import levelsPlugin = require('./plugins/levels');
 import config = require('../../config');
 
 import guildClient = require('../guildClient');
-import Server = require('./discordserver');
+import Server = require('./GuildServer');
 
 import limits = require('../limits');
 
 
 // Commands
-let BlacklistCmd: Command = null;
-let PunishmentCmd: Command = null;
+let BlacklistCmd =  commandPlugin.defaultCommands.get('blacklist');
+let PunishmentCmd = commandPlugin.defaultCommands.get('punishment');
 
-process.nextTick(() => {
-	BlacklistCmd = commandPlugin.defaultCommands.get('blacklist');
-	PunishmentCmd = commandPlugin.defaultCommands.get('punishment');
-});
+// process.nextTick(() => {
+// 	BlacklistCmd = commandPlugin.defaultCommands.get('blacklist');
+// 	PunishmentCmd = commandPlugin.defaultCommands.get('punishment');
+// });
 
 
 
@@ -68,6 +68,8 @@ client.on('ready', () => {
 
 	client.guilds.forEach(g => logger.info(' - - ' + g.id +  ' | ' + g.region + ' | ' + g.name));
 	client.user.setActivity('the spacetime continuum', { type: 'LISTENING' });
+
+	client.shard.send('ready');
 });
 
 
@@ -398,7 +400,6 @@ client.on('resume', (replayed) => logger.info(' - resume', replayed));
 // client.on('userNoteUpdate', (user, oldNote, newNote) => logger.info(' - userNoteUpdate', user, oldNote, newNote));
 // client.on('userUpdate', (oldUser, newUser) => logger.info(' - userUpdate', oldUser, newUser));
 // client.on('warn', (info) => logger.info(' - warn', info));
-
 
 client.login(config.bot.discord.token);
 

@@ -7,8 +7,8 @@ import config = require('../config');
 
 import DiscordServers = require('./models/servers');
 
-import DiscordMusic = require('./music/discordmusic');
-import DiscordServer = require('./bot/discordserver');
+import DiscordMusic = require('./music/GuildMusic');
+import DiscordServer = require('./bot/GuildServer');
 
 
 // TODO: Cache Server even though it takes milliseconds to JSON.parse each get.
@@ -98,12 +98,17 @@ function updateServer(serverId: string, cb?: (found: boolean, err: Error) => any
 		if (err == null) return cb(false, err);
 		if (server == null) return cb(false, new Error('No Server'));
 
+		if (typeof server.server == 'string') {
+			server.server = JSON.parse(server.server);
+		}
+
+		server.server.linked = (server.bot_id != null && server.bot_id.length != 0);
 		server.server.commands = server.command_ids;
 		server.server.phrases = server.phrase_ids;
 		// server.server.intervals = server.interval_ids;
 
-		server.server.alias = server.server.aliasList;
-		delete server.server['aliasList'];
+		// server.server.alias = server.server.aliasList;
+		// delete server.server['aliasList'];
 
 		put(serverId, server.server, err => cb(true, err));
 	});

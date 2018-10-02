@@ -22,7 +22,7 @@ import CommandManger = require('../../../command-manager');
 
 import Discord = require('discord.js');
 
-import Server = require('../discordserver');
+import Server = require('../GuildServer');
 
 
 let categoryCommands: { [category: string]: Command[] } = {};

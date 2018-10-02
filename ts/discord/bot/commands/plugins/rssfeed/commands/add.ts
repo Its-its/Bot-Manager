@@ -2,7 +2,7 @@ import Discord = require('discord.js');
 import generate = require('nanoid/generate');
 
 
-import DiscordServer = require('../../../../discordserver');
+import DiscordServer = require('../../../../GuildServer');
 import DiscordFeeds = require('../../../../../models/feed');
 
 import RSSFeeds = require('../../../../../../models/rssfeed');

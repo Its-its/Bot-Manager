@@ -1,5 +1,5 @@
 import Discord = require('discord.js');
-import Server = require('../discordserver');
+import Server = require('../GuildServer');
 
 import CommandManager = require('../../../command-manager');
 import defaultCommands = require('../commands');

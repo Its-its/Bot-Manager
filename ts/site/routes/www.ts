@@ -23,7 +23,7 @@ export = (app: express.Application, socketio) => {
 
 	app.get('/bot/:id([0-9A-Za-z]{24,32})', authed, (req, res) => {
 		if (!(<any>req).isAuthenticated()) return res.redirect('/');
-		res.render('bot-dashboard');
+		res.render('bot/dashboard');
 	});
 
 	app.get('/settings', authed, (req, res) => {
@@ -32,7 +32,7 @@ export = (app: express.Application, socketio) => {
 
 	var route = musicRoute(socketio);
 	app.use(route.loc, route.route);
-	
+
 	apiSetup(app);
 	passport(app);
 	discord(app);

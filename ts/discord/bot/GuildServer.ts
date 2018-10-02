@@ -27,7 +27,7 @@ const SERVER = {
 	MAX_PHRASE_TEXT: 5
 };
 
-// TODO: extend Server with class to find edited items. || Mark items edited. Only save edited items to db.
+// TODO: Mark items edited. Only save edited items to db.
 
 class Changes {
 	public defaults = {};
@@ -81,6 +81,8 @@ class Changes {
 
 
 class Server extends Changes {
+	public linked: boolean;
+
 	public branch: number;
 	public serverId: string;
 	public migration: number;
@@ -147,6 +149,7 @@ class Server extends Changes {
 	constructor(serverID: string, options?: DiscordBot.ServerOptions) {
 		super();
 
+		this.linked = def(options.linked, true);
 		this.serverId = serverID;
 
 		this.region = options.region;
@@ -156,25 +159,25 @@ class Server extends Changes {
 		this.memberCount = options.memberCount;
 		this.ownerID = options.ownerID;
 
-		this.events = options.events || [];
-		this.alias = options.alias || [];
-		this.intervals = options.intervals || [];
-		this.ranks = options.ranks || [];
-		this.roles = options.roles || [];
-		this.commands = options.commands || [];
-		this.phrases = options.phrases || [];
-		this.plugins = options.plugins || {};
-		this.values = options.values || {};
-		this.channels = options.channels || {};
-		this.punishments = options.punishments || {};
+		this.events = def(options.events, []);
+		this.alias = def(options.alias, options.aliasList, []);
+		this.intervals = def(options.intervals, []);
+		this.ranks = def(options.ranks, []);
+		this.roles = def(options.roles, []);
+		this.commands = def(options.commands, []);
+		this.phrases = def(options.phrases, []);
+		this.plugins = def(options.plugins, {});
+		this.values = def(options.values, {});
+		this.channels = def(options.channels, {});
+		this.punishments = def(options.punishments, {});
 
-		this.migration = options.version == null ? SERVER.LATEST_VERSION : options.version;
+		this.migration = def(options.version, SERVER.LATEST_VERSION);
 
 		this.commandPrefix = options.commandPrefix;
 
-		if (options.leveling) this.leveling = options.leveling;
-		if (options.moderation) this.moderation = options.moderation;
-		if (options.permissions) this.permissions = options.permissions;
+		this.leveling = def(options.leveling, this.leveling);
+		this.moderation = def(options.moderation, this.moderation);
+		this.permissions = def(options.permissions, this.permissions);
 
 		this.init();
 
@@ -214,7 +217,7 @@ class Server extends Changes {
 			{ server_id: this.serverId },
 			{
 				$set: {
-					server: this.toDBPrint()
+					server: JSON.stringify(this.toDBPrint())
 				},
 				$setOnInsert: {
 					removed: false,
@@ -1220,7 +1223,7 @@ class Server extends Changes {
 
 			punishments: this.punishments,
 
-			alias: this.alias,
+			aliasList: this.alias,
 			ranks: this.ranks,
 			moderation: this.moderation,
 			plugins: this.plugins,
@@ -1232,6 +1235,17 @@ class Server extends Changes {
 			permissions: this.permissions
 		});
 	}
+}
+
+function def<I>(...opts: I[]): I {
+	var item = null;
+
+	for(var i = 0; i < opts.length; i++) {
+		item = opts[i];
+		if (item != null) break;
+	}
+
+	return item;
 }
 
 function getOrCreateUser(member: Discord.GuildMember, cb: (err: any, doc: Document) => any) {

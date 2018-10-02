@@ -1,5 +1,5 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../discordserver');
+import DiscordServer = require('../../../../GuildServer');
 
 import UserLevel = require('../../../../plugins/levels/models/userlevel');
 

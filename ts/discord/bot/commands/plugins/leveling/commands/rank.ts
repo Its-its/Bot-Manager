@@ -1,5 +1,5 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../discordserver');
+import DiscordServer = require('../../../../GuildServer');
 
 import request = require('request');
 import sharp = require('sharp');

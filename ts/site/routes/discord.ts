@@ -4,6 +4,10 @@ import config = require('../../config');
 import Validation = require('../models/validation');
 
 export = (app: express.Application) => {
+	app.get('/discord/invite', (req, res) => {
+		res.redirect('https://discordapp.com/oauth2/authorize?client_id=367809207849844737&scope=bot&permissions=8');
+	});
+
 	app.post('/discord/invite', authed, (req, res) => {
 		var botId = req.body.botId;
 		var guildId = req.body.guildId;
@@ -25,7 +29,8 @@ export = (app: express.Application) => {
 			var validate = new Validation({
 				user_id: req['user'].id,
 				bot_id: botId,
-				listener_id: guildId
+				listener_id: guildId,
+				date_created: Date.now()
 			});
 
 			validate.save(err => {

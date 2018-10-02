@@ -1,6 +1,11 @@
-import { ShardingManager } from 'discord.js';
+import { Shard, ShardingManager } from 'discord.js';
 
 import config = require('../config');
+
+
+const SHARD_ID_STATUS: { [guild_id: string]: number } = {};
+const GUILD_ID_SHARD: { [guild_id: string]: Shard } = {};
+
 
 const clients = ['bot', 'interval', 'music'];
 
@@ -11,7 +16,6 @@ function launch(client: string) {
 
 	console.log('Launching ' + client.toUpperCase());
 
-	let finished = false;
 
 	manager = new ShardingManager(`src/discord/${client}/index.js`, {
 		totalShards: 'auto',
@@ -20,14 +24,32 @@ function launch(client: string) {
 	});
 
 	manager.on('launch', shard => {
+		SHARD_ID_STATUS[shard.id] = 0;
 		console.log(`Creating shard ${shard.id} [ ${shard.id + 1} of ${manager.totalShards} ]`);
+	});
 
-		if (shard.id + 1 == manager.totalShards) {
-			finished = true;
+	manager.on('message', (shard, message) => {
+		if (message == 'ready') {
+			console.log(`Shard [${shard.id}]: Ready`);
+
+			shard.eval('var opts = { status: this.status, guild_ids: this.guilds.map(g => g.id) }; opts;')
+			.then(opts => {
+				SHARD_ID_STATUS[shard.id] = opts.status;
+				opts.guild_ids.forEach(g => GUILD_ID_SHARD[g] = shard);
+			})
+			.catch(e => console.error(e));
+		} else {
+			console.log(`MSG [${shard.id}]: ${message}`);
 		}
 	});
 
-	manager.on('message', (shard, message) => console.log(`MSG [${shard.id}]: ${message}`));
+	setInterval(() => {
+		manager.broadcastEval('var opts = { id: this.shard.id, status: this.status }; opts;')
+		.then(shards => {
+			shards.forEach(s => SHARD_ID_STATUS[s.id] = s.status);
+		})
+		.catch(e => console.error(e));
+	}, 1000 * 60 * 5);
 
 	manager.spawn();
 
