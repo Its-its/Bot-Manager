@@ -228,7 +228,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 										permissions: or.permissions,//<any>utils.getPermissions(or.permissions).toArray()
 									})
 									.then(r => {
-										console.log(`[Roles]: ${or.id} - ${r.id}`);
+										console.log(`[Roles]: ${or.id} - ${r.id} - ${r.name}`);
 										tempIdToNew[or.id] =  r.id;
 										nextWait(pos + 1);
 									})
@@ -250,7 +250,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 								mentionable: or.mentionable
 							})
 							.then(r => {
-								console.log(`[Roles]: ${or.id} - ${r.id}`);
+								console.log(`[Roles]: ${or.id} - ${r.id} - ${r.name}`);
 								tempIdToNew[or.id] =  r.id;
 								nextWait(pos + 1);
 							})
@@ -278,6 +278,8 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 				function createChannels(channels: CompiledChannel[], fin: () => any) {
 					if (channels == null || channels.length == 0) return fin();
+
+					channels = channels.sort((c1, c2) => c1.position - c2.position);
 
 					create(0);
 
@@ -342,8 +344,8 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 							guild.setAFKTimeout(overview.afk_timeout),
 							// overview.server_image ? guild.setIcon(overview.server_image) : null,
 							// Possibility to be null if channels weren't included in backup.
-							overview.afk_channel ? guild.setAFKChannel(overview.afk_channel) : null,
-							overview.new_member_channel ? guild.setSystemChannel(overview.new_member_channel) : null
+							overview.afk_channel ? guild.setAFKChannel(tempIdToNew[overview.afk_channel]) : null,
+							overview.new_member_channel ? guild.setSystemChannel(tempIdToNew[overview.new_member_channel]) : null
 						], (promise, callback) => {
 							if (promise != null) {
 								promise.then(() => setTimeout(() => callback(), 500))

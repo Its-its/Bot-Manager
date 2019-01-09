@@ -39,7 +39,7 @@ function launch(client: string) {
 			})
 			.catch(e => console.error(e));
 		} else {
-			console.log(`MSG [${shard.id}]: ${message}`);
+			// console.log(`MSG [${shard.id}]:`, message);
 		}
 	});
 

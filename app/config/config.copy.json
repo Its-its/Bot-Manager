@@ -1,0 +1,59 @@
+{
+	"debug": true,
+	"port": 8088,
+	"urlProtocol": "http",
+	"baseUrl": "bots.local",
+	"session_secret": "new random password goes here",
+	"database": "mongodb://self.local:27017/bot-manager",
+	"redis": {
+		"guildsDB": 0,
+		"musicDB": 2,
+		"xpDB": 3,
+		"address": "self.local",
+		"port": 6379
+	},
+	"ytdl": {
+		"address": "ytdl.its.rip",
+		"port": 80
+	},
+	"music": {
+		"address": "127.0.0.1",
+		"port": 5603
+	},
+	"socketIO": {
+		"discordPort": 7640
+	},
+	"bot": {
+		"discord": {
+			"main_id": "because I have two bots. This one does nothing. Just for saving the other bot id.",
+			"id": "",
+			"token": "",
+			"main_token": "",
+			"port": 5602
+		}
+	},
+	"youtube": {
+		"key": ""
+	},
+	"passport": {
+		"twitch": {
+			"clientID": "",
+			"clientSecret": "",
+			"callbackURL": "/auth/twitch/callback"
+		},
+		"discord": {
+			"clientID": "",
+			"clientSecret": "",
+			"main_clientSecret": "because I have two bots. This one does nothing. Just for saving the other bot id.",
+			"callbackURL": "/auth/discord/callback",
+			"scopeInvite": [ "bot", "identify", "guilds" ],
+			"scopeAuth": [ "identify", "guilds" ]
+		},
+		"google": {
+			"clientID": "",
+			"clientSecret": "",
+			"callbackURL": "/auth/google/callback",
+			"scope": ""
+		}
+	}
+}
