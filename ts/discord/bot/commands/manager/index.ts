@@ -1,4 +1,5 @@
 import Rank = require('./rank');
+import Message = require('./message');
 import Plugin = require('./plugin');
 import Perms = require('./perms');
 import Nick = require('./nick');
@@ -17,5 +18,6 @@ export = [
 	Nick,
 	Prefix,
 	Backup,
-	Restore
+	Restore,
+	Message
 ];

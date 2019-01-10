@@ -7,7 +7,11 @@ const SHARD_ID_STATUS: { [guild_id: string]: number } = {};
 const GUILD_ID_SHARD: { [guild_id: string]: Shard } = {};
 
 
-const clients = ['bot', 'interval', 'music'];
+const clients = [
+	'bot',
+	'interval',
+	'music'
+];
 
 let manager: ShardingManager;
 

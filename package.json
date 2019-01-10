@@ -1,4 +1,11 @@
 {
+  "scripts": {
+    "discord_bot": "nodemon src/discord --delay 3 -- --client bot",
+    "discord_games": "nodemon src/discord --delay 3 -- --client games",
+    "discord_interval": "nodemon src/discord --delay 3 -- --client interval",
+    "discord_master": "nodemon src/discord --delay 3 -- --client master",
+    "discord_music": "nodemon src/discord --delay 3 -- --client music"
+  },
   "dependencies": {
     "async": "^2.6.1",
     "body-parser": "^1.18.3",
