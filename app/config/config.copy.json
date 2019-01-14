@@ -12,6 +12,15 @@
 		"address": "self.local",
 		"port": 6379
 	},
+	"shards": {
+		"discord": {
+			"masterPort": 8054,
+			"botPort": 8054,
+			"gamesPort": 8054,
+			"intervalPort": 8054,
+			"musicPort": 8054
+		}
+	},
 	"ytdl": {
 		"address": "ytdl.its.rip",
 		"port": 80

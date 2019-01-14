@@ -1,5 +1,3 @@
-import guildClient = require('../../guildClient');
-
 import Playlists = require('../../../music/models/playlists');
 
 import Users = require('../../../site/models/users');
@@ -7,6 +5,8 @@ import Users = require('../../../site/models/users');
 import request = require('request');
 
 import config = require('../../../config');
+
+import { getMusic } from '../GuildMusic';
 
 
 type SongGlobal = DiscordBot.plugins.SongGlobal;
@@ -31,7 +31,7 @@ function restorePlaylist(playlistId: string, cb: (errorMessage?: string) => any)
 function addToPlaylist(guildId: string, discordMemberId: string, playlistPublicId: string, songId: string, cb: (errorMessage?: string, info?: { song: SongGlobal, playlist: any }) => any) {
 	if (songId == null) return cb('Please provide an ID to the song.');
 
-	guildClient.getMusic(guildId, (music) => {
+	getMusic(guildId, (music) => {
 		if (playlistPublicId == 'default') playlistPublicId = music.currentPlaylist;
 
 		var val = /(?:(?:https?:\/\/)?(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11})/g.exec(songId);

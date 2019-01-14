@@ -34,14 +34,15 @@ let validPerms: string[] = [
 
 const OWNER_ID = '96318357472550912';
 
-addCommand(require('./misc'), 'Misc');
-addCommand(require('./moderation'), 'Moderation');
-addCommand(require('./manager'), 'Manager');
-addCommand(require('./plugins'), 'Plugins');
-addCommand(require('./owner'), 'Owner');
-// addCommand(require('./roles'), 'Roles');
 
-
+function initCommands() {
+	addCommand(require('./misc'), 'Misc');
+	addCommand(require('./moderation'), 'Moderation');
+	addCommand(require('./manager'), 'Manager');
+	addCommand(require('./plugins'), 'Plugins');
+	addCommand(require('./owner'), 'Owner');
+	// addCommand(require('./roles'), 'Roles');
+}
 
 function parseMessage(message: string, server: Server, defaultMessage: Discord.Message) {
 	var parts = [];
@@ -120,6 +121,7 @@ function list(flat = false) {
 }
 
 export {
+	initCommands,
 	validPerms,
 	parseMessage,
 	is,

@@ -7,8 +7,8 @@ import config = require('../config');
 
 import DiscordServers = require('./models/servers');
 
-import DiscordMusic = require('./music/GuildMusic');
 import DiscordServer = require('./bot/GuildServer');
+import { getMusic } from './music/GuildMusic';
 
 
 // TODO: Cache Server even though it takes milliseconds to JSON.parse each get.
@@ -114,13 +114,6 @@ function updateServer(serverId: string, cb?: (found: boolean, err: Error) => any
 	});
 }
 
-function getMusic(serverId: string,  cb: (music: DiscordMusic) => any) {
-	redisMusic.get(serverId, (err, str) => {
-		if (err != null) { console.error(err); cb(null); }
-		cb(new DiscordMusic(serverId, str == null ? {} : JSON.parse(str)));
-	});
-}
-
 export {
 	exists,
 	put,
@@ -128,5 +121,6 @@ export {
 	getOrCreate,
 	remove,
 	updateServer,
+
 	getMusic
 };

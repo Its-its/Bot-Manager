@@ -6,9 +6,6 @@ import Bots = require('../../site/models/bots');
 import Playlists = require('../../music/models/playlists');
 import Queues = require('../../music/models/queue');
 
-import discordRedis = require('../../discord/guildClient');
-
-
 let globalRoute = express.Router();
 
 // globalRoute.use(express.static(path.join(__dirname, '../../../app/public')));

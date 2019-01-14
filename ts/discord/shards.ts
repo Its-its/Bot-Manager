@@ -1,19 +1,23 @@
 import { Shard, ShardingManager } from 'discord.js';
+import socket = require('socket.io-client');
 
 import config = require('../config');
 
 
 const SHARD_ID_STATUS: { [guild_id: string]: number } = {};
-const GUILD_ID_SHARD: { [guild_id: string]: Shard } = {};
+let GUILD_ID_SHARD: { [guild_id: string]: Shard } = {};
 
 
 const clients = [
 	'bot',
+	'games',
 	'interval',
 	'music'
 ];
 
 let manager: ShardingManager;
+let io: SocketIOClient.Socket;
+
 
 function launch(client: string) {
 	if (clients.indexOf(client) == -1) throw new Error('Client "' + client + '" is not a valid client.');
@@ -32,19 +36,30 @@ function launch(client: string) {
 		console.log(`Creating shard ${shard.id} [ ${shard.id + 1} of ${manager.totalShards} ]`);
 	});
 
-	manager.on('message', (shard, message) => {
-		if (message == 'ready') {
-			console.log(`Shard [${shard.id}]: Ready`);
+	manager.on('message', (shard, opts) => {
+		if (typeof opts == 'string') {
+			if (opts == 'ready' || opts == 'update') {
+				if (opts == 'ready') console.log(`Shard [${shard.id}]: Ready`);
 
-			shard.eval('var opts = { status: this.status, guild_ids: this.guilds.map(g => g.id) }; opts;')
-			.then(opts => {
-				SHARD_ID_STATUS[shard.id] = opts.status;
-				opts.guild_ids.forEach(g => GUILD_ID_SHARD[g] = shard);
-			})
-			.catch(e => console.error(e));
-		} else {
-			// console.log(`MSG [${shard.id}]:`, message);
-		}
+				shard.eval('var opts = { status: this.status, guild_ids: this.guilds.map(g => g.id) }; opts;')
+				.then(opts => {
+					GUILD_ID_SHARD = {};
+
+					SHARD_ID_STATUS[shard.id] = opts.status;
+					opts.guild_ids.forEach(g => GUILD_ID_SHARD[g] = shard);
+				})
+				.catch(e => console.error(e));
+			}
+		} else if (typeof opts == 'object') {
+			if (opts._eval == null) {
+				io.emit('send', opts);
+			}// else console.log(message);
+		} else console.log(opts);
+		// else if (message.startsWith('cmd')) {
+		// 	console.log(message.slice(4));
+		// } else {
+		// 	// console.log(`MSG [${shard.id}]:`, message);
+		// }
 	});
 
 	setInterval(() => {
@@ -57,64 +72,38 @@ function launch(client: string) {
 
 	manager.spawn();
 
-	// if (client == 'bot') botCreated();
+	initLink(client);
 }
 
-function botCreated() {
-	const http = require('http');
-	const express = require('express');
-	const bodyParser = require('body-parser');
-	const RateLimit = require('express-rate-limit');
+function initLink(botType: string) {
+	io = socket.connect('http://localhost:' + config.shards.discord.masterPort);
 
-	const app = express();
-	const server = http.createServer(app);
+	io.on('from', opts => {
+		console.log('from:', opts);
 
-	app.set('port', config.bot.discord.port);
+		var shard = GUILD_ID_SHARD[opts._guild];
 
-	app.use(bodyParser.urlencoded({ extended: true }));
-	app.use(bodyParser.json());
+		console.log('Guild Exists: ' + (shard != null));
 
-	app.post('/message',
-	new RateLimit({
-		windowMs: 1000 * 60 * 5,
-		max: 1,
-		delayMs: 0,
-		message: 'Sending message requests too quickly. 1 per 5 minutes. Attempting to abuse this will result in being removed from the service.',
-		// keyGenerator: req => req['cf-ip']
-	}), (req, res) => {
-		var { gid, cid, message } = req.body;
-
-		if (!gid || !cid || !message) return res.send('error');
-
-		manager.broadcastEval(`
-			var guild = this.guilds.get('${gid}');
-
-			if (guild != null) {
-				var channel = guild.channels.get('${cid}');
-
-				if (channel != null) {
-					channel.send(\`${(<string>message).slice(0, 200).replace('\`', '\\\`')} - \\\`\\\`Sent from API\\\`\\\`\`)
-					.catch(e => console.error(e));
-					return true;
-				}
-			}
-
-			return false;
-		`).catch(c => console.error(c));
-
-		console.log(gid + ' - ' + cid);
-		console.log(message);
-
-		res.send('ok');
+		if (shard != null) {
+			shard.send(opts);
+		}
 	});
 
-	app.post('/:gid/:cid/:mid', (req, res) => {
-		var { gid, cid, mid } = req.body;
-
-		console.log(gid + ' - ' + cid + ' - ' + mid);
+	io.on('init', () => {
+		io.emit('init', botType);
 	});
 
-	server.listen(app.get('port'), () => console.log('Started server.'));
+	io.on('disconnect', reason => {
+		console.log('disconnect:', reason);
+
+		if (reason === 'io server disconnect') {
+			socket.connect();
+		}
+	});
+
+	io.on('connect_error', error => console.error(error));
+	io.on('connect_timeout', error => console.error(error));
 }
 
 export = {

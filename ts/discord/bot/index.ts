@@ -1,3 +1,5 @@
+console.log('DISCORD: BOT');
+
 import Command = require('./command');
 
 
@@ -26,15 +28,11 @@ import Server = require('./GuildServer');
 import limits = require('../limits');
 
 
+commandPlugin.defaultCommands.initCommands();
+
 // Commands
 let BlacklistCmd =  commandPlugin.defaultCommands.get('blacklist');
 let PunishmentCmd = commandPlugin.defaultCommands.get('punishment');
-
-// process.nextTick(() => {
-// 	BlacklistCmd = commandPlugin.defaultCommands.get('blacklist');
-// 	PunishmentCmd = commandPlugin.defaultCommands.get('punishment');
-// });
-
 
 
 mongoose.Promise = global.Promise;
@@ -47,19 +45,6 @@ client.options.disabledEvents = [
 ];
 
 let events: NewNode = new Events();
-
-// let app = express();
-// app.set('port', config.bot.discord.port);
-// app.use(cookieParse());
-// app.use(bodyParser.urlencoded({ extended: true }));
-// app.use(bodyParser.json());
-
-
-// app.get('/', (req, res) => { res.send('ok'); });
-
-
-// http.createServer(app)
-// .listen(app.get('port'), () => logger.info('Started Discord Server Listener.'));
 
 
 client.on('ready', () => {
@@ -78,9 +63,9 @@ if (client.shard != null && client.shard.count != 0) shardListener();
 
 function shardListener() {
 	process.on('message', msg => {
-		if (!msg._drss) return; // Discord shard eval starts with _eval/_sEval
+		if (msg._eval || msg._sEval) return; // Discord shard eval starts with _eval/_sEval
 
-		console.log('[PROCESS]:', msg);
+		console.log(`[SHARD ${client.shard.id}]:`, msg);
 	});
 }
 
@@ -178,6 +163,8 @@ client.on('guildUpdate', (oldGuild, newGuild) => {
 });
 
 client.on('guildDelete', (guild) => {
+	client.shard.send('update');
+
 	logger.info('Left Server: ' + guild.name);
 
 	limits.guildDelete(guild.id);
@@ -189,6 +176,8 @@ client.on('guildDelete', (guild) => {
 
 // Server joined
 client.on('guildCreate', guild => {
+	client.shard.send('update');
+
 	logger.info('Joined Server: ' + guild.name);
 
 	try {

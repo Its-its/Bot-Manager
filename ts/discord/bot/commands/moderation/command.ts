@@ -29,24 +29,31 @@ class Comm extends Command {
 			return Command.info([[
 				'Command',
 				[
+					'_NOT FINISHED_',
 					'command list',
 					'command create <name> <message>',
-					'command remove <name> <message>'
+					'command remove <pid> <message>'
 				].join('\n')
 			]])
 		}
 
 		var type = params.shift();
-		var commandName = params.shift();
-
-		if (/[a-z0-9_]/i.test(commandName)) return Command.info([['Command', 'Command name must only have A-Z 0-9 _ in it.']]);
 
 		switch(type.toLowerCase()) {
 			case 'list':
 				if (!this.hasPerms(message.member, server, PERMS.LIST)) return Command.noPermsMessage('Command');
-				break;
+
+				return Command.success([
+					[
+						'Command',
+						server.commands.map(c => `PID: ${c.pid} - ALIAS: ${c.alias.join(', ')}`).join('\n')
+					]
+				]);
 			case 'create':
 				if (!this.hasPerms(message.member, server, PERMS.CREATE)) return Command.noPermsMessage('Command');
+
+				var commandName = params.shift();
+				if (!/^[a-z0-9_]+$/i.test(commandName)) return Command.info([['Command', 'Command name must only have A-Z 0-9 _ in it.']]);
 
 				var onCalled = params.join(' ');
 
@@ -59,6 +66,9 @@ class Comm extends Command {
 				break;
 			case 'remove':
 				if (!this.hasPerms(message.member, server, PERMS.REMOVE)) return Command.noPermsMessage('Command');
+
+				var commandName = params.shift();
+				if (!/^[a-z0-9_]+$/i.test(commandName)) return Command.info([['Command', 'Command name must only have A-Z 0-9 _ in it.']]);
 
 				var paramId = parseInt(params.shift());
 

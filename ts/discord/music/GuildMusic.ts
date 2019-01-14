@@ -1,6 +1,5 @@
 import * as redis from 'redis';
 import * as Discord from 'discord.js';
-import * as YTDL from 'ytdl-core';
 
 import MusicPlaylist = require('../../music/models/playlists');
 import MusicHistory = require('../../music/models/history');
@@ -12,17 +11,9 @@ import musicPlugin = require('./plugins/music');
 
 import config = require('../../config');
 
-import request = require('request');
-
 
 let redisMusic = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.musicDB });
 
-function sendReq(url: string, opts, cb) {
-	return request.post('http://' + config.music.address + ':' + config.music.port + '/' + url)
-	.form(opts)
-	.on('response', res => cb(null, res.body == null ? { error: 'Music portion errored!' } : JSON.parse(res.body)))
-	.on('error', error => cb(error));
-}
 
 
 class Music implements DiscordBot.plugins.Music {
@@ -108,41 +99,21 @@ class Music implements DiscordBot.plugins.Music {
 	}
 
 	// Controls
-	public play(cb?: (err?: string, newSong?: DiscordBot.plugins.PlayedSong, lastSong?: DiscordBot.plugins.PlayedSong) => any) {
-		sendReq('play', {
-			guild_id: this.guildId
-		}, (err, res) => {
-			if (err) { console.error(err); cb && cb('An error occured.'); return; }
-			if (res.error) { console.error(err); cb && cb(res.error); return; }
-			cb && cb(null, res);
-		});
-	}
+	// public play() {
+	// 	//
+	// }
 
-	public sendStop(reason: 'stopped' | 'next' = 'stopped', cb?: (reason: string) => any) {
-		sendReq('stop', {
-			guild_id: this.guildId,
-			reason: reason
-		}, () => (cb && cb(reason)));
-	}
+	// public sendStop(reason: 'stopped' | 'next' = 'stopped') {
+	// 	//
+	// }
 
-	public next(cb?: (err: string, newSong: DiscordBot.plugins.PlayedSong, lastSong: DiscordBot.plugins.PlayedSong) => any) {
-		console.log(' - next');
+	// public next() {
+	// 	//
+	// }
 
-		sendReq('next', {
-			guild_id: this.guildId
-		}, (err, res) => (cb && cb(res.err, res.newSong, res.lastSong)));
-	}
-
-	public rejoinVoice(guild?: Discord.Guild, cb?: (err, msg?) => any) {
-		sendReq('join', {
-			guild_id: guild == null ? this.guildId : guild.id,
-			channel_id: this.lastVoiceChannelId
-		}, (err, res) => {
-			if (err) { console.error(err); cb('An error occured.'); return; }
-			if (res.error) { console.error(err); cb(res.error); return; }
-			if (res.msg) cb(null, res.msg);
-		});
-	}
+	// public rejoinVoice(guild?: Discord.Guild) {
+	// 	//
+	// }
 
 
 	// Queue
@@ -250,11 +221,9 @@ class Music implements DiscordBot.plugins.Music {
 
 
 	// Util
-	public isPlaying(cb: (playing: boolean) => any) {
-		sendReq('stop', {
-			guild_id: this.guildId
-		}, (err, res) => cb(res.msg));
-	}
+	// public isPlaying(cb: (playing: boolean) => any) {
+	// 	//
+	// }
 
 	public sendMessageFromGuild(guild: Discord.Guild, message: any) {
 		var channel = <Discord.TextChannel>guild.channels.get(this.lastTextChannelId);
@@ -309,4 +278,7 @@ function uniqueID(size: number): string {
 }
 
 
-export = Music;
+export {
+	Music,
+	getMusic
+};

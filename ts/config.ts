@@ -26,6 +26,15 @@ interface Config {
 		address: string;
 		port: number;
 	}
+	shards: {
+		discord: {
+			masterPort: number;
+			botPort: number;
+			gamesPort: number;
+			intervalPort: number;
+			musicPort: number;
+		}
+	}
 	music: {
 		address: string;
 		port: number;

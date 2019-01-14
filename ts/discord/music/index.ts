@@ -1,12 +1,15 @@
+console.log('DISCORD: MUSIC');
+
+
 import * as Discord from 'discord.js';
 import * as bodyParser from 'body-parser';
 import { PassThrough } from 'stream';
-
 
 import fs = require('fs');
 import path = require('path');
 import http = require('http');
 
+import redis = require('redis');
 import ss = require('socket.io-stream');
 import morgan = require('morgan');
 import express = require('express');
@@ -20,9 +23,9 @@ import Queues = require('../../music/models/queue');
 import Playlists = require('../../music/models/playlists');
 
 import config = require('../../config');
-import guildClient = require('../guildClient');
 import musicUtils = require('./plugins/music');
 import utils = require('../utils');
+import { getMusic } from './GuildMusic';
 
 
 mongoose.Promise = global.Promise;
@@ -32,43 +35,42 @@ mongoose.connect(config.database, { useNewUrlParser: true });
 import client = require('../client');
 
 
-//
 
-const server = http.createServer();
-const io = socketIO(server);
+// const server = http.createServer();
+// const io = socketIO(server);
 
-io.on('connection', (socket) => {
-	socket.on('bot-playing', (info) => {
-		guildClient.getMusic(info.id, (music) => {
-			socket.emit('bot-playing', { playing: music.playing });
-		});
-	});
+// io.on('connection', (socket) => {
+// 	socket.on('bot-playing', (info) => {
+// 		getMusic(info.id, (music) => {
+// 			socket.emit('bot-playing', { playing: music.playing });
+// 		});
+// 	});
 
-	socket.on('listen-stop', (info) => {
-		if (info == null || info.id == null) return;
-		socket.leave(info.id);
-	});
+// 	socket.on('listen-stop', (info) => {
+// 		if (info == null || info.id == null) return;
+// 		socket.leave(info.id);
+// 	});
 
-	socket.on('listen-start', (info) => {
-		if (info == null || info.id == null) return;
-		socket.join(info.id);
+// 	socket.on('listen-start', (info) => {
+// 		if (info == null || info.id == null) return;
+// 		socket.join(info.id);
 
-		guildClient.getMusic(info.id, (music) => {
-			if (music == null) return socket.emit('listen', { error: 'Guild not valid.' });
-			socket.emit('listen', {
-				serverId: info.id,
-				playing: music.playing,
-				customPlaylist: music.customPlaylist,
-				playingFrom: music.playingFrom,
-				repeatQueue: music.repeatQueue,
-				repeatSong: music.repeatSong
-			});
-		});
-	});
-});
+// 		getMusic(info.id, (music) => {
+// 			if (music == null) return socket.emit('listen', { error: 'Guild not valid.' });
+// 			socket.emit('listen', {
+// 				serverId: info.id,
+// 				playing: music.playing,
+// 				customPlaylist: music.customPlaylist,
+// 				playingFrom: music.playingFrom,
+// 				repeatQueue: music.repeatQueue,
+// 				repeatSong: music.repeatSong
+// 			});
+// 		});
+// 	});
+// });
 
-console.log('IO Port: ' + config.socketIO.discordPort);
-server.listen(config.socketIO.discordPort);
+// console.log('IO Port: ' + config.socketIO.discordPort);
+// server.listen(config.socketIO.discordPort);
 
 
 
@@ -164,9 +166,9 @@ app.post('/stop', (req, res) => {
 app.post('/next', (req, res) => {
 	var { guild_id } = req.body;
 
-	next(guild_id, (err, res) => {
+	next(guild_id, (err, resp) => {
 		if (err) return res.send({ error: err });
-		res.send(res);
+		res.send(resp);
 	});
 });
 
@@ -241,7 +243,7 @@ app.post('/queue/:type', (req, res) => {
 					if (itemsToSearch.length == 0) return res.send({ error: 'No more items.' });
 
 					musicUtils.getSong(itemsToSearch, (err, songs) => {
-						guildClient.getMusic(guild_id, music => {
+						getMusic(guild_id, music => {
 							var fields = [
 								[
 									'Music',
@@ -281,12 +283,181 @@ app.post('/search', (req, res) => {
 });
 
 
-http.createServer(app)
-.listen(app.get('port'), () => console.log('Started DML: ' + app.get('port')));
+// http.createServer(app)
+// .listen(app.get('port'), () => console.log('Started DML: ' + app.get('port')));
 
 
 
+if (client.shard != null && client.shard.count != 0) shardListener();
 
+
+function shardListener() {
+	process.on('message', msg => {
+		if (msg._eval || msg._sEval) return; // Discord shard eval starts with _eval/_sEval
+
+		console.log(`[SHARD ${client.shard.id}]:`, msg);
+
+		if (msg._event) {
+			var guild_id = msg._guild,
+				channel_id = msg._channel,
+				sender_id = msg._sender,
+				search = msg.search;
+
+			var guild = client.guilds.get(guild_id);
+			var channel = <Discord.TextChannel>guild.channels.get(channel_id);
+
+			switch(msg._event) {
+				case 'join':
+					joinVoiceChannel(guild_id, channel_id, err => {
+						if (err) { console.error(err); send(utils.errorMsg([['Music', err]])); return; }
+						send(utils.successMsg([['Music', 'Joined channel.']]));
+					});
+					break;
+				case 'leave':
+					leaveVoiceChannel(guild_id, err => {
+						if (err) { console.error(err); send(utils.errorMsg([['Music', err]])); return; }
+						send(utils.successMsg([['Music', 'Left channel.']]));
+					});
+					break;
+				case 'search':
+					break;
+				case 'stop':
+					stop(guild_id, null, (err, msg) => {
+						if (err) { console.error(err); send(utils.errorMsg([['Music', err]])); return; }
+						send(utils.successMsg([['Music', msg]]));
+					});
+					break;
+				case 'next':
+					next(guild_id, (err, res) => {
+						if (err) { console.error(err); send(utils.errorMsg([['Music', err]])); return; }
+						// send(utils.successMsg([['Music', 'Now Playing: ']]));
+					});
+					break;
+				case 'play':
+					if (search == null || search.length == 0) {
+						playSong(guild_id, null, (err, newsong, lastSong) => {
+							if (err) { console.error(err); send(utils.errorMsg([['Music', err]])); return; }
+							send(utils.successMsg([['Music', 'Playing song.']]));
+						});
+					} else {
+						findAndPlay(guild_id, search, (err, song) => {
+							if (err) { console.error(err); send(utils.errorMsg([['Music', err]])); return; }
+							send(utils.successMsg([['Music', 'Playing song.']]));
+						});
+					}
+					break;
+				case 'queue':
+					var params = msg.params == null ? [] : msg.params;
+					var type = msg.queue_type;
+
+					switch(type) {
+						case 'playlist':
+							queuePlaylist(guild_id, params.shift(), (err, count) => {
+								if (err) { console.error(err); send(utils.errorMsg([['Music', err]])); return; }
+								send(utils.successMsg([['Music', 'Queued Playlist with ' + count + ' files.']]));
+							});
+							break;
+						case 'repeat':
+							queueToggleRepeat(guild_id, value => {
+								send(utils.successMsg([['Music', `Toggled Repeat: ${value ? '' : 'Not '} Repeating`]]));
+							});
+							break;
+						case 'clear':
+							queueClear(guild_id, err => {
+								if (err) { console.error(err); send(utils.errorMsg([['Music', err]])); return; }
+								send(utils.successMsg([['Music', 'Queue Cleared']]));
+							});
+							break;
+						case 'shuffle':
+							queueShuffle(guild_id, () => {
+								send(utils.successMsg([['Music', 'Shuffled Song Queue']]));
+							});
+							break;
+						case 'remove':
+							queueRemoveItem(guild_id, params.shift(), err => {
+								if (err) { console.error(err); send(utils.errorMsg([['Music', err]])); return; }
+								send(utils.successMsg([['Music', 'Removed Item from queue.']]));
+							});
+							break;
+						case 'add':
+							queueSong(guild_id, sender_id, params.join(' '), (errMsg, song) => {
+								if (errMsg) { console.error(errMsg); send(utils.errorMsg([['Music', errMsg]])); return; }
+
+								send(utils.generateFullSong(
+									'Added to Queue', song.id, '',
+									song.title, song.thumbnail_url, song.length,
+									song.channel_id, new Date(song.published).toISOString()));
+							});
+							break;
+						default:
+							if (type == 'list' || /^[0-9]+$/g.test(type)) {
+								if (type != 'list') params.push(type);
+
+								Queues.findOne({ server_id: guild_id }, (err, queue: any) => {
+									if (queue.items.length == 0) return send(utils.errorMsg([['Music', 'Nothing Queued!']]));
+
+									var page = 1;
+									var maxPages = Math.ceil(queue.items.length/5);
+									var maxItems = 5;
+
+									if (params != null && params.length != 0) {
+										var parsed = parseInt(params);
+										if (Number.isInteger(parsed)) page = parsed;
+									}
+
+									if (page > maxPages) page = maxPages;
+									if (page < 1) page = 1;
+
+									var pageSlice = (page - 1) * maxItems;
+
+									var itemsToSearch = queue.items.slice(pageSlice, pageSlice + maxItems).map(i => i.id);
+
+									if (itemsToSearch.length == 0) return send(utils.errorMsg([['Music', 'No more items.']]));
+
+									musicUtils.getSong(itemsToSearch, (err, songs) => {
+										getMusic(guild_id, music => {
+											var fields = [
+												[
+													'Music',
+													[
+														'Queued Items: ' + songs.length,
+														'Page: ' + page + '/' + maxPages,
+														'**Repeat Queue:** ' + (music.repeatQueue ? 'Yes': 'No'),
+														'**Repeat Song:** ' + (music.repeatSong ? 'Yes': 'No')
+													].join('\n')
+												]
+											];
+
+											fields = fields.concat(songs
+											.map((q, i) => [
+												'ID: ' + (pageSlice + i + 1),
+												[	`[${q.title}](${utils.videoIdToUrl(q.type || 'youtube', q.id)})`,
+													'Uploaded: ' + new Date(q.published).toDateString(),
+													'Length: ' + utils.secondsToHMS(q.length)
+												].join('\n')
+											]));
+
+											return send(utils.successMsg(<any>fields));
+										});
+									});
+								});
+							}
+							break;
+					}
+					break;
+				default: console.log('UNKNOWN EVENT: ', msg);
+			}
+
+			function send(str: { embed: any; }) {
+				return channel.send(new Discord.RichEmbed(str.embed));
+			}
+		}
+	});
+}
+
+function sendToWebUI(opts: { [a: string]: any }) {
+	client.shard.send(Object.assign({ from: 'music', to: 'web-music' }, opts));
+}
 
 
 
@@ -332,6 +503,7 @@ client.options.disabledEvents = [
 client.on('ready', () => {
 	console.log(' - Client ID:' + client.user.id);
 	console.log(' - Found ' + client.guilds.size + ' Guild(s).');
+	client.shard.send('ready');
 });
 
 client.on('error', e => console.error(e));
@@ -396,7 +568,7 @@ function joinVoiceChannel(guildId: string, channelId: string, cb: (errMsg?: stri
 	var channel = client.channels.get(channelId);
 
 	if (channel != null && channel.type == 'voice') {
-		guildClient.getMusic(guildId, music => {
+		getMusic(guildId, music => {
 			music.lastVoiceChannelId = channel.id;
 			music.playing = null;
 			music.save();
@@ -444,7 +616,7 @@ function stop(guild_id: string, reason: 'stopped' | 'next', cb?: (err, res?) => 
 	} else stopReason(guild_id, reason, () => cb && cb(reason));
 }
 
-function next(guild_id: string, cb) {
+function next(guild_id: string, cb: (err: string, newSong?: DiscordBot.plugins.PlayedSong, lastSong?: DiscordBot.plugins.PlayedSong) => any) {
 	console.log(' - next');
 
 	if (isPlaying(guild_id)) stop(guild_id, 'next', () => playSong(guild_id, null, cb));
@@ -470,7 +642,7 @@ function playSong(
 			else stop(guild_id, 'stopped'); // Stop song, new song ready to play
 		}
 
-		guildClient.getMusic(guild_id, (music) => {
+		getMusic(guild_id, (music) => {
 			if (newSong == null) {
 				music.nextInQueue(nextSong => {
 					if (nextSong == null) {
@@ -551,7 +723,7 @@ function playSong(
 	} else {
 		// If the bot is QUICKLY restarted it doesn't leave the voice channel and it doesn't know it's still in it.
 		if (trys >= 3) { console.error('Attempted to join Voice Channel 3 times. Now stopping. - ' + guild_id); return false; }
-		guildClient.getMusic(guild_id, music => {
+		getMusic(guild_id, music => {
 			joinVoiceChannel(guild_id, music.lastVoiceChannelId, (err) => {
 				if (err) return console.error('Attempted to join voice channel: ', err);
 				playSong(guild_id, newSong, cb, trys + 1);
@@ -589,8 +761,9 @@ function findAndPlay(guildId: string, search: string, cb: (errorMessage?: string
 
 	function playIt(song: DiscordBot.plugins.SongGlobal) {
 		playSong(guildId, song, (err, next, last) => {
-			io.to(guildId)
-			.emit('play-start', {
+			sendToWebUI({
+				_guild: guildId,
+				_event: 'play-start',
 				error: err,
 				nextSong: next,
 				lastSong: last
@@ -602,8 +775,11 @@ function findAndPlay(guildId: string, search: string, cb: (errorMessage?: string
 }
 
 function stopPlaying(guildId: string, cb: (errorMessage?: string) => any) {
-	guildClient.getMusic(guildId, music => {
-		io.to(guildId).emit('play-stop');
+	getMusic(guildId, music => {
+		sendToWebUI({
+			_guild: guildId,
+			_event: 'play-stop'
+		});
 		stopReason(guildId);
 		cb();
 	});
@@ -622,40 +798,55 @@ function stopReason(guild_id: string, reason: 'stopped' | 'next' = 'stopped', cb
 
 // Queue
 function queueToggleRepeat(guildId: string, cb: (value: boolean) => any) {
-	guildClient.getMusic(guildId, music => {
+	getMusic(guildId, music => {
 		var repeat = music.toggleQueueRepeat();
-		io.to(guildId).emit('queue-toggle-repeat', { value: repeat });
+		sendToWebUI({
+			_guild: guildId,
+			_event: 'queue-toggle-repeat',
+			value: repeat
+		});
 		music.save();
 		cb(repeat);
 	});
 }
 
 function queueClear(guildId: string, cb: (err?: any) => any) {
-	guildClient.getMusic(guildId, music => {
-		io.to(guildId).emit('queue-clear');
+	getMusic(guildId, music => {
+		sendToWebUI({
+			_guild: guildId,
+			_event: 'queue-clear'
+		});
 		music.clearQueue(err => cb(err));
 	});
 }
 
 function queueShuffle(guildId: string, cb: () => any) {
-	guildClient.getMusic(guildId, music => {
+	getMusic(guildId, music => {
 		music.shuffleQueue();
-		io.to(guildId).emit('queue-shuffle', { queue: 'todo' });
+		sendToWebUI({
+			_guild: guildId,
+			_event: 'queue-shuffle',
+			queue: 'todo'
+		});
 		cb();
 	});
 }
 
 function queueRemoveItem(guildId: string, item, cb: (err?: any) => any) {
-	guildClient.getMusic(guildId, music => {
+	getMusic(guildId, music => {
 		music.removeFromQueue(item, err => {
-			io.to(guildId).emit('queue-item-remove', { item: item });
+			sendToWebUI({
+				_guild: guildId,
+				_event: 'queue-item-remove',
+				item: item
+			});
 			cb(err);
 		});
 	});
 }
 
 function queueSong(guildId: string, memberId: string, uriOrSearch: string, cb: (errorMessage?: string, song?: DiscordBot.plugins.SongGlobal) => any) {
-	guildClient.getMusic(guildId, music => {
+	getMusic(guildId, music => {
 		var val = /(?:(?:https?:\/\/)(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11})/g.exec(uriOrSearch);
 
 		if (val != null) {
@@ -663,13 +854,21 @@ function queueSong(guildId: string, memberId: string, uriOrSearch: string, cb: (
 
 			musicUtils.getSong(id, (errMsg, songs) => {
 				if (errMsg != null) return cb(errMsg);
-				io.to(guildId).emit('queue-item-add', { item: songs[0] });
+				sendToWebUI({
+					_guild: guildId,
+					_event: 'queue-item-add',
+					item: songs[0]
+				});
 				music.addToQueue(memberId, songs[0], err => cb(err, songs[0]));
 			})
 		} else {
 			musicUtils.findFirstSong(uriOrSearch, (errMsg, song) => {
 				if (errMsg != null) return cb(errMsg);
-				io.to(guildId).emit('queue-item-add', { item: song });
+				sendToWebUI({
+					_guild: guildId,
+					_event: 'queue-item-add',
+					item: song
+				});
 				music.addToQueue(memberId, song, err => cb(err, song));
 			});
 		}
@@ -679,7 +878,7 @@ function queueSong(guildId: string, memberId: string, uriOrSearch: string, cb: (
 function queuePlaylist(guildId: string, playlistId: string, cb: (err?: any, count?: number) => any) {
 	if (playlistId == null) return cb('No playlist ID specified! Please use an ID or "default"');
 
-	guildClient.getMusic(guildId, music => {
+	getMusic(guildId, music => {
 		if (playlistId == 'default') playlistId = music.currentPlaylist;
 
 		Playlists.findOne({ public_id: playlistId }, (err, playlist) => {
@@ -697,7 +896,11 @@ function queuePlaylist(guildId: string, playlistId: string, cb: (err?: any, coun
 					})
 				}
 			}, (err) => {
-				io.to(guildId).emit('queue-playlist', { public_id: playlistId });
+				sendToWebUI({
+					_guild: guildId,
+					_event: 'queue-playlist',
+					public_id: playlistId
+				});
 				cb(null, playlist.songs.length);
 			});
 		});

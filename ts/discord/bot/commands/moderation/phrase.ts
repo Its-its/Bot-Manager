@@ -69,7 +69,12 @@ class Create extends Command {
 					if (!this.hasPerms(message.member, server, PERMS.CREATE)) return Command.noPermsMessage('Phrase');
 
 					if (params.length < 2) return;
-					server.createPhrase(message.member, params.shift().split(','), (phrase) => {
+
+					var phraseName = params.shift();
+
+					if (!/^[a-z0-9]+$/i.test(phraseName)) return Command.info([['Phrase', 'Phrase name must only have A-Z 0-9 in it.']]);
+
+					server.createPhrase(message.member, phraseName.split(','), (phrase) => {
 						if (phrase == null) return;
 
 						var resp = params.join(' ');

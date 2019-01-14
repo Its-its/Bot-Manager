@@ -47,10 +47,10 @@ declare namespace DiscordBot {
 			constructor(guildId: string, save: MusicOptions);
 
 			save(cb?);
-			play(cb?: (err: string, newSong?: DiscordBot.plugins.SongGlobal, lastSong?: DiscordBot.plugins.SongGlobal) => any, trys?: number);
-			sendStop(reason: 'stopped' | 'next', cb?: (reason: string) => any);
-			next(cb: (err: string, newSong: DiscordBot.plugins.PlayedSong, lastSong: DiscordBot.plugins.PlayedSong) => any);
-			rejoinVoice(guild?: any/*Guild*/, cb?: (err, msg?) => any);
+			// play(cb?: (err: string, newSong?: DiscordBot.plugins.SongGlobal, lastSong?: DiscordBot.plugins.SongGlobal) => any, trys?: number);
+			// sendStop(reason: 'stopped' | 'next', cb?: (reason: string) => any);
+			// next(cb: (err: string, newSong: DiscordBot.plugins.PlayedSong, lastSong: DiscordBot.plugins.PlayedSong) => any);
+			// rejoinVoice(guild?: any/*Guild*/, cb?: (err, msg?) => any);
 			clearQueue(cb: (err: any) => any);
 			addToQueue(user: string, song: SongGlobal, cb: () => any);
 			removeFromQueue(id: string, cb: (err: any) => any);
@@ -59,7 +59,7 @@ declare namespace DiscordBot {
 			toggleQueueRepeat(): boolean;
 			addToHistory(song: PlayedSong);
 			clearHistory(cb: (err: any) => any);
-			isPlaying(cb: (playing: boolean) => any);
+			// isPlaying(cb: (playing: boolean) => any);
 			sendMessageFromGuild(guild: any/*Guild*/, message: string, error?: boolean);
 			regrab(cb: (music: Music) => any);
 			toString(): string;
