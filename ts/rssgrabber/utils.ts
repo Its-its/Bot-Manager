@@ -1,19 +1,115 @@
 import { Document } from 'mongoose';
 
 import crypto = require('crypto');
-import md5 = require('md5');
+import Twit = require('twit');
 
 import request = require('request');
 import FeedParser = require('feedparser');
 
 import RSSFeeds = require('../models/rssfeed');
+import TwitterFeeds = require('../models/twitterfeed');
 
 import cheerio = require('cheerio');
 
 import { URL } from 'url';
 
-const DEFAULT_FORMAT = ':newspaper:  **{title}**\n\n{link}';
+const DEFAULT_RSS_FORMAT = ':newspaper:  **{title}**\n\n{link}';
+const DEFAULT_TWITTER_FORMAT = ':bird:  **{text}**\n\n{link}';
 
+
+
+// TWITTER
+
+const twitter = new Twit({
+	consumer_key:         'dZwMAukw0gd1U3detHh38XvK8',
+	consumer_secret:      'elh1y4iZoqUutXKA86HvfB1yX6xj6vqdAC8c9HBU6ryNxLrmVY',
+	access_token:         '358512140-4r97ewMT0IUOETldmcsEBS3ew0vrPbhKbOBBqkGt',
+	access_token_secret:  'sEk54lu8YyNtxz8IzI3lBLUXl2P4XeTQNig2JMoCOvNxm',
+	timeout_ms:           60 * 1000,
+	strictSSL:            true
+});
+
+interface TwitterFeedFix extends Document {
+	user_id: string;
+
+	displayName: string;
+	screenName: string;
+
+	sending_to: number;
+
+	last_called: Date;
+
+	items: {
+		id: string;
+
+		text: string;
+		link: string;
+	}[];
+}
+
+function addTwitterFeed(urlOrScreenName: string, cb: (err?: string, newFeed?: boolean, feed?: TwitterFeedFix, items?: TwitterStatusesDB[]) => any) {
+	var urlRegex = new RegExp('twitter.com/(\\w+)', 'i');
+
+	if (urlRegex.test(urlOrScreenName)) {
+		var exec = urlRegex.exec(urlOrScreenName);
+		urlOrScreenName = exec[1];
+	}
+
+	twitter.get('users/lookup', { screen_name: urlOrScreenName }, (err, res: Twit.Twitter.User[]) => {
+		if (err != null) return cb(err.toString());
+
+		if (res.length == 0) return cb("User cannot be found!");
+
+		const user = res[0];
+
+		TwitterFeeds.findOne({ user_id: user.id_str }, (err, feed) => {
+			if (err != null) return cb(err);
+
+			twitter.get('statuses/user_timeline', { id: user.id_str, count: 10, include_rts: true }, (err, statuses: Twit.Twitter.Status[]) => {
+				if (err != null) return cb(err.toString());
+
+				var feedItems = twitterStatusesToDB(statuses);
+
+				// Exists already? Return with statuses
+				if (feed != null) return cb(null, false, feed, feedItems);
+
+				new TwitterFeeds({
+					user_id: user.id_str,
+					screenName: user.screen_name,
+					displayName: user.name,
+
+					sending_to: 1,
+
+					items: feedItems
+				})
+				.save((err, feed) => {
+					if (err != null) return cb(err);
+					cb(null, true, feed, feedItems);
+				});
+			});
+		});
+	});
+}
+
+
+interface TwitterStatusesDB {
+	id: string;
+	text: string;
+	link: string;
+}
+
+function twitterStatusesToDB(items: Twit.Twitter.Status[]): TwitterStatusesDB[] {
+	return items.map(i => {
+		return {
+			id: i.id_str,
+			text: i.full_text || i.text,
+			link: `https://twitter.com/${i.user.screen_name}/status/${i.id_str}`
+		};
+	});
+}
+
+
+// RSS
 
 interface ArticleDB {
 	url: string;
@@ -35,6 +131,27 @@ interface ArticleItemDB {
 	categories: string[];
 };
 
+interface RSSFeedFix extends Document {
+	url: string;
+	link: string;
+	xmlUrl: string;
+
+	sending_to: number;
+
+	items: {
+		id: string;
+		title: string;
+		description: string;
+		date: Date;
+		link: string;
+		guid: string;
+		author: string;
+		generator: string;
+		categories: string[];
+	}[];
+
+	last_called: Date;
+}
 
 function getFeedItems(url: string, cookies: any, cb: (err?: Error, items?: FeedParser.Item[]) => any) {
 	const feedparser = new FeedParser({});
@@ -77,7 +194,7 @@ function getFeedItems(url: string, cookies: any, cb: (err?: Error, items?: FeedP
 }
 
 
-function addNewFeed(uri: string, cookies: any, title: string, cb: (err?: string, newFeed?: boolean, feed?: Document, article?: ArticleDB) => any) {
+function addNewFeed(uri: string, cookies: any, title: string, cb: (err?: string, newFeed?: boolean, feed?: RSSFeedFix, article?: ArticleDB) => any) {
 	// Find db from url
 	//   - Not found? Get items, Check again with one of the items xml urls (usually more proper) if not found, register as new.
 
@@ -94,11 +211,12 @@ function addNewFeed(uri: string, cookies: any, title: string, cb: (err?: string,
 	RSSFeeds.findOne({ $or: [ { xmlUrl: uri }, { link: uri } ] }, (err, feed) => {
 		if (err != null) return cb(err);
 
-		if (feed != null) return cb(null, false, feed);
-	
-
 		getFeedItems(uri, cookies, (err, items) => {
 			if (err != null) return cb('An error occured while trying to grab Feed Items.');
+
+			// Feed already exist? No need to continue and create it.
+			if (feed != null) return cb(null, false, feed, articlesToDB(uri, items));
+
 
 			var fItem = items[0];
 
@@ -119,7 +237,7 @@ function addNewFeed(uri: string, cookies: any, title: string, cb: (err?: string,
 					else createFeed();
 				});
 			} else createFeed();
-			
+
 
 			function createFeed() {
 				var articles = articlesToDB(uri, items);
@@ -132,11 +250,11 @@ function addNewFeed(uri: string, cookies: any, title: string, cb: (err?: string,
 			}
 
 			// console.log(JSON.stringify(items[0], null, 2));
-	
+
 			// for(var i = 0; i < items.length; i++) {
 			// 	console.log('ID: ' + getArticleId(items[i], items));
 			// }
-		}); 
+		});
 	});
 }
 
@@ -221,27 +339,28 @@ interface FormatOpts {
 	guid: string;
 }
 
+type Obj = { [name: string]: string };
 
-function compileFormat(format: string, opts: FormatOpts) {
-	return format.replace(/{date}/gi, typeof opts.date == 'number' ? '' : '')
-		.replace(/{title}/gi, opts.title)
-		.replace(/{author}/gi, opts.author)
-		// .replace(/{summary}/gi, opts.summary)
-		// .replace(/{subscriptions}/gi, opts.subscriptions)
-		.replace(/{link}/gi, opts.link)
-		.replace(/{description}/gi, opts.description)
-		// .replace(/{tags}/gi, opts.tags)
-		.replace(/{guid}/gi, opts.guid)
+function compileFormat(format: string, opts: Obj) {
+	for (const key in opts) {
+		format = format.replace(new RegExp(`{${key}}`, 'gi'), opts[key]);
+	}
+
+	return format;
 }
 
 
 export = {
-	DEFAULT_FORMAT,
+	DEFAULT_RSS_FORMAT,
+	DEFAULT_TWITTER_FORMAT,
 	returnArticlesAfter,
 	articleItemsToDB,
 	articlesToDB,
 	addNewFeed,
 	getFeedItems,
 	getArticleId,
-	compileFormat
+	compileFormat,
+
+	addTwitterFeed,
+	twitterStatusesToDB
 };

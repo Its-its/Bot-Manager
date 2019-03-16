@@ -72,10 +72,10 @@ function launch(client: string) {
 
 	manager.spawn();
 
-	initLink(client);
+	initMasterLink(client);
 }
 
-function initLink(botType: string) {
+function initMasterLink(clientName: string) {
 	io = socket.connect('http://localhost:' + config.shards.discord.masterPort);
 
 	io.on('from', opts => {
@@ -91,7 +91,7 @@ function initLink(botType: string) {
 	});
 
 	io.on('init', () => {
-		io.emit('init', botType);
+		io.emit('init', clientName);
 	});
 
 	io.on('disconnect', reason => {

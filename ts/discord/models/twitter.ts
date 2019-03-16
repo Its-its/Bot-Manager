@@ -2,7 +2,7 @@ import mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
-const DiscordFeeds = new Schema({
+const TwitterFeeds = new Schema({
 	pid: String,
 
 	active: { type: Boolean, default: true },
@@ -17,7 +17,7 @@ const DiscordFeeds = new Schema({
 			format: String,
 			active: { type: Boolean, default: true },
 			items: [ String ],
-			feed: { ref: 'rssfeeds', type: Schema.Types.ObjectId }
+			feed: { ref: 'feeds_twitter', type: Schema.Types.ObjectId }
 		}
 	]
 });
@@ -38,6 +38,6 @@ interface FeedFix extends mongoose.Document {
 }
 
 
-const adsf: mongoose.Model<FeedFix> = mongoose.model('discord_feeds', DiscordFeeds);
+const adsf: mongoose.Model<FeedFix> = mongoose.model('discord_twitter', TwitterFeeds);
 
 export = adsf;

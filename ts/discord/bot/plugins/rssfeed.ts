@@ -1,1 +1,0 @@
-// Call every 30 minutes.

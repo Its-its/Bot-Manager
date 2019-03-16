@@ -8,7 +8,6 @@ let pluginNames = [
 	'Commands',
 	'Music',
 	'Interval',
-	'RSSFeed',
 	'Logs',
 	'Leveling'
 ];

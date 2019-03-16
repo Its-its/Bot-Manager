@@ -10,6 +10,9 @@ import Restore = require('./restore');
 
 import Options = require('./options');
 
+import RSSFeed = require('./rssfeed');
+import TwitterFeed = require('./twitter');
+
 export = [
 	Options,
 	Plugin,
@@ -19,5 +22,7 @@ export = [
 	Prefix,
 	Backup,
 	Restore,
-	Message
+	Message,
+	RSSFeed,
+	TwitterFeed
 ];

@@ -1,1 +1,1 @@
-// Marks accounts as "flagged" accounts. If joins one of his/friends guilds, alerts person who flagged it via channel or msg. (global for me)
+// Marks accounts as "flagged" accounts. If joins one of his/friends guilds, alerts person who flagged it via channel or msg. (global for me if reason for it)

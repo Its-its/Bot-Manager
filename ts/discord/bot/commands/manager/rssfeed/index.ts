@@ -30,8 +30,6 @@ class RSSFeed extends Command {
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
-		// if (!server.isPluginEnabled('rssfeed')) return Command.error([['Error', 'Please enable the RSS Feed Plugin!']]);
-
 		var callType = params.shift();
 
 		if (callType == null || callType.toLowerCase() == 'help') return comm.Help.call(params, server, message);

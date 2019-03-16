@@ -2,8 +2,8 @@ import mongoose = require('mongoose');
 import Discord = require('discord.js');
 
 import DiscordServer = require('../../../../GuildServer');
-import DiscordFeeds = require('../../../../../models/feed');
-import RSSFeeds = require('../../../../../../models/rssfeed');
+import DiscordTwitter = require('../../../../../models/twitter');
+import GlobalTwitterFeeds = require('../../../../../../models/twitterfeed');
 
 import utils = require('../../../../../utils');
 
@@ -14,7 +14,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	.then((m: Discord.Message) => {
 		const guild = m.guild;
 
-		DiscordFeeds.find({ guild_id: guild.id })
+		DiscordTwitter.find({ guild_id: guild.id })
 		.exec((err, feeds) => {
 			if (err != null) {
 				m.edit(utils.errorMsg([['RSS Feed', 'An error occured while trying to find RSS Feeds. Please try again in a few moments.']]));
@@ -46,7 +46,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				// TODO: Permission checks
 
 				selector.addSelection(String(i + 1), `<#${feed.channel_id}> (Feeds: ${feed.feeds.length})`, (page) => {
-					DiscordFeeds.findOne({ guild_id: guild.id, channel_id: feed.channel_id })
+					DiscordTwitter.findOne({ guild_id: guild.id, channel_id: feed.channel_id })
 					.populate('feeds.feed')
 					.exec((err, feed) => {
 						if (err != null) {
@@ -65,22 +65,18 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 }
 
 interface Feed extends mongoose.Document {
-	url: string;
-	link: string;
-	xmlUrl: string;
+	user_id: string,
+
+	displayName: string,
+	screenName: string,
 
 	sending_to: number;
 
 	items: {
-		id: string;
-		title: string;
-		description: string;
-		date: Date;
-		link: string;
-		guid: string;
-		author: string;
-		generator: string;
-		categories: string[];
+		id: string,
+
+		text: string,
+		link: string
 	}[];
 
 	last_called: Date;
@@ -126,7 +122,7 @@ function showChannel(page: utils.MessagePage, channelFeed: ChannelFeed) {
 	if (!channelExists) {
 		page.addSelection('Toggle', 'Enable/Disable the feeds in the channel.', () => {
 			channelFeed.active = !channelFeed.active;
-			DiscordFeeds.updateOne({ _id: channelFeed._id }, { $set: { active: channelFeed.active } }).exec();
+			DiscordTwitter.updateOne({ _id: channelFeed._id }, { $set: { active: channelFeed.active } }).exec();
 			// TODO
 		});
 	}
@@ -148,7 +144,7 @@ function showChannel(page: utils.MessagePage, channelFeed: ChannelFeed) {
 			var channel = (<Discord.TextChannel>page.channel).guild.channels.get(id);
 			if (channel == null) return false;
 
-			DiscordFeeds.updateOne({ _id: channelFeed._id }, { $set: { channel_id: channel.id } }).exec();
+			DiscordTwitter.updateOne({ _id: channelFeed._id }, { $set: { channel_id: channel.id } }).exec();
 
 			pageMove.temporaryMessage('Changed Feed to requested channel.', 3000);
 
@@ -160,9 +156,9 @@ function showChannel(page: utils.MessagePage, channelFeed: ChannelFeed) {
 
 	page.addSelection('Delete', 'Permanently delete all Channel Feeds.', (page) => {
 		page.addSelection('yes', 'Yes, PERMANENTLY delete all Channel Feeds.', () => {
-			DiscordFeeds.remove({ _id: channelFeed._id }).exec();
+			DiscordTwitter.remove({ _id: channelFeed._id }).exec();
 			//! Ensure correct
-			RSSFeeds.updateMany({ _id: { $in: channelFeed.feeds.map(f => mongoose.Types.ObjectId(f.feed._id)) } }, { $inc: { sending_to: -1 } }).exec();
+			GlobalTwitterFeeds.updateMany({ _id: { $in: channelFeed.feeds.map(f => mongoose.Types.ObjectId(f.feed._id)) } }, { $inc: { sending_to: -1 } }).exec();
 			page.temporaryMessage(`Deleted <#${channelFeed.channel_id}> Channel Feeds`, 3000);
 		});
 
@@ -176,7 +172,7 @@ function showChannel(page: utils.MessagePage, channelFeed: ChannelFeed) {
 	channelFeed.feeds.forEach((feed, i) => {
 		page.addSelection(
 			String(i + 1),
-			'[' + (channelFeed.active ? (feed.active ? 'Active' : 'Disabled') : 'Disabled') + '] ' + feed.feed.link.slice(0, 40),
+			`[${(channelFeed.active ? (feed.active ? 'Active' : 'Disabled') : 'Disabled')}]: https://twitter.com/${feed.feed.screenName}`,
 			next => showPageFeed(next, channelFeed, i)
 		);
 	});
@@ -185,6 +181,9 @@ function showChannel(page: utils.MessagePage, channelFeed: ChannelFeed) {
 
 	page.display();
 }
+
+const DEFAULT_TWITTER_FORMAT = ':bird:  **{text}**\n\n{link}';
+
 
 function showPageFeed(page: utils.MessagePage, channelFeed: ChannelFeed, pos: number) {
 	var feed = channelFeed.feeds[pos];
@@ -210,7 +209,7 @@ function showPageFeed(page: utils.MessagePage, channelFeed: ChannelFeed, pos: nu
 
 	page.addSelection('Template', 'Change the feed template', (pageTemplate) => {
 		pageTemplate.setFormat([
-			'Template currently:\n```' + feed.format + '```',
+			'Template currently:\n```' + (feed.format || DEFAULT_TWITTER_FORMAT) + '```',
 			'Please enter the new template in chat.',
 			'',
 			'{page_items}',
@@ -219,9 +218,12 @@ function showPageFeed(page: utils.MessagePage, channelFeed: ChannelFeed, pos: nu
 		]);
 
 		pageTemplate.listen(value => {
-			if (value == 'default') value = null;
-			DiscordFeeds.updateOne({ _id: channelFeed._id }, { $set: { ['feeds.' + pos + '.format']: value } }).exec();
+			if (value.length == 0 || value == 'default') value = null;
+			else value = value.replace(/\</g, '\\<').replace(/\>/g, '\\>');
+
+			DiscordTwitter.updateOne({ _id: channelFeed._id }, { $set: { ['feeds.' + pos + '.format']: value } }).exec();
 			pageTemplate.temporaryMessage('Changed Feed Format.', 3000);
+
 			return true;
 		});
 
@@ -230,8 +232,8 @@ function showPageFeed(page: utils.MessagePage, channelFeed: ChannelFeed, pos: nu
 
 	page.addSelection('Remove', 'Remove the feed from the channel.', (pageRemove) => {
 		pageRemove.addSelection('yes', 'Yes, PERMANENTLY delete the Channel Feeds.', () => {
-			DiscordFeeds.updateOne({ _id: channelFeed._id }, { $unset: { ['feeds.' + pos]: '' } }).exec();
-			RSSFeeds.updateOne({ _id: feed.feed._id }, { $inc: { sending_to: -1 } }).exec();
+			GlobalTwitterFeeds.updateOne({ _id: feed.feed._id }, { $inc: { sending_to: -1 } }).exec();
+			DiscordTwitter.updateOne({ _id: channelFeed._id }, { $pull: { feeds: { feed: feed.feed._id } } }).exec();
 			pageRemove.temporaryMessage(`Deleted <#${channelFeed.channel_id}> Channel Feeds`, 3000);
 		});
 

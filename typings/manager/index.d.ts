@@ -438,7 +438,7 @@ declare namespace DiscordBot {
 		};
 	}
 
-	type PLUGIN_NAMES = 'commands' | 'music' | 'interval' | 'rssfeed' | 'logs' | 'leveling' | 'events';
+	type PLUGIN_NAMES = 'commands' | 'music' | 'interval' | 'logs' | 'leveling' | 'events';
 
 	interface Plugin {
 		[name: string]: PluginItem;

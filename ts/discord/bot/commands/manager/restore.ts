@@ -370,7 +370,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 				if (isImporting('moderation')) {
 					async.mapSeries([
 						guild.setVerificationLevel(items.moderation.verification),
-						guild.setExcplicitContentFilter(items.moderation.content_filter)
+						// TODO: Linode crashes @ this one. guild.setExcplicitContentFilter(items.moderation.content_filter)
 					], (promise, callback) => {
 						if (promise != null) {
 							promise.then(() => setTimeout(() => callback(), 500))

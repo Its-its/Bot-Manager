@@ -2,10 +2,15 @@ import mongoose = require('mongoose');
 import async = require('async');
 
 
-import ModelIntervals = require('../../models/intervals');
-import ModelRSSfeed = require('../../models/rssfeed');
-import ModelDiscordFeed = require('../models/feed');
+import GlobalModelIntervals = require('../../models/intervals');
+import GlobalModelRSSFeed = require('../../models/rssfeed');
+import GlobalModelTwitterFeed = require('../../models/twitterfeed');
 
+
+import DiscordModelFeed = require('../models/feed');
+import DiscordModelTwitter = require('../models/twitter');
+
+import Twit = require('twit');
 import Discord = require('discord.js');
 
 import config = require('../../config');
@@ -16,9 +21,17 @@ import client = require('../client');
 
 mongoose.Promise = global.Promise;
 if (config.debug) mongoose.set('debug', true);
-// mongoose.connect(config.database, { useNewUrlParser: true });
+mongoose.connect(config.database, { useNewUrlParser: true });
 
-console.log('Starting Intervals.');
+var twitter = new Twit({
+	consumer_key:         'dZwMAukw0gd1U3detHh38XvK8',
+	consumer_secret:      'elh1y4iZoqUutXKA86HvfB1yX6xj6vqdAC8c9HBU6ryNxLrmVY',
+	access_token:         '358512140-4r97ewMT0IUOETldmcsEBS3ew0vrPbhKbOBBqkGt',
+	access_token_secret:  'sEk54lu8YyNtxz8IzI3lBLUXl2P4XeTQNig2JMoCOvNxm',
+	timeout_ms:           60*1000,
+	strictSSL:            true
+});
+
 
 client.options.disabledEvents = [
 	// 'READY',
@@ -65,38 +78,31 @@ client.options.disabledEvents = [
 ];
 
 
-client.login(config.bot.discord.token)
-.then(() => {})
-.catch(err => {
-	if (err.message.includes('too many guilds')) {
-		// shard
-		console.log('Too many guilds');
-	}
-});
+client.login(config.bot.discord.token);+
 
 client.on('error', e => console.error(e));
 
 client.on('guildDelete', guild => {
-	ModelDiscordFeed.find({ guild_id: guild.id }, (err, feeds) => {
+	DiscordModelFeed.find({ guild_id: guild.id }, (err, feeds) => {
 		if (err) return console.error(err);
 		if (feeds.length == 0) return;
 
-		// TODO: dec ModelRSSfeed.sending_to
+		// TODO: dec GlobalModelRSSFeed.sending_to
 
-		// ModelRSSfeed.updateOne({  });
+		// GlobalModelRSSFeed.updateOne({  });
 	});
-	ModelIntervals.remove({ guild_id: guild.id }).exec();
+	GlobalModelIntervals.remove({ guild_id: guild.id }).exec();
 });
 
 client.on('channelDelete', (channel: Discord.TextChannel) => {
 	if (channel.type == 'text') {
 		// If channel has RSSFeed deactivate it and set channel_id to null.
-		ModelDiscordFeed.findOneAndUpdate(
+		DiscordModelFeed.findOneAndUpdate(
 			{ guild_id: channel.guild.id, channel_id: channel.id },
 			{ $set: { channel_id: null, active: false, 'feeds.items': [] } },
 			(err, found) => {
 				if (found != null) {
-					ModelRSSfeed.update({ _id: { $in: found['feeds'] } }, { $inc: { sending_to: -1 } }).exec();
+					GlobalModelRSSFeed.update({ _id: { $in: found['feeds'] } }, { $inc: { sending_to: -1 } }).exec();
 				}
 			}
 		);
@@ -105,10 +111,129 @@ client.on('channelDelete', (channel: Discord.TextChannel) => {
 	}
 });
 
-const callAgain = 1000 * 60 * 5;
+const CALL_AGAIN = 1000 * 60 * 5;
 
 
-interface FeedItem {
+
+interface TwitterFeedItem {
+	id: string;
+	text: string;
+	link: string;
+}
+
+interface TwitterFeed extends mongoose.Document {
+	url: string;
+	link: string;
+	xmlUrl: string;
+
+	sending_to: number;
+
+	items: TwitterFeedItem[];
+
+	last_called: Date;
+}
+
+interface ChannelTwitterFeedItem {
+	format: string;
+	active: boolean;
+	items: string[];
+	feed: TwitterFeed;
+};
+
+// Twitter Feeds
+setInterval(() => {
+	DiscordModelTwitter.find({ active: true, last_check: { $lte: Date.now() - CALL_AGAIN } })
+	.populate('feeds.feed')
+	.exec((err, feedDocs) => {
+		if (err != null) return console.error(err);
+		if (feedDocs.length == 0) return console.log('None.');
+
+
+		async.eachLimit(feedDocs, 10, (doc, cbEach) => {
+			// No feeds? Mark as inactive.
+			if (doc.feeds.length == 0) {
+				DiscordModelTwitter.updateOne({ _id: doc._id }, { $set: { active: false } })
+				.exec(() => cbEach());
+				return;
+			}
+
+			var newFeeds: {
+				feed: ChannelTwitterFeedItem,
+				item: TwitterFeedItem
+			}[] = [];
+
+			var feedItems = {};
+
+			for(var i = 0; i < doc.feeds.length; i++) {
+				var feeds = doc.feeds[i];
+
+				feeds.feed.items.forEach(item => {
+					if (feeds.items.indexOf(item.id) == -1) {
+						newFeeds.push({
+							feed: feeds,
+							item: item
+						});
+					}
+				});
+
+				// Saved discord feeds is usually a different length than the Global Feeds.
+				if (feeds.items.length != feeds.feed.items.length || newFeeds.length != 0) {
+					feedItems['feeds.' + i + '.items'] = feeds.feed.items.map(i => i.id);
+				}
+			}
+
+			if (newFeeds.length != 0) {
+				var guild = client.guilds.get(doc.guild_id);
+
+				if (guild == null) {
+					// Remove
+					DiscordModelTwitter.find({ guild_id: doc.guild_id }, (err, feeds) => {
+						var rssIds: string[] = [];
+
+						feeds.map(f => f.feeds.map(f => f.feed))
+						.forEach(f => rssIds = rssIds.concat(f));
+
+						// TODO: Remove dupes
+
+						DiscordModelTwitter.remove({ guild_id: doc.guild_id }).exec();
+					});
+
+					console.error('Guild doesn\'t exist anymore.')
+					return;
+				}
+
+				var channel = <Discord.TextChannel>guild.channels.get(doc.channel_id);
+
+				if (channel == null) {
+					// TODO: Disable
+					console.error('Channel doesn\'t exist anymore.');
+					return;
+				}
+
+				newFeeds.reverse().forEach(opts => {
+					var { item, feed } = opts;
+					channel.send(util.compileFormat(feed.format == null ? util.DEFAULT_TWITTER_FORMAT : feed.format, {
+						text: item.text,
+						link: item.link
+					}))
+					.catch(e => console.error(e));
+				});
+			}
+
+			if (Object.keys(feedItems).length != 0) {
+				DiscordModelTwitter.updateOne({ _id: doc._id }, { $set: feedItems }).exec();
+			}
+
+			cbEach();
+		});
+	});
+}, 1000 * 60);
+
+
+
+// RSS Feed
+
+interface RSSFeedItem {
 	id: string;
 	title: string;
 	description: string;
@@ -120,152 +245,122 @@ interface FeedItem {
 	categories: string[];
 };
 
-interface Feed extends mongoose.Document {
+interface RSSFeed extends mongoose.Document {
 	url: string;
 	link: string;
 	xmlUrl: string;
 
 	sending_to: number;
 
-	items: FeedItem[];
+	items: RSSFeedItem[];
 
 	last_called: Date;
 }
 
-interface ChannelFeedItem {
+interface ChannelRSSFeedItem {
 	format: string;
 	active: boolean;
 	items: string[];
-	feed: Feed;
+	feed: RSSFeed;
 };
 
-
-interface FeedFix extends mongoose.Document {
-	pid: string;
-	active: boolean;
-	guild_id: string;
-	channel_id: string;
-	last_check: Date;
-	feeds: ChannelFeedItem[];
-}
-
-
-
-function asdf() {
-
-// RSS Feed
 setInterval(() => {
-	ModelDiscordFeed.find({ active: true, last_check: { $lte: Date.now() - callAgain } })
+	DiscordModelFeed.find({ active: true, last_check: { $lte: Date.now() - CALL_AGAIN } })
 	.populate('feeds.feed')
 	.exec((err, feedDocs) => {
 		if (err != null) return console.error(err);
 		if (feedDocs.length == 0) return console.log('None.');
 
-		// Split into groups of 10.
-		var grouped: FeedFix[][] = [];
 
-		var count = Math.ceil(feedDocs.length/10);
+		async.eachLimit(feedDocs, 10, (doc, cbEach) => {
+			// No feeds? Mark as inactive.
+			if (doc.feeds.length == 0) {
+				DiscordModelFeed.updateOne({ _id: doc._id }, { $set: { active: false } })
+				.exec(() => cbEach());
+				return;
+			}
 
-		for(var i = 0; i < count; i++) {
-			grouped.push(feedDocs.splice(0, 10));
-		}
+			var newFeeds: {
+				feed: ChannelRSSFeedItem,
+				item: RSSFeedItem
+			}[] = [];
 
-		// TODO: Fix everyLimit
+			var feedItems = {};
 
-		async.every(grouped, (docs, cbEvery) => {
-			// Execute simultaneously.
-			async.each(docs, (doc, cbEach) => {
-				if (doc.feeds.length == 0) {
-					ModelDiscordFeed.updateOne({ _id: doc._id }, { $set: { active: false } })
-					.exec(() => cbEach());
+			for(var i = 0; i < doc.feeds.length; i++) {
+				var feeds = doc.feeds[i];
+
+				feeds.feed.items.forEach(item => {
+					if (feeds.items.indexOf(item.id) == -1) {
+						newFeeds.push({
+							feed: feeds,
+							item: item
+						});
+					}
+				});
+
+				// Saved discord feeds is a different length than the RSS Feeds.
+				if (feeds.items.length != feeds.feed.items.length || newFeeds.length != 0) {
+					feedItems['feeds.' + i + '.items'] = feeds.feed.items.map(i => i.id);
+				}
+			}
+
+			if (newFeeds.length != 0) {
+				var guild = client.guilds.get(doc.guild_id);
+
+				if (guild == null) {
+					// Remove
+					DiscordModelFeed.find({ guild_id: doc.guild_id }, (err, feeds) => {
+						var rssIds: string[] = [];
+
+						feeds.map(f => f.feeds.map(f => f.feed))
+						.forEach(f => rssIds = rssIds.concat(f));
+
+						// TODO: Remove dupes
+
+						DiscordModelFeed.remove({ guild_id: doc.guild_id }).exec();
+					});
+
+					console.error('Guild doesn\'t exist anymore.')
 					return;
 				}
 
-				var newFeeds: {
-					feed: ChannelFeedItem,
-					item: FeedItem
-				}[] = [];
+				var channel = <Discord.TextChannel>guild.channels.get(doc.channel_id);
 
-				var feedItems = {};
-
-				for(var i = 0; i < doc.feeds.length; i++) {
-					var feeds = doc.feeds[i];
-
-					feeds.feed.items.forEach(item => {
-						if (feeds.items.indexOf(item.id) == -1) {
-							newFeeds.push({
-								feed: feeds,
-								item: item
-							});
-						}
-					});
-
-					// Saved discord feeds is a different length than the RSS Feeds.
-					if (feeds.items.length != feeds.feed.items.length || newFeeds.length != 0) {
-						feedItems['feeds.' + i + '.items'] = feeds.feed.items.map(i => i.id);
-					}
+				if (channel == null) {
+					// TODO: Disable
+					console.error('Channel doesn\'t exist anymore.');
+					return;
 				}
 
-				if (newFeeds.length != 0) {
-					var guild = client.guilds.get(doc.guild_id);
+				newFeeds.reverse()
+				.forEach(opts => {
+					var { item, feed } = opts;
+					channel.send(util.compileFormat(feed.format == null ? util.DEFAULT_RSS_FORMAT : feed.format, {
+						title: item.title,
+						date: item.date.toString(),
+						author: item.author,
+						description: item.description,
+						link: item.link,
+						guid: item.guid
+						// tags: feed.tags
+					}))
+					.catch(e => console.error(e));
+				});
+			}
 
-					if (guild == null) {
-						// Remove
-						ModelDiscordFeed.find({ guild_id: doc.guild_id }, (err, feeds) => {
-							var rssIds: string[] = [];
+			if (Object.keys(feedItems).length != 0) {
+				DiscordModelFeed.updateOne({ _id: doc._id }, { $set: feedItems }).exec();
+			}
 
-							feeds.map(f => f.feeds.map(f => f.feed))
-							.forEach(f => rssIds = rssIds.concat(f));
-
-							// TODO: Remove dupes
-
-							ModelDiscordFeed.remove({ guild_id: doc.guild_id }).exec();
-						});
-
-						console.error('Guild doesn\'t exist anymore.')
-						return;
-					}
-
-					var channel = <Discord.TextChannel>guild.channels.get(doc.channel_id);
-
-					if (channel == null) {
-						// Disable
-						console.error('Channel doesn\'t exist anymore.');
-						return;
-					}
-
-					newFeeds.forEach(opts => {
-						var { item, feed } = opts;
-						channel.send(util.compileFormat(feed.format == null ? util.DEFAULT_FORMAT : feed.format, {
-							title: item.title,
-							date: item.date,
-							author: item.author,
-							description: item.description,
-							link: item.link,
-							guid: item.guid
-							// tags: feed.tags
-						}))
-						.catch(e => console.error(e));
-					});
-				}
-
-				if (Object.keys(feedItems).length != 0) {
-					ModelDiscordFeed.updateOne({ _id: doc._id }, { $set: feedItems }).exec();
-				}
-
-				// console.log(feedItems);
-
-				// console.log(JSON.stringify(doc, null, 4));
-
-				cbEach();
-			}, () => cbEvery());
+			cbEach();
 		});
 	});
 }, 1000 * 60);
 
 // Intervals
 setInterval(() => {
-	ModelIntervals.find({ active: true, nextCall: { $lt: Date.now() } })
+	GlobalModelIntervals.find({ active: true, nextCall: { $lt: Date.now() } })
 	.then(items => {
 		if (items.length == 0) return;
 
@@ -309,5 +404,3 @@ setInterval(() => {
 		});
 	}, e => console.error(e));
 }, 1000 * 60);
-
-}

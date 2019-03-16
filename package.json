@@ -4,7 +4,9 @@
     "discord_games": "nodemon src/discord --delay 3 -- --client games",
     "discord_interval": "nodemon src/discord --delay 3 -- --client interval",
     "discord_master": "nodemon src/discord/master --delay 3",
-    "discord_music": "nodemon src/discord --delay 3 -- --client music"
+    "discord_music": "nodemon src/discord --delay 3 -- --client music",
+
+    "grabber": "nodemon src/rssgrabber --delay 3"
   },
   "dependencies": {
     "async": "^2.6.1",
@@ -35,6 +37,7 @@
     "socket.io": "^2.1.1",
     "socket.io-client": "^2.1.1",
     "socket.io-stream": "^0.9.1",
+    "twit": "2.2.11",
     "uws": "^99.0.0",
     "vhost": "^3.0.2",
     "winston": "^3.1.0",
@@ -54,6 +57,7 @@
     "@types/sharp": "^0.17.10",
     "@types/socket.io": "^1.4.38",
     "@types/socket.io-client": "^1.4.32",
+    "@types/twit": "2.2.21",
     "@types/winston": "^2.4.4"
   }
 }

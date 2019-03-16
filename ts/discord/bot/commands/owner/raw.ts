@@ -24,10 +24,7 @@ class Raw extends Command {
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) return Command.info([[ 'Description', this.description ], [ 'Command Usage', 'raw <message>' ]]);
 
-		return Command.info([[
-			'Raw Message',
-			params.map(p => p.replace(/\</g, '\\<').replace(/\>/g, '\\>')).join(' ')
-		]])
+		message.channel.send(params.map(p => p.replace(/\</g, '\\<').replace(/\>/g, '\\>')).join(' '));
 	}
 }
 

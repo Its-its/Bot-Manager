@@ -1,11 +1,7 @@
 console.log('DISCORD: BOT');
 
-import Command = require('./command');
-
-
 import mongoose = require('mongoose');
 import * as Discord from 'discord.js';
-import * as Events from 'events';
 
 import logger = require('../logging');
 
@@ -31,8 +27,8 @@ import limits = require('../limits');
 commandPlugin.defaultCommands.initCommands();
 
 // Commands
-let BlacklistCmd =  commandPlugin.defaultCommands.get('blacklist');
-let PunishmentCmd = commandPlugin.defaultCommands.get('punishment');
+const BlacklistCmd =  commandPlugin.defaultCommands.get('blacklist');
+const PunishmentCmd = commandPlugin.defaultCommands.get('punishment');
 
 
 mongoose.Promise = global.Promise;
@@ -40,11 +36,12 @@ if (config.debug) mongoose.set('debug', true);
 mongoose.connect(config.database, { useNewUrlParser: true });
 
 import client = require('../client');
+
 client.options.disabledEvents = [
 	'TYPING_START'
 ];
 
-let events: NewNode = new Events();
+
 
 
 client.on('ready', () => {
@@ -247,9 +244,9 @@ client.on('guildCreate', guild => {
 					} else {
 						if (newServer) {
 							server = new DiscordServers({
-								user_id: validation.user_id,
+								// user_id: validation.user_id,
 								// bot_id: item.id,
-								server_id: validation.listener_id,
+								server_id: guild.id,
 								key: uniqueID(16)
 							});
 
@@ -404,10 +401,5 @@ client.login(config.bot.discord.token);
 // - guildMemberUpdate
 
 export {
-	client,
-	events
+	client
 };
-
-interface NewNode extends NodeJS.EventEmitter {
-	on(event: 'message', listener: (message: Discord.Message, userOptions: Server) => void): this;
-}
