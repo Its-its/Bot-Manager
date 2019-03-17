@@ -1,3 +1,8 @@
+/** INFORMATION
+ * Restore will restore a backup of a guild. It requires either the guild ID or the backup id.
+ *
+*/
+
 import Discord = require('discord.js');
 import DiscordServer = require('../../GuildServer');
 

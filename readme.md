@@ -49,10 +49,6 @@ Moderation
 	Ignore,
 	Prune
 
-Owner
-	Health
-	Raw
-
 Plugins
 	Leveling,
 	Music,
