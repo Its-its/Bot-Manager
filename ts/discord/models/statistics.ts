@@ -5,12 +5,13 @@ let Schema = mongoose.Schema;
 // TODO: Every 5 minutes Activity for major things like; music playing, chat messages so I know when peaks are.
 
 // TODO: Send update every 30 minutes.
-const DailyActivity = new Schema({
+const DailyStats = new Schema({
 	guild_count: { type: Number, default: 0 },
 	user_count: { type: Number, default: 0 },
 
-	// guild_chat_count: { type: Number, default: 0 },
-	// private_chat_count: { type: Number, default: 0 },
+	guild_user_chat_count: { type: Number, default: 0 },
+	// private_member_chat_count: { type: Number, default: 0 },
+	guild_bot_command_count: { type: Number, default: 0 },
 
 	// music_plays_count: { type: Number, default: 0 },
 	// music_bandwidth: { type: Number, default: 0 },
@@ -24,4 +25,4 @@ const DailyActivity = new Schema({
 	created_at: Date // Make 12:00 AM
 });
 
-export = mongoose.model('discord_activity_daily', DailyActivity);
+export = mongoose.model('discord_statistics_daily', DailyStats);

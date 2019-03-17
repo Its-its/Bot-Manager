@@ -581,6 +581,22 @@ class Server extends Changes {
 		return true;
 	}
 
+	public removeIgnore(type: 'member' | 'channel', id: string): boolean {
+		if (type == 'member') {
+			var indexOf = this.moderation.ignoredUsers.indexOf(id);
+
+			if (indexOf != -1) this.moderation.ignoredUsers.splice(indexOf, 1);
+
+			return indexOf != -1;
+		} else {
+			var indexOf = this.moderation.ignoredChannels.indexOf(id);
+
+			if (indexOf != -1) this.moderation.ignoredChannels.splice(indexOf, 1);
+
+			return indexOf != -1;
+		}
+	}
+
 	public clearIgnoreList(list: 'member' | 'channel' | 'all') {
 		if (list == 'member') {
 			this.moderation.ignoredUsers = [];

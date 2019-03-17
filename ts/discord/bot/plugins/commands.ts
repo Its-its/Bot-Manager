@@ -4,18 +4,19 @@ import Server = require('../GuildServer');
 import CommandManager = require('../../../command-manager');
 import defaultCommands = require('../commands');
 
+import limits = require('../../limits');
 
 function isEnabled(server: Server): boolean {
 	return server.plugins.commands == null ? true : server.plugins.commands.enabled;
 }
 
 
-function onMessage(bot_id: string, message: Discord.Message, server: Server): boolean {
-	if (message.author.bot) return true;
+function onDidCallCommand(bot_id: string, message: Discord.Message, server: Server): boolean {
+	if (message.author.bot) return false;
 
 	if (!server.memberIgnored(message.member.id)) {
 		if (CommandManager.isCallingCommand(server.getPrefix(), bot_id, message.content)) {
-			// TODO: limit how fast you can send commands.
+			if (!limits.canCallCommand(message.guild.id)) return false;
 
 			if (message.content.trim() == `<@${bot_id}>` || message.content.trim() == `<@!${bot_id}>`) {
 				message.channel.send(new Discord.RichEmbed({
@@ -31,13 +32,13 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 						// }
 					]
 				}));
-				return true;
+				return false;
 			}
 
 
 			var commandMessage = CommandManager.getCommandMessage(server.getPrefix(), bot_id, message.content).trim();
 
-			if (commandMessage.length == 0) return true;
+			if (commandMessage.length == 0) return false;
 
 			var commName = commandMessage.split(' ', 2)[0].toLowerCase();
 
@@ -56,7 +57,9 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 
 
 			// Not enabled? Not "plugin" or "perms"? Doesn't have bypasstoggle perm? return
-			if (!isEnabled(server) && commName != 'plugin' && commName != 'perms' && !server.memberHasExactPerm(message.member, 'commands.bypasstoggle')) return true;
+			if (!isEnabled(server) && commName != 'plugin' && commName != 'perms' && !server.memberHasExactPerm(message.member, 'commands.bypasstoggle')) {
+				return false;
+			}
 
 			// Check if cannot call command.
 			// Not admin? not enabled?
@@ -68,13 +71,13 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 				console.error(e);
 			}
 
-			return true;
+			return false;
 		} else {
 			var phrase = server.findPhrase(message.content.split(' '));
 
 			if (phrase != null && phrase.responses.length != 0) {
 				phrase.responses.forEach(r => parseOptions(r));
-				return true;
+				return false;
 			}
 		}
 
@@ -122,14 +125,13 @@ function onMessage(bot_id: string, message: Discord.Message, server: Server): bo
 
 	}
 
-	// Message check otherwise?
-	return false;
+	return true;
 }
 
 // TODO: Role updates
 
 export {
 	isEnabled,
-	onMessage,
+	onDidCallCommand,
 	defaultCommands
 };

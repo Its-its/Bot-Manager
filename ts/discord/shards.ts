@@ -1,3 +1,5 @@
+import {Model, Document} from 'mongoose';
+
 import { Shard, ShardingManager } from 'discord.js';
 import socket = require('socket.io-client');
 
@@ -67,12 +69,49 @@ function launch(client: string) {
 		.then(shards => {
 			shards.forEach(s => SHARD_ID_STATUS[s.id] = s.status);
 		})
-		.catch(e => console.error(e));
+		.catch(console.error);
 	}, 1000 * 60 * 5);
 
 	manager.spawn();
 
 	initMasterLink(client);
+
+	if (client == 'bot') botClientSetup();
+}
+
+function botClientSetup() {
+	const ModelStats: Model<Document> = require('./models/statistics');
+
+	setInterval(() => {
+		manager.broadcastEval('var opts = { user_count: this.users.size, guild_count: this.guilds.size }; opts;')
+		.then(shards => {
+			var guild_count = 0, user_count = 0;
+
+			shards.forEach(s => {
+				guild_count += s.guild_count;
+				user_count += s.user_count;
+			});
+
+			var date = new Date();
+			date.setUTCHours(0);
+			date.setUTCSeconds(0);
+			date.setUTCMilliseconds(0);
+
+			ModelStats.updateOne({
+				created_at: date
+			}, {
+				$set: {
+					guild_count: guild_count,
+					user_count: user_count
+				},
+				$setOnInsert: {
+					created_at: date
+				}
+			}, { upsert: true })
+			.exec();
+		})
+		.catch(console.error);
+	}, 30 * 60 * 60 * 1000);
 }
 
 function initMasterLink(clientName: string) {

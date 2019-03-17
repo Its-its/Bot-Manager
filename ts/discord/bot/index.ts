@@ -9,6 +9,8 @@ import DiscordServers = require('../models/servers');
 import Validation = require('../../site/models/validation');
 import Bots = require('../../site/models/bots');
 
+import ModelStats = require('../models/statistics');
+
 
 // Plugins
 import commandPlugin = require('./plugins/commands');
@@ -41,17 +43,46 @@ client.options.disabledEvents = [
 	'TYPING_START'
 ];
 
+let statistics = defaultStats();
 
-
+function defaultStats() {
+	return {
+		guild_user_chat_count: 0,
+		guild_bot_command_count: 0
+	};
+}
 
 client.on('ready', () => {
 	logger.info(' - Client ID:' + client.user.id);
 	logger.info(' - Found ' + client.guilds.size + ' Guild(s).');
 
-	client.guilds.forEach(g => logger.info(' - - ' + g.id +  ' | ' + g.region + ' | ' + g.name));
+	// client.guilds.forEach(g => logger.info(' - - ' + g.id +  ' | ' + g.region + ' | ' + g.name));
 	client.user.setActivity('the spacetime continuum', { type: 'LISTENING' });
 
-	client.shard.send('ready');
+
+	setInterval(() => {
+		var statistics_copy = statistics;
+
+		// Reset stats since we now have a copy of it and it gets added to the doc.
+		statistics = defaultStats();
+
+
+		var date = new Date();
+		date.setUTCHours(0);
+		date.setUTCSeconds(0);
+		date.setUTCMilliseconds(0);
+
+		ModelStats.updateOne({
+			created_at: date
+		}, {
+			$inc: statistics_copy,
+			$setOnInsert: {
+				created_at: date
+			}
+		}, { upsert: true }).exec();
+	}, 15 * 60 * 60 * 1000);
+
+	if (client.shard != null) client.shard.send('ready');
 });
 
 
@@ -95,20 +126,26 @@ client.on('message', msg => {
 
 	try {
 		guildClient.get(msg.guild.id, server => {
-			if (server == null) return new Server(msg.guild.id, {
-				region: msg.guild.region,
-				name: msg.guild.name,
-				iconURL: msg.guild.iconURL,
-				createdAt: msg.guild.createdTimestamp,
-				memberCount: msg.guild.memberCount,
-				ownerID: msg.guild.ownerID
-			}).save();
+			if (server == null) {
+				server = new Server(msg.guild.id, {
+					region: msg.guild.region,
+					name: msg.guild.name,
+					iconURL: msg.guild.iconURL,
+					createdAt: msg.guild.createdTimestamp,
+					memberCount: msg.guild.memberCount,
+					ownerID: msg.guild.ownerID
+				});
+
+				server.save();
+			}
 
 			if (server.channelIgnored(msg.channel.id)) return;
 
-			if (!limits.canCallCommand(msg.guild.id)) return;
+			if (commandPlugin.onDidCallCommand(client.user.id, msg, server)) {
+				statistics.guild_bot_command_count++;
+			} else {
+				statistics.guild_user_chat_count++;
 
-			if (!commandPlugin.onMessage(client.user.id, msg, server)) {
 				BlacklistCmd.onMessage(msg, server);
 
 				levelsPlugin.onMessage(msg, server);
@@ -275,7 +312,17 @@ client.on('channelDelete', channel => {
 	if (channel.type != 'dm' && channel.type != 'group') {
 		guildClient.get((<Discord.GuildChannel>channel).guild.id, server => {
 			if (server == null) return;
+
 			BlacklistCmd.onChannelDelete(<Discord.GuildChannel>channel, server);
+
+			var needsSaving = false;
+
+			if (server.channelIgnored(channel.id)) {
+				server.removeIgnore('channel', channel.id);
+				needsSaving = true;
+			}
+
+			if (needsSaving) server.save();
 		});
 	}
 });
