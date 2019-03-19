@@ -59,7 +59,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 							return;
 						}
 
-						showChannel(page, feed);
+						showChannel(server, message.member, page, feed);
 					});
 				});
 			});
@@ -108,10 +108,10 @@ interface ChannelFeed extends mongoose.Document {
 	feeds: ChannelFeedItem[];
 }
 
-function showChannel(page: utils.MessagePage, channelFeed: ChannelFeed) {
+function showChannel(server: DiscordServer, guildMember: Discord.GuildMember, page: utils.MessagePage, channelFeed: ChannelFeed) {
 	var channel = <Discord.TextChannel>page.channel;
 
-	const channelExists = channel.guild.channels.has(channelFeed.channel_id);
+	// const channelExists = channel.guild.channels.has(channelFeed.channel_id);
 
 	page.setFormat([
 		'**Active:** ' + (channelFeed.active ? 'Yes' : 'No'),
@@ -125,44 +125,50 @@ function showChannel(page: utils.MessagePage, channelFeed: ChannelFeed) {
 		'Always select responsibly.'
 	]);
 
-	if (!channelExists) {
-		page.addSelection('Toggle', 'Enable/Disable the feeds in the channel.', () => {
-			channelFeed.active = !channelFeed.active;
-			DiscordFeeds.updateOne({ _id: channelFeed._id }, { $set: { active: channelFeed.active } }).exec();
-			// TODO
+	// TODO: I don't remmeber why this was here.
+
+	// if (!channelExists) {
+	// 	page.addSelection('Toggle', 'Enable/Disable the feeds in the channel.', () => {
+	// 		channelFeed.active = !channelFeed.active;
+	// 		DiscordFeeds.updateOne({ _id: channelFeed._id }, { $set: { active: channelFeed.active } }).exec();
+	// 		// TODO
+	// 	});
+	// }
+
+	if (this.hasPerms(guildMember, server, PERMISSIONS.MOVE)) {
+		page.addSelection('Move', 'Moves the Channel Feed to a new channel.', (pageMove) => {
+			pageMove.setFormat([
+				'Send Channel ID or # to move the feed to that channel.​',
+				'',
+				'{page_items}'
+			]);
+
+			pageMove.listen(message => moveFeedToDifferentChannel(message, channelFeed._id, page, pageMove));
+
+			pageMove.display();
 		});
 	}
 
-	page.addSelection('Move', 'Moves the Channel Feed to a new channel.', (pageMove) => {
-		pageMove.setFormat([
-			'Send Channel ID or # to move the feed to that channel.​',
-			'',
-			'{page_items}'
-		]);
+	if (this.hasPerms(guildMember, server, PERMISSIONS.REMOVE)) {
+		page.addSelection('Delete', 'Permanently delete all Channel Feeds.', (page) => {
+			page.addSelection('yes', 'Yes, PERMANENTLY delete all Channel Feeds.', () => {
+				removeMultipleFeedsFromChannel(channelFeed.feeds.map(f => mongoose.Types.ObjectId(f.feed._id)), channelFeed._id);
+				page.temporaryMessage(`Deleted <#${channelFeed.channel_id}> Channel Feeds`, 3000);
+			});
 
-		pageMove.listen(message => moveFeedToDifferentChannel(message, channelFeed._id, page, pageMove));
+			page.addSelection('no', 'No, go back to previous page.', () => {
+				page.back();
+			});
 
-		pageMove.display();
-	});
-
-	page.addSelection('Delete', 'Permanently delete all Channel Feeds.', (page) => {
-		page.addSelection('yes', 'Yes, PERMANENTLY delete all Channel Feeds.', () => {
-			removeMultipleFeedsFromChannel(channelFeed.feeds.map(f => mongoose.Types.ObjectId(f.feed._id)), channelFeed._id);
-			page.temporaryMessage(`Deleted <#${channelFeed.channel_id}> Channel Feeds`, 3000);
+			page.display();
 		});
-
-		page.addSelection('no', 'No, go back to previous page.', () => {
-			page.back();
-		});
-
-		page.display();
-	});
+	}
 
 	channelFeed.feeds.forEach((feed, i) => {
 		page.addSelection(
 			String(i + 1),
 			'[' + (channelFeed.active ? (feed.active ? 'Active' : 'Disabled') : 'Disabled') + '] ' + feed.feed.link.slice(0, 50),
-			next => showPageFeed(next, channelFeed, i)
+			next => showPageFeed(server, guildMember, next, channelFeed, i)
 		);
 	});
 
@@ -210,7 +216,7 @@ function removeFeedFromChannel(mongoGlobalFeedId: any, mongoDiscordFeedId: any) 
 
 const DEFAULT_RSS_FORMAT = ':newspaper:  **{title}**\n\n{link}';
 
-function showPageFeed(page: utils.MessagePage, channelFeed: ChannelFeed, pos: number) {
+function showPageFeed(server: DiscordServer, guildMember: Discord.GuildMember, page: utils.MessagePage, channelFeed: ChannelFeed, pos: number) {
 	var feed = channelFeed.feeds[pos];
 
 	page.setFormat([
@@ -230,39 +236,43 @@ function showPageFeed(page: utils.MessagePage, channelFeed: ChannelFeed, pos: nu
 	// 	});
 	// }
 
-	page.addSelection('Template', 'Change the feed template', (pageTemplate) => {
-		pageTemplate.setFormat([
-			'Template currently:',
-			'```' + (feed.format || DEFAULT_RSS_FORMAT) + '```',
-			'Please enter the new template in chat.',
-			'Values: ``{title}, {link}, more to be added...``',
-			'',
-			'{page_items}',
-			'',
-			'Always select responsibly.'
-		]);
+	if (this.hasPerms(guildMember, server, PERMISSIONS.EDIT_TEMPLATE)) {
+		page.addSelection('Template', 'Change the feed template', (pageTemplate) => {
+			pageTemplate.setFormat([
+				'Template currently:',
+				'```' + (feed.format || DEFAULT_RSS_FORMAT) + '```',
+				'Please enter the new template in chat.',
+				'Values: ``{title}, {link}, more to be added...``',
+				'',
+				'{page_items}',
+				'',
+				'Always select responsibly.'
+			]);
 
-		pageTemplate.listen(value => {
-			changeFeedTemplate(value, channelFeed._id, pos);
-			pageTemplate.temporaryMessage('Changed Feed Format.', 3000);
-			return true;
+			pageTemplate.listen(value => {
+				changeFeedTemplate(value, channelFeed._id, pos);
+				pageTemplate.temporaryMessage('Changed Feed Format.', 3000);
+				return true;
+			});
+
+			pageTemplate.display();
 		});
+	}
 
-		pageTemplate.display();
-	});
+	if (this.hasPerms(guildMember, server, PERMISSIONS.REMOVE)) {
+		page.addSelection('Remove', 'Remove the feed from the channel.', (pageRemove) => {
+			pageRemove.addSelection('yes', 'Yes, PERMANENTLY delete the Channel Feeds.', () => {
+				removeFeedFromChannel(feed.feed._id, channelFeed._id);
+				pageRemove.temporaryMessage(`Deleted <#${channelFeed.channel_id}> Channel Feeds`, 3000);
+			});
 
-	page.addSelection('Remove', 'Remove the feed from the channel.', (pageRemove) => {
-		pageRemove.addSelection('yes', 'Yes, PERMANENTLY delete the Channel Feeds.', () => {
-			removeFeedFromChannel(feed.feed._id, channelFeed._id);
-			pageRemove.temporaryMessage(`Deleted <#${channelFeed.channel_id}> Channel Feeds`, 3000);
+			pageRemove.addSelection('no', 'No, go back to previous page.', () => {
+				pageRemove.back();
+			});
+
+			pageRemove.display();
 		});
-
-		pageRemove.addSelection('no', 'No, go back to previous page.', () => {
-			pageRemove.back();
-		});
-
-		pageRemove.display();
-	});
+	}
 
 	page.display();
 }

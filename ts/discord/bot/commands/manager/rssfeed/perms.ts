@@ -2,9 +2,11 @@
 
 const PERMS = {
 	MAIN: 'commands.rssfeed',
+	TOGGLE: 'toggle',
 	ADD: 'add',
 	REMOVE: 'remove',
-	FORMAT: 'format',
+	MOVE: 'move',
+	EDIT_TEMPLATE: 'template',
 	LIST: 'list'
 };
 
