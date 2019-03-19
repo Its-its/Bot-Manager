@@ -6,20 +6,21 @@ import Command = require('../../command');
 import utils = require('../../../utils');
 
 const PERMS = {
-	MAIN: 'commands.info'
+	MAIN: 'commands.info',
+	MEMBER: 'member'
 };
 
 for(var name in PERMS) {
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
-// if (!this.hasPerms(message.member, server, PERMS.MAIN)) return Command.noPermsMessage('');
 
 class Info extends Command {
 	constructor() {
 		super('info', false, false);
 
 		this.perms = Object.values(PERMS);
+		this.description = 'Shows information about a guild member.';
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
@@ -27,25 +28,26 @@ class Info extends Command {
 			return Command.info([
 				[
 					'Info',
-					'info'
+					'info <@user>'
 				]
 			]);
 		}
 
-		// TODO: Finish
+		var discordId = params.shift();
+		var idType = utils.getIdType(discordId);
 
-		var id = params.shift();
-		var type = utils.getIdType(id);
-		id = utils.strpToId(id);
+		discordId = utils.strpToId(discordId);
 
-		if (type == null) return Command.error([[ 'Info', 'Unknown type' ]]);
+		if (idType == null) return Command.error([[ 'Info', 'Unknown type' ]]);
 
-		switch(type) {
+		switch(idType) {
 			case 'member':
-				var member = message.guild.members.get(id);
-				if (member == null) return Command.error([[ 'Info', 'Member not in Guild!' ]]);
+				if (!this.hasPerms(message.member, server, PERMS.MEMBER)) return Command.noPermsMessage('Info');
 
-				var roles = member.roles.array()
+				var guildMember = message.guild.members.get(discordId);
+				if (guildMember == null) return Command.error([[ 'Info', 'Member not in Guild!' ]]);
+
+				var roles = guildMember.roles.array()
 				.filter(r => r.name != '@everyone')
 				.map(r => r.name)
 				.join(', ');
@@ -57,41 +59,41 @@ class Info extends Command {
 					embed: {
 						color: Command.InfoColor,
 						author: {
-							name: member.user.tag,
-							icon_url: member.user.displayAvatarURL
+							name: guildMember.user.tag,
+							icon_url: guildMember.user.displayAvatarURL
 						},
 						thumbnail: {
-							url: member.user.displayAvatarURL
+							url: guildMember.user.displayAvatarURL
 						},
 						fields: [
 							{
 								name: 'ID',
-								value: member.user.id,
+								value: guildMember.user.id,
 								inline: true
 							},
 							{
 								name: 'Status',
-								value: member.presence.status,
+								value: guildMember.presence.status,
 								inline: true
 							},
 							{
 								name: 'Nickname',
-								value: member.nickname || 'None',
+								value: guildMember.nickname || 'None',
 								inline: true
 							},
 							{
 								name: 'Game',
-								value: member.presence.game == null ? 'None' : member.presence.game.name,
+								value: guildMember.presence.game == null ? 'None' : guildMember.presence.game.name,
 								inline: true
 							},
 							{
 								name: 'Joined',
-								value: member.joinedAt.toDateString(),
+								value: guildMember.joinedAt.toDateString(),
 								inline: true
 							},
 							{
 								name: 'Registered',
-								value: member.user.createdAt.toDateString(),
+								value: guildMember.user.createdAt.toDateString(),
 								inline: true
 							},
 							{

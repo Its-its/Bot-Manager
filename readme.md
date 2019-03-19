@@ -7,7 +7,7 @@ List of things needing fixes/todo:
 - Shard between bot/music/etc. correctly.
 - Fix leveling
 - Implement from Channel for Message Command
-
+- Move Command Usage Params into own object for greater use of them.
 
 Double Check:
 - Punishments
@@ -19,19 +19,9 @@ Code Cleanup since all I did was keep mindlessly adding commands.
 ## Need to Audit:
 
 Manager
-	Options,
-	Plugin,
-	Rank,
-	Backup,
-	Restore,
-	Message,
+	Backup
+	Restore
 	TwitterFeed
-
-Misc
-	Help,
-	Info,
-	Uptime,
-	Random
 
 Moderation
 	Mute,

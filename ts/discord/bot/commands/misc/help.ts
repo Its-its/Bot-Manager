@@ -11,12 +11,12 @@ class Help extends Command {
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
-		var commands = (<{[str: string]: Command[]}>Commands.list());
-		var categoryNames: any[] = Object.keys(commands).map(c => [ c, c.toLowerCase(), commands[c].length ]);
+		var commandList = (<{[str: string]: Command[]}>Commands.list());
+		var commandCategories: [string, string, number][] = Object.keys(commandList).map(c => [ c, c.toLowerCase(), commandList[c].length ]);
 
 		var commandTotal = 0;
 
-		categoryNames.forEach(c => commandTotal += c[2]);
+		commandCategories.forEach(c => commandTotal += c[2]);
 
 		if (params.length == 0) {
 			var lines = [
@@ -25,8 +25,8 @@ class Help extends Command {
 				server.getPrefix() + 'help all'
 			];
 
-			for(var i = 0; i < categoryNames.length; i++) {
-				var cat = categoryNames[i];
+			for(var i = 0; i < commandCategories.length; i++) {
+				var cat = commandCategories[i];
 				if (cat[1] != 'owner') lines.push(server.getPrefix() + 'help ' + cat[1]);
 			}
 
@@ -40,9 +40,9 @@ class Help extends Command {
 			]);
 		}
 
-		var name = params.shift().toLowerCase();
+		var paramHelpName = params.shift().toLowerCase();
 
-		if (name == 'all') {
+		if (paramHelpName == 'all') {
 			var each = [
 				[
 					'**All Commands**',
@@ -52,17 +52,17 @@ class Help extends Command {
 
 			var length = each[0].length;
 
-			for(var i = 0; i < categoryNames.length; i++) {
-				var categoryName = categoryNames[i];
+			for(var i = 0; i < commandCategories.length; i++) {
+				var categoryInfo = commandCategories[i];
 
-				if (categoryName[1] == 'owner') continue;
+				if (categoryInfo[1] == 'owner') continue;
 
-				var categoryCommands = commands[categoryName[0]];
+				var commandsInCategory = commandList[categoryInfo[0]];
 
 				each.push([
-					`**${categoryName[0]}**`,
+					`**${categoryInfo[0]}**`,
 					Command.table(['Name', 'Perms', 'Description'],
-						categoryCommands.map(c =>
+						commandsInCategory.map(c =>
 							[
 								c.commandName[0],
 								c.hasPermsCount(message.member, server, c.perms) + '/' + c.perms.length,
@@ -85,18 +85,28 @@ class Help extends Command {
 			return;
 		}
 
-		if (name == 'owner') return;
+		if (paramHelpName == 'owner') return;
 
 		// List commands in a category
-		for(var i = 0; i < categoryNames.length; i++) {
-			var categoryName = categoryNames[i];
+		for(var i = 0; i < commandCategories.length; i++) {
+			var categoryInfo = commandCategories[i];
 
-			if (categoryName[1] == name) {
-				var categoryCommands = commands[categoryName[0]];
-				return Command.info([[
-					'Commands in Category ' + categoryName[0],
-					'_Temporary design_\n' + categoryCommands.map(c => server.getPrefix() + c.commandName[0] + ' | ' + (c.description || 'No Description Available.')).join('\n')
-				]]);
+			if (categoryInfo[1] == paramHelpName) {
+				var commandsInCategory = commandList[categoryInfo[0]];
+
+				message.channel.send(`**${categoryInfo[0]}**\n` +
+					Command.table(['Name', 'Perms', 'Description'],
+						commandsInCategory.map(c =>
+							[
+								c.commandName[0],
+								c.hasPermsCount(message.member, server, c.perms) + '/' + c.perms.length,
+								c.description
+							]
+						)
+					)
+				);
+
+				return;
 			}
 		}
 

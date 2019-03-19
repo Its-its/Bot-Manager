@@ -17,6 +17,7 @@ for(var name in PERMS) {
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
+// TODO: Make ranks store sperately from main json. Lots of ranks on players (which are common) on large servers will cause major lag spikes every time it has to parse it.
 
 class Rank extends Command {
 	constructor() {
@@ -37,15 +38,15 @@ class Rank extends Command {
 			]);
 		}
 
-		var member = message.member;
-		var roleId;
+		var guildNember = message.member;
+		var roleId: string;
 
-		var type = params.shift();
-		var val = params.shift();
+		var parameterBeingCalled = params.shift();
+		var valueOfParameter = params.shift();
 
-		switch (type) {
+		switch (parameterBeingCalled) {
 			case 'list':
-				if (!this.hasPerms(message.member, server, PERMS.LIST)) return Command.noPermsMessage('Rank');
+				if (!this.hasPerms(guildNember, server, PERMS.LIST)) return Command.noPermsMessage('Rank');
 
 				if (ranks.length == 0) return Command.info([[ 'Public Ranks:', 'No Ranks Public' ]]);
 
@@ -57,46 +58,54 @@ class Rank extends Command {
 				return Command.info([[ 'Public Ranks:', Command.table([], roles) ]]);
 
 			case 'join':
-				if (!this.hasPerms(message.member, server, PERMS.JOIN)) return Command.noPermsMessage('Rank');
+				if (!this.hasPerms(guildNember, server, PERMS.JOIN)) return Command.noPermsMessage('Rank');
 
-				if (val == null) return Command.error([['ERROR!', 'Please specify the role!']]);
-				if ((roleId = getRoleId(val)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
+				if (valueOfParameter == null) return Command.error([['ERROR!', 'Please specify the role!']]);
+				if ((roleId = getRoleId(valueOfParameter)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
 				if (!server.isRank(roleId)) return Command.error([['ERROR!', 'That is not a public rank!']]);
-				if (member.roles.has(val)) return Command.error([['ERROR!', 'You already have the role!']]);
-				member.addRole(roleId, 'Public Rank - User requested.')
+				if (guildNember.roles.has(valueOfParameter)) return Command.error([['ERROR!', 'You already have the role!']]);
+
+				guildNember.addRole(roleId, 'Public Rank - User requested.')
 				.then(s => {}, reason => { console.error(' - ' + reason); })
 				.catch(reason => console.error(reason));
+
 				break;
 
 			case 'leave':
-				if (!this.hasPerms(message.member, server, PERMS.LEAVE)) return Command.noPermsMessage('Rank');
+				if (!this.hasPerms(guildNember, server, PERMS.LEAVE)) return Command.noPermsMessage('Rank');
 
-				if (val == null) return Command.error([['ERROR!', 'Please specify the role!']]);
-				if ((roleId = getRoleId(val)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
+				if (valueOfParameter == null) return Command.error([['ERROR!', 'Please specify the role!']]);
+				if ((roleId = getRoleId(valueOfParameter)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
 				if (!server.isRank(roleId)) return Command.error([['ERROR!', 'That is not a public rank!']]);
-				if (!member.roles.has(val)) return Command.error([['ERROR!', 'You already have the role!']]);
-				member.removeRole(roleId, 'Public Rank - User requested.')
+				if (!guildNember.roles.has(valueOfParameter)) return Command.error([['ERROR!', 'You already have the role!']]);
+
+				guildNember.removeRole(roleId, 'Public Rank - User requested.')
 				.then(s => {}, reason => { console.error(' - ' + reason); })
 				.catch(reason => console.error(reason));
+
 				break;
 
 			// Add/Remove role from public ranks.
 			case 'add':
-				if (!this.hasPerms(message.member, server, PERMS.ADD)) return Command.noPermsMessage('Rank');
+				if (!this.hasPerms(guildNember, server, PERMS.ADD)) return Command.noPermsMessage('Rank');
 
-				if (val == null) return Command.error([['ERROR!', 'Please specify the role!']]);
-				if (server.isRank(val)) return Command.error([['ERROR!', 'Rank already exists!']]);
-				if ((roleId = getRoleId(val)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
+				if (valueOfParameter == null) return Command.error([['ERROR!', 'Please specify the role!']]);
+				if (server.isRank(valueOfParameter)) return Command.error([['ERROR!', 'Rank already exists!']]);
+				if ((roleId = getRoleId(valueOfParameter)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
+
 				server.addRank(roleId);
+
 				break;
 
 			case 'remove':
-				if (!this.hasPerms(message.member, server, PERMS.REMOVE)) return Command.noPermsMessage('Rank');
+				if (!this.hasPerms(guildNember, server, PERMS.REMOVE)) return Command.noPermsMessage('Rank');
 
-				if (val == null) return Command.error([['ERROR!', 'Please specify the role!']]);
-				if (!server.isRank(val)) return Command.error([['ERROR!', 'Rank already removed!']]);
-				if ((roleId = getRoleId(val)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
+				if (valueOfParameter == null) return Command.error([['ERROR!', 'Please specify the role!']]);
+				if (!server.isRank(valueOfParameter)) return Command.error([['ERROR!', 'Rank already removed!']]);
+				if ((roleId = getRoleId(valueOfParameter)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
+
 				server.removeRank(roleId);
+
 				break;
 		}
 

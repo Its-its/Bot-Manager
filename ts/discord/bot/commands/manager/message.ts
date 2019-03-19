@@ -8,14 +8,15 @@ const PERMISSIONS = {
 };
 
 // Figure out if I could really do a dm group another way.
-// @Channel instead of @Role ??
+
+// IDEA: @Channel instead of @Role ??
 class Message extends Command {
 	constructor() {
 		super(['dm', 'message']);
 
 		this.perms = Object.values(PERMISSIONS);
 
-		this.description = 'DM A group of people individually or in one huge group chat.';
+		this.description = 'DM A group of people individually (or in one huge group chat coming soon).';
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
@@ -33,16 +34,16 @@ class Message extends Command {
 		var roleId = params.shift();
 		// var isGroupDM = params[0].toLowerCase() == 'group';
 		// if (isGroupDM) params.shift();
-		var sending = params.join(' ');
+		var messageToSend = params.join(' ');
 
 		// if (isGroupDM) {
 		// 	return Command.error([['Error', 'Group DM\'s not implemented yet']])
 		// }
 
-		if (roleId == null || sending.length == 0) {
+		if (roleId == null || messageToSend.length == 0) {
 			return Command.error([
 				[
-					'Error',
+					'Message',
 					'Invalid opts!'
 				]
 			]);
@@ -50,24 +51,24 @@ class Message extends Command {
 
 		roleId = server.strpToId(roleId);
 
-		var server_role = message.guild.roles.get(roleId);
-		if (server_role == null) return Command.error([['Error', 'Not a valid Server Role.']]);
+		const discordGuildRole = message.guild.roles.get(roleId);
+		if (discordGuildRole == null) return Command.error([['Error', 'Not a valid Server Role.']]);
 
-		const members = server_role.members.array();
+		const membersInRole = discordGuildRole.members.array();
 
 		// if (!isGroupDM) {
-			message.channel.send(Command.info([['Success', `Sending a DM to ${members.length} players in the role ${server_role.name}. This may take a minute.`]]));
-			sending += `\n\n_Sent from "${message.guild.name}" by <@${message.member.id}> to everyone in the role @${server_role.name} (with ${members.length} members)_`;
+			message.channel.send(Command.info([['Success', `Sending a DM to ${membersInRole.length} players in the role ${discordGuildRole.name}. This may take a minute.`]]));
+			messageToSend += `\n\n_Sent from "${message.guild.name}" by <@${message.member.id}> to everyone in the role @${discordGuildRole.name} (with ${membersInRole.length} members)_`;
 		// } else {
 		// 	message.channel.send(Command.info([['Success', `Creating a group DM with ${members.length} players in the role ${server_role.name}. This may take a minute.`]]));
 		// }
 
 		// if (!isGroupDM) {
 			function nextMessage(pos: number) {
-				if (pos == members.length) return message.channel.send(Command.success([['Success', `Sent a DM to ${members.length} players in the role ${server_role.name}`]]));
-				var member = members[pos];
+				if (pos == membersInRole.length) return message.channel.send(Command.success([['Success', `Sent a DM to ${membersInRole.length} players in the role ${discordGuildRole.name}`]]));
+				var member = membersInRole[pos];
 
-				member.sendMessage(sending)
+				member.sendMessage(messageToSend)
 				.then(() => {
 					setTimeout(() => nextMessage(pos + 1), 500);
 				})

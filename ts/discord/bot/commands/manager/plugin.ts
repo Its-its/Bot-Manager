@@ -57,29 +57,22 @@ class Plugin extends Command {
 			case 'list':
 				if (!this.hasPerms(message.member, server, PERMISSIONS.LIST)) return Command.noPermsMessage('Plugin');
 
-				message.channel.send(Command.info([
-					[
-						'Plugin List',
-						Command.table(['Name', 'Active', '...'], plugins.map((name, i) => {
-							var plugin = server.plugins[name];
-							return [
-								displayNames[i],
-								(server.isPluginEnabled(<any>name) ? 'Enabled' : 'Disabled'),
-								'...'
-							]
-						}))
+				return Command.table(['Name', 'Active'], plugins.map((name, i) => {
+					return [
+						displayNames[i],
+						(server.isPluginEnabled(<any>name) ? 'Enabled' : 'Disabled')
 					]
-				]));
-				return;
+				}));
+
 			case 'enable':
 				if (!this.hasPerms(message.member, server, PERMISSIONS.ENABLE)) return Command.noPermsMessage('Plugin');
 
-				var type = params.shift();
-				if (type == null) return;
+				var pluginName = params.shift();
+				if (pluginName == null) return Command.error([['Plugin', 'Invalid Params']]);
 
-				type = type.toLowerCase();
+				pluginName = pluginName.toLowerCase();
 
-				if (type == 'all') {
+				if (pluginName == 'all') {
 					plugins.forEach(p => {
 						if (server.plugins[p] != null) {
 							server.plugins[p].enabled = true;
@@ -92,35 +85,38 @@ class Plugin extends Command {
 						[ 'Plugin', 'Enabled All Plugins' ]
 					]));
 				} else {
-					var index = plugins.indexOf(type);
-					if (index != -1) {
-						if (server.plugins[type] != null) {
-							server.plugins[type].enabled = true;
+					var indexOfPlugin = plugins.indexOf(pluginName);
+
+					if (indexOfPlugin != -1) {
+						if (server.plugins[pluginName] != null) {
+							server.plugins[pluginName].enabled = true;
 						} else {
-							server.plugins[type] = { enabled: true };
+							server.plugins[pluginName] = { enabled: true };
 						}
 
 						message.channel.send(Command.info([
-							[ 'Plugin', 'Enabled ' + type ]
+							[ 'Plugin', 'Enabled ' + pluginName ]
 						]));
 					} else {
 						message.channel.send(Command.info([
 							[	'Plugin',
-								[	'No plugin exists with the name "' + type + '"',
+								[	'No plugin exists with the name "' + pluginName + '"',
 									'Please use one of the following:',
 									' - ' + plugins.join(', ')
 								].join('\n') ]
 						]));
 					}
 				}
+
 				break;
+
 			case 'disable':
 				if (!this.hasPerms(message.member, server, PERMISSIONS.DISABLE)) return Command.noPermsMessage('Plugin');
 
-				var type = params.shift();
-				if (type == null) return;
+				var pluginName = params.shift();
+				if (pluginName == null) return Command.error([['Plugin', 'Invalid Params']]);
 
-				if (type == 'all') {
+				if (pluginName == 'all') {
 					plugins.forEach(p => {
 						if (server.plugins[p] != null) {
 							server.plugins[p].enabled = false;
@@ -128,30 +124,37 @@ class Plugin extends Command {
 							server.plugins[p] = { enabled: false };
 						}
 					});
+
 					message.channel.send(Command.info([
 						[ 'Plugin', 'Disabled All Plugins' ]
 					]));
 				} else {
-					var index = plugins.indexOf(type);
-					if (index != -1) {
-						if (server.plugins[type] != null) {
-							server.plugins[type].enabled = false;
+					var indexOfPlugin = plugins.indexOf(pluginName);
+
+					if (indexOfPlugin != -1) {
+						if (server.plugins[pluginName] != null) {
+							server.plugins[pluginName].enabled = false;
 						} else {
-							server.plugins[type] = { enabled: false };
+							server.plugins[pluginName] = { enabled: false };
 						}
 
 						message.channel.send(Command.info([[ 'Plugin', 'Disabled Plugin.' ]]));
 					} else {
 						message.channel.send(Command.info([
-							[	'Plugin',
-								[	'No plugin exists with the name "' + type + '"',
+							[
+								'Plugin',
+								[
+									'No plugin exists with the name "' + pluginName + '"',
 									'Please use one of the following:',
 									' - ' + plugins.join(', ')
-								].join('\n') ]
+								].join('\n')
+							]
 						]));
 					}
 				}
+
 				break;
+
 			// case 'perms':
 			// 	if (!server.userHasPerm(message.member, 'commands.plugin.perms')) return;
 

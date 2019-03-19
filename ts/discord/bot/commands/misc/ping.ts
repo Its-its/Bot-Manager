@@ -5,12 +5,24 @@ import Command = require('../../command');
 
 import Commands = require('../index');
 
+
+const PERMS = {
+	MAIN: 'commands.ping'
+};
+
+for(var name in PERMS) {
+	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
+}
+
+
 class Ping extends Command {
 	constructor() {
 		super('ping', true, false);
+
+		// this.perms = Object.values(PERMS);
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public call(_params: string[], _server: DiscordServer, message: Discord.Message) {
 		const client = message.client;
 
 		if (client.shard != null && client.shard.count != 0) {

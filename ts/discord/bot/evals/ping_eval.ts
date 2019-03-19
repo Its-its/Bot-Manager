@@ -1,6 +1,6 @@
 import Discord = require('discord.js');
 
-var self: Discord.Client = this;
+var self: Discord.Client = <any>this;
 
 var opts = {
 	id: self.shard.id,

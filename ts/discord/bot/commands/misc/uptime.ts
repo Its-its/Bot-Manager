@@ -3,9 +3,6 @@ import DiscordServer = require('../../GuildServer');
 
 import Command = require('../../command');
 
-let started = Date.now();
-
-
 const PERMS = {
 	MAIN: 'commands.uptime'
 };
@@ -21,11 +18,23 @@ class Uptime extends Command {
 		this.perms = Object.values(PERMS);
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
-		return Command.info([[
-			'Uptime',
-			Math.floor((Date.now() - started)/(1000 * 60 * 60 * 24)) + ' Hours.'
-		]]);
+	public call(_params: string[], _server: DiscordServer, message: Discord.Message) {
+		const client = message.client;
+
+		if (client.shard != null && client.shard.count != 0) {
+			client.shard.broadcastEval('var opts = { id: this.shard.id, uptime: this.uptime }; opts;')
+			.then(shards => {
+				var output = [];
+
+				for (var i = 0; i < shards.length; i++) {
+					var shard = shards[i];
+					output.push(`Shard ${shard.id}: Uptime ${Math.floor(client.uptime/(1000 * 60 * 60 * 24))} Hours`);
+				}
+
+				message.channel.send(output, { code: 'http' });
+			})
+			.catch(e => console.error(e));
+		}
 	}
 }
 
