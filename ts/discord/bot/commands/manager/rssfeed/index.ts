@@ -5,14 +5,7 @@ import Command = require('../../../command');
 
 import comm = require('./commands');
 
-
-const PERMS = {
-	MAIN: 'commands.rssfeed'
-};
-
-for(var name in PERMS) {
-	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
-}
+import PERMS = require('./perms');
 
 
 // for(var name in comm) {

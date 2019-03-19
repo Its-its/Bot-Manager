@@ -22,10 +22,12 @@ class Nick extends Command {
 				[ 'Description', this.description ],
 				[
 					'Command Usage',
-					server.getPrefix() + 'nick <name>'
+					'nick <name>'
 				]
 			]);
 		}
+
+		if (!this.hasPerms(message.member, server, PERMISSIONS.MAIN)) return Command.noPermsMessage('Nick');
 
 		var name = params.join(' ');
 

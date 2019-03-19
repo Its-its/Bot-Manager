@@ -330,26 +330,29 @@ declare namespace DiscordBot {
 
 	interface Permissions {
 		roles: {
-			[id: string]: {
-				groups: string[];
-				perms: string[];
-			}
-		};
-		users: {
-			[id: string]: {
-				groups: string[];
-				perms: string[];
-			}
-		};
-		groups: {
-			[id: string]: {
-				displayName: string;
-				name: string;
+			[id: string]: PermissionsUserOrRoles;
+		}
 
-				perms: string[];
-				groups?: string[];
-			}
-		};
+		users: {
+			[id: string]: PermissionsUserOrRoles;
+		}
+
+		groups: {
+			[id: string]: PermissionsGroup;
+		}
+	}
+
+	interface PermissionsUserOrRoles {
+		groups: string[];
+		perms: string[];
+	}
+
+	interface PermissionsGroup {
+		displayName: string;
+		name: string;
+
+		perms: string[];
+		groups?: string[];
 	}
 
 	interface Alias {

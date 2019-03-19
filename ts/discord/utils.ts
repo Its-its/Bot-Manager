@@ -11,6 +11,9 @@ const InfoColor = 0x46a0c0;
 const WarningColor = 0xc4d950;
 const ErrorColor = 0xd91582;
 
+function noPermsMessage(cmdName: string) {
+	return errorMsg([[cmdName, 'You don\'t have perms to access this.']]);
+}
 
 function defCall(color: number, array: any[][] | { embed: any; }) {
 	return {
@@ -616,6 +619,7 @@ export {
 	errorMsg,
 	warningMsg,
 	infoMsg,
+	noPermsMessage,
 
 	startDate,
 	strpToId,

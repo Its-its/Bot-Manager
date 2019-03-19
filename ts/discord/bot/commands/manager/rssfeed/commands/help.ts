@@ -3,9 +3,16 @@ import DiscordServer = require('../../../../GuildServer');
 
 import Command = require('../../../../command');
 
-function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	//
-	return Command.info([['RSS Feed', 'Help.']]);
+function call(_params: string[], _server: DiscordServer, _message: Discord.Message) {
+	return Command.info([
+		[
+			'RSS Feed',
+			[
+				'add <URL>',
+				'list'
+			].join('\n')
+		]
+	]);
 }
 
 export {

@@ -50,7 +50,7 @@ class PrefixCommand extends Command {
 			case 'reset':
 				if (!this.hasPerms(message.member, server, PERMS.RESET)) return Command.noPermsMessage('Prefix');
 
-				server.commandPrefix = prefix;
+				server.commandPrefix = '!';
 				server.save();
 
 				return Command.success([[
@@ -62,7 +62,7 @@ class PrefixCommand extends Command {
 
 				var prefix = params.shift();
 
-				if (prefix != null && new RegExp('[~\/\\!@#$%^&\*\(\)\-=+:;<>,.?]{1,4}', 'i').test(prefix)) {
+				if (prefix != null && new RegExp('[~\\!@#$%^&\*\-=+:;<>,.?]{1,4}', 'i').test(prefix)) {
 					server.commandPrefix = prefix;
 					server.save();
 					return Command.success([[
@@ -74,8 +74,8 @@ class PrefixCommand extends Command {
 						'Prefix',
 						[
 							'Invalid command prefix.',
-							'Prefix has to be 1-5 characters long.',
-							'Only using: ~/\\!@#$%^&*()-=+:;<>,.?'
+							'Prefix has to be 1-4 characters long.',
+							'Only using: ~\\!@#$%^&*-=+:;<>,.?'
 						].join('\n')
 					]]);
 				}

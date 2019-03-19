@@ -10,7 +10,11 @@ import GlobalRSSFeeds = require('../../../../../../models/rssfeed');
 
 import intervalUtils = require('../../../../../../rssgrabber/utils');
 
+import PERMISSIONS = require('../perms');
+
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
+	if (!this.hasPerms(message.member, server, PERMISSIONS.ADD)) return utils.noPermsMessage('RSS Feed');
+
 	var url = params.join(' ');
 
 	intervalUtils.addNewFeed(url, null, null, (err, isNew, feedDoc, article) => {

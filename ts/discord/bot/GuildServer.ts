@@ -94,7 +94,7 @@ class Server extends Changes {
 	public memberCount: number;
 	public ownerID: string;
 
-	public commandPrefix: string;
+	public commandPrefix?: string;
 
 
 	public channels: DiscordBot.Channels;
@@ -936,20 +936,17 @@ class Server extends Changes {
 
 
 	// Permissions
-	public createGroup(displayName: string): boolean {
+	public createGroup(displayName: string): DiscordBot.PermissionsGroup {
 		var tounique = displayName.replace(/ /, '').toLowerCase();
 
-		if (Object.keys(this.permissions.groups).length >= 15) return false;
+		if (Object.keys(this.permissions.groups).length >= 15) return null;
+		if (this.permissions.groups[tounique] != null) return null;
 
-		if (this.permissions.groups[tounique] != null) return false;
-
-		this.permissions.groups[tounique] = {
+		return this.permissions.groups[tounique] = {
 			displayName: displayName,
 			name: displayName.replace(/\s/, '').toLowerCase(),
 			perms: []
 		};
-
-		return true;
 	}
 
 	public removeGroup(name: string): boolean {

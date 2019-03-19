@@ -99,8 +99,8 @@ class Command {
 	static WarningColor = info.WarningColor;
 	static ErrorColor = info.ErrorColor;
 
-	static noPermsMessage(cmdName) {
-		return Command.error([[cmdName, 'You don\'t have perms to access this.']]);
+	static noPermsMessage(cmdName: string) {
+		return info.noPermsMessage(cmdName);
 	}
 
 	static defCall(color: number, array: any[][] | { embed: any; }) {

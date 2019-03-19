@@ -7,9 +7,14 @@ import RSSFeeds = require('../../../../../../models/rssfeed');
 
 import utils = require('../../../../../utils');
 
+import PERMISSIONS = require('../perms');
+
+// TODO: Sort out options into respectable files.
 
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
+	if (!this.hasPerms(message.member, server, PERMISSIONS.LIST)) return utils.noPermsMessage('RSS Feed');
+
 	message.channel.send(utils.infoMsg([['RSS Feed', 'Finding all RSS Feeds in current Guild.']]))
 	.then((m: Discord.Message) => {
 		const guild = m.guild;
@@ -106,9 +111,6 @@ interface ChannelFeed extends mongoose.Document {
 function showChannel(page: utils.MessagePage, channelFeed: ChannelFeed) {
 	var channel = <Discord.TextChannel>page.channel;
 
-	// TODO
-	// const isSameGuild = (channel.guild.id == channelFeed.guild_id);
-
 	const channelExists = channel.guild.channels.has(channelFeed.channel_id);
 
 	page.setFormat([
@@ -138,31 +140,14 @@ function showChannel(page: utils.MessagePage, channelFeed: ChannelFeed) {
 			'{page_items}'
 		]);
 
-		pageMove.listen(message => {
-			var type = utils.getIdType(message);
-			if (type != null || type != 'channel') return false;
-
-			var id = utils.strpToId(message);
-			if (id == null) return false;
-
-			var channel = (<Discord.TextChannel>page.channel).guild.channels.get(id);
-			if (channel == null) return false;
-
-			DiscordFeeds.updateOne({ _id: channelFeed._id }, { $set: { channel_id: channel.id } }).exec();
-
-			pageMove.temporaryMessage('Changed Feed to requested channel.', 3000);
-
-			return true;
-		});
+		pageMove.listen(message => moveFeedToDifferentChannel(message, channelFeed._id, page, pageMove));
 
 		pageMove.display();
 	});
 
 	page.addSelection('Delete', 'Permanently delete all Channel Feeds.', (page) => {
 		page.addSelection('yes', 'Yes, PERMANENTLY delete all Channel Feeds.', () => {
-			DiscordFeeds.remove({ _id: channelFeed._id }).exec();
-			//! Ensure correct
-			RSSFeeds.updateMany({ _id: { $in: channelFeed.feeds.map(f => mongoose.Types.ObjectId(f.feed._id)) } }, { $inc: { sending_to: -1 } }).exec();
+			removeMultipleFeedsFromChannel(channelFeed.feeds.map(f => mongoose.Types.ObjectId(f.feed._id)), channelFeed._id);
 			page.temporaryMessage(`Deleted <#${channelFeed.channel_id}> Channel Feeds`, 3000);
 		});
 
@@ -186,6 +171,43 @@ function showChannel(page: utils.MessagePage, channelFeed: ChannelFeed) {
 	page.display();
 }
 
+
+function moveFeedToDifferentChannel(channelStrId: string, mongoFeedId: any, page: utils.MessagePage, pageMove: utils.MessagePage): boolean {
+	var type = utils.getIdType(channelStrId);
+	if (type != null || type != 'channel') return false;
+
+	var id = utils.strpToId(channelStrId);
+	if (id == null) return false;
+
+	var channel = (<Discord.TextChannel>page.channel).guild.channels.get(id);
+	if (channel == null) return false;
+
+	DiscordFeeds.updateOne({ _id: mongoFeedId }, { $set: { channel_id: channel.id } }).exec();
+
+	pageMove.temporaryMessage('Changed Feed to requested channel.', 3000);
+
+	return true;
+}
+
+function changeFeedTemplate(newTemplate: string, mongoFeedId: any, feedPos: number) {
+	if (newTemplate.length == 0 || newTemplate == 'default') newTemplate = null;
+	else newTemplate = newTemplate.replace(/\</g, '\\<').replace(/\>/g, '\\>');
+
+	DiscordFeeds.updateOne({ _id: mongoFeedId }, { $set: { ['feeds.' + feedPos + '.format']: newTemplate } }).exec();
+}
+
+function removeMultipleFeedsFromChannel(mongoGlobalFeedIds: any[], mongoDiscordFeedId: any) {
+	DiscordFeeds.remove({ _id: mongoDiscordFeedId }).exec();
+	// TODO! Ensure correct
+	RSSFeeds.updateMany({ _id: { $in: mongoGlobalFeedIds } }, { $inc: { sending_to: -1 } }).exec();
+}
+
+function removeFeedFromChannel(mongoGlobalFeedId: any, mongoDiscordFeedId: any) {
+	DiscordFeeds.updateOne({ _id: mongoDiscordFeedId }, { $pull: { feeds: { feed: mongoGlobalFeedId } } }).exec();
+	RSSFeeds.updateOne({ _id: mongoGlobalFeedId }, { $inc: { sending_to: -1 } }).exec();
+}
+
+
 const DEFAULT_RSS_FORMAT = ':newspaper:  **{title}**\n\n{link}';
 
 function showPageFeed(page: utils.MessagePage, channelFeed: ChannelFeed, pos: number) {
@@ -195,9 +217,6 @@ function showPageFeed(page: utils.MessagePage, channelFeed: ChannelFeed, pos: nu
 		'**Active**: ​' + channelFeed.active,
 		'**URL:** ' + feed.feed.url,
 		'**Link:** ' + feed.feed.link,
-		// '**Template Format:**',
-		// '```' + feed.format + '```',
-		// '',
 		'{page_items}',
 		'',
 		'Always select responsibly.'
@@ -213,8 +232,10 @@ function showPageFeed(page: utils.MessagePage, channelFeed: ChannelFeed, pos: nu
 
 	page.addSelection('Template', 'Change the feed template', (pageTemplate) => {
 		pageTemplate.setFormat([
-			'Template currently:\n```' + (feed.format || DEFAULT_RSS_FORMAT) + '```',
+			'Template currently:',
+			'```' + (feed.format || DEFAULT_RSS_FORMAT) + '```',
 			'Please enter the new template in chat.',
+			'Values: ``{title}, {link}, more to be added...``',
 			'',
 			'{page_items}',
 			'',
@@ -222,12 +243,8 @@ function showPageFeed(page: utils.MessagePage, channelFeed: ChannelFeed, pos: nu
 		]);
 
 		pageTemplate.listen(value => {
-			if (value.length == 0 || value == 'default') value = null;
-			else value = value.replace(/\</g, '\\<').replace(/\>/g, '\\>');
-
-			DiscordFeeds.updateOne({ _id: channelFeed._id }, { $set: { ['feeds.' + pos + '.format']: value } }).exec();
+			changeFeedTemplate(value, channelFeed._id, pos);
 			pageTemplate.temporaryMessage('Changed Feed Format.', 3000);
-
 			return true;
 		});
 
@@ -236,8 +253,7 @@ function showPageFeed(page: utils.MessagePage, channelFeed: ChannelFeed, pos: nu
 
 	page.addSelection('Remove', 'Remove the feed from the channel.', (pageRemove) => {
 		pageRemove.addSelection('yes', 'Yes, PERMANENTLY delete the Channel Feeds.', () => {
-			DiscordFeeds.updateOne({ _id: channelFeed._id }, { $pull: { feeds: { feed: feed.feed._id } } }).exec();
-			RSSFeeds.updateOne({ _id: feed.feed._id }, { $inc: { sending_to: -1 } }).exec();
+			removeFeedFromChannel(feed.feed._id, channelFeed._id);
 			pageRemove.temporaryMessage(`Deleted <#${channelFeed.channel_id}> Channel Feeds`, 3000);
 		});
 

@@ -22,13 +22,9 @@ Manager
 	Options,
 	Plugin,
 	Rank,
-	Perms,
-	Nick,
-	Prefix,
 	Backup,
 	Restore,
 	Message,
-	RSSFeed,
 	TwitterFeed
 
 Misc

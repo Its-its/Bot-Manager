@@ -1,7 +1,7 @@
 import Rank = require('./rank');
 import Message = require('./message');
 import Plugin = require('./plugin');
-import Perms = require('./perms');
+import Perms = require('./permissions');
 import Nick = require('./nick');
 import Prefix = require('./prefix');
 
