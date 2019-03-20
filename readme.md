@@ -8,7 +8,7 @@ List of things needing fixes/todo:
 - Fix leveling
 - Implement from Channel for Message Command
 - Move Command Usage Params into own object for greater use of them.
-
+- Add checks to make sure bot has the correct permissions before running the command(s). (ex: in prune command file)
 Double Check:
 - Punishments
 
@@ -22,18 +22,6 @@ Manager
 	Backup
 	Restore
 	TwitterFeed
-
-Moderation
-	Mute,
-	Warn,
-	Punishment,
-	Command,
-	Blacklist,
-	Interval,
-	Phrase,
-	Alias,
-	Ignore,
-	Prune
 
 Plugins
 	Leveling,

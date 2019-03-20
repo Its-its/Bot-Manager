@@ -10,6 +10,7 @@ const PERMISSIONS = {
 	REMOVE: 'commands.alias.remove'
 };
 
+
 class Alias extends Command {
 	constructor() {
 		super('alias');
@@ -26,14 +27,14 @@ class Alias extends Command {
 				[
 					'Command Usage',
 					[
-						server.getPrefix() + 'alias list',
-						server.getPrefix() + 'alias add <alias name> <command>',
-						server.getPrefix() + 'alias remove <alias name>'
+						'alias list',
+						'alias add <alias name> <command>',
+						'alias remove <alias name>'
 					].join('\n')
 				],
 				[
 					'Example',
-					`${server.getPrefix()}alias add play music play\n_${server.getPrefix()}play is now ${server.getPrefix()}music play_`
+					`\`\`${server.getPrefix()}alias add music play\`\`\n_${server.getPrefix()}play now works as ${server.getPrefix()}music play_`
 				]
 			]);
 		}
@@ -41,14 +42,22 @@ class Alias extends Command {
 		switch(params.shift().toLowerCase()) {
 			case 'list':
 				if (!this.hasPerms(message.member, server, PERMISSIONS.LIST)) return Command.noPermsMessage('Alias');
-				return Command.info([
-					[
-						'Alias',
-						server.alias.length == 0 ? 'None' : server.alias.map(a => 'Alias: ' + a.alias.join(', ') + '\nCommand: ' + a.command).join('\n')
-					]
-				]);
+
+				if (server.alias.length == 0) {
+					return Command.info([
+						[
+							'Alias',
+							'No alias created as of yet.'
+						]
+					]);
+				} else {
+					message.channel.send(Command.table(['Alias', 'Command'], server.alias.map(a => [a.alias.join(','), a.command])))
+
+					return;
+				}
 			case 'add':
 				if (!this.hasPerms(message.member, server, PERMISSIONS.ADD)) return Command.noPermsMessage('Alias');
+
 				var alias = params.shift();
 				var command = params.join(' ');
 
@@ -61,6 +70,7 @@ class Alias extends Command {
 				return Command.success([['Alias', 'Added new alias.']]);
 			case 'remove':
 				if (!this.hasPerms(message.member, server, PERMISSIONS.REMOVE)) return Command.noPermsMessage('Alias');
+
 				if (server.removeAlias(params.shift())) {
 					server.save();
 					return Command.success([['Alias', 'Successfully removed alias.']]);

@@ -30,9 +30,9 @@ class Blacklist extends Command {
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		var blacklisted = server.moderation.blacklisted;
 
-		var param_1 = params.shift();
+		var cmdToCall = params.shift();
 
-		if (param_1 == null) {
+		if (cmdToCall == null) {
 			return Command.info([
 				[ 'Description', this.description ],
 				[
@@ -48,65 +48,69 @@ class Blacklist extends Command {
 			]);
 		}
 
-		if (param_1 == 'list') {
+		if (cmdToCall == 'list') {
 			if (!this.hasPerms(message.member, server, PERMS.LIST)) return Command.noPermsMessage('Blacklist');
 
-			var channel = params.shift();
+			var discChannelIdStr = params.shift();
 
-			if (channel == null) {
-				var channels_ids = Object.keys(blacklisted);
+			if (discChannelIdStr == null) {
+				var blacklistedChannelIds = Object.keys(blacklisted);
 
-				return Command.info([
-					[
-						'Channels with Blacklists',
-						channels_ids.length == 0
-						? 'None'
-						: channels_ids.map(b => ` - ${b == 'global' ? 'global' : `<#${b}>`} - Blacklisted Count: ${blacklisted[b].items.length}`).join('\n')
-					]
-				]);
+				if (blacklistedChannelIds.length == 0) {
+					return Command.info([
+						[
+							'Channels with Blacklists',
+							'No channels have any blacklists in them.'
+						]
+					]);
+				} else {
+					message.channel.send(Command.table([ 'Channel', 'Blacklist amount' ], blacklistedChannelIds.map(b => [b == 'global' ? 'global' : `<#${b}>`, blacklisted[b].items.length])));
+					return;
+				}
 			} else {
-				var channel_id = server.strpToId(channel);
+				var channelIdStripped = server.strpToId(discChannelIdStr);
 
-				var channelBlacklist = blacklisted[channel_id];
+				var channelBlacklisted = blacklisted[channelIdStripped];
 
 				return Command.info([
 					[
 						'Blacklisted Items:',
-						channelBlacklist == null || channelBlacklist.items.length == 0 ? 'None' : channelBlacklist.items.map(b => ` - ${b}`).join('\n')
+						channelBlacklisted == null || channelBlacklisted.items.length == 0 ? 'None' : channelBlacklisted.items.map(b => ` - ${b}`).join('\n')
 					]
 				]);
 			}
-		} else if (param_1 == 'remove') {
+		} else if (cmdToCall == 'remove') {
 			if (!this.hasPerms(message.member, server, PERMS.CLEAR)) return Command.noPermsMessage('Blacklist');
 
-			var channel = params.shift();
-			var text = params.join(' ');
-			if (channel == null || text.length == 0) return Command.info([[ 'Blacklist', 'Invalid opts. Use: remove <global/#channel/all> <text/all>' ]]);
+			var discChannelIdStr = params.shift();
+			var fullCommand = params.join(' ');
 
-			var channel_id = server.strpToId(channel);
+			if (discChannelIdStr == null || fullCommand.length == 0) return Command.info([[ 'Blacklist', 'Invalid opts. Use: remove <global/#channel/all> <text/all>' ]]);
 
-			var channelBlacklist = blacklisted[channel_id];
+			var channelIdStripped = server.strpToId(discChannelIdStr);
 
-			if (channelBlacklist == null || channelBlacklist.items.length == 0) {
+			var channelBlacklisted = blacklisted[channelIdStripped];
+
+			if (channelBlacklisted == null || channelBlacklisted.items.length == 0) {
 				return Command.info([
 					[ 'Blacklist', 'Blacklist already empty! You can\'t remove what\'s not there!' ]
 				]);
 			}
 
-			if (channel_id == 'all') {
+			if (channelIdStripped == 'all') {
 				server.moderation.blacklisted = {};
 			} else {
-				if (text == 'all') {
-					delete server.moderation.blacklisted[channel_id];
+				if (fullCommand == 'all') {
+					delete server.moderation.blacklisted[channelIdStripped];
 				} else {
-					var channel_blacklists = server.moderation.blacklisted[channel_id];
+					var channel_blacklists = server.moderation.blacklisted[channelIdStripped];
 
 					if (channel_blacklists == null) {
 						return Command.info([
 							[ 'Blacklist', 'There are no Blacklists for that channel!' ]
 						]);
 					} else {
-						var indexOf = channel_blacklists.items.indexOf(text.toLowerCase());
+						var indexOf = channel_blacklists.items.indexOf(fullCommand.toLowerCase());
 
 						if (indexOf == -1) {
 							return Command.info([
@@ -124,23 +128,23 @@ class Blacklist extends Command {
 			return Command.info([
 				[
 					'Blacklist',
-					`Removed ${channel_id == 'all' ? 'all' : '<#' + channel_id + '>'} item(s) from blacklist.`
+					`Removed ${channelIdStripped == 'all' ? 'all' : '<#' + channelIdStripped + '>'} item(s) from blacklist.`
 				]
 			]);
-		} else if (param_1 == 'add') {
+		} else if (cmdToCall == 'add') {
 			if (!this.hasPerms(message.member, server, PERMS.ADD)) return Command.noPermsMessage('Blacklist');
 
-			var channel_id = server.strpToId(params.shift());
+			var channelIdStripped = server.strpToId(params.shift());
 
-			if (channel_id == null) {
+			if (channelIdStripped == null) {
 				return Command.error([
 					[ 'Blacklist', 'Invalad params. Please refer to help!' ]
 				]);
 			} else {
-				if (channel_id != 'global') {
-					var channelT = message.guild.channels.get(channel_id);
+				if (channelIdStripped != 'global') {
+					var discordChannel = message.guild.channels.get(channelIdStripped);
 
-					if (channelT == null || channelT.type != 'text') {
+					if (discordChannel == null || discordChannel.type != 'text') {
 						return Command.error([
 							[ 'Blacklist', 'That text channel does not exist in the guild!' ]
 						]);
@@ -148,18 +152,15 @@ class Blacklist extends Command {
 				}
 			}
 
-			if (server.moderation.blacklisted[channel_id] != null && server.moderation.blacklisted[channel_id].items.length == 25) {
+			if (server.moderation.blacklisted[channelIdStripped] != null && server.moderation.blacklisted[channelIdStripped].items.length == 25) {
 				return Command.error([
 					[ 'Blacklist', 'Sorry! You reached the current limit for Blacklisted words in a channel!' ]
 				]);
 			}
 
-			var word = params.join(' ').trim().toLowerCase();
+			var fullCommand = params.join(' ').trim().toLowerCase();
 
-			var resp = 'Successfully blacklisted "' + word + '"';
-
-			if (!server.blacklist(channel_id, word)) {
-				// resp = 'Successfully removed "' + word + '" from blacklist.';
+			if (!server.blacklist(channelIdStripped, fullCommand)) {
 				return Command.error([
 					[ 'Blacklist', 'That channel already has that word blacklisted!' ]
 				]);
@@ -167,22 +168,22 @@ class Blacklist extends Command {
 
 			server.save();
 
-			return Command.success([[ 'Blacklist', resp ]]);
-		} else if (param_1 == 'action') {
+			return Command.success([[ 'Blacklist', 'Successfully blacklisted "' + fullCommand + '"' ]]);
+		} else if (cmdToCall == 'action') {
 			if (!this.hasPerms(message.member, server, PERMS.ACTION)) return Command.noPermsMessage('Blacklist');
 
-			var channel_id = server.strpToId(params.shift());
-			var action_text = params.shift();
+			var channelIdStripped = server.strpToId(params.shift());
+			var punishmentType = params.shift();
 
-			if (channel_id == null) {
+			if (channelIdStripped == null) {
 				return Command.error([
 					[ 'Blacklist', 'Invalad params. Please refer to help!' ]
 				]);
 			}
 
-			var channelBlacklist = blacklisted[channel_id];
+			var channelBlacklisted = blacklisted[channelIdStripped];
 
-			if (channelBlacklist == null || channelBlacklist.items.length == 0) {
+			if (channelBlacklisted == null || channelBlacklisted.items.length == 0) {
 				return Command.info([
 					[ 'Blacklist', 'Blacklist already empty! You can\'t remove what\'s not there!' ]
 				]);
@@ -190,24 +191,24 @@ class Blacklist extends Command {
 
 			var action: DiscordBot.PunishmentTypes = null;
 
-			if (action_text == 'censor') {
+			if (punishmentType == 'censor') {
 				action = { type: 'censor' };
-			} else if (action_text == 'delete') {
+			} else if (punishmentType == 'delete') {
 				action = { type: 'delete' };
 			} else {
 				return Command.info([
-					[ 'Blacklist', 'Action not valid. Please use "censor" or "delete"' ]
+					[ 'Blacklist', 'Punishment action not valid. Please use "censor" or "delete"' ]
 				]);
 			}
 
-			server.blacklistPunishment(channel_id, action);
+			server.blacklistPunishment(channelIdStripped, action);
 
 			server.save();
 
 			return Command.info([
 				[
 					'Blacklist',
-					'Edited Blacklist Punishment Action for channel ' + (channel_id == 'global' ? 'global' : '<#' + channel_id + '>')
+					'Edited Blacklist Punishment Action for channel ' + (channelIdStripped == 'global' ? 'global' : '<#' + channelIdStripped + '>')
 				]
 			]);
 		}

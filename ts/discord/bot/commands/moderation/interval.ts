@@ -20,7 +20,6 @@ for(var name in PERMS) {
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
-// if (!this.hasPerms(message.member, server, PERMS.MAIN)) return Command.noPermsMessage('Interval');
 
 class Interval extends Command {
 	constructor() {
@@ -32,8 +31,6 @@ class Interval extends Command {
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
-		var blacklisted = server.moderation.blacklisted;
-
 		if (params.length == 0) {
 			return Command.info([
 				[ 'Description', this.description ],
@@ -58,19 +55,23 @@ class Interval extends Command {
 			case 'list':
 				if (!this.hasPerms(message.member, server, PERMS.LIST)) return Command.noPermsMessage('Interval');
 
-				return Command.info([
-					[	'Interval List',
-						server.intervals.length == 0 ? 'No intervals created' :
-						Command.table(
-							['ID', 'Status', 'Repeat'],
-							server.intervals.map((i, index) => [(index + 1), i.active ? 'Active' : 'Disabled', i.every]))
-					]
-				]);
+				if (server.intervals.length == 0) {
+					return Command.info([
+						[	'Interval List',
+							'No intervals created'
+						]
+					]);
+				} else {
+					message.channel.send(Command.table(['ID', 'Status', 'Repeat Time'], server.intervals.map((i, index) => [(index + 1), i.active ? 'Active' : 'Disabled', i.every])));
+					return;
+				}
+
 			case 'create':
 				if (!this.hasPerms(message.member, server, PERMS.CREATE)) return Command.noPermsMessage('Interval');
 
 				var minutes = parseInt(params[1]);
 				if (isNaN(minutes)) return;
+
 				if (message.channel.type != 'text') return;
 
 				var pos = server.addInterval(minutes, message.guild.id, message.channel.id);
@@ -80,59 +81,61 @@ class Interval extends Command {
 					[ 'Interval', 'Interval with ID ' + pos + ' created.\nSeconds set to ' + seconds ]
 				]);
 			default:
-				var id = parseInt(params[0]);
-				if (isNaN(id)) return Command.error([[ 'Interval', 'Invalid Interval ID.' ]]);
+				var intervalId = parseInt(params[0]);
+				if (isNaN(intervalId)) return Command.error([[ 'Interval', 'Invalid Interval ID.' ]]);
 
 				switch (params[1]) {
 					case 'remove':
 						if (!this.hasPerms(message.member, server, PERMS.REMOVE)) return Command.noPermsMessage('Interval');
 
-						server.removeInterval(id);
+						server.removeInterval(intervalId);
 						server.save();
 
 						return Command.info([
-							[ 'Interval', 'Interval with ID ' + id + ' removed.' ]
+							[ 'Interval', 'Interval with ID ' + intervalId + ' removed.' ]
 						]);
+
 					case 'toggle':
 						if (!this.hasPerms(message.member, server, PERMS.TOGGLE)) return Command.noPermsMessage('Interval');
 
-						var togglePos = server.toggleInterval(id);
+						var togglePos = server.toggleInterval(intervalId);
 						server.save();
 
 						return Command.info([
-							[ 'Interval', 'Interval with ID ' + id + ' is now ' + (togglePos ? 'Active' : 'Disabled') ]
+							[ 'Interval', 'Interval with ID ' + intervalId + ' is now ' + (togglePos ? 'Active' : 'Disabled') ]
 						]);
-					case 'set':
-						var type = params[2];
 
-						switch (type) {
+					case 'set':
+						var setType = params[2];
+
+						switch (setType) {
 							case 'minutes':
 								if (!this.hasPerms(message.member, server, PERMS.SET_MINUTES)) return Command.noPermsMessage('Interval');
 
 								var seconds = parseInt(params[3]);
 								if (isNaN(seconds)) return Command.error([[ 'Interval', 'Invalid Seconds.' ]]);
-								server.setIntervalTime(id, seconds);
+								server.setIntervalTime(intervalId, seconds);
 								server.save();
 
 								return Command.info([
-									[ 'Interval', 'Interval ' + id + ' time update to ' + seconds + ' seconds.' ]
+									[ 'Interval', 'Interval ' + intervalId + ' time update to ' + seconds + ' seconds.' ]
 								]);
 							case 'message':
 								if (!this.hasPerms(message.member, server, PERMS.SET_MESSAGE)) return Command.noPermsMessage('Interval');
 
 								var text = params.slice(3).join(' ');
-								server.setIntervalMessage(id, text);
+								server.setIntervalMessage(intervalId, text);
 								server.save();
 
-								return Command.info([[ 'Interval', 'Interval ' + id + ' updated.' ]]);
+								return Command.info([[ 'Interval', 'Interval ' + intervalId + ' updated.' ]]);
 							case 'name':
 								if (!this.hasPerms(message.member, server, PERMS.SET_NAME)) return Command.noPermsMessage('Interval');
 
 								var text = params.slice(3).join(' ');
-								server.setIntervalName(id, text);
+								server.setIntervalName(intervalId, text);
 								server.save();
 
-								return Command.info([[ 'Interval', 'Interval ' + id + ' updated.' ]]);
+								return Command.info([[ 'Interval', 'Interval ' + intervalId + ' updated.' ]]);
 							// ? case 'onCall': // TODO: SECURE IT
 							// ? 	var text = params.slice(3).join(' ');
 							// ? 	server.setIntervalEvent(id, 'onCall', text);
@@ -152,8 +155,6 @@ class Interval extends Command {
 						break;
 				}
 		}
-
-		// return Command.success([['Blacklist', resp]]);
 	}
 }
 

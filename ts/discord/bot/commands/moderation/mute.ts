@@ -11,7 +11,13 @@ import TempPunishments = require('../../../models/temp_punishments');
 
 
 const PERMS = {
-	MAIN: 'commands.mute'
+	MAIN: 'commands.mute',
+	PERMANENT: 'permanent',
+	MUTE_1H: 'max_1hour',
+	MUTE_1D: 'max_1day',
+	MUTE_1W: 'max_1week',
+	MUTE_1M: 'max_1month',
+	MUTE_6M: 'max_6month'
 };
 
 for(var name in PERMS) {
@@ -21,6 +27,12 @@ for(var name in PERMS) {
 
 const MAX_SECONDS = parseTime('1y');
 const MIN_SECONDS = parseTime('5m');
+
+const MAX_MUTE_1H = parseTime('1h');
+const MAX_MUTE_1D = parseTime('1d');
+const MAX_MUTE_1W = parseTime('1w');
+const MAX_MUTE_1M = parseTime('4w2d');
+const MAX_MUTE_6M = parseTime('26w');
 
 class Mute extends Command {
 	constructor() {
@@ -42,7 +54,7 @@ class Mute extends Command {
 						'@user <duration> [reason]',
 						'',
 						'**Duration Examples:**',
-						' — **1w2d** - 1 Week 2 Days',
+						' — **4w2d** - 4 Week 2 Days (a month)',
 						' — **1w** - 1 Week',
 						' — **1d** - 1 Day',
 						' — **24h** - 1 Day',
@@ -68,33 +80,52 @@ class Mute extends Command {
 			]);
 		}
 
-		var user_str = params.shift();
+		var userIdStr = params.shift();
 
-		var type_user = server.idType(user_str);
+		var userType = server.idType(userIdStr);
 
-		if (type_user != 'member') return Command.error([[ 'Mute', 'Invalid args. Please refer to mute help.' ]]);
+		if (userType != 'member') return Command.error([[ 'Mute', 'Invalid args. Please refer to mute help.' ]]);
 
-		var user_id = server.strpToId(user_str);
+		var discUserId = server.strpToId(userIdStr);
 
-		var time_str = params.shift();
+		var timeStr = params.shift();
 
 		var reason = params.join(' ');
 
-		var seconds = parseTime(time_str);
+		var seconds = parseTime(timeStr);
 
 		if (seconds == null) {
-			reason = time_str + reason;
+			reason = timeStr + reason;
 		} else {
 			if (seconds < MIN_SECONDS) return Command.error([[ 'Mute', 'Minimum mute time is 5 minutes.' ]]);
 			if (seconds > MAX_SECONDS) return Command.error([[ 'Mute', 'Max mute time is 1 year.' ]]);
 		}
 
-		message.guild.member(user_id)
+
+		if (seconds == null) {
+			if (!this.hasPerms(message.member, server, PERMS.PERMANENT)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for indefinitely.' ]])
+		} else if (seconds > MAX_MUTE_6M) {
+			if (!this.hasPerms(message.member, server, PERMS.MUTE_6M)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 6 Months (26 weeks)' ]]);
+		} else if (seconds > MAX_MUTE_1M) {
+			if (!this.hasPerms(message.member, server, PERMS.MUTE_1M)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 1 Month (4 weeks 2 days)' ]]);
+		} else if (seconds > MAX_MUTE_1W) {
+			if (!this.hasPerms(message.member, server, PERMS.MUTE_1W)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 1 Week' ]]);
+		} else if (seconds > MAX_MUTE_1D) {
+			if (!this.hasPerms(message.member, server, PERMS.MUTE_1D)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 1 Day' ]]);
+		} else if (seconds > MAX_MUTE_1H) {
+			if (!this.hasPerms(message.member, server, PERMS.MUTE_1H)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 1 Hour.' ]]);
+		}
+
+
+
+		message.guild.member(discUserId)
 		.addRole(server.punishments.punished_role_id, 'Punished [Mute]');
+
+		// TODO: Check to see if user currently is being punished. (temp or perm)
 
 		new Punishments({
 			server_id: message.guild.id,
-			member_id: user_id,
+			member_id: discUserId,
 			creator_id: message.member.id,
 
 			pid: generate('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 6),
@@ -110,16 +141,16 @@ class Mute extends Command {
 			}
 
 			if (seconds != null) {
-				// IDEA: Check to see if punishment uses same role (if currently punished)
+				// TODO: Check to see if punishment uses same role (if currently punished)
 				TempPunishments.updateOne(
 					{
 						server_id: message.guild.id,
-						member_id: user_id
+						member_id: discUserId
 					},
 					{
 						$set: {
 							server_id: message.guild.id,
-							member_id: user_id,
+							member_id: discUserId,
 							punishment: item._id,
 							expires: Date.now() + (seconds * 1000)
 						}
@@ -136,8 +167,8 @@ class Mute extends Command {
 			[
 				'Mute',
 				[
-					'**Muted:** <@' + user_id + '>',
-					'**Length:** ' + (seconds == -1 ? 'Forever' : time_str),
+					'**Muted:** <@' + discUserId + '>',
+					'**Length:** ' + (seconds == -1 ? 'Forever' : timeStr),
 					'**Reason:** ' + reason
 				].join('\n')
 			]
@@ -146,13 +177,13 @@ class Mute extends Command {
 }
 
 function parseTime(time: string): number {
-	var seconds = 0, cached = '';
+	var seconds = 0, lastGrabbed = '';
 
 	for(var i = 0; i < time.length; i++) {
 		var p = time[i];
 
-		if (p == 'y' || p == 'w' || p == 'd' || p == 'h' || p == 'm') {
-			var parsed = parseInt(cached);
+		if (p == 'y' || p == 'w' || p == 'd' || p == 'h' || p == 'm' || p == 's') {
+			var parsed = parseInt(lastGrabbed);
 			if (isNaN(parsed)) return null;
 
 			if (p == 'y') {
@@ -165,10 +196,13 @@ function parseTime(time: string): number {
 				seconds += parsed * 60 * 60;
 			} else if (p == 'm') {
 				seconds += parsed * 60;
+			} else if (p == 's') {
+				seconds += parsed;
 			}
-			cached = '';
+
+			lastGrabbed = '';
 		} else {
-			cached += p;
+			lastGrabbed += p;
 		}
 	}
 

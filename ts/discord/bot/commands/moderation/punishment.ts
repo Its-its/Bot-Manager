@@ -139,7 +139,8 @@ class Punishment extends Command {
 						// 'edit <@user/id> <punishemnt id>',
 						'clear <@user/id>',
 						// 'create',
-						'settings'
+						'settings',
+						'settings punished_role <auto/@role/role id>'
 					].join('\n')
 				]
 			]);
@@ -153,19 +154,19 @@ class Punishment extends Command {
 					return Command.error([['Punishments', 'Please provide @user/id for now.']]);
 				}
 
-				var user_str = params.shift();
+				var userIdStr = params.shift();
 
-				var type_user = server.idType(user_str);
+				var idType = server.idType(userIdStr);
 
-				if (type_user != 'member') return Command.error([[ 'Punishments', 'Invalid args. Please refer to mute help.' ]]);
+				if (idType != 'member') return Command.error([[ 'Punishments', 'Invalid args. Please refer to mute help.' ]]);
 
-				var user_id = server.strpToId(user_str);
+				var userId = server.strpToId(userIdStr);
 
-				if (!message.guild.members.has(user_id)) return Command.error([[ 'Punishments', 'Member does not exist in Guild.' ]]);
+				if (!message.guild.members.has(userId)) return Command.error([[ 'Punishments', 'Member does not exist in Guild.' ]]);
 
 				message.channel.send('Grabbing that for you. Please wait...')
 				.then((msg: Discord.Message) => {
-					Punishments.find({ server_id: message.guild.id, member_id: user_id }, (err, items) => {
+					Punishments.find({ server_id: message.guild.id, member_id: userId }, (err, items) => {
 						if (err != null) return console.error(err);
 
 						msg.edit(Command.table(
@@ -195,19 +196,19 @@ class Punishment extends Command {
 			case 'remove':
 				if (!server.userHasPerm(message.member, PERMS.REMOVE)) return false;
 
-				var user_str = params.shift();
+				var userIdStr = params.shift();
 
-				var type_user = server.idType(user_str);
+				var idType = server.idType(userIdStr);
 
-				if (type_user != 'member') return Command.error([[ 'Punishments', 'Invalid args. Please refer to mute help.' ]]);
+				if (idType != 'member') return Command.error([[ 'Punishments', 'Invalid args. Please refer to mute help.' ]]);
 
-				var user_id = server.strpToId(user_str);
+				var userId = server.strpToId(userIdStr);
 
-				if (!message.guild.members.has(user_id)) return Command.error([[ 'Punishments', 'Member does not exist in Guild.' ]]);
+				if (!message.guild.members.has(userId)) return Command.error([[ 'Punishments', 'Member does not exist in Guild.' ]]);
 
-				var pun_id = params.shift();
+				var punishmentId = params.shift();
 
-				Punishments.remove({ server_id: message.guild.id, member_id: user_id, pid: pun_id }).exec();
+				Punishments.remove({ server_id: message.guild.id, member_id: userId, pid: punishmentId }).exec();
 
 				message.channel.send('Removed Punishment on user.')
 				.catch(e => console.error(e));
@@ -215,17 +216,17 @@ class Punishment extends Command {
 			case 'clear':
 				if (!server.userHasPerm(message.member, PERMS.CLEAR)) return false;
 
-				var user_str = params.shift();
+				var userIdStr = params.shift();
 
-				var type_user = server.idType(user_str);
+				var idType = server.idType(userIdStr);
 
-				if (type_user != 'member') return Command.error([[ 'Punishments', 'Invalid args. Please refer to mute help.' ]]);
+				if (idType != 'member') return Command.error([[ 'Punishments', 'Invalid args. Please refer to mute help.' ]]);
 
-				var user_id = server.strpToId(user_str);
+				var userId = server.strpToId(userIdStr);
 
-				if (!message.guild.members.has(user_id)) return Command.error([[ 'Punishments', 'Member does not exist in Guild.' ]]);
+				if (!message.guild.members.has(userId)) return Command.error([[ 'Punishments', 'Member does not exist in Guild.' ]]);
 
-				Punishments.remove({ server_id: message.guild.id, member_id: user_id }).exec();
+				Punishments.remove({ server_id: message.guild.id, member_id: userId }).exec();
 
 				message.channel.send('Cleared Punishments for user.')
 				.catch(e => console.error(e));
@@ -243,15 +244,17 @@ class Punishment extends Command {
 
 					if (type == 'punished_role') {
 						if (params.length == 0) {
+							return Command.info([['Punishment', `Role ID: ${server.punishments.punished_role_id == null ? 'None' : '<@' + server.punishments.punished_role_id + '>'}`]]);
+						}
+
+						var punishDoType = params.shift();
+
+						if (punishDoType == 'auto') {
 							message.guild.createRole({
 								name: 'Punished',
 								color: '#b32626'
 							})
 							.then(role => {
-								if (server.punishments.punished_role_id != null && server.punishments.punished_role_id != role.id) {
-									// TODO
-								}
-
 								server.punishments.punished_role_id = role.id;
 								server.save();
 
@@ -265,23 +268,20 @@ class Punishment extends Command {
 							})
 							.catch(e => console.error(e));
 						} else {
-							return Command.error([['Punishment', 'Cannot manually set Punished Role as of yet.']]);
-							// var str_id = params.shift();
+							var roleIdType = server.idType(punishDoType);
+							if (roleIdType != null && roleIdType != 'role') return Command.error([['Punishment', 'ID is not a role.']]);
 
-							// var id_type = server.idType(str_id);
-							// if (id_type != null && id_type != 'role') return Command.error([['Punishment', 'ID is not a role.']]);
+							var roleId = server.strpToId(punishDoType);
+							if (!message.guild.roles.has(roleId)) return Command.error([['Punishment', 'The Role does not exist in this guild']]);
 
-							// var id = server.strpToId(str_id);
-							// if (!message.guild.roles.has(id)) return Command.error([['Punishment', 'The Role does not exist in this guild']]);
+							if (server.punishments.punished_role_id != null && server.punishments.punished_role_id == roleId) {
+								return Command.error([['Punishment', 'Punishment role ID already set as that ID.']]);
+							}
 
-							// if (server.punishments.punished_role_id != null && server.punishments.punished_role_id != id) {
-							// 	// TODO
-							// }
+							server.punishments.punished_role_id = roleId;
+							server.save();
 
-							// server.punishments.punished_role_id = id;
-							// server.save();
-
-							// return Command.success([['Punishment', 'Changed Punishment Role']]);
+							return Command.success([['Punishment', 'Changed Punishment Role']]);
 						}
 					}
 				}

@@ -15,6 +15,7 @@ for(var name in PERMS) {
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
+
 class Comm extends Command {
 	constructor() {
 		super(['command', 'cmd'], false);
@@ -32,34 +33,31 @@ class Comm extends Command {
 					'_NOT FINISHED_',
 					'command list',
 					'command create <name> <message>',
-					'command remove <pid> <message>'
+					'command remove <pid>'
 				].join('\n')
 			]])
 		}
 
-		var type = params.shift();
+		var cmdTypeCalled = params.shift();
 
-		switch(type.toLowerCase()) {
+		switch(cmdTypeCalled.toLowerCase()) {
 			case 'list':
 				if (!this.hasPerms(message.member, server, PERMS.LIST)) return Command.noPermsMessage('Command');
 
-				return Command.success([
-					[
-						'Command',
-						server.commands.map(c => `PID: ${c.pid} - ALIAS: ${c.alias.join(', ')}`).join('\n')
-					]
-				]);
+				message.channel.send(Command.table([ 'PID', 'Alias' ], server.commands.map(c => [c.pid, c.alias.join(', ')])));
+
+				return;
 			case 'create':
 				if (!this.hasPerms(message.member, server, PERMS.CREATE)) return Command.noPermsMessage('Command');
 
 				var commandName = params.shift();
 				if (!/^[a-z0-9_]+$/i.test(commandName)) return Command.info([['Command', 'Command name must only have A-Z 0-9 _ in it.']]);
 
-				var onCalled = params.join(' ');
+				var onCalledMessage = params.join(' ');
 
-				if (onCalled.length == 0) return;
+				if (onCalledMessage.length == 0) return;
 
-				server.createCommand(message.member, commandName, { type: 'echo', message: onCalled }, (resp) => {
+				server.createCommand(message.member, commandName, { type: 'echo', message: onCalledMessage }, (resp) => {
 					if (resp) server.save(() => message.reply(`Successfully created command "${commandName}"`));
 					else message.reply('Command with that name already exists!');
 				});

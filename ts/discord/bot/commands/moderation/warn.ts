@@ -23,7 +23,7 @@ class Warn extends Command {
 
 		this.perms = Object.values(PERMS);
 
-		this.description = '';
+		this.description = 'Warn a player';
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
@@ -37,18 +37,18 @@ class Warn extends Command {
 			]);
 		}
 
-		var user_str = params.shift();
+		var userIdStr = params.shift();
 
-		var type_user = server.idType(user_str);
+		var userType = server.idType(userIdStr);
 
-		if (type_user != 'member') return Command.error([[ 'Mute', 'Invalid args. Please refer to warn help.' ]]);
+		if (userType != 'member') return Command.error([[ 'Mute', 'Invalid args. Please refer to warn help.' ]]);
 
-		var user_id = server.strpToId(user_str);
+		var userId = server.strpToId(userIdStr);
 		var reason = params.join(' ');
 
 		new Punishments({
 			server_id: message.guild.id,
-			member_id: user_id,
+			member_id: userId,
 			creator_id: message.member.id,
 
 			pid: generate('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 6),
@@ -63,7 +63,7 @@ class Warn extends Command {
 			[
 				'Mute',
 				[
-					'**Warned:** <@' + user_id + '>',
+					'**Warned:** <@' + userId + '>',
 					'**Reason:** ' + reason
 				].join('\n')
 			]

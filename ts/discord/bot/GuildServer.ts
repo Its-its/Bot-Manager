@@ -510,6 +510,16 @@ class Server extends Changes {
 		return null;
 	}
 
+	public phraseResponseToString(response: DiscordBot.PhraseResponses): string {
+		switch(response.type) {
+			case 'alias': return JSON.stringify(response);
+			case 'echo': return JSON.stringify(response);
+			case 'interval': return JSON.stringify(response);
+			case 'rank': return JSON.stringify(response);
+			case 'set': return JSON.stringify(response);
+		}
+	}
+
 
 	// Whitelisted/Blacklisted
 	public hasBlacklistedWord(id: string, content: string): boolean {
