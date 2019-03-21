@@ -3,6 +3,7 @@ import DiscordServer = require('../../../../GuildServer');
 
 import utils = require('../../../../../utils');
 
+import PERMS = require('../perms');
 
 const ID_TO_NAME = {
 	react_add: 'React Add',
@@ -15,6 +16,8 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 }
 
 function showEditPage(compiled: DiscordBot.ListenEvents, senderMessage: Discord.Message, server: DiscordServer) {
+	if (!this.hasPerms(senderMessage.member, server, PERMS.EDIT)) return utils.noPermsMessage('Events');
+
 	const selector = utils.createPageSelector(senderMessage.author.id, senderMessage.channel);
 
 	selector.setFormat([

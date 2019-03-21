@@ -1,28 +1,39 @@
 import Discord = require('discord.js');
 import DiscordServer = require('../../../../GuildServer');
 
+import utils = require('../../../../../utils');
+
 import Edit = require('./edit');
+
+import PERMS = require('../perms');
 
 // events add react 01010 :check:
 
-const TYPES = [ 'react_add', 'member_add', 'member_remove' ];
+const TYPES = [
+	'react_add', 'react_remove',
+	'member_add', 'member_remove'
+];
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	var type = params.shift();
-	if (type == null) return message.channel.send('Invalid args');
-	type = type.toLowerCase();
-	if (TYPES.indexOf(type) == -1) return message.channel.send('Type must be one of these: ' + TYPES.join(','));
+	if (!this.hasPerms(message.member, server, PERMS.ADD)) return utils.noPermsMessage('Events');
+
+	var eventType = params.shift();
+	if (eventType == null) return message.channel.send('Invalid args');
+
+	eventType = eventType.toLowerCase();
+
+	if (TYPES.indexOf(eventType) == -1) return message.channel.send('Type must be one of these: ' + TYPES.join(','));
 
 	var compiled: any = {
-		type: type
+		type: eventType
 	};
 
-	if (type == 'react_add') {
+	if (eventType == 'react_add') {
 		var id = params.shift();
 		var emoji = params.shift();
 
 		if (id == null || emoji == null) return message.channel.send('Invalid args for react_add');
-		if (message.guild.emojis[emoji] == null) return;
+		if (!message.guild.emojis.has(emoji)) return;
 		// TODO: Figure out a way to check and see if the message exists.
 
 		compiled['message_id'] = id;

@@ -5,19 +5,8 @@ import Command = require('../../../command');
 
 import comm = require('./commands');
 
+import PERMS = require('./perms');
 
-const PERMS = {
-	MAIN: 'commands.events'
-};
-
-for(var name in PERMS) {
-	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
-}
-
-
-// for(var name in comm) {
-// 	var perms = comm[name].PERMS;
-// }
 
 class Events extends Command {
 	constructor() {
@@ -28,7 +17,7 @@ class Events extends Command {
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
-		// if (!server.isPluginEnabled('events')) return Command.error([['Error', 'Please enable the Events Plugin!']]);
+		if (!server.isPluginEnabled('events')) return Command.error([['Error', 'Please enable the Events Plugin!']]);
 
 		var callType = params.shift();
 
@@ -37,7 +26,7 @@ class Events extends Command {
 			case 'add': return comm.Add.call(params, server, message);
 			case 'edit': return comm.Edit.call(params, server, message);
 			case 'remove': return comm.Remove.call(params, server, message);
-			case 'help':
+			// case 'help':
 			default: return comm.Help.call(params, server, message);
 		}
 	}

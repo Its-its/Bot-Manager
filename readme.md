@@ -24,7 +24,5 @@ Manager
 	TwitterFeed
 
 Plugins
-	Leveling,
-	Music,
-	Logs,
-	Events
+	Leveling
+	Music
