@@ -55,7 +55,7 @@ export = (app: express.Application) => {
 	});
 }
 
-function authed(req, res, next) {
+function authed(req: express.Request, res: express.Response, next: express.NextFunction) {
 	if ((<any>req).isAuthenticated()) return next();
 	res.status(500).send('Not Authed!');
 }

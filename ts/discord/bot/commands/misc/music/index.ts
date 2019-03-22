@@ -36,7 +36,7 @@ class Music extends Command {
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) return commands.help.call(params, server, message);
 
-		switch (params.shift().toLowerCase()) {
+		switch (params.shift()!.toLowerCase()) {
 			case 'info': return commands.info.call(params, server, message);
 			case 'join': return commands.join.call(params, server, message);
 			case 'leave': return commands.leave.call(params, server, message);

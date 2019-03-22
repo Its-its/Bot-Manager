@@ -1,4 +1,5 @@
 import mongoose = require('mongoose');
+import { CustomDocs } from '../../../typings/manager';
 
 let Schema = mongoose.Schema;
 
@@ -53,50 +54,4 @@ let DiscordServer = new Schema({
 	edited_at: { type: Date, default: Date.now }
 });
 
-interface MongooseDoc extends mongoose.Document {
-	user_id: string;
-	bot_id: string;
-
-	server_id: string;
-	key: string;
-
-	removed: boolean;
-
-	command_ids: string[];
-	interval_ids: string[];
-	phrase_ids: string[];
-
-	server: {
-		version: number;
-
-		region: string;
-		name: string;
-		iconURL: string;
-		createdAt: string;
-		memberCount: string;
-		ownerID: string;
-
-		commandPrefix: string;
-
-		aliasList: any[];
-
-		permissions: {};
-		intervals: string[];
-		ranks: any[];
-
-		commands?: any[];
-		phrases?: any[];
-
-		plugins: {};
-		values: {};
-
-		moderation: DiscordBot.Moderation;
-	}
-
-	created_at: Date;
-	edited_at: Date;
-}
-
-let model: mongoose.Model<MongooseDoc> = mongoose.model('discord_servers', DiscordServer);
-
-export = model;
+export = (<mongoose.Model<CustomDocs.discord.ServersDocument>>mongoose.model('discord_servers', DiscordServer));

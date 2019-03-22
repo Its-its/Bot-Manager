@@ -1,9 +1,7 @@
-import path = require('path');
 import http = require('http');
 import socketio = require('socket.io');
 
 import express = require('express');
-import redis = require('redis');
 
 import bodyParser = require('body-parser');
 import cookieParse = require('cookie-parser');

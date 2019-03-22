@@ -52,9 +52,10 @@ function addTwitterFeed(urlOrScreenName: string, cb: (err?: string, newFeed?: bo
 
 	if (urlRegex.test(urlOrScreenName)) {
 		var exec = urlRegex.exec(urlOrScreenName);
-		urlOrScreenName = exec[1];
+		if (exec != null) urlOrScreenName = exec[1];
 	}
 
+	// @ts-ignore
 	twitter.get('users/lookup', { screen_name: urlOrScreenName }, (err, res: Twit.Twitter.User[]) => {
 		if (err != null) return cb(err.toString());
 
@@ -65,13 +66,14 @@ function addTwitterFeed(urlOrScreenName: string, cb: (err?: string, newFeed?: bo
 		TwitterFeeds.findOne({ user_id: user.id_str }, (err, feed) => {
 			if (err != null) return cb(err);
 
+			// @ts-ignore
 			twitter.get('statuses/user_timeline', { id: user.id_str, count: 10, include_rts: true }, (err, statuses: Twit.Twitter.Status[]) => {
 				if (err != null) return cb(err.toString());
 
 				var feedItems = twitterStatusesToDB(statuses);
 
 				// Exists already? Return with statuses
-				if (feed != null) return cb(null, false, feed, feedItems);
+				if (feed != null) return cb(undefined, false, feed, feedItems);
 
 				new TwitterFeeds({
 					user_id: user.id_str,
@@ -84,7 +86,7 @@ function addTwitterFeed(urlOrScreenName: string, cb: (err?: string, newFeed?: bo
 				})
 				.save((err, feed) => {
 					if (err != null) return cb(err);
-					cb(null, true, feed, feedItems);
+					cb(undefined, true, feed, feedItems);
 				});
 			});
 		});
@@ -102,7 +104,7 @@ function twitterStatusesToDB(items: Twit.Twitter.Status[]): TwitterStatusesDB[] 
 	return items.map(i => {
 		return {
 			id: i.id_str,
-			text: i.full_text || i.text,
+			text: '' + (i.full_text || i.text),
 			link: `https://twitter.com/${i.user.screen_name}/status/${i.id_str}`
 		};
 	});
@@ -173,13 +175,13 @@ function getFeedItems(url: string, cookies: any, cb: (err?: Error, items?: FeedP
 	var feedItems: FeedParser.Item[] = [];
 
 
-	feedparser.on('error', (err) => {
+	feedparser.on('error', (err: any) => {
 		if (errored) return;
 		errored = true;
 		cb(err);
 	});
 
-	feedparser.on('readable', function() {
+	feedparser.on('readable', function(this: FeedParser) {
 		var item: FeedParser.Item;
 		while(item = this.read()) {
 			feedItems.push(item);
@@ -189,7 +191,7 @@ function getFeedItems(url: string, cookies: any, cb: (err?: Error, items?: FeedP
 	feedparser.on('end', () => {
 		if (errored) return;
 
-		cb(null, feedItems);
+		cb(undefined, feedItems);
 	});
 }
 
@@ -212,10 +214,10 @@ function addNewFeed(uri: string, cookies: any, title: string, cb: (err?: string,
 		if (err != null) return cb(err);
 
 		getFeedItems(uri, cookies, (err, items) => {
-			if (err != null) return cb('An error occured while trying to grab Feed Items.');
+			if (err != null || items == null) return cb('An error occured while trying to grab Feed Items.');
 
 			// Feed already exist? No need to continue and create it.
-			if (feed != null) return cb(null, false, feed, articlesToDB(uri, items));
+			if (feed != null) return cb(undefined, false, feed, articlesToDB(uri, items));
 
 
 			var fItem = items[0];
@@ -233,19 +235,19 @@ function addNewFeed(uri: string, cookies: any, title: string, cb: (err?: string,
 				RSSFeeds.findOne({ $or: [ { xmlUrl: uri }, { link: fItem.meta.link.replace(/https?:\/\//i, '') } ] }, (err, feed) => {
 					if (err != null) return cb('Error contacting DB. Please try again in a minute.');
 
-					if (feed != null) cb(null, false, feed);
+					if (feed != null) cb(undefined, false, feed);
 					else createFeed();
 				});
 			} else createFeed();
 
 
 			function createFeed() {
-				var articles = articlesToDB(uri, items);
+				var articles = articlesToDB(uri, <FeedParser.Item[]>items);
 
 				new RSSFeeds(articles)
 				.save((err, feed) => {
 					if (err != null) return cb(err);
-					cb(null, true, feed, articles);
+					cb(undefined, true, feed, articles);
 				});
 			}
 
@@ -284,7 +286,7 @@ function articleItemsToDB(items: FeedParser.Item[]): ArticleItemDB[] {
 			id: crypto.createHash('md5').update(getArticleId(i, items)).digest('hex'),
 			title: i.title,
 			description: cheerio.load(i.description).root().text(), // TODO: HTML -> String
-			date: i.date.getTime(),
+			date: i.date == null ? 0 : i.date.getTime(),
 			link: i.link,
 			guid: i.guid,
 			author: i.author,

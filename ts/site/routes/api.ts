@@ -14,6 +14,7 @@ import Bots = require('../models/bots');
 import discordUtils = require('../../discord/utils');
 
 import config = require('../../config');
+import { CustomDocs } from '../../../typings/manager';
 
 let redisGuildsClient = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.guildsDB });
 
@@ -76,7 +77,7 @@ function ensure(opts: EnsureOpts) {
 
 	// console.log(JSON.stringify(corrected, null, 4));
 
-	function correctOpts(key, item): CorrectedArgs {
+	function correctOpts(key: string, item: any): CorrectedArgs {
 		if (typeof item == 'string') {
 			return {
 				fieldLocation: 'body',
@@ -94,6 +95,7 @@ function ensure(opts: EnsureOpts) {
 			}, item);
 
 			if (Array.isArray(obj.type)) {
+				// @ts-ignore
 				obj.type = obj.type.map(a => correctOpts(null, a));
 			}
 
@@ -151,22 +153,22 @@ function ensure(opts: EnsureOpts) {
 		return { value: value };
 	}
 
-	return function(req, res, next) {
+	return function(req: express.Request, res: express.Response, next: express.NextFunction) {
 		for(var i = 0; i < corrected.length; i++) {
 			var item = corrected[i];
 
-			item.value = req[item.fieldLocation][item.fieldName];
+			item.value = req[item.fieldLocation!][item.fieldName];
 
 			// Check if exists.
 			if (item.value == null) {
 				if (item.required) return res.status(400).send({ error: 'Missing required field "' + item.fieldName  });
-				if (item.default != null) req[item.fieldLocation][item.fieldName] = item.default;
+				if (item.default != null) req[item.fieldLocation!][item.fieldName] = item.default;
 				continue;
 			}
 
 			var errorMsg = verify(item);
 			if (errorMsg.err != null) return res.status(400).send({ error: errorMsg.err.replace('%s', item.fieldName) });
-			req[item.fieldLocation][item.fieldName] = errorMsg.value;
+			req[item.fieldLocation!][item.fieldName] = errorMsg.value;
 		}
 
 		next();
@@ -231,16 +233,16 @@ export = (app: express.Application) => {
 
 		console.log('/status populate lis');
 		// Main Dashboard
-		req['user'].populate('listeners', (err, resp) => {
+		req['user'].populate('listeners', (err: any, resp: CustomDocs.web.UsersDocument) => {
 			res.send({
 				error: err,
-				data: resp.listeners.map(b => {
+				data: resp.listeners!.map(b => {
 					return {
 						displayName: b.displayName,
 						uid: b.uid,
 						is_active: b.is_active,
 						created_at: b.created_at,
-						selectedBot: Bots.collectionToName(b.botType)
+						selectedBot: Bots.collectionToName!(b.botType)
 					};
 				})
 			});
@@ -277,22 +279,26 @@ export = (app: express.Application) => {
 		var id = req.body.id;
 
 		Bots.findOne({ uid: id }, (err, bot) => {
+			var user: CustomDocs.web.UsersDocument = req.user;
+
 			if (err == null && bot != null) {
 				// TODO: Remove
-				DiscordMembers.findOne({ user_id: req['user'].id }, (err, member) => {
+				DiscordMembers.findOne({ user_id: user.id }, (err, member: CustomDocs.discord.MembersDocument) => {
+					if (member == null) return;
+
 					var data = {
 						user: {
 							twitch: {
-								linked: req['user'].twitch.id != null
+								linked: user.twitch.id != null
 							},
 							discord: {
-								linked: req['user'].discord.id != null,
+								linked: user.discord.id != null,
 								guilds: member['guilds']
 									.filter(g => discordUtils.getPermissions(g.permissions).has(discordUtils.Permissions.FLAGS.ADMINISTRATOR))
 									.map(g => { return { id: g.id, name: g.name }})
 							},
 							youtube: {
-								linked: req['user'].youtube.id != null
+								linked: user.youtube.id != null
 							}
 						},
 						bot: {
@@ -310,12 +316,16 @@ export = (app: express.Application) => {
 						if (app != null) {
 							delete app['__v'];
 							delete app['_id'];
+							// @ts-ignore
 							delete app['user_id'];
+							// @ts-ignore
 							delete app['server_id'];
+							// @ts-ignore
 							delete app['bot_id'];
 						}
 
-						data.bot.app = app;
+						// @ts-ignore
+						data.bot.app = app!;
 
 						res.send({ data: data });
 					});
@@ -353,224 +363,222 @@ export = (app: express.Application) => {
 	//! Commands
 
 	// Get All Bot Commands
-	bots.get('/:bid/commands', registerBot, (req, res) => {
-		var bot = req['bot'];
-		// var { bid } = req.params;
+	// TODO:
+	// bots.get('/:bid/commands', registerBot, (req, res) => {
+	// 	// @ts-ignore
+	// 	var bot: CustomDocs.web.BotsDocument = req['bot'];
+	// 	// var { bid } = req.params;
 
-		// Bots.findOne({ uid: bid }, (err, bot) => {
-		//	if (err != null) return res.send({ error: err });
+	// 	// Bots.findOne({ uid: bid }, (err, bot) => {
+	// 	//	if (err != null) return res.send({ error: err });
 
-		DiscordServers.findOne({ _id: bot.botId })
-		.populate('command_ids')
-		.exec((err, doc) => {
-			if (err != null) return res.send({ error: err });
+	// 	DiscordServers.findOne({ _id: bot.botId })
+	// 	.populate('command_ids')
+	// 	.exec((err, doc: CustomDocs.discord.ServersDocument) => {
+	// 		if (err != null) return res.send({ error: err });
 
-			res.send({
-				data: doc['command_ids'].map(c => {
-					return {
-						id: c['uid'],
-						alias: c['alias'],
-						params: c['params'],
-						enabled: doc.server.moderation.disabledCustomCommands.indexOf(c['uid']) == -1
-					}
-				})
-			});
-		});
-		// });
-	});
+	// 		res.send({
+	// 			data: doc['command_ids'].map(c => {
+	// 				return {
+	// 					id: c['uid'],
+	// 					alias: c['alias'],
+	// 					params: c['params'],
+	// 					enabled: doc.server.moderation.disabledCustomCommands.indexOf(c['uid']) == -1
+	// 				}
+	// 			})
+	// 		});
+	// 	});
+	// 	// });
+	// });
 
 	// Create Bot Command
-	bots.post('/:bid/commands', ensure({
-		alias: {
-			type: [
-				{ type: 'string', $min: 1 }
-			],
-			required: true,
-			$min: 1,
-			$filter: (text => /^[a-z0-9]+$/i.test(text))
-		},
-		enabled: {
-			type: 'boolean',
-			default: false
-		},
-		params: {
-			type: 'array',
-			required: true,
-			$min: 1,
-			$max: 2
-		}
-	}), registerBot, (req, res) => {
-		var { bid, cid } = req.params;
+	// TODO
+	// bots.post('/:bid/commands', ensure({
+	// 	alias: {
+	// 		type: [
+	// 			{ type: 'string', $min: 1 }
+	// 		],
+	// 		required: true,
+	// 		$min: 1,
+	// 		$filter: (text => /^[a-z0-9]+$/i.test(text))
+	// 	},
+	// 	enabled: {
+	// 		type: 'boolean',
+	// 		default: false
+	// 	},
+	// 	params: {
+	// 		type: 'array',
+	// 		required: true,
+	// 		$min: 1,
+	// 		$max: 2
+	// 	}
+	// }), registerBot, (req, res) => {
+	// 	var { bid, cid } = req.params;
 
-		var { alias, enabled, params } = req.body;
+	// 	var { alias, enabled, params } = req.body;
 
-		var bot = req['bot'];
+	// 	// @ts-ignore
+	// 	var bot: CustomDocs.web.BotsDocument = req['bot'];
 
-		// Bots.findOne({ uid: bid }, (err, bot) => {
-		// 	if (err == null) {
-		DiscordServers.findOne({ _id: bot.botId })
-		.populate('command_ids')
-		.exec((err, doc) => {
-			if (err != null) return res.status(500).send({ error: err });
+	// 	DiscordServers.findOne({ _id: bot.botId })
+	// 	.populate('command_ids')
+	// 	.exec((err, doc: CustomDocs.discord.ServersPopulatedDocument) => {
+	// 		if (err != null) return res.status(500).send({ error: err });
+	// 		if (doc == null) return res.status(500).send({ error: 'Unable to find Discord Server.' });
 
-			var commands: DiscordBot.Command[] = <any>doc.command_ids;
+	// 		var commands = doc.command_ids;
 
-			if (commands.length > 20) return res.status(500).send({ error: 'Maximum Commands used in bot.' })
+	// 		if (commands.length >= 20) return res.status(500).send({ error: 'Maximum Commands used in bot.' })
 
-			for(var i = 0; i < commands.length; i++) {
-				var cmd = commands[i];
+	// 		for(var i = 0; i < commands.length; i++) {
+	// 			var cmd = commands[i];
 
-				// New Command Alias's
-				for(var a = 0; a < alias.length; a++) {
-					if (cmd.alias.indexOf(alias[a].toLowerCase()) != -1) {
-						return res.send({ error: 'A Command with one or more of those alias\'s exists!' });
-					}
-				}
-			}
+	// 			// New Command Alias's
+	// 			for(var a = 0; a < alias.length; a++) {
+	// 				if (cmd.alias.indexOf(alias[a].toLowerCase()) != -1) {
+	// 					return res.send({ error: 'A Command with one or more of those alias\'s exists!' });
+	// 				}
+	// 			}
+	// 		}
 
-			new Commands({
-				uid: uniqueID(),
-				alias: alias,
-				params: [ params[0] ]
-			})
-			.save((err, prod) => {
-				if (err != null) {
-					console.error(err);
-					return res.status(500).send({ error: 'An Error occured while trying to add the command! Try again in a minute.' });
-				}
+	// 		new Commands({
+	// 			uid: uniqueID(),
+	// 			alias: alias,
+	// 			params: [ params[0] ]
+	// 		})
+	// 		.save((err, prod) => {
+	// 			if (err != null) {
+	// 				console.error(err);
+	// 				return res.status(500).send({ error: 'An Error occured while trying to add the command! Try again in a minute.' });
+	// 			}
 
-				var addTo = {
-					command_ids: prod.id
-				};
+	// 			var addTo: any = {
+	// 				command_ids: prod.id
+	// 			};
 
-				if (!enabled) {
-					addTo['server.moderation.disabledCustomCommands'] = prod['uid'];
-				}
+	// 			if (!enabled) {
+	// 				addTo['server.moderation.disabledCustomCommands'] = prod.pid;
+	// 			}
 
-				DiscordServers.updateOne(
-					{ _id: doc.id },
-					{ $addToSet: addTo }
-				).exec();
+	// 			DiscordServers.updateOne(
+	// 				{ _id: doc.id },
+	// 				{ $addToSet: addTo }
+	// 			).exec();
 
-				doc.server.commands = (<any[]>doc.command_ids).map(c => {
-					return { id: c.uid, alias: c.alias, params: c.params };
-				});
+	// 			doc.server.commands = (<any[]>doc.command_ids).map(c => {
+	// 				return { id: c.uid, alias: c.alias, params: c.params };
+	// 			});
 
-				var newComm = {
-					id: prod['uid'],
-					alias: prod['alias'],
-					params: prod['params'],
-					enabled: enabled
-				};
+	// 			var newComm = {
+	// 				id: prod.pid,
+	// 				alias: prod.alias,
+	// 				params: prod.params,
+	// 				enabled: enabled
+	// 			};
 
-				doc.server.commands.push(newComm);
+	// 			doc.server.commands.push(newComm);
 
-				redisGuildsClient.set(doc.server_id, JSON.stringify(doc['server']), () => {
-					res.send({ data: newComm });
-				});
-			});
-		});
-		// 	} else res.status(500).send({ error: err });
-		// });
-	});
-
-	// Get Single Bot Command
-	// bots.get('/:bid/commands/:cid', (req, res) => {
-	// 	//
+	// 			redisGuildsClient.set(doc.server_id, JSON.stringify(doc['server']), () => {
+	// 				res.send({ data: newComm });
+	// 			});
+	// 		});
+	// 	});
 	// });
 
 	// Update Bot Command
-	bots.put('/:bid/commands/:cid', ensure({
-		alias: {
-			type: [
-				{ type: 'string', $min: 1 }
-			],
-			required: true,
-			$min: 1,
-			$filter: (text => /^[a-z0-9]+$/i.test(text))
-		},
-		enabled: {
-			type: 'boolean',
-			default: false
-		},
-		params: {
-			type: 'array',
-			required: true,
-			$min: 1,
-			$max: 2
-		}
-	}), registerBot, (req, res) => {
-		var { bid, cid } = req.params;
+	// TODO
+	// bots.put('/:bid/commands/:cid', ensure({
+	// 	alias: {
+	// 		type: [
+	// 			{ type: 'string', $min: 1 }
+	// 		],
+	// 		required: true,
+	// 		$min: 1,
+	// 		$filter: (text => /^[a-z0-9]+$/i.test(text))
+	// 	},
+	// 	enabled: {
+	// 		type: 'boolean',
+	// 		default: false
+	// 	},
+	// 	params: {
+	// 		type: 'array',
+	// 		required: true,
+	// 		$min: 1,
+	// 		$max: 2
+	// 	}
+	// }), registerBot, (req, res) => {
+	// 	var { bid, cid } = req.params;
 
-		var { alias, enabled, params } = req.body;
+	// 	var { alias, enabled, params } = req.body;
 
-		var bot = req['bot'];
+	// 	// @ts-ignore
+	// 	var bot: CustomDocs.web.BotsDocument = req['bot'];
 
-		// Bots.findOne({ uid: bid }, (err, bot) => {
-		// 	if (err != null) {
-		// 		console.error(err);
-		// 		res.status(500).send({ error: 'An Error Occured while trying to grab the bot.' });
-		// 		return;
-		// 	}
+	// 	// Bots.findOne({ uid: bid }, (err, bot) => {
+	// 	// 	if (err != null) {
+	// 	// 		console.error(err);
+	// 	// 		res.status(500).send({ error: 'An Error Occured while trying to grab the bot.' });
+	// 	// 		return;
+	// 	// 	}
 
-		// 	if (bot == null) return res.status(500).send({ error: 'Bot does not exist!' });
+	// 	// 	if (bot == null) return res.status(500).send({ error: 'Bot does not exist!' });
 
-		DiscordServers.findOne({ _id: bot.botId }, (err, server) => {
-			if (err != null) {
-				console.error(err);
-				res.status(500).send({ error: 'An Error Occured while trying to grab the bot.' });
-				return;
-			}
+	// 	DiscordServers.findOne({ _id: bot.botId }, (err, server) => {
+	// 		if (err != null) {
+	// 			console.error(err);
+	// 			res.status(500).send({ error: 'An Error Occured while trying to grab the bot.' });
+	// 			return;
+	// 		}
 
-			if (server == null) return res.status(500).send({ error: 'Server does not exist!' });
+	// 		if (server == null) return res.status(500).send({ error: 'Server does not exist!' });
 
-			Commands.findOneAndUpdate(
-				{ uid: cid },
-				{
-					$set: {
-						alias: alias,
-						params: params,
-						edited_at: Date.now()
-					}
-				}, (err, comm) => {
-				if (err != null) {
-					console.error(err);
-					res.status(500).send({ error: 'An Error Occured while trying to grab the bot.' });
-					return;
-				}
+	// 		Commands.findOneAndUpdate(
+	// 			{ uid: cid },
+	// 			{
+	// 				$set: {
+	// 					alias: alias,
+	// 					params: params,
+	// 					edited_at: Date.now()
+	// 				}
+	// 			}, (err, comm) => {
+	// 			if (err != null) {
+	// 				console.error(err);
+	// 				res.status(500).send({ error: 'An Error Occured while trying to grab the bot.' });
+	// 				return;
+	// 			}
 
-				if (comm == null) return res.status(500).send({ error: 'Command does not exist!' });
-
-
-				if (!enabled && server.server.moderation.disabledCustomCommands.indexOf(cid) == -1) {
-					DiscordServers.updateOne(
-						{ _id: server.id },
-						{ $addToSet: { 'server.moderation.disabledCustomCommands': cid } }
-					).exec();
-				} else if (enabled && server.server.moderation.disabledCustomCommands.indexOf(cid) != -1) {
-					DiscordServers.updateOne(
-						{ _id: server.id },
-						{ $pull: { 'server.moderation.disabledCustomCommands': cid } }
-					).exec();
-				}
+	// 			if (comm == null) return res.status(500).send({ error: 'Command does not exist!' });
 
 
-				res.send({
-					id: cid,
-					alias: alias,
-					params: params,
-					enabled: enabled
-				});
-			});
-		});
-		// });
-	});
+	// 			if (!enabled && server.server.moderation.disabledCustomCommands.indexOf(cid) == -1) {
+	// 				DiscordServers.updateOne(
+	// 					{ _id: server.id },
+	// 					{ $addToSet: { 'server.moderation.disabledCustomCommands': cid } }
+	// 				).exec();
+	// 			} else if (enabled && server.server.moderation.disabledCustomCommands.indexOf(cid) != -1) {
+	// 				DiscordServers.updateOne(
+	// 					{ _id: server.id },
+	// 					{ $pull: { 'server.moderation.disabledCustomCommands': cid } }
+	// 				).exec();
+	// 			}
+
+
+	// 			res.send({
+	// 				id: cid,
+	// 				alias: alias,
+	// 				params: params,
+	// 				enabled: enabled
+	// 			});
+	// 		});
+	// 	});
+	// });
 
 	// Delete Command from Bot
 	bots.delete('/:bid/commands/:cid', registerBot, (req, res) => {
 		var { bid, cid } = req.params;
 
-		var bot = req['bot'];
+		// @ts-ignore
+		var bot: CustomDocs.web.BotsDocument = req['bot'];
 
 		// Bots.findOne({ uid: bid }, (err, bot) => {
 		// 	if (err != null) {
@@ -728,6 +736,7 @@ export = (app: express.Application) => {
 		Bots.findOne({ uid: req.params.bid }, (err, bot) => {
 			if (err != null) return res.status(500).send({ error: err });
 			if (bot == null) return res.status(500).send({ error: 'Bot doesn\'t exist.' });
+			// @ts-ignore
 			req['bot'] = bot;
 			next();
 		});

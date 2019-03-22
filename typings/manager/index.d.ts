@@ -1,4 +1,14 @@
+import { Document, Schema } from "mongoose";
+
 // import { Message } from 'discord.js';
+
+// declare module 'socket.io-stream';
+declare module 'connect-mongo';
+declare module 'mogan';
+declare module 'express-session';
+
+type Nullable<T> = T | null;
+type Optional<T> = T | undefined;
 
 
 declare interface CommandClient {
@@ -25,6 +35,153 @@ declare interface CommandClient {
 // 	cb?: (params: Array<string>) => any;
 // }
 
+declare namespace CustomDocs {
+	namespace global {
+		export interface CommandsDoc extends Document {
+			user_id: Schema.Types.ObjectId;
+			pid: string;
+
+			alias: string[];
+			params: any[];
+
+			created_at: Date;
+			edited_at: Date;
+		}
+	}
+
+	namespace discord {
+		export interface MembersDocument extends Document {
+			user_id: Schema.Types.ObjectId;
+
+			did: string;
+			name: string;
+			avatar: string;
+
+			mfa_enabled: boolean;
+			discriminator: string;
+
+			connections: any[];
+			guilds: any[];
+
+			created_at: Date;
+		}
+
+		export interface ServersPopulatedDocument extends ServersDocumentTemp<
+			DiscordBot.Command, DiscordBot.Interval, DiscordBot.Phrase> {}
+
+		export interface ServersDocument extends ServersDocumentTemp<
+			string, string, string> {}
+
+		export interface ServersDocumentTemp<C, I, P> extends Document {
+			user_id: string;
+			bot_id: string;
+
+			server_id: string;
+			key: string;
+
+			removed: boolean;
+
+			command_ids: C[];
+			interval_ids: I[];
+			phrase_ids: P[];
+
+			server: string | {
+				version: number;
+
+				region: string;
+				name: string;
+				iconURL: string;
+				createdAt: string;
+				memberCount: string;
+				ownerID: string;
+
+				commandPrefix: string;
+
+				aliasList: any[];
+
+				permissions: {};
+				intervals: string[];
+				ranks: any[];
+
+				commands?: any[];
+				phrases?: any[];
+
+				plugins: {};
+				values: {};
+
+				moderation: DiscordBot.Moderation;
+			}
+
+			created_at: Date;
+			edited_at: Date;
+		}
+	}
+
+	namespace web {
+		export interface BotsDocument extends Document {
+			getBot: (cb: (err?: Error, res?: Document) => any) => any;
+
+			user_id: string;
+			uid: string;
+
+			botType: string;
+			botId: string;
+
+			displayName: string;
+
+			is_active: boolean;
+
+			created_at: Date;
+			edited_at: Date;
+		}
+
+		// @ts-ignore
+		export interface UsersDocument extends Document {
+			is_Active: boolean;
+			admin: boolean;
+			bots: {
+				amount: number;
+				twitch_amount: number;
+				youtube_amount: number;
+				discord_amount: number;
+			};
+
+			twitch: {
+				id: string;
+				token: string;
+				email: string;
+				name: string;
+			}
+
+			youtube: {
+				id: string;
+				token: string;
+				email: string;
+				name: string;
+			}
+
+			discord: {
+				id: string;
+				token: string;
+			}
+
+			created_at: Date;
+
+			listeners?: BotsDocument[];
+		}
+	}
+
+	namespace music {
+		export interface BotsDocument extends Document {
+			server_id: string;
+			items: {
+				addedBy: string;
+				id: string;
+			}[];
+		}
+	}
+}
+
 
 declare namespace DiscordBot {
 	namespace plugins {
@@ -46,22 +203,22 @@ declare namespace DiscordBot {
 
 			constructor(guildId: string, save: MusicOptions);
 
-			save(cb?);
+			save(cb?: any): any;
 			// play(cb?: (err: string, newSong?: DiscordBot.plugins.SongGlobal, lastSong?: DiscordBot.plugins.SongGlobal) => any, trys?: number);
 			// sendStop(reason: 'stopped' | 'next', cb?: (reason: string) => any);
 			// next(cb: (err: string, newSong: DiscordBot.plugins.PlayedSong, lastSong: DiscordBot.plugins.PlayedSong) => any);
 			// rejoinVoice(guild?: any/*Guild*/, cb?: (err, msg?) => any);
-			clearQueue(cb: (err: any) => any);
-			addToQueue(user: string, song: SongGlobal, cb: () => any);
-			removeFromQueue(id: string, cb: (err: any) => any);
-			nextInQueue(cb: (song: SongGlobal) => any);
-			shuffleQueue();
+			clearQueue(cb: (err: any) => any): any;
+			addToQueue(user: string, song: SongGlobal, cb: () => any): any;
+			removeFromQueue(id: string, cb: (err: any) => any): any;
+			nextInQueue(cb: (song: SongGlobal) => any): any;
+			shuffleQueue(): any;
 			toggleQueueRepeat(): boolean;
-			addToHistory(song: PlayedSong);
-			clearHistory(cb: (err: any) => any);
+			addToHistory(song: PlayedSong): any;
+			clearHistory(cb: (err: any) => any): any;
 			// isPlaying(cb: (playing: boolean) => any);
-			sendMessageFromGuild(guild: any/*Guild*/, message: string, error?: boolean);
-			regrab(cb: (music: Music) => any);
+			sendMessageFromGuild(guild: any/*Guild*/, message: string, error?: boolean): any;
+			regrab(cb: (music: Music) => any): any;
 			toString(): string;
 		}
 
@@ -441,10 +598,11 @@ declare namespace DiscordBot {
 		};
 	}
 
-	type PLUGIN_NAMES = 'commands' | 'music' | 'interval' | 'logs' | 'leveling' | 'events';
+	type PLUGIN_NAMES = 'commands' | 'interval' | 'logs' | 'leveling' | 'events';
 
 	interface Plugin {
-		[name: string]: PluginItem;
+		// [name: string]: PluginItem;
+
 		commands?: PluginItem;
 		music?: PluginItem;
 		interval?: PluginItem;

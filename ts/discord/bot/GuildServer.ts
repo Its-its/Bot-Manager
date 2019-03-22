@@ -1,3 +1,6 @@
+import { Document, Types } from 'mongoose';
+import { DiscordBot, CustomDocs, Nullable } from '../../../typings/manager';
+
 import * as redis from 'redis';
 import * as Discord from 'discord.js';
 
@@ -15,7 +18,6 @@ import intervalPlugin = require('./plugins/interval');
 
 import utils = require('../utils');
 
-import { Document, Types } from 'mongoose';
 
 
 let redisGuildsClient = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.guildsDB });
@@ -83,7 +85,7 @@ class Changes {
 class Server extends Changes {
 	public linked: boolean;
 
-	public branch: number;
+	// public branch: number;
 	public serverId: string;
 	public migration: number;
 
@@ -110,7 +112,6 @@ class Server extends Changes {
 	};
 
 	public events: DiscordBot.ListenEvents[];
-	public leveling: DiscordBot.Leveling;
 	public intervals: DiscordBot.Interval[];
 	public ranks: string[];
 
@@ -118,6 +119,7 @@ class Server extends Changes {
 	public commands: DiscordBot.Command[];
 	public phrases: DiscordBot.Phrase[];
 	public roles: DiscordBot.Role[];
+	public leveling: DiscordBot.Leveling = { roles: [], keepPreviousRoles: false };
 
 	public plugins: DiscordBot.Plugin = {
 		commands: {
@@ -140,16 +142,16 @@ class Server extends Changes {
 		// }
 	};
 
-	public values;
+	public values: any;
 
 	public permissions: DiscordBot.Permissions = {
 		roles: {}, users: {}, groups: {}
 	};
 
-	constructor(serverID: string, options?: DiscordBot.ServerOptions) {
+	constructor(serverID: string, options: DiscordBot.ServerOptions) {
 		super();
 
-		this.linked = def(options.linked, true);
+		this.linked = def(true, options.linked)!;
 		this.serverId = serverID;
 
 		this.region = options.region;
@@ -159,25 +161,25 @@ class Server extends Changes {
 		this.memberCount = options.memberCount;
 		this.ownerID = options.ownerID;
 
-		this.events = def(options.events, []);
-		this.alias = def(options.alias, options.aliasList, []);
-		this.intervals = def(options.intervals, []);
-		this.ranks = def(options.ranks, []);
-		this.roles = def(options.roles, []);
-		this.commands = def(options.commands, []);
-		this.phrases = def(options.phrases, []);
-		this.plugins = def(options.plugins, {});
-		this.values = def(options.values, {});
-		this.channels = def(options.channels, {});
-		this.punishments = def(options.punishments, {});
+		this.events = def([], options.events)!;
+		this.alias = def([], options.alias, options.aliasList)!;
+		this.intervals = def([], options.intervals)!;
+		this.ranks = def([], options.ranks)!;
+		this.roles = def([], options.roles)!;
+		this.commands = def([], options.commands)!;
+		this.phrases = def([], options.phrases)!;
+		this.plugins = def({}, options.plugins);
+		this.values = def({}, options.values);
+		this.channels = def({}, options.channels)!;
+		this.punishments = def({}, options.punishments)!;
 
-		this.migration = def(options.version, SERVER.LATEST_VERSION);
+		this.migration = def(SERVER.LATEST_VERSION, options.version)!;
 
 		this.commandPrefix = options.commandPrefix;
 
-		this.leveling = def(options.leveling, this.leveling);
-		this.moderation = def(options.moderation, this.moderation);
-		this.permissions = def(options.permissions, this.permissions);
+		this.leveling = def(this.leveling, options.leveling)!;
+		this.moderation = def(this.moderation, options.moderation)!;
+		this.permissions = def(this.permissions, options.permissions)!;
 
 		this.init();
 
@@ -207,7 +209,7 @@ class Server extends Changes {
 		}
 	}
 
-	public regrab(cb: (server: Server) => any) {
+	public regrab(cb: (server?: Server) => any) {
 		getServer(this.serverId, server => cb(server));
 	}
 
@@ -237,9 +239,9 @@ class Server extends Changes {
 	// Plugins
 	public isPluginEnabled(name: DiscordBot.PLUGIN_NAMES) {
 		// Commands is enabled by default even if null.
-		if (name == 'commands') return this.plugins[name] == null || this.plugins[name].enabled;
+		if (name == 'commands') return this.plugins[name] == null || this.plugins[name]!.enabled;
 
-		return this.plugins[name] != null && this.plugins[name].enabled;
+		return this.plugins[name] != null && this.plugins[name]!.enabled;
 	}
 
 	public getPrefix() {
@@ -286,7 +288,7 @@ class Server extends Changes {
 
 	// Leveling
 	public keepPreviousRoles() {
-		return this.leveling != null || (this.leveling.keepPreviousRoles == null ? false : this.leveling.keepPreviousRoles);
+		return this.leveling != null && (this.leveling.keepPreviousRoles == null ? false : this.leveling.keepPreviousRoles);
 	}
 
 	public roleForLevel(level: number) {
@@ -358,7 +360,7 @@ class Server extends Changes {
 		if (this.findPhrase(phraseText) != null) return null;
 
 		var phrase = {
-			_id: null,
+			_id: undefined,
 			sid: this.serverId,
 			pid: uniqueID(4),
 			phrases: phraseText,
@@ -375,6 +377,7 @@ class Server extends Changes {
 			})
 			.save((err, prod) => {
 				phrase._id = prod.id;
+
 				this.phrases.push(phrase);
 
 				cb(phrase);
@@ -386,10 +389,10 @@ class Server extends Changes {
 		});
 	}
 
-	public removePhrase(id: number | string, phrases?: string[]): DiscordBot.Phrase {
+	public removePhrase(id: number | string, phrases?: string[]): Nullable<DiscordBot.Phrase> {
 		if (this.phrases.length < id) return null;
 
-		var phrase: DiscordBot.Phrase = null;
+		var phrase: Nullable<DiscordBot.Phrase> = null;
 		var pos = -1;
 
 		if (typeof id == 'string') {
@@ -407,6 +410,7 @@ class Server extends Changes {
 		}
 
 		if (pos == -1) return null;
+		if (phrase == null) return null;
 
 		// Remove full phrase?
 		if (phrases == null) {
@@ -415,8 +419,8 @@ class Server extends Changes {
 		} else {
 			Phrases.updateOne({ _id: phrase._id }, { $pull: { phrases: { $in: phrases } } }).exec();
 			phrases.forEach((p, i) => {
-				var index = phrase.phrases.indexOf(p);
-				if (index != -1) phrase.phrases.splice(index, 1);
+				var index = phrase!.phrases.indexOf(p);
+				if (index != -1) phrase!.phrases.splice(index, 1);
 			});
 		}
 
@@ -488,7 +492,7 @@ class Server extends Changes {
 		return true;
 	}
 
-	public findPhrase(text: string[] | string): DiscordBot.Phrase {
+	public findPhrase(text: string[] | string): Nullable<DiscordBot.Phrase> {
 		if (Array.isArray(text)) {
 			text = text.slice(0, SERVER.MAX_PHRASE_TEXT);
 
@@ -501,10 +505,10 @@ class Server extends Changes {
 		}
 
 		for(var i = 0; i < this.phrases.length; i++) {
-			var phrase = this.phrases[i];
+			var ePhrase = this.phrases[i];
 
-			if (phrase.phrases.find(p => phrase.ignoreCase == null || phrase.ignoreCase ? p.toLowerCase() == (<string>text).toLowerCase() : p == text))
-				return phrase;
+			if (ePhrase.phrases.find(p => ePhrase.ignoreCase == null || ePhrase.ignoreCase ? p.toLowerCase() == (<string>text).toLowerCase() : p == text))
+				return ePhrase;
 		}
 
 		return null;
@@ -643,7 +647,7 @@ class Server extends Changes {
 		}
 
 		var comm: DiscordBot.Command = {
-			_id: null,
+			_id: undefined,
 			pid: uniqueID(4),
 			alias: commandNames,
 			params: Array.isArray(resp) ? resp : [
@@ -772,7 +776,7 @@ class Server extends Changes {
 		return this.roles;
 	}
 
-	public getRole(roleId: string): DiscordBot.Role {
+	public getRole(roleId: string): Nullable<DiscordBot.Role> {
 		var index = this.getRoleIndex(roleId);
 		return index == -1 ? null : this.roles[index];
 	}
@@ -812,18 +816,18 @@ class Server extends Changes {
 		if (typeof id == 'string') {
 			for(var i = 0; i < this.intervals.length; i++) {
 				if (this.intervals[i].pid == id) {
-					intervalPlugin.removeInterval(this.intervals[i]._id);
+					intervalPlugin.removeInterval(this.intervals[i]._id!);
 					break;
 				}
 			}
 		} else {
 			var interval = this.intervals.splice(id - 1, 1)[0];
 			if (interval == null) return console.error('Remove Interval, id does not exist!');
-			intervalPlugin.removeInterval(interval._id);
+			intervalPlugin.removeInterval(interval._id!);
 		}
 	}
 
-	public toggleInterval(id: number | string): boolean {
+	public toggleInterval(id: number | string): Nullable<boolean> {
 		var interval = null;
 
 		if (typeof id == 'string') {
@@ -841,15 +845,15 @@ class Server extends Changes {
 		}
 
 		interval.active = !interval.active;
-		interval.nextCall = null;
+		interval.nextCall = undefined;
 
-		var opts: DiscordBot.Interval = { active: interval.active, nextCall: null };
+		var opts: DiscordBot.Interval = { active: interval.active, nextCall: undefined };
 
 		if (interval.active) {
-			interval.nextCall = opts.nextCall = Date.now() + (interval.every * 1000);
+			interval.nextCall = opts.nextCall = Date.now() + (interval.every! * 1000);
 		}
 
-		intervalPlugin.editInterval(interval._id, opts);
+		intervalPlugin.editInterval(interval._id!, opts);
 
 		return interval.active;
 	}
@@ -877,7 +881,8 @@ class Server extends Changes {
 		}
 
 		Object.assign(interval, params);
-		intervalPlugin.editInterval(interval._id, params);
+
+		intervalPlugin.editInterval(interval._id!, params);
 	}
 
 	public setIntervalName(id: number | string, name: string) {
@@ -894,7 +899,7 @@ class Server extends Changes {
 
 		if (interval == null) return console.error('Interval not found for ID: ' + id);
 
-		intervalPlugin.editInterval(interval._id, { displayName: name });
+		intervalPlugin.editInterval(interval._id!, { displayName: name });
 		interval.displayName = name;
 	}
 
@@ -912,7 +917,7 @@ class Server extends Changes {
 
 		if (interval == null) return console.error('Interval not found for ID: ' + id);
 
-		intervalPlugin.editInterval(interval._id, { message: name });
+		intervalPlugin.editInterval(interval._id!, { message: name });
 		interval.message = name;
 	}
 
@@ -940,13 +945,13 @@ class Server extends Changes {
 
 		if (interval == null) return false;
 
-		this.setIntervalTime(id, interval.every);
+		this.setIntervalTime(id, interval.every!);
 		return true;
 	}
 
 
 	// Permissions
-	public createGroup(displayName: string): DiscordBot.PermissionsGroup {
+	public createGroup(displayName: string): Nullable<DiscordBot.PermissionsGroup> {
 		var tounique = displayName.replace(/ /, '').toLowerCase();
 
 		if (Object.keys(this.permissions.groups).length >= 15) return null;
@@ -992,8 +997,8 @@ class Server extends Changes {
 
 		var group = this.permissions.groups[id];
 
-		for(var i = 0; i < group.groups.length; i++) {
-			if (this.isGroupsRecursive(group.groups[i], saved)) return true;
+		for(var i = 0; i < group.groups!.length; i++) {
+			if (this.isGroupsRecursive(group.groups![i], saved)) return true;
 		}
 
 		return false;
@@ -1015,7 +1020,7 @@ class Server extends Changes {
 
 		if (type == 'groups' && this.isGroupsRecursive(id, [ groupId ])) return false;
 
-		var groups = perms[id].groups;
+		var groups = perms[id].groups!;
 
 		if (groups.length >= 5) return false;
 
@@ -1262,15 +1267,12 @@ class Server extends Changes {
 	}
 }
 
-function def<I>(...opts: I[]): I {
-	var item = null;
-
+function def<D, I>(def: D, ...opts: I[]): D | I {
 	for(var i = 0; i < opts.length; i++) {
-		item = opts[i];
-		if (item != null) break;
+		if (opts[i] != null) return opts[i];
 	}
 
-	return item;
+	return def;
 }
 
 function getOrCreateUser(member: Discord.GuildMember, cb: (err: any, doc: Document) => any) {
@@ -1295,9 +1297,9 @@ function getOrCreateUser(member: Discord.GuildMember, cb: (err: any, doc: Docume
 	});
 }
 
-function getServer(serverId: string,  cb: (music: Server) => any) {
+function getServer(serverId: string,  cb: (music?: Server) => any) {
 	redisGuildsClient.get(serverId, (err, str) => {
-		if (err != null) { console.error(err); cb(null); }
+		if (err != null) { console.error(err); cb(); }
 		cb(new Server(serverId, str == null ? {} : JSON.parse(str)));
 	});
 }

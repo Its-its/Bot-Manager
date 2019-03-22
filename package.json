@@ -5,10 +5,14 @@
     "discord_interval": "nodemon src/discord --delay 3 -- --client interval",
     "discord_master": "nodemon src/discord/master --delay 3",
     "discord_music": "nodemon src/discord --delay 3 -- --client music",
-
     "grabber": "nodemon src/rssgrabber --delay 3"
   },
   "dependencies": {
+    "@types/connect-mongo": "^0.0.41",
+    "@types/cookie-parser": "^1.4.1",
+    "@types/express-session": "^1.15.12",
+    "@types/morgan": "^1.7.35",
+    "@types/passport": "^1.0.0",
     "async": "^2.6.1",
     "body-parser": "^1.18.3",
     "cheerio": "^1.0.0-rc.2",

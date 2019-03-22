@@ -58,7 +58,8 @@ setInterval(() => {
 					count: 10,
 					include_rts: true
 				},
-				function (err, data: Twit.Twitter.Status[]) {
+				// @ts-ignore
+				function(err, data: Twit.Twitter.Status[]) {
 					if (err != null) return console.error(err);
 
 					var newItems = utils.twitterStatusesToDB(data);
@@ -97,7 +98,7 @@ setInterval(() => {
 
 		async.everyLimit(feedDocs, 10, (doc, cbEvery) => {
 			utils.getFeedItems(doc.url, null, (err, items) => {
-				if (err != null) return console.error(err);
+				if (err != null || items == null) return console.error(err);
 
 				var newItems = utils.articleItemsToDB(items);
 				var oldIds = doc.items.map(i => i.id);

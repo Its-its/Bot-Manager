@@ -1,10 +1,12 @@
+import { Server } from 'socket.io';
+
 import path = require('path');
 import express = require('express');
 
 import passport = require('passport');
 
 
-export = (socketio) => {
+export = (socketio: Server) => {
 	let app = express();
 
 	app.set('view engine', 'ejs');

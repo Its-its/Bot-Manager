@@ -1,5 +1,8 @@
+// @ts-ignore
 import passportGoogleOauth = require('passport-google-oauth');
+// @ts-ignore
 import passportDiscord = require('passport-discord');
+// @ts-ignore
 import passportTwitch = require('passport-twitch');
 import passport = require('passport');
 
@@ -119,7 +122,7 @@ export = (app: express.Application) => {
 			callbackURL: config.passport.discord.callbackURL,
 			scope: config.passport.discord.scopeInvite
 		},
-		(accessToken, refreshToken, profile, done) => {
+		(accessToken: string, refreshToken: string, profile: any, done: any) => {
 			Users.findOne({ 'discord.id': profile.id }, (err, user: any) => {
 				if (err != null) return done(err);
 
@@ -153,7 +156,7 @@ export = (app: express.Application) => {
 
 				// guilds: [{ owner: Boolean, permissions: Number, icon: String, id: String, name: String }]
 
-				user.save((err, doc) => {
+				user.save((err: any, doc: any) => {
 					if (err) {
 						console.log(err);
 						return done(err, null);
@@ -181,15 +184,16 @@ export = (app: express.Application) => {
 	));
 
 	// Login
-	passport.serializeUser((user, done) => {
+	passport.serializeUser((user: any, done) => {
 		console.log('passport.serializeUser:', user);
 		done(null, user.id);
 	});
 
 	// Logout
-	passport.deserializeUser((id, done) => {
+	passport.deserializeUser((id: any, done) => {
 		console.log('passport.deserializeUser:', id);
 		Users.findById(id, (err, user) => {
+			// @ts-ignore
 			done(err, user);
 		});
 	});

@@ -1,11 +1,11 @@
 // TODO: Completely seperate from discord.
 
 interface DefaultCommands {
-	parseMessage: (message: string, userConfig, extra: any) => any;
+	parseMessage: (message: string, userConfig: any, extra: any) => any;
 	get: (commandName: string) => any;
 }
 
-function parseMessage(defaultCommands: DefaultCommands, userConfig, message: string, extra: any, cb: (obj: DiscordBot.PhraseResponses) => void) {
+function parseMessage(defaultCommands: DefaultCommands, userConfig: any, message: string, extra: any, cb: (obj: DiscordBot.PhraseResponses) => void) {
 	var parts = message.split(' ');
 	var messageCommand = parts[0].toLowerCase();
 
@@ -30,19 +30,21 @@ function parseMessage(defaultCommands: DefaultCommands, userConfig, message: str
 
 				console.log('[CommMan]: Command: ' + message);
 
+				if (fixedParams == null) return console.error('command Manager: fixedParams returned null');
+
 				var calls = dealWithOnCalled(
 					userConfig.commands,
 					fixedParams.newParams,
 					command.params[fixedParams.pos],
 					command.params);
 
+				if (calls == null) return console.error('command Manager: dealWithOnCalled returned null');
+
 				if (Array.isArray(calls)) {
 					for (var a = 0; a < calls.length; a++) cb(calls[a]);
 				} else cb(calls);
 			}
 		}
-
-	// cb({ type: "error" });
 }
 
 function hasPermissions(defaultCommands: DefaultCommands, message: string, isAdmin: boolean): boolean {
@@ -60,7 +62,7 @@ function dealWithOnCalled(
 	commands: Array<Command>,
 	messageParams: Array<string>,
 	usedParam: CommandParam,
-	allParams?: Array<CommandParam>): DiscordBot.PhraseResponses {
+	allParams?: Array<CommandParam>): Nullable<DiscordBot.PhraseResponses> {
 
 	var response = usedParam.onCalled || usedParam.response;
 
@@ -101,7 +103,7 @@ function dealWithOnCalled(
 	return response;
 }
 
-function getCommand(commands: Array<Command>, command: string): Command {
+function getCommand(commands: Array<Command>, command: string): Nullable<Command> {
 	for (var i = 0; i < commands.length; i++) {
 		if (commands[i].alias.indexOf(command) != -1) return commands[i];
 	}
@@ -109,15 +111,17 @@ function getCommand(commands: Array<Command>, command: string): Command {
 	return null;
 }
 
-function getProperParam(message: string[], params: Array<CommandParam>): { pos: number; newParams: Array<string>; } {
+function getProperParam(message: string[], params: Array<CommandParam>): Nullable<{ pos: number; newParams: Array<string>; }> {
 	for (var a = 0; a < params.length; a++) {
 		var param = params[a];
 
 		if (param.length != null) {
 			if (param.length != message.length - 1) continue;
-			return { pos: a, newParams: fix(message) };
+			return { pos: a, newParams: removeEmptiesFromArray(message) };
 		} else {
-			if (param.minLength > message.length - 1 || (param.maxLength == -1 ? false : param.maxLength < message.length - 1)) continue;
+			if ((param.minLength != null && param.minLength > message.length - 1) ||
+				(param.maxLength == -1 ? false : param.maxLength != null && param.maxLength < message.length - 1)
+			) continue;
 
 			var paramReg = param.paramReg;
 
@@ -126,8 +130,8 @@ function getProperParam(message: string[], params: Array<CommandParam>): { pos: 
 
 				var messageRemains = message;
 
-				var newMessageParams = [];
-				newMessageParams.push(messageRemains.shift());
+				var newMessageParams: string[] = [];
+				newMessageParams.push(<string>messageRemains.shift());
 
 				parts.forEach(part => {
 					var points = parseInt(part);
@@ -141,25 +145,28 @@ function getProperParam(message: string[], params: Array<CommandParam>): { pos: 
 					newMessageParams.push(array.join(' '));
 				});
 
-				return { pos: a, newParams: fix(newMessageParams) };
+				return { pos: a, newParams: removeEmptiesFromArray(newMessageParams) };
 			}
 
-			return { pos: a, newParams: fix(message) };
+			return { pos: a, newParams: removeEmptiesFromArray(message) };
 		}
 	}
 
 	return null;
 }
 
-function fix(msg: string[]) { return msg.slice(1).filter(t => t.length != 0); }
+function removeEmptiesFromArray(msg: string[]) { return msg.slice(1).filter(t => t.length != 0); }
 
 
 function getParam(command: Command, id: number): CommandParam {
 	return command.params[id];
 }
 
-function getCommandParam(commandName: string, id: number, commands: Array<Command>): CommandParam {
+function getCommandParam(commandName: string, id: number, commands: Array<Command>): Nullable<CommandParam> {
 	var command = getCommand(commands, commandName);
+
+	if (command == null) return null;
+
 	var param = getParam(command, id);
 
 	return param;
@@ -189,7 +196,7 @@ export = {
 	dealWithOnCalled,
 	getCommand,
 	getProperParam,
-	fix,
+	fix: removeEmptiesFromArray,
 	getParam,
 	getCommandParam,
 	isCallingCommand,

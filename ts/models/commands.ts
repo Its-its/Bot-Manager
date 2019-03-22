@@ -1,8 +1,9 @@
 import mongoose = require('mongoose');
+import { CustomDocs } from '../../typings/manager';
 
-let Schema = mongoose.Schema;
+const Schema = mongoose.Schema;
 
-let Commands = new Schema({
+const Commands = new Schema({
 	// Creator ID
 	user_id: { type: Schema.Types.ObjectId, ref: 'users' },
 
@@ -16,4 +17,4 @@ let Commands = new Schema({
 	edited_at: { type: Date, default: Date.now }
 });
 
-export = mongoose.model('commands', Commands);
+export = (<mongoose.Model<CustomDocs.global.CommandsDoc>>mongoose.model('commands', Commands));

@@ -1,11 +1,15 @@
+import { Server } from 'socket.io';
+import * as express from 'express';
+
+
 import passport = require('./passport');
 import apiSetup = require('./api');
 import discord = require('./discord');
 
 import musicRoute = require('../../music/routes');
 
-import * as express from 'express';
-export = (app: express.Application, socketio) => {
+
+export = (app: express.Application, socketio: Server) => {
 	app.get('/', (req, res) => {
 		if ((<any>req).isAuthenticated()) return res.redirect('/dashboard');
 		res.render('index');
@@ -44,11 +48,11 @@ export = (app: express.Application, socketio) => {
 
 	function render(url: string, fileName?: string) {
 		fileName = fileName || url.replace('/', '');
-		app.get(url, (_, res) => res.render(fileName));
+		app.get(url, (_, res) => res.render(<string>fileName));
 	}
 }
 
-function authed(req, res, next) {
+function authed(req: express.Request, res: express.Response, next: express.NextFunction) {
 	if ((<any>req).isAuthenticated()) return next();
 	res.status(500).send('Not Authed!');
 }

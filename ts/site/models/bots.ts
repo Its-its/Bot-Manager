@@ -1,7 +1,9 @@
+import { CustomDocs } from '../../../typings/manager';
+
+
 import mongoose = require('mongoose');
 
 let Schema = mongoose.Schema;
-
 
 let Bots = new Schema({
 	user_id: { type: Schema.Types.ObjectId, ref: 'users' },
@@ -17,10 +19,10 @@ let Bots = new Schema({
 	edited_at: { type: Date, default: Date.now }
 });
 
-Bots.method('getBot', function(cb) {
+Bots.method('getBot', function(this: CustomDocs.web.BotsDocument, cb: (err?: Error, res?: any) => any) {
 	if (this.botType == null || this.botId == null)
 		return cb(new Error('No App Exists.'), null);
-	
+
 	mongoose.connection.collection(this.botType)
 	.findOne({ '_id': this.botId }, (err, res) => {
 		if (res != null) res.type = collectionToName(this.botType).toLowerCase();
@@ -32,7 +34,7 @@ Bots.static('appName', appName);
 Bots.static('collectionToName', collectionToName);
 
 
-function appName(name: string) {
+function appName(name: string): string {
 	switch (name) {
 		case 'disc':
 		case 'discord':
@@ -45,41 +47,21 @@ function appName(name: string) {
 		case 'twitchtv':
 			return 'twitch_channels';
 	}
+
 	throw new Error('Unknown APP Name: ' + name);
 }
 
-function collectionToName(collection: string) {
+function collectionToName(collection?: string): string {
 	if (collection == 'discord_servers') return 'Discord';
 	if (collection == 'youtube_channels') return 'Youtube';
 	if (collection == 'twitch_channels') return 'Twitch';
 	return 'Unknown';
 }
 
-interface MongooseDoc extends mongoose.Document {
-	getBot: (cb: (err, res: mongoose.Document) => any) => any;
-	appName: (str: string) => string;
-
-	user_id: string;
-	uid: string;
-
-	botType: string;
-	botId: string;
-	
-	displayName: string;
-
-	is_active: boolean;
-
-	created_at: Date;
-	edited_at: Date;
+interface Model extends mongoose.Model<CustomDocs.web.BotsDocument> {
+	collectionToName: (collection: string) => string;
+	appName: (bot: string) => string;
 }
 
-
-interface Model<T extends mongoose.Document> extends mongoose.Model<T> {
-	collectionToName?: (collection: string) => string;
-	appName?: (bot: string) => string;
-	getBot?: (cb: (err: Error, res?: any) => any) => any;
-}
-
-let model: Model<MongooseDoc> = mongoose.model('bots', Bots);
-
-export = model;
+// @ts-ignore
+export = (<Model>mongoose.model('bots', Bots));
