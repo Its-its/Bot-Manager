@@ -8,8 +8,37 @@ import config = require('../../../config');
 
 import { getMusic } from '../GuildMusic';
 
+import client = require('../../client');
+
 
 type SongGlobal = DiscordBot.plugins.SongGlobal;
+
+
+// Bot Shard -> Music Shard
+function sendReq(url: string, opts: { [a: string]: any }) {
+	client.shard.send(Object.assign({ from: 'bot', to: 'music', _event: url }, opts));
+}
+
+function sendQueue(queueType: string, guild_id: string, member_id: string, channel_id: string, params: string[]) {
+	sendReq('queue', {
+		_guild: guild_id,
+		_channel: channel_id,
+		_sender: member_id,
+
+		queue_type: queueType,
+		params: params
+	});
+}
+
+function sendPlay(channel_id: string, guild_id: string, member_id: string, search: string) {
+	sendReq('play', {
+		_guild: guild_id,
+		_channel: channel_id,
+		_sender: member_id,
+
+		search: search
+	});
+}
 
 
 // Playlist crap
@@ -126,12 +155,6 @@ function clearPlaylist(guildId: string, discordMemberId: string, playlistPublicI
 
 // Utils
 
-// TODO: return { site name, download url }
-function isProperSongUrl(url: string) {
-	return /(?:(?:https?:\/\/)(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)?([^= &?/\r\n]{8,11})/g.test(url) || /^([a-zA-Z0-9-_]){11}$/.test(url);
-}
-
-
 
 function getSong(uri: string | string[], cb: (errorMessage?: string, song?: SongGlobal[]) => any) {
 	request.get(`http://${config.ytdl.full}/info?force=true&id=` + (typeof uri == 'string' ? uri : uri.join(',')), (err, res) => {
@@ -210,6 +233,11 @@ function findFirstSong(search: string, cb: (errorMsg?: any, song?: SongGlobal) =
 	});
 }
 
+// TODO: return { site name, download url }
+function isProperSongUrl(url: string) {
+	return /(?:(?:https?:\/\/)(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)?([^= &?/\r\n]{8,11})/g.test(url) || /^([a-zA-Z0-9-_]){11}$/.test(url);
+}
+
 
 export {
 	createPlaylist,
@@ -223,5 +251,9 @@ export {
 	isProperSongUrl,
 	getSong,
 	searchForSong,
-	findFirstSong
+	findFirstSong,
+
+	sendReq,
+	sendQueue,
+	sendPlay
 };

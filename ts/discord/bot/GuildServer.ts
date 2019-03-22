@@ -1197,6 +1197,8 @@ class Server extends Changes {
 	}
 
 	public userHasPerm(user: Discord.GuildMember, perm: string): boolean {
+		if (user == null) return false;
+
 		if (user.hasPermission('ADMINISTRATOR')) return true;
 
 		if (this.userHasParentPerm(user.id, perm)) return true;
