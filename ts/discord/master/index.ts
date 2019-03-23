@@ -1,5 +1,6 @@
 import socketIO = require('socket.io');
 import config = require('../../config');
+import { Nullable } from '../../../typings/manager';
 
 interface SocketExt extends socketIO.Socket {
 	port: number;
@@ -21,9 +22,10 @@ const io = socketIO.listen(config.shards.discord.masterPort);
 io.on('connection', (socket: SocketExt) => {
 	console.log('Connection: ' + socket.id);
 
-	let botType: string = null;
+	let botType: Nullable<string> = null;
 
 	socket.on('init', type => {
+		// @ts-ignore
 		socket.port = config.shards.discord[type + 'Port'];
 		console.log(`init: ${type} - ${socket.port}`);
 

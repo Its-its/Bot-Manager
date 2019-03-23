@@ -1,4 +1,5 @@
 import mongoose = require('mongoose');
+import { CustomDocs } from '../../../typings/manager';
 
 const Schema = mongoose.Schema;
 
@@ -22,22 +23,5 @@ const DiscordFeeds = new Schema({
 	]
 });
 
-interface FeedFix extends mongoose.Document {
-	pid: string;
-	active: boolean;
-	guild_id: string;
-	channel_id: string;
-	last_check: Date;
 
-	feeds: {
-		format: string;
-		active: boolean;
-		items: string[];
-		feed: any;
-	}[];
-}
-
-
-const adsf: mongoose.Model<FeedFix> = mongoose.model('discord_feeds', DiscordFeeds);
-
-export = adsf;
+export = (<mongoose.Model<CustomDocs.discord.DiscordRss>>mongoose.model('discord_feeds', DiscordFeeds));

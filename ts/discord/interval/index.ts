@@ -18,6 +18,7 @@ import config = require('../../config');
 import util = require('../../rssgrabber/utils');
 
 import client = require('../client');
+import { CustomDocs } from '../../../typings/manager';
 
 mongoose.Promise = global.Promise;
 if (config.debug) mongoose.set('debug', true);
@@ -144,7 +145,7 @@ interface ChannelTwitterFeedItem {
 setInterval(() => {
 	DiscordModelTwitter.find({ active: true, last_check: { $lte: Date.now() - CALL_AGAIN } })
 	.populate('feeds.feed')
-	.exec((err, feedDocs) => {
+	.exec((err, feedDocs: CustomDocs.discord.DiscordTwitterPopulated[]) => {
 		if (err != null) return console.error(err);
 		if (feedDocs.length == 0) return console.log('None.');
 
@@ -158,7 +159,7 @@ setInterval(() => {
 			}
 
 			var newFeeds: {
-				feed: ChannelTwitterFeedItem,
+				feed: CustomDocs.discord.DiscordTwitterFeeds<CustomDocs.global.TwitterFeeds>,
 				item: TwitterFeedItem
 			}[] = [];
 
@@ -178,6 +179,7 @@ setInterval(() => {
 
 				// Saved discord feeds is usually a different length than the Global Feeds.
 				if (feeds.items.length != feeds.feed.items.length || newFeeds.length != 0) {
+					// @ts-ignore
 					feedItems['feeds.' + i + '.items'] = feeds.feed.items.map(i => i.id);
 				}
 			}
@@ -267,7 +269,7 @@ interface ChannelRSSFeedItem {
 setInterval(() => {
 	DiscordModelFeed.find({ active: true, last_check: { $lte: Date.now() - CALL_AGAIN } })
 	.populate('feeds.feed')
-	.exec((err, feedDocs) => {
+	.exec((err, feedDocs: CustomDocs.discord.DiscordRssPopulated[]) => {
 		if (err != null) return console.error(err);
 		if (feedDocs.length == 0) return console.log('None.');
 
@@ -301,6 +303,7 @@ setInterval(() => {
 
 				// Saved discord feeds is a different length than the RSS Feeds.
 				if (feeds.items.length != feeds.feed.items.length || newFeeds.length != 0) {
+					// @ts-ignore
 					feedItems['feeds.' + i + '.items'] = feeds.feed.items.map(i => i.id);
 				}
 			}
@@ -367,10 +370,10 @@ setInterval(() => {
 		console.log('Calling ' + items.length + ' intervals.');
 
 		async.every(items, (item, cb) => {
-			var guild = client.guilds.get(item['guild_id']);
+			var guild = client.guilds.get(item.guild_id);
 
 			if (guild != null) {
-				var channel = <Discord.TextChannel>guild.channels.get(item['channel_id']);
+				var channel = <Discord.TextChannel>guild.channels.get(item.channel_id);
 
 				if (channel != null) {
 					// try {
@@ -384,11 +387,12 @@ setInterval(() => {
 
 						// 	if (ret === false) return;
 						// } else {
-							channel.send(item['message']);
+							channel.send(item.message);
 						// }
 
-						item['nextCall'] = Date.now() + (item['every'] * 1000);
+						item.nextCall = Date.now() + (item.every * 1000);
 						item.save();
+
 						return cb();
 					// } catch (error) {
 					// 	console.error(error);
@@ -398,8 +402,9 @@ setInterval(() => {
 				}
 			}
 
-			item['active'] = false;
+			item.active = false;
 			item.save();
+
 			cb();
 		});
 	}, e => console.error(e));

@@ -47,9 +47,117 @@ declare namespace CustomDocs {
 			created_at: Date;
 			edited_at: Date;
 		}
+
+		export interface TwitterFeeds extends Document {
+			user_id: string;
+
+			displayName: string;
+			screenName: string;
+
+			sending_to: number;
+
+			last_called: Date;
+
+			items: {
+				id: string;
+
+				text: string;
+				link: string;
+			}[];
+		}
+
+		export interface RSSFeeds extends Document {
+			url: string;
+			link: string;
+			xmlUrl: string;
+
+			sending_to: number;
+
+			items: {
+				id: string;
+				title: string;
+				description: string;
+				date: Date;
+				link: string;
+				guid: string;
+				author: string;
+				generator: string;
+				categories: string[];
+			}[];
+
+			last_called: Date;
+		}
+
+		export interface Intervals extends Document {
+			guild_id: string;
+			channel_id: string;
+
+			displayName: string;
+			message: string;
+			active: boolean;
+
+			every: number;
+			nextCall: number;
+
+			events: {
+				onCall: string;
+			}
+
+			created_at: Date;
+			edited_at: Date;
+		}
 	}
 
 	namespace discord {
+		export interface DiscordRss extends DiscordFeedsTemp<string> {}
+		export interface DiscordRssPopulated extends DiscordFeedsTemp<CustomDocs.global.RSSFeeds> {}
+
+		export interface DiscordFeedsTemp<F> extends Document {
+			pid: string;
+			active: boolean;
+			guild_id: string;
+			channel_id: string;
+			last_check: Date;
+
+			feeds: DiscordRssFeeds<F>[];
+		}
+
+		export interface DiscordRssFeeds<F> {
+			format: string;
+			active: boolean;
+			items: string[];
+			feed: F;
+		}
+
+		// Twitter
+		export interface DiscordTwitter extends DiscordTwitterTemp<string> {}
+		export interface DiscordTwitterPopulated extends DiscordTwitterTemp<CustomDocs.global.TwitterFeeds> {}
+
+		export interface DiscordTwitterTemp<F> extends Document {
+			pid: string;
+			active: boolean;
+			guild_id: string;
+			channel_id: string;
+			last_check: Date;
+
+			feeds: DiscordTwitterFeeds<F>[];
+		}
+
+		export interface DiscordTwitterFeeds<F> {
+			format: string;
+			active: boolean;
+			items: string[];
+			feed: F;
+		}
+
+		export interface Backup extends Document {
+			server_id: string;
+			pid: string;
+			items: string[];
+			json: string;
+			created_at: Date;
+		}
+
 		export interface MembersDocument extends Document {
 			user_id: Schema.Types.ObjectId;
 
@@ -172,7 +280,32 @@ declare namespace CustomDocs {
 	}
 
 	namespace music {
-		export interface BotsDocument extends Document {
+		export interface Playlists extends Document {
+			creator: Schema.Types.ObjectId;
+
+			type: number; // default, custom, generated
+			visibility: number; // public, private, hidden
+			permissions: number;
+
+			public_id: string;
+			plays: number;
+			views: number;
+
+			title: string;
+
+			description: string;
+			thumb: string;
+
+			// markedForDeletion: boolean;
+
+			songs: any[];
+			song_count: number;
+
+			created_at: Date;
+			updated_at: Date;
+		}
+
+		export interface Queue extends Document {
 			server_id: string;
 			items: {
 				addedBy: string;
@@ -191,7 +324,7 @@ declare namespace DiscordBot {
 			lastVoiceChannelId: string;
 			lastTextChannelId: string;
 
-			playing: PlayedSong;
+			playing?: PlayedSong;
 
 			guildPlaylist: string;
 			customPlaylist: string;
@@ -211,14 +344,14 @@ declare namespace DiscordBot {
 			clearQueue(cb: (err: any) => any): any;
 			addToQueue(user: string, song: SongGlobal, cb: () => any): any;
 			removeFromQueue(id: string, cb: (err: any) => any): any;
-			nextInQueue(cb: (song: SongGlobal) => any): any;
+			nextInQueue(cb: (song?: SongGlobal) => any): any;
 			shuffleQueue(): any;
 			toggleQueueRepeat(): boolean;
 			addToHistory(song: PlayedSong): any;
 			clearHistory(cb: (err: any) => any): any;
 			// isPlaying(cb: (playing: boolean) => any);
 			sendMessageFromGuild(guild: any/*Guild*/, message: string, error?: boolean): any;
-			regrab(cb: (music: Music) => any): any;
+			regrab(cb: (music?: Music) => any): any;
 			toString(): string;
 		}
 
@@ -484,6 +617,8 @@ declare namespace DiscordBot {
 
 		keepPreviousRoles: boolean;
 	}
+
+	type PermissionTypes = PermissionsUserOrRoles | PermissionsGroup;
 
 	interface Permissions {
 		roles: {

@@ -16,7 +16,7 @@ import { getMusic } from './music/GuildMusic';
 let redisGuildsClient = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.guildsDB });
 let redisMusic = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.musicDB });
 
-function put(serverId: string, server: DiscordServer, cb?: (err: Error) => any) {
+function put(serverId: string, server: DiscordServer, cb?: redis.Callback<"OK">) {
 	redisGuildsClient.set(serverId, JSON.stringify(server), cb);
 }
 
@@ -44,25 +44,25 @@ function getOrCreate(guild: Guild, cb: (client: DiscordServer) => any) {
 		});
 
 		server.save(() => {
-			cb(server);
+			cb(server!);
 		});
 	});
 }
 
-function get(serverId: string, cb: (client: DiscordServer) => any) {
+function get(serverId: string, cb: (client?: DiscordServer) => any) {
 	redisGuildsClient.get(serverId, (err, str) => {
-		if (err != null) { console.error(err); return cb(null); }
+		if (err != null) { console.error(err); return cb(); }
 
 		if (str == null) {
 			updateServer(serverId, (found, err) => {
 				if (err != null) {
 					console.error(found ? 'Not Found:' : 'Found:', err);
-					return cb(null);
+					return cb();
 				}
 
 				redisGuildsClient.get(serverId, (err, str) => {
-					if (err != null) { console.error(err); return cb(null); }
-					if (str == null) return cb(null);
+					if (err != null) { console.error(err); return cb(); }
+					if (str == null) return cb();
 
 					return cb(new DiscordServer(serverId, JSON.parse(str)));
 				});
@@ -73,15 +73,15 @@ function get(serverId: string, cb: (client: DiscordServer) => any) {
 	});
 }
 
-function remove(serverId: string, cb: (count: number) => any) {
+function remove(serverId: string, cb: (count?: number) => any) {
 	var doCb = false;
 
 	redisMusic.del(serverId, fin);
 	redisGuildsClient.del(serverId, fin);
 
-	function fin(err, count) {
+	function fin(err?: any, count?: number) {
 		if (doCb) {
-			if (err != null) { console.error(err); cb(null); return; }
+			if (err != null) { console.error(err); cb(); return; }
 			return cb(count);
 		}
 
@@ -89,14 +89,14 @@ function remove(serverId: string, cb: (count: number) => any) {
 	}
 }
 
-function updateServer(serverId: string, cb?: (found: boolean, err: Error) => any) {
+function updateServer(serverId: string, cb?: (found: boolean, err: Error | null) => any) {
 	DiscordServers.findOne({ server_id: serverId })
 	.populate({ path: 'command_ids', select: 'pid alias params' })
 	.populate({ path: 'phrase_ids', select: 'pid enabled ignoreCase phrases responses' })
 	// .populate({ path: 'interval_ids', select: 'pid ' })
 	.exec((err, server: any) => {
-		if (err == null) return cb(false, err);
-		if (server == null) return cb(false, new Error('No Server'));
+		if (err == null) return cb && cb(false, err);
+		if (server == null) return cb && cb(false, new Error('No Server'));
 
 		if (typeof server.server == 'string') {
 			server.server = JSON.parse(server.server);
@@ -110,7 +110,7 @@ function updateServer(serverId: string, cb?: (found: boolean, err: Error) => any
 		// server.server.alias = server.server.aliasList;
 		// delete server.server['aliasList'];
 
-		put(serverId, server.server, err => cb(true, err));
+		put(serverId, server.server, err => cb && cb(true, err));
 	});
 }
 

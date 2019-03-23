@@ -1,4 +1,5 @@
 import mongoose = require('mongoose');
+import { CustomDocs } from '../../../typings/manager';
 
 let Schema = mongoose.Schema;
 
@@ -13,4 +14,4 @@ const Backup = new Schema({
 	created_at: Date
 });
 
-export = mongoose.model('discord_backups', Backup);
+export = (<mongoose.Model<CustomDocs.discord.Backup>>mongoose.model('discord_backups', Backup));

@@ -43,8 +43,13 @@ function launch(client: string) {
 			if (opts == 'ready' || opts == 'update') {
 				if (opts == 'ready') console.log(`Shard [${shard.id}]: Ready`);
 
+				interface EvalOpts {
+					status: number;
+					guild_ids: string[];
+				}
+
 				shard.eval('var opts = { status: this.status, guild_ids: this.guilds.map(g => g.id) }; opts;')
-				.then(opts => {
+				.then((opts: EvalOpts) => {
 					GUILD_ID_SHARD = {};
 
 					SHARD_ID_STATUS[shard.id] = opts.status;
@@ -117,7 +122,12 @@ function botClientSetup() {
 function initMasterLink(clientName: string) {
 	io = socket.connect('http://localhost:' + config.shards.discord.masterPort);
 
-	io.on('from', opts => {
+	interface FromOpts {
+		_guild: string;
+		// ...
+	}
+
+	io.on('from', (opts: FromOpts) => {
 		console.log('from:', opts);
 
 		var shard = GUILD_ID_SHARD[opts._guild];
@@ -133,7 +143,7 @@ function initMasterLink(clientName: string) {
 		io.emit('init', clientName);
 	});
 
-	io.on('disconnect', reason => {
+	io.on('disconnect', (reason: any) => {
 		console.log('disconnect:', reason);
 
 		if (reason === 'io server disconnect') {
@@ -141,8 +151,8 @@ function initMasterLink(clientName: string) {
 		}
 	});
 
-	io.on('connect_error', error => console.error(error));
-	io.on('connect_timeout', error => console.error(error));
+	io.on('connect_error', (error: any) => console.error(error));
+	io.on('connect_timeout', (error: any) => console.error(error));
 }
 
 export = {

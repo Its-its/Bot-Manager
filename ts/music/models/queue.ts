@@ -1,4 +1,5 @@
 import mongoose = require('mongoose');
+import { CustomDocs } from '../../../typings/manager';
 
 let Schema = mongoose.Schema;
 
@@ -11,8 +12,8 @@ let QueueItem = new Schema({
 
 let Queue = new Schema({
 	server_id: String,
-	
+
 	items: [ QueueItem ]
 });
 
-export = mongoose.model('music_queue', Queue);
+export = (<mongoose.Model<CustomDocs.music.Queue>>mongoose.model('music_queue', Queue));

@@ -16,7 +16,7 @@ import Playlists = require('../../music/models/playlists');
 import config = require('../../config');
 import musicUtils = require('./plugins/music');
 import utils = require('../utils');
-import { getMusic } from './GuildMusic';
+import { getMusic, Music } from './GuildMusic';
 
 
 mongoose.Promise = global.Promise;
@@ -134,7 +134,7 @@ function shardListener() {
 							if (type == 'list' || /^[0-9]+$/g.test(type)) {
 								if (type != 'list') params.push(type);
 
-								Queues.findOne({ server_id: guild_id }, (err, queue: CustomDocs.music.BotsDocument) => {
+								Queues.findOne({ server_id: guild_id }, (err, queue: CustomDocs.music.Queue) => {
 									if (queue.items.length == 0) return send(utils.errorMsg([['Music', 'Nothing Queued!']]));
 
 									var page = 1;
@@ -159,10 +159,12 @@ function shardListener() {
 										if (err != null) return console.error(err);
 
 										if (songs == null) {
-											return send(utils.successMsg([['Music', 'Unable to find songs.']]));
+											return send(utils.errorMsg([['Music', 'Unable to find songs.']]));
 										}
 
 										getMusic(guild_id, music => {
+											if (music == null) return send(utils.errorMsg([['Music', 'Unable to find music.']]));
+
 											var fields = [
 												[
 													'Music',
@@ -317,8 +319,10 @@ function joinVoiceChannel(guildId: string, channelId: string, cb: (errMsg?: stri
 
 	if (channel != null && channel.type == 'voice') {
 		getMusic(guildId, music => {
+			if (music == null) return cb('Unable to find music.');
+
 			music.lastVoiceChannelId = channel!.id;
-			music.playing = null;
+			music.playing = undefined;
 			music.save();
 
 			joinChannel(<any>channel, () => cb());
@@ -394,6 +398,8 @@ function playSong(
 		}
 
 		getMusic(guild_id, (music) => {
+			if (music == null) return cb && cb('Unable to find Music.');
+
 			if (newSong == null) {
 				music.nextInQueue(nextSong => {
 					if (nextSong == null) {
@@ -408,7 +414,7 @@ function playSong(
 		});
 
 
-		function play(music: any, song: DiscordBot.plugins.SongGlobal) {
+		function play(music: Music, song: DiscordBot.plugins.SongGlobal) {
 			// var streamUrl = uidToStreamUrl(song.type, song.id);
 
 			// if (streamUrl == null) {
@@ -444,7 +450,7 @@ function playSong(
 					song.title, song.thumbnail_url, song.length,
 					song.channel_id, new Date(song.published).toISOString());
 
-				music.sendMessageFromGuild(guild, send);
+				music.sendMessageFromGuild(guild!, send);
 
 				music.addToHistory(music.playing);
 				music.save();
@@ -454,7 +460,7 @@ function playSong(
 
 			dispatcher.on('end', reason => {
 				console.log('End: ' + reason);
-				music.playing = null;
+				music.playing = undefined;
 
 				if (reason == 'stopped') {
 					music.save();
@@ -475,8 +481,14 @@ function playSong(
 		// If the bot is QUICKLY restarted it doesn't leave the voice channel and it doesn't know it's still in it.
 		if (trys >= 3) { console.error('Attempted to join Voice Channel 3 times. Now stopping. - ' + guild_id); return false; }
 		getMusic(guild_id, music => {
+			if (music == null) return cb && cb('Unable to find music.');
+
 			joinVoiceChannel(guild_id, music.lastVoiceChannelId, (err) => {
-				if (err) return console.error('Attempted to join voice channel: ', err);
+				if (err) {
+					if (cb != null) cb('Unable to join voice channel. ' + err);
+					console.error('Attempted to join voice channel: ', err);
+					return;
+				}
 				playSong(guild_id, newSong, cb, trys + 1);
 			});
 		});
@@ -500,6 +512,8 @@ function findAndPlay(guildId: string, search: string, cb: (errorMessage?: string
 				console.log('Unable to find "' + id + '" searching for it instead.');
 				musicUtils.findFirstSong(id, (errMsg, song) => {
 					if (errMsg != null) return cb(errMsg);
+					if (song == null) return cb('Unable to find song');
+
 					playIt(song);
 				});
 			} else playIt(songs[0]);
@@ -507,6 +521,8 @@ function findAndPlay(guildId: string, search: string, cb: (errorMessage?: string
 	} else {
 		musicUtils.findFirstSong(search, (errMsg, song) => {
 			if (errMsg != null) return cb(errMsg);
+			if (song == null) return cb('Unable to find song');
+
 			playIt(song);
 		});
 	}
@@ -549,49 +565,63 @@ function stopReason(guild_id: string, reason: 'stopped' | 'next' = 'stopped', cb
 }
 
 // Queue
-function queueToggleRepeat(guildId: string, cb: (value: boolean) => any) {
+function queueToggleRepeat(guildId: string, cb: (err?: string, value?: boolean) => any) {
 	getMusic(guildId, music => {
+		if (music == null) return cb('Unable to find music');
+
 		var repeat = music.toggleQueueRepeat();
+
 		sendToWebUI({
 			_guild: guildId,
 			_event: 'queue-toggle-repeat',
 			value: repeat
 		});
+
 		music.save();
-		cb(repeat);
+
+		cb(undefined, repeat);
 	});
 }
 
-function queueClear(guildId: string, cb: (err?: any) => any) {
+function queueClear(guildId: string, cb: (err?: string) => any) {
 	getMusic(guildId, music => {
+		if (music == null) return cb('Unable to find music');
+
 		sendToWebUI({
 			_guild: guildId,
 			_event: 'queue-clear'
 		});
+
 		music.clearQueue(err => cb(err));
 	});
 }
 
-function queueShuffle(guildId: string, cb: () => any) {
+function queueShuffle(guildId: string, cb: (err?: string) => any) {
 	getMusic(guildId, music => {
+		if (music == null) return cb('Unable to find music');
+
 		music.shuffleQueue();
 		sendToWebUI({
 			_guild: guildId,
 			_event: 'queue-shuffle',
 			queue: 'todo'
 		});
+
 		cb();
 	});
 }
 
-function queueRemoveItem(guildId: string, item: string, cb: (err?: any) => any) {
+function queueRemoveItem(guildId: string, item: string, cb: (err?: string) => any) {
 	getMusic(guildId, music => {
+		if (music == null) return cb('Unable to find music');
+
 		music.removeFromQueue(item, err => {
 			sendToWebUI({
 				_guild: guildId,
 				_event: 'queue-item-remove',
 				item: item
 			});
+
 			cb(err);
 		});
 	});
@@ -599,6 +629,8 @@ function queueRemoveItem(guildId: string, item: string, cb: (err?: any) => any) 
 
 function queueSong(guildId: string, memberId: string, uriOrSearch: string, cb: (errorMessage?: string, song?: DiscordBot.plugins.SongGlobal) => any) {
 	getMusic(guildId, music => {
+		if (music == null) return cb('Unable to find music');
+
 		var val = /(?:(?:https?:\/\/)(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11})/g.exec(uriOrSearch);
 
 		if (val != null) {
@@ -606,7 +638,7 @@ function queueSong(guildId: string, memberId: string, uriOrSearch: string, cb: (
 
 			musicUtils.getSong(id, (errMsg, songs) => {
 				if (errMsg != null) return cb(errMsg);
-				if (songs == null) return cb('No songs found!');
+				if (songs == null || songs.length == 0) return cb('No songs found!');
 
 				sendToWebUI({
 					_guild: guildId,
@@ -618,11 +650,14 @@ function queueSong(guildId: string, memberId: string, uriOrSearch: string, cb: (
 		} else {
 			musicUtils.findFirstSong(uriOrSearch, (errMsg, song) => {
 				if (errMsg != null) return cb(errMsg);
+				if (song == null) return cb('No songs found!');
+
 				sendToWebUI({
 					_guild: guildId,
 					_event: 'queue-item-add',
 					item: song
 				});
+
 				music.addToQueue(memberId, song, err => cb(err, song));
 			});
 		}
@@ -633,6 +668,8 @@ function queuePlaylist(guildId: string, playlistId: string, cb: (err?: any, coun
 	if (playlistId == null) return cb('No playlist ID specified! Please use an ID or "default"');
 
 	getMusic(guildId, music => {
+		if (music == null) return cb('No Music found!');
+
 		if (music.currentPlaylist == null) return cb('Unable to find your guild playlist.');
 
 		if (playlistId == 'default') playlistId = music.currentPlaylist;

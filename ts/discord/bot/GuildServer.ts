@@ -986,8 +986,12 @@ class Server extends Changes {
 		return true;
 	}
 
-	public getPermsFrom(type: 'roles' | 'users' | 'groups', id: string) {
-		return this.permissions[type][this.strpToId(id)];
+	public getPermsFrom(type: 'roles' | 'users' | 'groups', id: string): Nullable<DiscordBot.PermissionTypes> {
+		var sid = this.strpToId(id);
+
+		if (sid == null) return null;
+
+		return this.permissions[type][sid];
 	}
 
 	public isGroupsRecursive(id: string, saved: string[] = []) {
@@ -1032,18 +1036,21 @@ class Server extends Changes {
 
 	public addPermTo(type: 'roles' | 'groups' | 'users', id: string, perm: string): boolean {
 		var perms = this.permissions[type];
-		id = this.strpToId(id);
 
-		if (perms[id] == null) {
+		var sid = this.strpToId(id);
+
+		if (sid == null) return false;
+
+		if (perms[sid] == null) {
 			if (type == 'roles' || type == 'users') {
-				perms[id] = {
+				perms[sid] = {
 					groups: [],
 					perms: []
 				};
 			} else return false;
 		}
 
-		var ps = perms[id].perms;
+		var ps = perms[sid].perms;
 
 		if (ps.length >= 25) return false;
 
@@ -1059,33 +1066,39 @@ class Server extends Changes {
 	}
 
 	public removePermFrom(type: 'roles' | 'groups' | 'users', id: string, perm: string): boolean {
-		id = this.strpToId(id);
+		var sid = this.strpToId(id);
+
+		if (sid == null) return false;
+
 		var perms = this.permissions[type];
 
-		if (perms[id] == null) return false;
+		if (perms[sid] == null) return false;
 
-		var index = perms[id].perms.indexOf(perm);
+		var index = perms[sid].perms.indexOf(perm);
 
 		if (index == -1) return false;
-		perms[id].perms.splice(index, 1);
+		perms[sid].perms.splice(index, 1);
 
 		return true;
 	}
 
 	public removeGroupFrom(type: 'roles' | 'users', id: string, group: string): boolean {
-		id = this.strpToId(id);
+		var sid = this.strpToId(id);
+
+		if (sid == null) return false;
+
 		var perms = this.permissions[type];
 
-		if (perms[id] == null) return false;
-		var index = perms[id].groups.indexOf(group);
+		if (perms[sid] == null) return false;
+		var index = perms[sid].groups.indexOf(group);
 
 		if (index == -1) return false;
-		perms[id].groups.splice(index, 1);
+		perms[sid].groups.splice(index, 1);
 
 		return true;
 	}
 
-	public strpToId(str: string): string {
+	public strpToId(str: string): Nullable<string> {
 		return utils.strpToId(str);
 	}
 

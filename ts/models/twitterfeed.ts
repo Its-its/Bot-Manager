@@ -1,4 +1,5 @@
 import mongoose = require('mongoose');
+import { CustomDocs } from '../../typings/manager';
 
 let Schema = mongoose.Schema;
 
@@ -25,24 +26,4 @@ const RSSFeeds = new Schema({
 });
 
 
-interface FeedFix extends mongoose.Document {
-	user_id: string;
-
-	displayName: string;
-	screenName: string;
-
-	sending_to: number;
-
-	last_called: Date;
-
-	items: {
-		id: string;
-
-		text: string;
-		link: string;
-	}[];
-}
-
-const adsf: mongoose.Model<FeedFix> = mongoose.model('feeds_twitter', RSSFeeds);
-
-export = adsf;
+export = (<mongoose.Model<CustomDocs.global.TwitterFeeds>>mongoose.model('feeds_twitter', RSSFeeds));

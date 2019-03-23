@@ -29,13 +29,14 @@ function ensure(opts: EnsureOpts) {
 				default: null
 			};
 		} else {
+			// @ts-ignore
 			opts[key] = Object.apply({ required: false, default: null }, opts[key]);
 		}
 	}
 
 	console.log(opts);
 
-	return function(req, res, next) {
+	return function(_req: express.Request, _res: express.Response, next: express.NextFunction) {
 		next();
 	}
 }
@@ -65,7 +66,9 @@ globalRoute.post('/bot', ensure({ id: 'string' }), (req, res) => {
 
 		bot.getBot((err, item) => {
 			if (err != null) return res.send({ error: err });
+			if (item == null) return res.send({ error: 'Item Not found.' });
 
+			// @ts-ignore
 			if (item['type'] == 'discord') {
 				res.send({ item: item });
 			}

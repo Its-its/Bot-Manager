@@ -1,3 +1,5 @@
+import { CustomDocs } from '../../../typings/manager';
+
 import mongoose = require('mongoose');
 
 let Schema = mongoose.Schema;
@@ -30,31 +32,5 @@ let Playlist = new Schema({
 });
 
 
-interface MongooseDoc extends mongoose.Document {
-	creator: string;
 
-	type: number; // default, custom, generated
-	visibility: number; // public, private, hidden
-	permissions: number;
-
-	public_id: string;
-	plays: number;
-	views: number;
-
-	title: string;
-
-	description: string;
-	thumb: string;
-
-	// markedForDeletion: boolean;
-
-	songs: any[];
-	song_count: number;
-
-	created_at: Date;
-	updated_at: Date;
-}
-
-let model: mongoose.Model<MongooseDoc> = mongoose.model('music_playlists', Playlist);
-
-export = model;
+export = (<mongoose.Model<CustomDocs.music.Playlists>>mongoose.model('music_playlists', Playlist));

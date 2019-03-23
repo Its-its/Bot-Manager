@@ -2,6 +2,9 @@ import Discord = require('discord.js');
 
 import Command = require('./bot/command');
 
+import { Nullable } from '../../typings/manager';
+
+
 const startDate = Date.now();
 
 
@@ -46,8 +49,9 @@ function infoMsg(array: [string, string][]) {
 }
 
 //! Text is different widths if not in code blocks.
+// TODO: Max cell width
 function tableMsg(header: string[], body: any[][], opts?: { delimiter?: string; spacing?: number; monospaced?: boolean; }): string {
-	opts = Object.assign({
+	var compOpts = Object.assign({
 		delimiter: ' ',
 		spacing: 2,
 		monospaced: true
@@ -71,19 +75,19 @@ function tableMsg(header: string[], body: any[][], opts?: { delimiter?: string; 
 		});
 	});
 
-	rows.push(header.map((h, i) => h + ' '.repeat(largestCell[i] - String(h).length + opts.spacing)).join(opts.delimiter));
+	rows.push(header.map((h, i) => h + ' '.repeat(largestCell[i] - String(h).length + compOpts.spacing)).join(compOpts.delimiter));
 
 	rows.push('='.repeat(rows[0].length));
 
 	body.forEach(ro => {
-		rows.push(ro.map((c, i) => c + ' '.repeat(largestCell[i] - String(c).length + opts.spacing)).join(opts.delimiter));
+		rows.push(ro.map((c, i) => c + ' '.repeat(largestCell[i] - String(c).length + compOpts.spacing)).join(compOpts.delimiter));
 	});
 
 
 	var comp = rows.join('\n');
 
 
-	if (opts.monospaced) comp = '```' + comp + '```';
+	if (compOpts.monospaced) comp = '```' + comp + '```';
 
 
 	// if (comp.length > 1024) throw 'Table is too large. ' + comp.length + '/1024';
@@ -92,7 +96,7 @@ function tableMsg(header: string[], body: any[][], opts?: { delimiter?: string; 
 }
 
 
-function strpToId(str: string): string {
+function strpToId(str: string): Nullable<string> {
 	if (str == null) return null;
 
 	if (!str.startsWith('<@') && !str.startsWith('<#')) return str;
@@ -111,7 +115,7 @@ function strpToId(str: string): string {
 }
 
 
-function getIdType(str: string): 'role' | 'member' | 'channel' {
+function getIdType(str: string): Nullable<'role' | 'member' | 'channel'> {
 	if (str == null || str.length < 3) return null;
 
 	if (str.startsWith('<@&') || str == '@everyone') return 'role';
@@ -237,21 +241,23 @@ const DISCORD_FLAGS = {
 	MANAGE_EMOJIS: 1 << 30,
 };
 
+type PermissionTypes = number | Permissions | Array<string> | string;
+
 class Permissions {
 	public bitfield: number;
 
-	constructor(permissions: number | Permissions | Array<string> | string) {
+	constructor(permissions: PermissionTypes) {
 		this.bitfield = Permissions.resolve(permissions);
 	}
 
-	has(permission: number | Permissions | Array<string> | string, checkAdmin = true) {
+	has(permission: PermissionTypes, checkAdmin = true): boolean {
 		if (permission instanceof Array) return permission.every(p => this.has(p, checkAdmin));
 			permission = Permissions.resolve(permission);
 		if (checkAdmin && (this.bitfield & Permissions.FLAGS.ADMINISTRATOR) > 0) return true;
 			return (this.bitfield & permission) === permission;
 	}
 
-	missing(permissions: number | Permissions | Array<string> | string, checkAdmin = true) {
+	missing(permissions: PermissionTypes, checkAdmin = true) {
 		if (!(permissions instanceof Array)) permissions = new Permissions(permissions).toArray(false);
 			return permissions.filter(p => !this.has(p, checkAdmin));
 	}
@@ -260,7 +266,7 @@ class Permissions {
 		return Object.freeze(this);
 	}
 
-	add(...permissions) {
+	add(...permissions: PermissionTypes[]) {
 		let total = 0;
 		for (let p = permissions.length - 1; p >= 0; p--) {
 			const perm = Permissions.resolve(permissions[p]);
@@ -271,7 +277,7 @@ class Permissions {
 		return this;
 	}
 
-	remove(...permissions) {
+	remove(...permissions: PermissionTypes[]) {
 		let total = 0;
 		for (let p = permissions.length - 1; p >= 0; p--) {
 			const perm = Permissions.resolve(permissions[p]);
@@ -283,9 +289,11 @@ class Permissions {
 	}
 
 	serialize(checkAdmin = true) {
-		const serialized = {};
+		const serialized: { [name: string]: boolean } = {};
+
 		for (const perm in Permissions.FLAGS)
 			serialized[perm] = this.has(perm, checkAdmin);
+
 		return serialized;
 	}
 
@@ -298,17 +306,19 @@ class Permissions {
 		while (keys.length) yield keys.shift();
 	}
 
-	static resolve(permission: number | Permissions | Array<string> | string): number {
+	static resolve(permission: PermissionTypes): number {
 		if (typeof permission === 'number' && permission >= 0) return permission;
 		if (permission instanceof Permissions) return permission.bitfield;
 		if (Array.isArray(permission)) return permission.map(p => this.resolve(p)).reduce((prev, p) => prev | p, 0);
+		// @ts-ignore
 		if (typeof permission === 'string') return this.FLAGS[permission];
+
 		throw new Error('PERMISSIONS_INVALID');
 	}
 
 	static FLAGS = DISCORD_FLAGS;
 
-	static ALL = (<any>Object).values(Permissions.FLAGS).reduce((all, p) => all | p, 0);
+	static ALL = Object.values(Permissions.FLAGS).reduce((all, p) => all | p, 0);
 
 	static DEFAULT = 104324097;
 }
@@ -330,7 +340,8 @@ function createPageSelector(responder: string, channel: GChannel, cb?: (value: M
 	if (cb == null) return new MessagePage({ author_id: responder, channel: channel });
 
 	channel.send('Please wait...')
-	.then((c: Discord.Message) => cb(new MessagePage({ author_id: responder, editingMessage: c, channel })));
+	// @ts-ignore
+	.then((c: Discord.Message) => {cb(new MessagePage({ author_id: responder, editingMessage: c, channel }))});
 }
 
 interface MessagePageConfig {
@@ -366,24 +377,24 @@ const formatReplaceValues = {
 class MessagePage {
 	public author_id: string;
 
-	public onMessage: (value: string) => boolean = null;
+	public onMessage?: (value: string) => boolean = undefined;
 
 	public channel: GChannel;
-	public editingMessage: Discord.Message;
+	public editingMessage?: Discord.Message;
 
-	public collector: Discord.MessageCollector;
+	public collector?: Discord.MessageCollector;
 
 	public selectionCalls: { [name: string]: (value: MessagePage) => any } = {};
-	public selections: PageSelection[] = [];
+	public selections: (PageSelection | null)[] = [];
 
 	public removeReply: boolean;
-	public timeoutMS: number;
+	public timeoutMS?: number;
 
 	public parent?: MessagePage;
 
 	public initiated = false;
 
-	public format: string[];
+	public format: string[] = [];
 	public pageSelectionFormat = (item: PageSelection) => item.input + ' > ' + item.description;
 
 	constructor(config: MessagePageConfig) {
@@ -394,7 +405,7 @@ class MessagePage {
 		this.channel = config.channel;
 
 		this.parent = config.parent;
-		this.removeReply = config.removeReply;
+		this.removeReply = (config.removeReply == null ? false : config.removeReply);
 		this.timeoutMS = config.timeoutMS;
 
 		this.setFormat([
@@ -408,7 +419,12 @@ class MessagePage {
 		if (this.initiated) return;
 		this.initiated = true;
 
-		this.collector = this.editingMessage.channel.createMessageCollector(m => m.author.id == this.author_id, { time: this.timeoutMS });
+		var channel: Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel;
+
+		if (this.editingMessage != null) channel = this.editingMessage.channel;
+		else channel = this.channel;
+
+		this.collector = channel.createMessageCollector(m => m.author.id == this.author_id, { time: this.timeoutMS });
 		this.collector.on('collect', (collectedMsg) => this.onCollect(collectedMsg));
 		this.collector.on('end', (_, reason) => this.onEnd(reason));
 	}
@@ -424,15 +440,23 @@ class MessagePage {
 		if (this.select(input)) return;
 
 		// Stops current one, creates new one to refresh the time.
-		this.collector.stop('invalid-input');
+		if (this.collector != null) this.collector.stop('invalid-input');
 
-		this.collector = this.editingMessage.channel.createMessageCollector(m => m.author.id == this.author_id, { time: this.timeoutMS });
+		var channel: Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel;
+
+		if (this.editingMessage != null) channel = this.editingMessage.channel;
+		else channel = this.channel;
+
+		this.collector = channel.createMessageCollector(m => m.author.id == this.author_id, { time: this.timeoutMS });
 		this.collector.on('collect', (collectedMsg) => this.onCollect(collectedMsg));
 		this.collector.on('end', (_, reason) => this.onEnd(reason));
 
-		this.editingMessage.channel.send(Command.error([[ 'Input Error', `"${input}" is not a valid selection input.` ]]))
-		.then((m: Discord.Message) => m.delete(2000).catch(e => console.error('del-2000:', e)))
-		.catch(e => console.error('collect:', e));
+		if (this.editingMessage != null) {
+			this.editingMessage.channel.send(Command.error([[ 'Input Error', `"${input}" is not a valid selection input.` ]]))
+			// @ts-ignore
+			.then((m: Discord.Message) => m.delete(2000).catch(e => console.error('del-2000:', e)))
+			.catch((e: any) => console.error('collect:', e));
+		}
 	}
 
 	public onEnd(reason: string) {
@@ -440,19 +464,26 @@ class MessagePage {
 
 		if (reason == 'time') {
 			if (this.editingMessage == null) return;
+
 			this.editingMessage.delete();
-			this.editingMessage = null;
+			this.editingMessage = undefined;
 			this.temporaryMessage(Command.error([[ 'Time limit exceeded.', 'Removing page selections...' ]]), 3000);
 		} else if (reason == 'exit') {
 			this.edit(Command.error([['Pages', 'Exiting...']]), () => {
+				if (this.editingMessage == null) return;
+
 				this.editingMessage.delete(3000)
 				.catch(e => console.error('exit:', e));
-				this.editingMessage = null;
+
+				this.editingMessage = undefined;
 			});
 		} else if (reason == 'delete') {
+			if (this.editingMessage == null) return;
+
 			this.editingMessage.delete()
 			.catch(e => console.error('delete:', e));
-			this.editingMessage = null;
+
+			this.editingMessage = undefined;
 		}
 	}
 
@@ -472,11 +503,12 @@ class MessagePage {
 	public refresh() {
 		if (this.editingMessage == null) {
 			this.channel.send(this.compileMessage())
+			// @ts-ignore
 			.then((c: Discord.Message) => {
 				this.editingMessage = c;
 				this.init();
 			})
-			.catch(e => console.error('refresh:', e));
+			.catch((e: any) => console.error('refresh:', e));
 		} else {
 			this.edit(this.compileMessage(), () => {
 				this.init();
@@ -492,11 +524,11 @@ class MessagePage {
 		} else {
 			if (this.editingMessage != null && reason != 'close') {
 				this.editingMessage.delete();
-				this.editingMessage = null;
+				this.editingMessage = undefined;
 			}
 		}
 
-		this.collector = null;
+		this.collector = undefined;
 		this.initiated = false;
 	}
 
@@ -523,8 +555,9 @@ class MessagePage {
 
 	public editSelection(inputValue: string, opts: PageSelection) {
 		for(var i = 0; i < this.selections.length; i++) {
-			if (this.selections[i].input == inputValue) {
-				Object.assign(this.selections[i], opts);
+			var selection = this.selections[i];
+			if (selection != null && selection.input == inputValue) {
+				Object.assign(selection, opts);
 				break;
 			}
 		}
@@ -550,10 +583,11 @@ class MessagePage {
 		return true;
 	}
 
-	public temporaryMessage(contents, deletion: number, cb?: () => any) {
+	public temporaryMessage(contents: any, deletion: number, cb?: () => any) {
 		this.close(); // No need to select anything anymore.
 
-		// channel.send
+		if (this.editingMessage == null) return;
+
 		this.editingMessage.edit(contents)
 		.then((msg: Discord.Message) => {
 			msg.delete(deletion)
@@ -563,8 +597,10 @@ class MessagePage {
 		.catch(e => console.error('temp0:', e));
 	}
 
-	public edit(newMessage, cb: (value: Discord.Message) => any) {
+	public edit(newMessage: any, cb: (value: Discord.Message) => any) {
 		// this.close(); // No need to select anything anymore.
+
+		if (this.editingMessage == null) return;
 
 		this.editingMessage.edit(newMessage)
 		.then(m => { this.setEditing(m); cb(m); })
@@ -577,6 +613,7 @@ class MessagePage {
 			'Pages',
 			this.format.map(f => {
 				for(var format in formatReplaceValues) {
+					// @ts-ignore
 					if (f == format) return formatReplaceValues[format](this);
 				}
 				return f;

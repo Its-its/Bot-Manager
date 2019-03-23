@@ -1,4 +1,5 @@
 import mongoose = require('mongoose');
+import { CustomDocs } from '../../typings/manager';
 
 let Schema = mongoose.Schema;
 
@@ -24,4 +25,4 @@ let DiscordIntervals = new Schema({
 });
 
 
-export = mongoose.model('discord_intervals', DiscordIntervals);
+export = (<mongoose.Model<CustomDocs.global.Intervals>>mongoose.model('discord_intervals', DiscordIntervals));

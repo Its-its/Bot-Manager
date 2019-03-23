@@ -7,7 +7,7 @@ io.on('init', () => {
 	io.emit('init', 'bot', 8081);
 });
 
-io.on('connect_error', error => console.error(error));
-io.on('connect_timeout', error => console.error(error));
+io.on('connect_error', (error: any) => console.error(error));
+io.on('connect_timeout', (error: any) => console.error(error));
 
 console.log('Start');

@@ -1,4 +1,5 @@
 import mongoose = require('mongoose');
+import { CustomDocs } from '../../typings/manager';
 
 let Schema = mongoose.Schema;
 
@@ -29,29 +30,4 @@ const RSSFeeds = new Schema({
 	last_called: { type: Date, default: Date.now }
 });
 
-
-interface FeedFix extends mongoose.Document {
-	url: string;
-	link: string;
-	xmlUrl: string;
-
-	sending_to: number;
-
-	items: {
-		id: string;
-		title: string;
-		description: string;
-		date: Date;
-		link: string;
-		guid: string;
-		author: string;
-		generator: string;
-		categories: string[];
-	}[];
-
-	last_called: Date;
-}
-
-const adsf: mongoose.Model<FeedFix> = mongoose.model('rssfeeds', RSSFeeds);
-
-export = adsf;
+export = (<mongoose.Model<CustomDocs.global.RSSFeeds>>mongoose.model('rssfeeds', RSSFeeds));

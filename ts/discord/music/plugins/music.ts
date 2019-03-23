@@ -1,3 +1,6 @@
+import { DiscordBot } from '../../../../typings/manager';
+
+
 import Playlists = require('../../../music/models/playlists');
 
 import Users = require('../../../site/models/users');
@@ -57,10 +60,20 @@ function restorePlaylist(playlistId: string, cb: (errorMessage?: string) => any)
 	Playlists.updateOne({ public_id: playlistId }, { $set: { markedForDeletion: false } }, (err) => cb());
 }
 
-function addToPlaylist(guildId: string, discordMemberId: string, playlistPublicId: string, songId: string, cb: (errorMessage?: string, info?: { song: SongGlobal, playlist: any }) => any) {
+function addToPlaylist(
+	guildId: string,
+	discordMemberId: string,
+	playlistPublicId: string,
+	songId: string,
+	cb: (errorMessage?: string, info?: { song: SongGlobal, playlist_id: string }) => any)
+{
 	if (songId == null) return cb('Please provide an ID to the song.');
 
 	getMusic(guildId, (music) => {
+		if (music == null) {
+			return cb('Unable to get Music. Please try again in a few minutes.');
+		}
+
 		if (playlistPublicId == 'default') playlistPublicId = music.currentPlaylist;
 
 		var val = /(?:(?:https?:\/\/)?(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11})/g.exec(songId);
@@ -73,16 +86,18 @@ function addToPlaylist(guildId: string, discordMemberId: string, playlistPublicI
 
 			getSong(id, (errMsg, song) => {
 				if (errMsg != null) return cb(errMsg);
-				addTo(song);
+				if (song == null || song.length == 0) return cb('Unable to find song!');
+				addTo(song[0]);
 			});
 		} else {
 			findFirstSong(songId, (errMsg, song) => {
 				if (errMsg != null) return cb(errMsg);
+				if (song == null) return cb('Unable to find song!');
 				addTo(song);
 			});
 		}
 
-		function addTo(song) {
+		function addTo(song: DiscordBot.plugins.SongYT) {
 			Users.findOne({ 'discord.id': discordMemberId }, (err, user) => {
 				if (user == null) return cb('You cannot add songs to a playlist without authenticating your discord account!\nPlease do so here: ');
 
@@ -102,9 +117,10 @@ function addToPlaylist(guildId: string, discordMemberId: string, playlistPublicI
 					},
 					(err, raw) => {
 						console.log(raw);
+
 						if (raw.nModified == 0) return cb('Song is already in playlist!');
 
-						cb(err, song);
+						cb(err, { song: song, playlist_id: playlistPublicId });
 					}
 				);
 			});
@@ -164,6 +180,7 @@ function getSong(uri: string | string[], cb: (errorMessage?: string, song?: Song
 
 		if (data.error) return cb(data.error);
 
+		// @ts-ignore
 		var songs = data.songs.map(s => {
 			s.type = 'youtube';
 			delete s['description'];
@@ -173,7 +190,7 @@ function getSong(uri: string | string[], cb: (errorMessage?: string, song?: Song
 			return s;
 		});
 
-		cb(null, songs);
+		cb(undefined, songs);
 	});
 }
 

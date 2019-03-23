@@ -1,3 +1,6 @@
+import { DiscordBot } from '../../../typings/manager';
+
+
 import * as redis from 'redis';
 import * as Discord from 'discord.js';
 
@@ -22,7 +25,7 @@ class Music implements DiscordBot.plugins.Music {
 	public lastVoiceChannelId: string;
 	public lastTextChannelId: string;
 
-	public playing: DiscordBot.plugins.PlayedSong;
+	public playing?: DiscordBot.plugins.PlayedSong;
 
 	public guildPlaylist: string;
 	public customPlaylist: string;
@@ -73,12 +76,14 @@ class Music implements DiscordBot.plugins.Music {
 
 	get currentPlaylist() {
 		switch(this.playingFrom) {
-			case Music.Playlist.Default: return this.guildPlaylist;
 			case Music.Playlist.Custom: return this.customPlaylist;
+			case Music.Playlist.Default:
+			default:
+				return this.guildPlaylist;
 		}
 	}
 
-	public hasPlaylistPerms(user_id: string, playlist_id: string, cb: (value: boolean) => any) {
+	public hasPlaylistPerms(user_id: string, playlist_id: string | undefined, cb: (value: boolean) => any) {
 		if (playlist_id == null || this.guildPlaylist == playlist_id) {
 			// TODO: Check is has music perms
 			if (this.playingFrom == Music.Playlist.Default || this.guildPlaylist == playlist_id)
@@ -90,7 +95,7 @@ class Music implements DiscordBot.plugins.Music {
 		MusicPlaylist.findOne({ public_id: playlist_id }, (err, playlist) => {
 			if (playlist == null) return cb(false);
 
-			cb(playlist['creator_id'] == user_id);
+			cb(playlist.creator.toString() == user_id);
 		});
 	}
 
@@ -117,12 +122,12 @@ class Music implements DiscordBot.plugins.Music {
 
 
 	// Queue
-	public clearQueue(cb: (err: any) => any) {
+	public clearQueue(cb: (err: string) => any) {
 		MusicQueue.updateOne({ server_id: this.guildId }, { $set: { items: [] } }, err => cb(err));
 		// MusicQueue.deleteMany({ server_id: this.guildId }, err => cb(err));
 	}
 
-	public addToQueue(user: string, song: DiscordBot.plugins.SongGlobal, cb: (err) => any) {
+	public addToQueue(user: string, song: DiscordBot.plugins.SongGlobal, cb: (err?: string) => any) {
 		MusicQueue.findOne({
 			server_id: this.guildId
 		}, (err, queue: any) => {
@@ -137,19 +142,20 @@ class Music implements DiscordBot.plugins.Music {
 				id: song.id
 			});
 
-			queue.save(() => cb(null));
+			queue.save(() => cb());
 		});
 	}
 
 	public removeFromQueue(id: string, cb: (err: any) => any) {
 		MusicQueue.findOne({ server_id: this.guildId })
 		.exec((err, queue: any) => {
+			if (err != null) return cb('An Error Occured trying to query the Database.');
 			if (queue == null) return cb('Queue not found!');
 
 			for(var i = 0; i < queue.items.length; i++) {
 				if (queue.items[i].id == id) {
 					queue.items.splice(i, 1);
-					return queue.save(err => cb(err));
+					return queue.save((err: any) => cb(err));
 				}
 			}
 
@@ -157,24 +163,25 @@ class Music implements DiscordBot.plugins.Music {
 		});
 	}
 
-	public nextInQueue(cb: (song: DiscordBot.plugins.SongGlobal) => any) {
+	public nextInQueue(cb: (song?: DiscordBot.plugins.SongGlobal) => any) {
 		MusicQueue.findOne({ server_id: this.guildId }, (err, queue: any) => {
 			if (err != null) {
 				console.error(err);
-				return cb(null);
+				return cb();
 			}
 
 			var item = (!this.repeatSong ? queue.items.shift() : queue.items[0]);
 
-			if (item == null) return cb(null);
+			if (item == null) return cb();
 
 			if (!this.repeatSong && this.repeatQueue) queue.items.push(item);
 
-			queue.save(err => {
-				if (err != null) { console.error(err); cb(null); return; }
+			queue.save((err: any) => {
+				if (err != null) { console.error(err); cb(); return; }
 
 				musicPlugin.getSong(item.id, (err, songs) => {
-					if (err != null) { console.error(err); cb(null); return; }
+					if (err != null) { console.error(err); cb(); return; }
+					if (songs == null) { console.error('No songs found.'); cb(); return; }
 					songs[0].addedBy = item.addedBy;
 					cb(songs[0]);
 				});
@@ -232,7 +239,7 @@ class Music implements DiscordBot.plugins.Music {
 		.catch(e => console.error(e));
 	}
 
-	public regrab(cb: (music: Music) => any) {
+	public regrab(cb: (music?: Music) => any) {
 		getMusic(this.guildId, music => cb(music));
 	}
 
@@ -261,9 +268,9 @@ class Music implements DiscordBot.plugins.Music {
 	}
 }
 
-function getMusic(serverId: string,  cb: (music: Music) => any) {
+function getMusic(serverId: string,  cb: (music?: Music) => any) {
 	redisMusic.get(serverId, (err, str) => {
-		if (err != null) { console.error(err); cb(null); }
+		if (err != null) { console.error(err); cb(); }
 		cb(new Music(serverId, str == null ? {} : JSON.parse(str)));
 	});
 }

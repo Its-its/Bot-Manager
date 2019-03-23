@@ -1,3 +1,5 @@
+import { DiscordBot, Nullable } from "../typings/manager";
+
 // TODO: Completely seperate from discord.
 
 interface DefaultCommands {

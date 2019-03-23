@@ -19,23 +19,23 @@ let PLAYLIST_FLAGS = {
 	WEB_REMOVE_ITEMS: 1 << 3,
 };
 
-
+type PermissionTypes = number | PlaylistUserPerms | Array<string> | string;
 
 class PlaylistUserPerms {
 	public bitfield: number;
 
-	constructor(permissions) {
+	constructor(permissions: PermissionTypes) {
 		this.bitfield = resolvePerms(permissions);
 	}
 
-	has(permission, checkFullAcces = true) {
+	has(permission: PermissionTypes, checkFullAcces = true): boolean {
 		if (Array.isArray(permission)) return permission.every(p => this.has(p, checkFullAcces));
 		permission = resolvePerms(permission);
 		if (checkFullAcces && (this.bitfield & PLAYLIST_USER_FLAGS.FULL_ACCESS) > 0) return true;
 		return (this.bitfield & permission) === permission;
 	}
 
-	missing(permissions, checkFullAcces = true) {
+	missing(permissions: PermissionTypes, checkFullAcces = true) {
 		if (!Array.isArray(permissions)) permissions = new PlaylistUserPerms(permissions).toArray(false);
 		return permissions.filter(p => !this.has(p, checkFullAcces));
 	}
@@ -44,7 +44,7 @@ class PlaylistUserPerms {
 		return Object.freeze(this);
 	}
 
-	add(...permissions: number[]) {
+	add(...permissions: PermissionTypes[]) {
 		var total = 0;
 		for (var p = permissions.length - 1; p >= 0; p--) {
 			const perm = resolvePerms(permissions[p]);
@@ -55,19 +55,22 @@ class PlaylistUserPerms {
 		return this;
 	}
 
-	remove(...permissions) {
+	remove(...permissions: PermissionTypes[]) {
 		var total = 0;
+
 		for (var p = permissions.length - 1; p >= 0; p--) {
 			const perm = resolvePerms(permissions[p]);
 			total |= perm;
 		}
+
 		if (Object.isFrozen(this)) return new PlaylistUserPerms(this.bitfield & ~total);
 		this.bitfield &= ~total;
+
 		return this;
 	}
 
 	serialize(checkFullAcces = true) {
-		const serialized = {};
+		const serialized: { [name: string]: boolean } = {};
 		for (const perm in PLAYLIST_USER_FLAGS) serialized[perm] = this.has(perm, checkFullAcces);
 		return serialized;
 	}
@@ -84,12 +87,13 @@ class PlaylistUserPerms {
 	static ALL = Object.values(PLAYLIST_USER_FLAGS).reduce((all, p) => all | p, 0);
 }
 
-function resolvePerms(permission: number | PlaylistUserPerms | string | any[]): number {
+function resolvePerms(permission: PermissionTypes): number {
 	if (typeof permission === 'number' && permission >= 0) return permission;
 	if (permission instanceof PlaylistUserPerms) return permission.bitfield;
-	if (Array.isArray(permission)) return permission.map(p => this.resolve(p)).reduce((prev, p) => prev | p, 0);
+	if (Array.isArray(permission)) return permission.map(p => resolvePerms(p)).reduce((prev, p) => prev | p, 0);
+	// @ts-ignore
 	if (typeof permission === 'string') return PLAYLIST_USER_FLAGS[permission];
-	
+
 	throw new Error('PERMISSIONS_INVALID');
 }
 
