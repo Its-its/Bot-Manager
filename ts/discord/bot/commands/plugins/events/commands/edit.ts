@@ -4,6 +4,7 @@ import DiscordServer = require('../../../../GuildServer');
 import utils = require('../../../../../utils');
 
 import PERMS = require('../perms');
+import { DiscordBot } from '../../../../../../../typings/manager';
 
 const ID_TO_NAME = {
 	react_add: 'React Add',
@@ -16,9 +17,9 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 }
 
 function showEditPage(compiled: DiscordBot.ListenEvents, senderMessage: Discord.Message, server: DiscordServer) {
-	if (!this.hasPerms(senderMessage.member, server, PERMS.EDIT)) return utils.noPermsMessage('Events');
+	if (!server.userHasPerm(senderMessage.member,PERMS.EDIT)) return utils.noPermsMessage('Events');
 
-	const selector = utils.createPageSelector(senderMessage.author.id, senderMessage.channel);
+	const selector = utils.createPageSelector(senderMessage.author.id, senderMessage.channel)!;
 
 	selector.setFormat([
 		`Editing event on ${ID_TO_NAME[compiled.type]}. Your on called events are below.`,
@@ -71,11 +72,13 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 			]);
 
 			selector.addSelection('Add', 'Add a role to guild member', page => {
+				// @ts-ignore
 				compiled.event['do'] = 'add';
 				nextPage(page);
 			});
 
 			selector.addSelection('Remove', 'Remove a role from guild member', page => {
+				// @ts-ignore
 				compiled.event['do'] = 'remove';
 				nextPage(page);
 			});
@@ -92,12 +95,19 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 					var type = server.idType(id_message);
 					if (type != null && type != 'channel') return false;
 
-					var id = server.strpToId(id_message).trim();
+					var id = server.strpToId(id_message);
+
+					if (id == null) return false;
+
+					id = id.trim();
+
 					if ((<Discord.TextChannel>selector.channel).guild.roles.get(id) == null) return false;
 
+					// @ts-ignore
 					compiled.event['role_id'] = id;
 
 					server.regrab(copy => {
+						if (copy == null) return;
 						copy.addOrEditEvent(compiled);
 						copy.save();
 					});
@@ -118,12 +128,18 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 				var type = server.idType(id_message);
 				if (type != null && type != 'channel') return false;
 
-				var id = server.strpToId(id_message).trim();
+				var id = server.strpToId(id_message);
+
+				if (id == null) return false;
+
+				id = id.trim();
+
 				if ((<Discord.TextChannel>selector.channel).guild.channels.get(id) == null) return false;
 
+				// @ts-ignore
 				compiled.event['channel_id'] = id;
 
-				const messageSelector = utils.createPageSelector(selector.author_id, selector.channel);
+				const messageSelector = utils.createPageSelector(selector.author_id, selector.channel)!;
 
 				messageSelector.setFormat([
 					'**Message Event**',
@@ -133,9 +149,12 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 				]);
 
 				messageSelector.listen(message => {
+					// @ts-ignore
 					compiled.event['message'] = message;
 
 					server.regrab(copy => {
+						if (copy == null) return;
+
 						copy.addOrEditEvent(compiled);
 						copy.save();
 					});
@@ -157,9 +176,12 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 			]);
 
 			selector.listen(message => {
+				// @ts-ignore
 				compiled.event['message'] = message;
 
 				server.regrab(copy => {
+					if (copy == null) return;
+
 					copy.addOrEditEvent(compiled);
 					copy.save();
 				});

@@ -1,3 +1,4 @@
+import Discord = require ('discord.js');
 import { Document, Schema } from "mongoose";
 
 // import { Message } from 'discord.js';
@@ -9,6 +10,7 @@ declare module 'express-session';
 
 type Nullable<T> = T | null;
 type Optional<T> = T | undefined;
+type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
 
 
 declare interface CommandClient {
@@ -109,6 +111,46 @@ declare namespace CustomDocs {
 	}
 
 	namespace discord {
+		export interface UserLevel extends Document {
+			server_id: string;
+			member_id: string;
+
+			xp: number;
+			level: number;
+		}
+
+		export interface Punishments extends Document {
+			server_id: string;
+			member_id: string;
+			creator_id: string;
+
+			pid: string;
+
+			type: string;
+			length: number;
+
+			reason: string;
+
+			expires: Date;
+
+			created_at: Date;
+		}
+
+		// Temp Punishment
+
+		export interface TempPunishments extends _TempPunishments<string> {}
+		export interface TempPunishmentsPopulated extends _TempPunishments<Punishments> {}
+
+		export interface _TempPunishments<P> extends Document {
+			server_id: string;
+			member_id: string;
+
+			punishment: P;
+
+			expires: Date;
+		}
+
+		// RSS
 		export interface DiscordRss extends DiscordFeedsTemp<string> {}
 		export interface DiscordRssPopulated extends DiscordFeedsTemp<CustomDocs.global.RSSFeeds> {}
 
@@ -566,7 +608,7 @@ declare namespace DiscordBot {
 	interface ListenEvent {
 		uid: string;
 		type: string;
-		event?: DoEvents;
+		event: DoEvents;
 	}
 
 	interface ReactAddEvent extends ListenEvent {
@@ -644,7 +686,7 @@ declare namespace DiscordBot {
 		name: string;
 
 		perms: string[];
-		groups?: string[];
+		groups: string[];
 	}
 
 	interface Alias {
@@ -660,8 +702,8 @@ declare namespace DiscordBot {
 		pid: string;
 		sid: string;
 
-		enabled?: boolean;
-		ignoreCase?: boolean;
+		enabled: boolean;
+		ignoreCase: boolean;
 
 		phrases: string[];
 		responses: PhraseResponses[];
@@ -705,11 +747,15 @@ declare namespace DiscordBot {
 	interface Moderation {
 		disabledDefaultCommands: string[];
 		disabledCustomCommands: string[];
-		blacklisted: { [value: string]: { punishment: PunishmentTypes, items: string[] } };
+		blacklisted: ModerationBlacklist;
 		whitelisted: string[];
 		ignoredChannels: string[];
 		ignoredUsers: string[];
 	}
+
+	type ModerationBlacklist = {
+		[value: string]: { punishment: PunishmentTypes, items: string[] }
+	};
 
 
 	interface Interval {
@@ -720,14 +766,14 @@ declare namespace DiscordBot {
 		guild_id?: string;
 		channel_id?: string;
 
-		displayName?: string;
-		message?: string;
-		active?: boolean;
+		displayName: string;
+		message: string;
+		active: boolean;
 
-		every?: number;
+		every: number;
 		nextCall?: number;
 
-		events?: {
+		events: {
 			onCall?: string;
 			onReset?: string;
 		};
@@ -755,6 +801,16 @@ declare namespace DiscordBot {
 	interface PluginItem {
 		enabled: boolean;
 		// perms: boolean;
+	}
+
+	interface Overview {
+		server_image: string;
+		server_name: string;
+		server_region: string;
+		afk_channel?: string;
+		afk_timeout: number;
+		new_member_channel?: string;
+		notification_settings: Discord.MessageNotifications;
 	}
 
 	// Role

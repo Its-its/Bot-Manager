@@ -23,6 +23,7 @@ import CommandManger = require('../../../command-manager');
 import Discord = require('discord.js');
 
 import Server = require('../GuildServer');
+import { Nullable } from '../../../../typings/manager';
 
 
 let categoryCommands: { [category: string]: Command[] } = {};
@@ -92,16 +93,18 @@ function is(commandName: string) {
 	return false;
 }
 
-function get(commandName: string): Command {
+function get(commandName: string): Nullable<Command> {
 	for (var i = 0; i < defaultCommands.length; i++) {
 		if (defaultCommands[i].is(commandName)) return defaultCommands[i];
 	}
+
 	return null;
 }
 
-function addCommand(Cmd: typeof Command | typeof Command[], category: string, hidden?: boolean) {
+function addCommand(Cmd: typeof Command | typeof Command[], category: string, hidden?: boolean): void {
 	if (Array.isArray(Cmd)) return Cmd.forEach(c => addCommand(c, category, hidden));
 
+	// @ts-ignore
 	const command = new Cmd();
 
 	if (command.perms == null || command.perms.length == 0) console.log('No perms for ' + command.commandName[0]);

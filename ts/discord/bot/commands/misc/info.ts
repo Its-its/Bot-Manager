@@ -11,6 +11,7 @@ const PERMS = {
 };
 
 for(var name in PERMS) {
+	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
@@ -34,17 +35,20 @@ class Info extends Command {
 		}
 
 		var discordId = params.shift();
+		if (discordId == null) return Command.error([['Info', 'Invalid Params']]);
+
 		var idType = utils.getIdType(discordId);
+		if (idType == null) return Command.error([[ 'Info', 'Unknown type. Please @ or # the user, group, or channel.' ]]);
 
-		discordId = utils.strpToId(discordId);
+		var strippedDiscordId = utils.strpToId(discordId);
+		if (strippedDiscordId == null) return Command.error([['Info', 'Invalid Params']]);
 
-		if (idType == null) return Command.error([[ 'Info', 'Unknown type' ]]);
 
 		switch(idType) {
 			case 'member':
 				if (!this.hasPerms(message.member, server, PERMS.MEMBER)) return Command.noPermsMessage('Info');
 
-				var guildMember = message.guild.members.get(discordId);
+				var guildMember = message.guild.members.get(strippedDiscordId);
 				if (guildMember == null) return Command.error([[ 'Info', 'Member not in Guild!' ]]);
 
 				var roles = guildMember.roles.array()

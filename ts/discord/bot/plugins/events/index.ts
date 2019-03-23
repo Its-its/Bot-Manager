@@ -1,5 +1,6 @@
 import Discord = require('discord.js');
 import DiscordServer = require('../../GuildServer');
+import { DiscordBot } from '../../../../../typings/manager';
 
 // Custom events
 // - On react to certain message.
@@ -25,7 +26,13 @@ function onReactAdd(reaction: Discord.MessageReaction, user: Discord.User, serve
 			if (listening.message_id == reaction.message.id) {
 				if (listening.emoji_id == reaction.emoji.id) {
 					switch(listening.event.type) {
-						case 'role': doGroup(listening.event, reaction.message.guild, reaction.message.guild.members.get(user.id)); break;
+						case 'role':
+							var member = reaction.message.guild.members.get(user.id);
+
+							if (member == null) return;
+
+							doGroup(listening.event, reaction.message.guild, member);
+							break;
 						// case 'message': break;
 						// case 'dm': break;
 					}
@@ -82,19 +89,23 @@ function guildMemberRemove(member: Discord.GuildMember, server: DiscordServer) {
 
 
 function doGroup(event: DiscordBot.DoGroupEvent, guild: Discord.Guild, member: Discord.GuildMember) {
+	if (event.role_id == null) return;
+
 	switch(event.do) {
 		case 'add':
 			member.addRole(event.role_id)
-			.catch(e => console.error(e));
+			.catch((e: any) => console.error(e));
 			break;
 		case 'remove':
 		member.removeRole(event.role_id)
-		.catch(e => console.error(e));
+		.catch((e: any) => console.error(e));
 			break;
 	}
 }
 
 function doMessage(event: DiscordBot.DoMessageEvent, member: Discord.GuildMember) {
+	if (event.channel_id == null) return;
+
 	var channel = <Discord.TextChannel>member.guild.channels.get(event.channel_id);
 
 	if (channel != null) {

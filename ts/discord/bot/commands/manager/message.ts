@@ -49,9 +49,10 @@ class Message extends Command {
 			]);
 		}
 
-		roleId = server.strpToId(roleId);
+		var sRoleId = server.strpToId(roleId);
+		if (sRoleId == null) return Command.error([['Message', 'Invalid ID']]);
 
-		const discordGuildRole = message.guild.roles.get(roleId);
+		const discordGuildRole = message.guild.roles.get(sRoleId);
 		if (discordGuildRole == null) return Command.error([['Error', 'Not a valid Server Role.']]);
 
 		const membersInRole = discordGuildRole.members.array();
@@ -65,7 +66,7 @@ class Message extends Command {
 
 		// if (!isGroupDM) {
 			function nextMessage(pos: number) {
-				if (pos == membersInRole.length) return message.channel.send(Command.success([['Success', `Sent a DM to ${membersInRole.length} players in the role ${discordGuildRole.name}`]]));
+				if (pos == membersInRole.length) return message.channel.send(Command.success([['Success', `Sent a DM to ${membersInRole.length} players in the role ${discordGuildRole!.name}`]]));
 				var member = membersInRole[pos];
 
 				member.sendMessage(messageToSend)

@@ -8,6 +8,7 @@ import Command = require('../../command');
 
 import Punishments = require('../../../models/punishments');
 import TempPunishments = require('../../../models/temp_punishments');
+import { Nullable } from '../../../../../typings/manager';
 
 
 const PERMS = {
@@ -21,18 +22,19 @@ const PERMS = {
 };
 
 for(var name in PERMS) {
+	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
 
-const MAX_SECONDS = parseTime('1y');
-const MIN_SECONDS = parseTime('5m');
+const MAX_SECONDS = parseTime('1y')!;
+const MIN_SECONDS = parseTime('5m')!;
 
-const MAX_MUTE_1H = parseTime('1h');
-const MAX_MUTE_1D = parseTime('1d');
-const MAX_MUTE_1W = parseTime('1w');
-const MAX_MUTE_1M = parseTime('4w2d');
-const MAX_MUTE_6M = parseTime('26w');
+const MAX_MUTE_1H = parseTime('1h')!;
+const MAX_MUTE_1D = parseTime('1d')!;
+const MAX_MUTE_1W = parseTime('1w')!;
+const MAX_MUTE_1M = parseTime('4w2d')!;
+const MAX_MUTE_6M = parseTime('26w')!;
 
 class Mute extends Command {
 	constructor() {
@@ -81,14 +83,16 @@ class Mute extends Command {
 		}
 
 		var userIdStr = params.shift();
+		if (userIdStr == null) return Command.error([['Mute', 'Invalid Params.']]);
 
 		var userType = server.idType(userIdStr);
-
 		if (userType != 'member') return Command.error([[ 'Mute', 'Invalid args. Please refer to mute help.' ]]);
 
 		var discUserId = server.strpToId(userIdStr);
+		if (discUserId == null) return Command.error([['Mute', 'Invalid ID.']]);
 
 		var timeStr = params.shift();
+		if (timeStr == null) return Command.error([['Mute', 'Invalid Params.']]);
 
 		var reason = params.join(' ');
 
@@ -176,7 +180,7 @@ class Mute extends Command {
 	}
 }
 
-function parseTime(time: string): number {
+function parseTime(time: string): Nullable<number> {
 	var seconds = 0, lastGrabbed = '';
 
 	for(var i = 0; i < time.length; i++) {

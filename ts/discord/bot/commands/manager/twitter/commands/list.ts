@@ -6,11 +6,13 @@ import DiscordTwitter = require('../../../../../models/twitter');
 import GlobalTwitterFeeds = require('../../../../../../models/twitterfeed');
 
 import utils = require('../../../../../utils');
+import { CustomDocs, Nullable } from '../../../../../../../typings/manager';
 
 
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	message.channel.send(utils.infoMsg([['RSS Feed', 'Finding all RSS Feeds in current Guild.']]))
+	// @ts-ignore
 	.then((m: Discord.Message) => {
 		const guild = m.guild;
 
@@ -26,7 +28,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				return;
 			}
 
-			const selector = utils.createPageSelector(message.member.id, message.channel);
+			const selector = utils.createPageSelector(message.member.id, message.channel)!;
 			selector.setEditing(m);
 
 			selector.setFormat([
@@ -48,7 +50,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				selector.addSelection(String(i + 1), `<#${feed.channel_id}> (Feeds: ${feed.feeds.length})`, (page) => {
 					DiscordTwitter.findOne({ guild_id: guild.id, channel_id: feed.channel_id })
 					.populate('feeds.feed')
-					.exec((err, feed) => {
+					.exec((err, feed: CustomDocs.discord.DiscordTwitterPopulated) => {
 						if (err != null) {
 							m.edit(utils.errorMsg([['RSS Feed', 'An error occured while trying to find RSS Feed for Channel. Please try again in a few moments.']]));
 							return;
@@ -64,42 +66,9 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	});
 }
 
-interface Feed extends mongoose.Document {
-	user_id: string,
 
-	displayName: string,
-	screenName: string,
 
-	sending_to: number;
-
-	items: {
-		id: string,
-
-		text: string,
-		link: string
-	}[];
-
-	last_called: Date;
-}
-
-interface ChannelFeedItem {
-	format: string;
-	active: boolean;
-	items: string[];
-	feed: Feed;
-};
-
-interface ChannelFeed extends mongoose.Document {
-	pid: string;
-	active: boolean;
-	guild_id: string;
-	channel_id: string;
-	last_check: Date;
-
-	feeds: ChannelFeedItem[];
-}
-
-function showChannel(page: utils.MessagePage, channelFeed: ChannelFeed) {
+function showChannel(page: utils.MessagePage, channelFeed: CustomDocs.discord.DiscordTwitterPopulated) {
 	var channel = <Discord.TextChannel>page.channel;
 
 	// TODO
@@ -185,7 +154,7 @@ function showChannel(page: utils.MessagePage, channelFeed: ChannelFeed) {
 const DEFAULT_TWITTER_FORMAT = ':bird:  **{text}**\n\n{link}';
 
 
-function showPageFeed(page: utils.MessagePage, channelFeed: ChannelFeed, pos: number) {
+function showPageFeed(page: utils.MessagePage, channelFeed: CustomDocs.discord.DiscordTwitterPopulated, pos: number) {
 	var feed = channelFeed.feeds[pos];
 
 	page.setFormat([
@@ -218,10 +187,12 @@ function showPageFeed(page: utils.MessagePage, channelFeed: ChannelFeed, pos: nu
 		]);
 
 		pageTemplate.listen(value => {
-			if (value.length == 0 || value == 'default') value = null;
-			else value = value.replace(/\</g, '\\<').replace(/\>/g, '\\>');
+			var setting: Nullable<string>;
 
-			DiscordTwitter.updateOne({ _id: channelFeed._id }, { $set: { ['feeds.' + pos + '.format']: value } }).exec();
+			if (value.length == 0 || value == 'default') setting = null;
+			else setting = value.replace(/\</g, '\\<').replace(/\>/g, '\\>');
+
+			DiscordTwitter.updateOne({ _id: channelFeed._id }, { $set: { ['feeds.' + pos + '.format']: setting } }).exec();
 			pageTemplate.temporaryMessage('Changed Feed Format.', 3000);
 
 			return true;

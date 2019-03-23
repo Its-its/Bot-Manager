@@ -10,9 +10,9 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		return;
 	}
 
-	var user = params.shift();
-	var amount = parseInt(params.shift());
-	var type = params.shift();
+	var user = params.shift()!;
+	var amount = parseInt(params.shift()!);
+	var type = params.shift()!;
 
 	if (isNaN(amount) ||
 		(type != 'lvl' && type != 'xp') ||
@@ -22,11 +22,16 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	var idType = server.idType(user);
 
 	if (idType != null && idType != 'member') {
-		message.channel.send('Must he a users ID or @');
+		message.channel.send('Must be a users ID or @');
 		return;
 	}
 
 	var id = server.strpToId(user);
+
+	if (id == null) {
+		message.channel.send('Invalid ID.');
+		return;
+	}
 
 	var member = message.guild.member(id);
 

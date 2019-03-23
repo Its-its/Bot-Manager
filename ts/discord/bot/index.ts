@@ -29,8 +29,8 @@ import limits = require('../limits');
 commandPlugin.defaultCommands.initCommands();
 
 // Commands
-const BlacklistCmd =  commandPlugin.defaultCommands.get('blacklist');
-const PunishmentCmd = commandPlugin.defaultCommands.get('punishment');
+const BlacklistCmd =  commandPlugin.defaultCommands.get('blacklist')!;
+const PunishmentCmd = commandPlugin.defaultCommands.get('punishment')!;
 
 
 mongoose.Promise = global.Promise;
@@ -257,14 +257,14 @@ client.on('guildCreate', guild => {
 							item.is_active = true;
 
 							item.botType = (<any>Bots).appName('discord');
-							item.botId = server.id;
+							item.botId = server!.id;
 							item.displayName = guild.name;
 
 							item.save((err) => {
 								if (err != null) logger.error('Bots.save:', err);
 
 								if (newServer) {
-									server.save(err => {
+									server!.save(err => {
 										if (err != null) logger.error('DiscordServers.save:', err);
 										new Server(guild.id, {
 											region: guild.region,

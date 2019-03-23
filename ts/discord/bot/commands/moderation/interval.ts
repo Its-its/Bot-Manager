@@ -17,6 +17,7 @@ const PERMS = {
 };
 
 for(var name in PERMS) {
+	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
@@ -78,7 +79,7 @@ class Interval extends Command {
 				server.save();
 
 				return Command.info([
-					[ 'Interval', 'Interval with ID ' + pos + ' created.\nSeconds set to ' + seconds ]
+					[ 'Interval', 'Interval with ID ' + pos + ' created.\nMinutes set to ' + minutes ]
 				]);
 			default:
 				var intervalId = parseInt(params[0]);

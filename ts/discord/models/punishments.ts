@@ -1,4 +1,5 @@
 import mongoose = require('mongoose');
+import { CustomDocs } from '../../../typings/manager';
 
 let Schema = mongoose.Schema;
 
@@ -22,4 +23,4 @@ const Punishments = new Schema({
 	}
 });
 
-export = mongoose.model('discord_punishments', Punishments);
+export = (<mongoose.Model<CustomDocs.discord.Punishments>>mongoose.model('discord_punishments', Punishments));

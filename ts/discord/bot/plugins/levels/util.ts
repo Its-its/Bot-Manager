@@ -2,7 +2,7 @@
 
 class RandValue {
 	public min: number;
-	public max: number;
+	public max?: number;
 
 	constructor(min: number, max?: number) {
 		this.min = min;
@@ -10,7 +10,7 @@ class RandValue {
 	}
 
 	public value() {
-		if (this.max = null) return this.min;
+		if (this.max == null) return this.min;
 		return Math.floor(Math.random() * (this.max - this.min + 1)) + this.min;
 	}
 }
@@ -76,16 +76,19 @@ function remainingExp(totalXp: number) {
 	return totalXp - xp + xpAmountForLevel(level);
 }
 
-function regularArcData(cx, cy, radius, startDegrees, endDegrees, isCounterClockwise) {
+function regularArcData(cx: number, cy: number, radius: number, startDegrees: number, endDegrees: number, isCounterClockwise: boolean): string {
 	var offsetRadians = Math.PI/2;
-	var sweepFlag = (isCounterClockwise) ? 0 : 1;
+	var sweepFlag = isCounterClockwise ? 0 : 1;
+
 	var startRadians = offsetRadians + startDegrees * Math.PI / 180;
 	var endRadians = offsetRadians + (startDegrees + endDegrees) * Math.PI / 180;
 	var largeArc = ((endRadians - startRadians) % (2 * Math.PI)) > Math.PI ? 1 : 0;
-	var startX = parseInt(cx + radius * Math.cos(startRadians));
-	var startY = parseInt(cy + radius * Math.sin(startRadians));
-	var endX = parseInt(cx + radius * Math.cos(endRadians));
-	var endY = parseInt(cy + radius * Math.sin(endRadians));
+
+	var startX = (cx + radius * Math.cos(startRadians));
+	var startY = (cy + radius * Math.sin(startRadians));
+	var endX = (cx + radius * Math.cos(endRadians));
+	var endY = (cy + radius * Math.sin(endRadians));
+
 	var space = " ";
 	var arcData = "";
 

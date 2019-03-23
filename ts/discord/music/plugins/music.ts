@@ -33,7 +33,7 @@ function sendQueue(queueType: string, guild_id: string, member_id: string, chann
 	});
 }
 
-function sendPlay(channel_id: string, guild_id: string, member_id: string, search: string) {
+function sendPlay(channel_id: string, guild_id: string, member_id: string, search?: string) {
 	sendReq('play', {
 		_guild: guild_id,
 		_channel: channel_id,
@@ -218,7 +218,7 @@ interface SongSearch {
 	}[];
 }
 
-function searchForSong(search: string, page: string, cb: (errorMsg?: any, data?: SongSearch) => any) {
+function searchForSong(search: string, page: string | null | undefined, cb: (errorMsg?: any, data?: SongSearch) => any) {
 	request.get(`http://${config.ytdl.full}/search?query=${search}${page == null ? '' : '&pageToken=' + page}`, (err, res) => {
 		if (err != null) return cb(err);
 

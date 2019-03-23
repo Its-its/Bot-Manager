@@ -3,9 +3,9 @@ import DiscordServer = require('../../../../GuildServer');
 
 import Command = require('../../../../command');
 
-function call(_params: string[], _server: DiscordServer, _message: Discord.Message) {
+function call(description: string, _params: string[], _server: DiscordServer, _message: Discord.Message) {
 	return Command.info([
-		[ 'Description', this.description ],
+		[ 'Description', description ],
 		[
 			'Command Usage',
 			[

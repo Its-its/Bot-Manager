@@ -22,3 +22,6 @@ Manager
 
 Plugins
 	Leveling
+
+
+### Anything with @ts-ignore will need to be gone through and fixed.

@@ -40,7 +40,7 @@ class Help extends Command {
 			]);
 		}
 
-		var paramHelpName = params.shift().toLowerCase();
+		var paramHelpName = params.shift()!.toLowerCase();
 
 		if (paramHelpName == 'all') {
 			var each = [

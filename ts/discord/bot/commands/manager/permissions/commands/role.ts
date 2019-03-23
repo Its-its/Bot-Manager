@@ -15,7 +15,7 @@ import GlobalCommands = require('../../../index');
 import PERMISSIONS = require('../perms');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	if (!this.hasPerms(message.member, server, PERMISSIONS.ROLE)) return Command.noPermsMessage('Perms');
+	if (!server.userHasPerm(message.member, PERMISSIONS.ROLE)) return Command.noPermsMessage('Perms');
 
 	var roleFull = params.shift();
 	var cmdToDo = params.shift();
@@ -35,7 +35,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	}
 
 	if (cmdToDo == null) {
-		if (!this.hasPerms(message.member, server, PERMISSIONS.ROLE_LIST)) return Command.noPermsMessage('Perms');
+		if (!server.userHasPerm(message.member, PERMISSIONS.ROLE_LIST)) return Command.noPermsMessage('Perms');
 
 		var permission = server.getPermsFrom('roles', roleId);
 		if (permission == null) permission = { perms: [], groups: [] };
@@ -50,11 +50,11 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			]
 		]);
 	} else if (cmdToDo == 'add') {
-		if (!this.hasPerms(message.member, server, PERMISSIONS.ROLE_ADD)) return Command.noPermsMessage('Perms');
+		if (!server.userHasPerm(message.member, PERMISSIONS.ROLE_ADD)) return Command.noPermsMessage('Perms');
 
-		if (GlobalCommands.validPerms.indexOf(commandPermOrDo) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
+		if (GlobalCommands.validPerms.indexOf(commandPermOrDo!) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
 
-		var added = server.addPermTo('roles', roleId, commandPermOrDo);
+		var added = server.addPermTo('roles', roleId, commandPermOrDo!);
 
 		if (added) {
 			message.channel.send(Command.error([['Permissions', 'Added ' + commandPermOrDo + ' to ' + roleFull]]));
@@ -62,11 +62,11 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			message.channel.send(Command.error([['Permissions', 'Failed']]));
 		}
 	} else if (cmdToDo == 'remove') {
-		if (!this.hasPerms(message.member, server, PERMISSIONS.ROLE_REMOVE)) return Command.noPermsMessage('Perms');
+		if (!server.userHasPerm(message.member, PERMISSIONS.ROLE_REMOVE)) return Command.noPermsMessage('Perms');
 
-		if (GlobalCommands.validPerms.indexOf(commandPermOrDo) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
+		if (GlobalCommands.validPerms.indexOf(commandPermOrDo!) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
 
-		var added = server.removePermFrom('roles', roleId, commandPermOrDo);
+		var added = server.removePermFrom('roles', roleId, commandPermOrDo!);
 
 		if (added) {
 			message.channel.send(Command.error([['Permissions', 'Removed ' + commandPermOrDo + ' from ' + roleFull]]));

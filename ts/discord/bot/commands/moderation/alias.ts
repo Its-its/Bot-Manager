@@ -39,7 +39,7 @@ class Alias extends Command {
 			]);
 		}
 
-		switch(params.shift().toLowerCase()) {
+		switch(params.shift()!.toLowerCase()) {
 			case 'list':
 				if (!this.hasPerms(message.member, server, PERMISSIONS.LIST)) return Command.noPermsMessage('Alias');
 
@@ -71,7 +71,11 @@ class Alias extends Command {
 			case 'remove':
 				if (!this.hasPerms(message.member, server, PERMISSIONS.REMOVE)) return Command.noPermsMessage('Alias');
 
-				if (server.removeAlias(params.shift())) {
+				var name = params.shift();
+
+				if (name == null) return Command.error([['Alias', 'Pleave provide an alias name to remove.']]);
+
+				if (server.removeAlias(name)) {
 					server.save();
 					return Command.success([['Alias', 'Successfully removed alias.']]);
 				} else {

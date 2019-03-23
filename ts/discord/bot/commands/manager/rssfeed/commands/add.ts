@@ -13,7 +13,7 @@ import intervalUtils = require('../../../../../../rssgrabber/utils');
 import PERMISSIONS = require('../perms');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	if (!this.hasPerms(message.member, server, PERMISSIONS.ADD)) return utils.noPermsMessage('RSS Feed');
+	if (!server.userHasPerm(message.member, PERMISSIONS.ADD)) return utils.noPermsMessage('RSS Feed');
 
 	var url = params.join(' ');
 
@@ -31,8 +31,8 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 					$addToSet: {
 						feeds: [
 							{
-								items: article.items.map(i => i.id),
-								feed: feedDoc._id
+								items: article!.items.map(i => i.id),
+								feed: feedDoc!._id
 							}
 						]
 					},
@@ -69,14 +69,14 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 					for(var i = 0; i < dFeed.feeds.length; i++) {
 						var feed = dFeed.feeds[i];
 
-						if (feed.feed.toString() == feedDoc._id.toString()) {
+						if (feed.feed.toString() == feedDoc!._id.toString()) {
 							return message.channel.send(utils.infoMsg([['RSS Feed', 'RSS Feed url is already being used in the discord!']]));
 						}
 					}
 				}
 
 
-				GlobalRSSFeeds.updateOne({ _id: feedDoc._id }, { $inc: { sending_to: 1 } }).exec();
+				GlobalRSSFeeds.updateOne({ _id: feedDoc!._id }, { $inc: { sending_to: 1 } }).exec();
 				DiscordRSSFeeds.updateOne(
 					{ guild_id: message.guild.id, channel_id: message.channel.id },
 					{
@@ -86,8 +86,8 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 						$addToSet: {
 							feeds: [
 								{
-									items: article.items.map(i => i.id),
-									feed: feedDoc._id
+									items: article!.items.map(i => i.id),
+									feed: feedDoc!._id
 								}
 							]
 						}

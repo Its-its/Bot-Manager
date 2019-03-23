@@ -1,4 +1,5 @@
 import mongoose = require('mongoose');
+import { CustomDocs } from '../../../../../../typings/manager';
 
 let Schema = mongoose.Schema;
 
@@ -10,4 +11,4 @@ const UserLevel = new Schema({
 	level: { type: Number, default: 0 }
 });
 
-export = mongoose.model('discord_levels_user', UserLevel);
+export = (<mongoose.Model<CustomDocs.discord.UserLevel>>mongoose.model('discord_levels_user', UserLevel));

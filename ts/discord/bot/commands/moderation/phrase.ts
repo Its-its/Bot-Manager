@@ -18,6 +18,7 @@ const PERMS = {
 };
 
 for(var name in PERMS) {
+	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
@@ -49,7 +50,7 @@ class Phrase extends Command {
 			]);
 		}
 
-		var cmdCallOrPhraseId = params.shift();
+		var cmdCallOrPhraseId = params.shift()!;
 		switch (cmdCallOrPhraseId) {
 			case 'list':
 				if (!this.hasPerms(message.member, server, PERMS.LIST)) return Command.noPermsMessage('Phrase');
@@ -73,6 +74,8 @@ class Phrase extends Command {
 
 				var phraseName = params.shift();
 
+				if (phraseName == null) return Command.error([['Phrase', 'Invalid Params']]);
+
 				if (!/^[a-z0-9]+$/i.test(phraseName)) return Command.info([['Phrase', 'Phrase name must only have A-Z 0-9 in it.']]);
 
 				server.createPhrase(message.member, phraseName.split(','), (phrase) => {
@@ -88,8 +91,9 @@ class Phrase extends Command {
 			case 'ignorecase':
 				if (!this.hasPerms(message.member, server, PERMS.IGNORECASE)) return Command.noPermsMessage('Phrase');
 
-				if (params.length < 2) return;
-				var id = parseInt(params.shift());
+				if (params.length < 2) return Command.error([['Phrase', 'Invalid Params']]);
+
+				var id = parseInt(params.shift()!);
 				if (isNaN(id)) return;
 
 				server.setPhraseIgnoreCase(id, params.shift() == 'true');
@@ -118,7 +122,7 @@ class Phrase extends Command {
 					if (name == 'phrase') {
 						if (!this.hasPerms(message.member, server, PERMS.REMOVE_PHRASE)) return Command.noPermsMessage('Phrase');
 
-						var phrases = null;
+						var phrases = undefined;
 						if (params.length != 0) phrases = params.join(' ').split(',');
 
 						server.removePhrase(cmdCallOrPhraseId, phrases);

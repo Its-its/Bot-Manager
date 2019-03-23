@@ -14,6 +14,7 @@ const PERMS = {
 };
 
 for(var name in PERMS) {
+	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
@@ -50,11 +51,15 @@ class Logs extends Command {
 				var channelId = params.shift();
 
 				if (channelId == null) channelId = message.channel.id;
-				else channelId = server.strpToId(channelId);
+				else {
+					var stripped = server.strpToId(channelId);
+					if (stripped == null) return Command.error([['Logs', 'ID is not valid.']]);
+					channelId = stripped;
+				}
 
 				if (!message.guild.channels.has(channelId)) return Command.error([['Logs', 'ID is not a channel.']]);
 
-				server.plugins.logs.textChannelId = channelId;
+				server.plugins.logs!.textChannelId = channelId;
 
 				if (channelId == message.channel.id) {
 					message.channel.send(Command.info([

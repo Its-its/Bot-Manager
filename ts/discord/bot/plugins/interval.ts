@@ -1,7 +1,8 @@
 import ModelIntervals = require('../../../models/intervals');
+import { CustomDocs } from '../../../../typings/manager';
 
 
-function getAllFromGuild(id: string, cb: (err, items) => any) {
+function getAllFromGuild(id: string, cb: (err: any, items: CustomDocs.global.Intervals[]) => any) {
 	ModelIntervals.find({ $or: [ { _id: id }, { guild_id: id } ] }, (err, items) => cb(err, items));
 }
 

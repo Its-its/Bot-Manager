@@ -96,7 +96,7 @@ function tableMsg(header: string[], body: any[][], opts?: { delimiter?: string; 
 }
 
 
-function strpToId(str: string): Nullable<string> {
+function strpToId(str?: string): Nullable<string> {
 	if (str == null) return null;
 
 	if (!str.startsWith('<@') && !str.startsWith('<#')) return str;

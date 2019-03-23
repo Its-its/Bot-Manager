@@ -4,6 +4,7 @@ import DiscordServer = require('../../GuildServer');
 import Backups = require('../../../models/backup');
 
 import Command = require('../../command');
+import { DiscordBot, Omit } from '../../../../../typings/manager';
 
 const PERMISSIONS = {
 	MAIN: 'commands.backup'
@@ -221,13 +222,13 @@ class Backup extends Command {
 						}
 
 						if (inParams('overview')) {
-							compiled['overview'] = {
+							compiled['overview']! = {
 								server_image: guild.icon,
 								server_name: guild.name,
 								server_region: guild.region,
-								afk_channel: guild.afkChannelID == null ? null : oldIdsToNew[guild.afkChannelID],
+								afk_channel: guild.afkChannelID == null ? undefined : oldIdsToNew[guild.afkChannelID],
 								afk_timeout: guild.afkTimeout,
-								new_member_channel: guild.systemChannelID == null ? null : oldIdsToNew[guild.systemChannelID],
+								new_member_channel: guild.systemChannelID == null ? undefined : oldIdsToNew[guild.systemChannelID],
 								notification_settings: guild.messageNotifications
 							};
 						}
@@ -387,6 +388,7 @@ interface CompiledChannel {
 };
 
 interface Compiled {
+	// TODO: Convert to global Role in index.d.ts
 	roles?: {
 		position: number;
 		id: string;
@@ -400,15 +402,7 @@ interface Compiled {
 
 	channels?: CompiledChannel[];
 
-	overview?: {
-		server_image: string;
-		server_name: string;
-		server_region: string;
-		afk_channel: string;
-		afk_timeout: number;
-		new_member_channel: string;
-		notification_settings: Discord.MessageNotifications;
-	};
+	overview?: DiscordBot.Overview;
 
 	moderation?: {
 		verification: number;
@@ -425,7 +419,7 @@ interface Compiled {
 		roles: string[];
 	}[];
 
-	blacklists?: { [value: string]: { punishment: DiscordBot.PunishmentTypes, items: string[] } };
+	blacklists?: DiscordBot.ModerationBlacklist;
 	disabled_custom_comm?: string[];
 	disabled_default_comm?: string[];
 	ignored_channels?: string[];
@@ -433,26 +427,14 @@ interface Compiled {
 	perms?: DiscordBot.Permissions;
 	prefix?: string;
 	ranks?: string[];
-	alias?: { command: string; alias: string[]; }[];
+	alias?: Omit<DiscordBot.Alias, 'pid'>[];
 
 
-	commands?: { alias: string[]; params: DiscordBot.CommandParam[] }[];
+	commands?: Omit<DiscordBot.Command, '_id' | 'pid'>[];
 
-	intervals?: {
-		active: boolean;
-		displayName: string;
-		events: any;
-		every: number;
-		message: string;
-		nextCall: number;
-	}[]
+	intervals?: DiscordBot.Interval[];
 
-	phrases?: {
-		enabled: boolean;
-		ignoreCase: boolean;
-		phrases: string[];
-		responses: DiscordBot.PhraseResponses[];
-	}[];
+	phrases?: Omit<DiscordBot.Phrase, 'pid' | 'sid'>[];
 }
 
 

@@ -15,6 +15,7 @@ const PERMS = {
 };
 
 for(var name in PERMS) {
+	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
@@ -65,6 +66,8 @@ class Prune extends Command {
 				var channelId = server.strpToId(params.shift());
 				var reason = params.shift();
 				var pruneLimit = 100;
+
+				if (reason == null) return Command.error([['Prune', 'Invalid Params']]);
 
 				if (channelId == null) {
 					channelId = message.channel.id;
@@ -175,6 +178,7 @@ function singleDeletions(messages: Discord.Message[], editMessage: Discord.Messa
 
 function recreateChannel(sendingChannel: Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel, channelBeingRecreated: Discord.TextChannel) {
 	send(sendingChannel, Command.success([['Prune', 'Cloning channel']]))
+	// @ts-ignore
 	.then((editMessage: Discord.Message) => {
 		editMessage = Array.isArray(editMessage) ? editMessage[0] : editMessage;
 
@@ -192,7 +196,7 @@ function recreateChannel(sendingChannel: Discord.TextChannel | Discord.DMChannel
 			.then(() => {
 				channelBeingRecreated.permissionOverwrites
 				.forEach(perm => {
-					var obj = {};
+					var obj: { [name: string]: boolean } = {};
 
 					utils.getPermissions(perm.allow).toArray().forEach(p => obj[p] = true);
 					utils.getPermissions(perm.deny).toArray().forEach(p => obj[p] = false);
@@ -216,19 +220,19 @@ function recreateChannel(sendingChannel: Discord.TextChannel | Discord.DMChannel
 		})
 		.catch(e => error(editMessage, e, '2'))
 	})
-	.catch(e => console.error(e));
+	.catch((e: any) => console.error(e));
 
-	function error(editMessage: Discord.Message, e, p) {
-		console.log('Error: ' + p);
+	function error(editMessage: Discord.Message, e: any, p: string) {
+		console.error('Prune Error: ' + p);
 		console.error(e);
-		editMessage.edit('An error occured.\n' + e.message);
+		editMessage.edit('An error occured.\n' + (e.message || e));
 	}
 }
 
-function send(channel: Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel, str: any, cb?: (err: Error, message?: Discord.Message | Discord.Message[]) => any) {
+function send(channel: Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel, str: any, cb?: (err?: Error, message?: Discord.Message | Discord.Message[]) => any) {
 	var msg = channel.send(new Discord.RichEmbed(str.embed));
 
-	if (cb != null) msg.then(msg => cb(null, msg), e => cb(e));
+	if (cb != null) msg.then(msg => cb(undefined, msg), e => cb(e));
 
 	return msg;
 }

@@ -5,14 +5,14 @@ import UserLevel = require('../../../../plugins/levels/models/userlevel');
 import util = require('../../../../plugins/levels/util');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	if (params.length != 3) {
-		message.channel.send('add <id> <amount> <xp/level>');
+	if (params.length < 3) {
+		message.channel.send('add <@id/id> <amount> <xp/level>');
 		return;
 	}
 
-	var user = params.shift();
-	var amount = parseInt(params.shift());
-	var type = params.shift();
+	var user = params.shift()!;
+	var amount = parseInt(params.shift()!);
+	var type = params.shift()!;
 
 	if (isNaN(amount) ||
 		(type != 'lvl' && type != 'xp') ||
@@ -27,6 +27,11 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	}
 
 	var id = server.strpToId(user);
+
+	if (id == null) {
+		message.channel.send('Invalid id Type');
+		return;
+	}
 
 	var member = message.guild.member(id);
 

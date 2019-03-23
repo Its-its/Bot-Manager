@@ -27,8 +27,8 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 					$addToSet: {
 						feeds: [
 							{
-								items: statues.map(i => i.id),
-								feed: feedDoc._id
+								items: statues!.map(i => i.id),
+								feed: feedDoc!._id
 							}
 						]
 					},
@@ -65,13 +65,13 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 					for(var i = 0; i < dFeed.feeds.length; i++) {
 						var feed = dFeed.feeds[i];
 
-						if (feed.feed.toString() == feedDoc._id.toString()) {
+						if (feed.feed.toString() == feedDoc!._id.toString()) {
 							return message.channel.send(utils.infoMsg([['Twitter', 'Twitter handle is already being used in the discord!']]));
 						}
 					}
 				}
 
-				GlobalTwitterFeeds.updateOne({ _id: feedDoc._id }, { $inc: { sending_to: 1 } }).exec();
+				GlobalTwitterFeeds.updateOne({ _id: feedDoc!._id }, { $inc: { sending_to: 1 } }).exec();
 				DiscordTwitter.updateOne(
 					{ guild_id: message.guild.id, channel_id: message.channel.id },
 					{
@@ -81,8 +81,8 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 						$addToSet: {
 							feeds: [
 								{
-									items: statues.map(i => i.id),
-									feed: feedDoc._id
+									items: statues!.map(i => i.id),
+									feed: feedDoc!._id
 								}
 							]
 						}

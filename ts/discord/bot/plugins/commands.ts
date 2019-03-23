@@ -5,6 +5,7 @@ import CommandManager = require('../../../command-manager');
 import defaultCommands = require('../commands');
 
 import limits = require('../../limits');
+import { DiscordBot } from '../../../../typings/manager';
 
 function isEnabled(server: Server): boolean {
 	return server.plugins.commands == null ? true : server.plugins.commands.enabled;
@@ -36,7 +37,11 @@ function onDidCallCommand(bot_id: string, message: Discord.Message, server: Serv
 			}
 
 
-			var commandMessage = CommandManager.getCommandMessage(server.getPrefix(), bot_id, message.content).trim();
+			var commandMessage = CommandManager.getCommandMessage(server.getPrefix(), bot_id, message.content);
+
+			if (commandMessage == null) return false;
+
+			commandMessage = commandMessage.trim();
 
 			if (commandMessage.length == 0) return false;
 

@@ -8,6 +8,7 @@ import PERMS = require('../perms');
 
 
 import utils = require('../../../../../utils');
+import { Nullable } from '../../../../../../../typings/manager';
 
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
@@ -25,19 +26,22 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	var search = params.join(' ').trim();
 
 	message.channel.send(Command.info([['Music', 'Searching for videos please wait...']]))
+	// @ts-ignore
 	.then((m: Discord.Message) => {
-		const selector = utils.createPageSelector(message.member.id, message.channel);
+		const selector = utils.createPageSelector(message.member.id, message.channel)!;
 		selector.setEditing(m);
 
 		nextPage(selector, search, null, () => selector.display());
 
-		function nextPage(pager: utils.MessagePage, query: string, page: string, cb: () => any) {
+		function nextPage(pager: utils.MessagePage, query: string, page: string | null | undefined, cb: () => any) {
 			searchForSong(query, page, (err, data) => {
 				if (err) {
 					console.error(err);
 					message.channel.send(Command.error([['Music', err.toString()]]));
 					return;
 				}
+
+				if (data == null) return message.channel.send(Command.error([['Music', 'Unable to find song. Please try again in a few minutes.']]));
 
 				data.items.forEach((song, p) => {
 					pager.addSelection(String(p + 1), song.title, (newPage) => {
@@ -85,7 +89,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			});
 		}
 	})
-	.catch(e => console.error(e));
+	.catch((e: any) => console.error(e));
 }
 
 export {

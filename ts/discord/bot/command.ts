@@ -3,6 +3,7 @@ import Server = require('./GuildServer');
 import info = require('../utils');
 
 import Discord = require('discord.js');
+import { DiscordBot } from '../../../typings/manager';
 
 class Command {
 	public commandName: string[];
@@ -13,7 +14,7 @@ class Command {
 	public adminOnly: boolean;
 	public perms: string[] = [];
 
-	constructor(commandName?: string | string[], togglable = true, adminOnly = true) {
+	constructor(commandName: string | string[], togglable = true, adminOnly = true) {
 		this.commandName = (typeof commandName == 'string' ? [commandName] : commandName);
 		this.togglable = (togglable == null ? true : togglable);
 		this.adminOnly = adminOnly;

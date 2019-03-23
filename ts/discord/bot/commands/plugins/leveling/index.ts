@@ -18,6 +18,7 @@ const PERMS = {
 };
 
 for(var name in PERMS) {
+	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
@@ -34,7 +35,9 @@ class Leveling extends Command {
 
 		var callType = params.shift();
 
+		// @ts-ignore
 		if (callType != null && PERMS[callType.toUpperCase()] != null) {
+			// @ts-ignore
 			if (!this.hasPerms(message.member, server, PERMS[callType.toUpperCase()])) return Command.noPermsMessage('Leveling');
 		}
 

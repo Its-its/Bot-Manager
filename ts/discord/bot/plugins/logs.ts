@@ -9,12 +9,15 @@ function messageDelete(message: Discord.Message) {
 	if (message.member == null || message.member.user.bot || message.channel.type != 'text') return;
 
 	guildClient.get(message.guild.id, server => {
-		if (server.isPluginEnabled('logs') && server.plugins.logs.textChannelId != null && server.plugins.logs.textChannelId != message.channel.id) {
-			var channel = <Discord.TextChannel>message.guild.channels.get(server.plugins.logs.textChannelId);
+		if (server == null || !server.isPluginEnabled('logs')) return;
+
+		if (server.plugins.logs!.textChannelId != null && server.plugins.logs!.textChannelId != message.channel.id) {
+			var channel = <Discord.TextChannel>message.guild.channels.get(server.plugins.logs!.textChannelId);
+
 			if (channel != null) {
 				channel.send(messageDeleted(<any>message.channel, message.member, message));
 			} else {
-				server.plugins.logs.textChannelId = null;
+				server.plugins.logs!.textChannelId = undefined;
 				server.save();
 			}
 		}
@@ -27,12 +30,15 @@ function messageDeleteBulk(messageCollection: Discord.Collection<string, Discord
 	if (messages.length != 0) {
 		var guildID = messages[0].guild.id;
 		guildClient.get(guildID, server => {
-			if (server.isPluginEnabled('logs') && server.plugins.logs.textChannelId != null && server.plugins.logs.textChannelId != messages[0].channel.id) {
-				var channel = <Discord.TextChannel>messages[0].guild.channels.get(server.plugins.logs.textChannelId);
+			if (server == null || !server.isPluginEnabled('logs')) return;
+
+			if (server.plugins.logs!.textChannelId != null && server.plugins.logs!.textChannelId != messages[0].channel.id) {
+				var channel = <Discord.TextChannel>messages[0].guild.channels.get(server.plugins.logs!.textChannelId);
+
 				if (channel != null) {
 					channel.send(messagesDeleted(messages));
 				} else {
-					server.plugins.logs.textChannelId = null;
+					server.plugins.logs!.textChannelId = undefined;
 					server.save();
 				}
 			}
@@ -44,12 +50,15 @@ function messageUpdate(oldMessage: Discord.Message, newMessage: Discord.Message)
 	if (oldMessage.member == null || oldMessage.member.user.bot || newMessage.channel.type != 'text' || oldMessage.content == newMessage.content) return;
 
 	guildClient.get(oldMessage.guild.id, server => {
-		if (server.isPluginEnabled('logs') && server.plugins.logs.textChannelId != null) {
-			var channel = <Discord.TextChannel>oldMessage.guild.channels.get(server.plugins.logs.textChannelId);
+		if (server == null || !server.isPluginEnabled('logs')) return;
+
+		if (server.plugins.logs!.textChannelId != null) {
+			var channel = <Discord.TextChannel>oldMessage.guild.channels.get(server.plugins.logs!.textChannelId);
+
 			if (channel != null) {
 				channel.send(messageEdited(<any>newMessage.channel, newMessage.member, oldMessage, newMessage));
 			} else {
-				server.plugins.logs.textChannelId = null;
+				server.plugins.logs!.textChannelId = undefined;
 				server.save();
 			}
 		}
@@ -58,12 +67,15 @@ function messageUpdate(oldMessage: Discord.Message, newMessage: Discord.Message)
 
 function guildMemberAdd(guildMember: Discord.GuildMember) {
 	guildClient.get(guildMember.guild.id, server => {
-		if (server.isPluginEnabled('logs') && server.plugins.logs.textChannelId != null) {
-			var channel = <Discord.TextChannel>guildMember.guild.channels.get(server.plugins.logs.textChannelId);
+		if (server == null || !server.isPluginEnabled('logs')) return;
+
+		if (server.plugins.logs!.textChannelId != null) {
+			var channel = <Discord.TextChannel>guildMember.guild.channels.get(server.plugins.logs!.textChannelId);
+
 			if (channel != null) {
 				//
 			} else {
-				server.plugins.logs.textChannelId = null;
+				server.plugins.logs!.textChannelId = undefined;
 				server.save();
 			}
 		}
@@ -72,12 +84,15 @@ function guildMemberAdd(guildMember: Discord.GuildMember) {
 
 function guildMemberRemove(guildMember: Discord.GuildMember) {
 	guildClient.get(guildMember.guild.id, server => {
-		if (server.isPluginEnabled('logs') && server.plugins.logs.textChannelId != null) {
-			var channel = <Discord.TextChannel>guildMember.guild.channels.get(server.plugins.logs.textChannelId);
+		if (server == null || !server.isPluginEnabled('logs')) return;
+
+		if (server.plugins.logs!.textChannelId != null) {
+			var channel = <Discord.TextChannel>guildMember.guild.channels.get(server.plugins.logs!.textChannelId);
+
 			if (channel != null) {
 				//
 			} else {
-				server.plugins.logs.textChannelId = null;
+				server.plugins.logs!.textChannelId = undefined;
 				server.save();
 			}
 		}

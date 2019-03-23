@@ -2,6 +2,7 @@ import Discord = require('discord.js');
 import DiscordServer = require('../../GuildServer');
 
 import Command = require('../../command');
+import { Optional } from '../../../../../typings/manager';
 
 
 const PERMS = {
@@ -12,6 +13,7 @@ const PERMS = {
 };
 
 for(var name in PERMS) {
+	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
@@ -38,7 +40,7 @@ class Comm extends Command {
 			]])
 		}
 
-		var cmdTypeCalled = params.shift();
+		var cmdTypeCalled = params.shift()!;
 
 		switch(cmdTypeCalled.toLowerCase()) {
 			case 'list':
@@ -51,6 +53,9 @@ class Comm extends Command {
 				if (!this.hasPerms(message.member, server, PERMS.CREATE)) return Command.noPermsMessage('Command');
 
 				var commandName = params.shift();
+
+				if (commandName == null) return Command.error([['Command', 'Invalid Params.']]);
+
 				if (!/^[a-z0-9_]+$/i.test(commandName)) return Command.info([['Command', 'Command name must only have A-Z 0-9 _ in it.']]);
 
 				var onCalledMessage = params.join(' ');
@@ -66,11 +71,18 @@ class Comm extends Command {
 				if (!this.hasPerms(message.member, server, PERMS.REMOVE)) return Command.noPermsMessage('Command');
 
 				var commandName = params.shift();
+
+				if (commandName == null) return Command.error([['Command', 'Invalid Params.']]);
+
 				if (!/^[a-z0-9_]+$/i.test(commandName)) return Command.info([['Command', 'Command name must only have A-Z 0-9 _ in it.']]);
 
-				var paramId = parseInt(params.shift());
+				var param = params.shift();
 
-				if (!Number.isInteger(paramId)) paramId = null;
+				if (param == null) return Command.error([['Command', 'Invalid Params.']]);
+
+				var paramId: Optional<number> = parseInt(param);
+
+				if (!Number.isInteger(paramId)) paramId = undefined;
 
 				server.removeCommand(commandName, paramId);
 				server.save(() => message.reply(`Successfully removed command "${commandName}"`));

@@ -26,6 +26,7 @@ const PERMISSIONS = {
 };
 
 for(var name in PERMISSIONS) {
+	// @ts-ignore
 	if (name != 'MAIN') PERMISSIONS[name] = `${PERMISSIONS.MAIN}.${PERMISSIONS[name]}`;
 }
 
@@ -74,9 +75,12 @@ class Plugin extends Command {
 
 				if (pluginName == 'all') {
 					plugins.forEach(p => {
+						// @ts-ignore
 						if (server.plugins[p] != null) {
+							// @ts-ignore
 							server.plugins[p].enabled = true;
 						} else {
+							// @ts-ignore
 							server.plugins[p] = { enabled: true };
 						}
 					});
@@ -88,9 +92,12 @@ class Plugin extends Command {
 					var indexOfPlugin = plugins.indexOf(pluginName);
 
 					if (indexOfPlugin != -1) {
+						// @ts-ignore
 						if (server.plugins[pluginName] != null) {
+							// @ts-ignore
 							server.plugins[pluginName].enabled = true;
 						} else {
+							// @ts-ignore
 							server.plugins[pluginName] = { enabled: true };
 						}
 
@@ -118,9 +125,12 @@ class Plugin extends Command {
 
 				if (pluginName == 'all') {
 					plugins.forEach(p => {
+						// @ts-ignore
 						if (server.plugins[p] != null) {
+							// @ts-ignore
 							server.plugins[p].enabled = false;
 						} else {
+							// @ts-ignore
 							server.plugins[p] = { enabled: false };
 						}
 					});
@@ -132,9 +142,12 @@ class Plugin extends Command {
 					var indexOfPlugin = plugins.indexOf(pluginName);
 
 					if (indexOfPlugin != -1) {
+						// @ts-ignore
 						if (server.plugins[pluginName] != null) {
+							// @ts-ignore
 							server.plugins[pluginName].enabled = false;
 						} else {
+							// @ts-ignore
 							server.plugins[pluginName] = { enabled: false };
 						}
 

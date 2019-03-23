@@ -2,6 +2,7 @@ import Discord = require('discord.js');
 import DiscordServer = require('../../GuildServer');
 
 import Command = require('../../command');
+import { Nullable } from '../../../../../typings/manager';
 
 
 const PERMS = {
@@ -14,6 +15,7 @@ const PERMS = {
 };
 
 for(var name in PERMS) {
+	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
@@ -39,7 +41,7 @@ class Rank extends Command {
 		}
 
 		var guildNember = message.member;
-		var roleId: string;
+		var roleId: Nullable<string>;
 
 		var parameterBeingCalled = params.shift();
 		var valueOfParameter = params.shift();
@@ -52,9 +54,11 @@ class Rank extends Command {
 
 				var roles = ranks.map(b => {
 					var role = message.guild.roles.get(b);
+					if (role == null) return null;
 					return [role.name, role.members.size + ' members'];
-				});
+				}).filter(f => f != null);
 
+				// @ts-ignore
 				return Command.info([[ 'Public Ranks:', Command.table([], roles) ]]);
 
 			case 'join':
@@ -111,7 +115,7 @@ class Rank extends Command {
 
 		server.save();
 
-		function getRoleId(name: string): string {
+		function getRoleId(name: string): Nullable<string> {
 			name = name.toLowerCase();
 
 			var roles = message.guild.roles.array();
@@ -120,6 +124,7 @@ class Rank extends Command {
 				if (role.name.toLowerCase() == name)
 					return role.id;
 			}
+
 			return null;
 		}
 

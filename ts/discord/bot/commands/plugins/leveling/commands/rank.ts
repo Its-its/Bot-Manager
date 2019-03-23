@@ -29,14 +29,20 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			sendImage(message.member, user);
 		});
 	} else {
-		var user = params.shift();
+		var user = params.shift()!;
 		var type = server.idType(user);
+
 		if (type != null && type != 'member') {
 			message.channel.send('Must he a users ID or @');
 			return;
 		}
 
 		var id = server.strpToId(user);
+
+		if (id == null) {
+			message.channel.send('Invalid ID');
+			return;
+		}
 
 		var member = message.guild.member(id);
 
@@ -61,7 +67,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		});
 	}
 
-	function getRank(id: string, cb: (err, leveling?: Level) => any) {
+	function getRank(id: string, cb: (err: any, leveling?: Level) => any) {
 		if (message.guild.member(id) != null) {
 			UserLevel.findOne({ server_id: message.guild.id, member_id: id }, (err, level) => {
 				if (err != null) {
@@ -84,7 +90,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 		var currentXP = level.xp - prevXP; // 426 - 325 = 101
 
-		var image = [];
+		var image: string[] = [];
 
 		const cx = 320;
 		const cy = 370;
@@ -174,7 +180,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			.pipe(avatar);
 		});
 
-		function addText(text, size, weight, x, y, color, extra?) {
+		function addText(text: any, size: any, weight: any, x: any, y: any, color: any, extra?: any) {
 			image.push(`<text
 				${extra == null ? '' : extra}
 				fill="${color == null ? '#EEE' : color}"
@@ -184,7 +190,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				font-weight="${weight}">${text}</text>`);
 		}
 
-		function addPath(fill, stroke, strokeWidth, data, extra?) {
+		function addPath(fill: any, stroke: any, strokeWidth: any, data: any, extra?: any) {
 			image.push('<path fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + strokeWidth + '" d="' + data + `" ${extra == null ? '' : extra} />`);
 		}
 	}

@@ -361,10 +361,12 @@ class Server extends Changes {
 
 		var phrase = {
 			_id: undefined,
+			enabled: true,
 			sid: this.serverId,
 			pid: uniqueID(4),
 			phrases: phraseText,
-			responses: []
+			responses: [],
+			ignoreCase: true
 		};
 
 		getOrCreateUser(member, (err, doc) => {
@@ -806,7 +808,9 @@ class Server extends Changes {
 			channel_id: channelId,
 			every: seconds,
 			active: false,
-			message: 'No message set!'
+			message: 'No message set!',
+			displayName: 'Interval',
+			events: {}
 		});
 
 		return this.intervals.length;
@@ -847,7 +851,7 @@ class Server extends Changes {
 		interval.active = !interval.active;
 		interval.nextCall = undefined;
 
-		var opts: DiscordBot.Interval = { active: interval.active, nextCall: undefined };
+		var opts: any = { active: interval.active };
 
 		if (interval.active) {
 			interval.nextCall = opts.nextCall = Date.now() + (interval.every! * 1000);
@@ -859,7 +863,7 @@ class Server extends Changes {
 	}
 
 	public setIntervalTime(id: number | string, minutes: number) {
-		var interval = null;
+		var interval: DiscordBot.Interval | null;
 
 		if (typeof id == 'string') {
 			for(var i = 0; i < this.intervals.length; i++) {
@@ -870,9 +874,10 @@ class Server extends Changes {
 			}
 		} else interval = this.intervals[id - 1];
 
+		// @ts-ignore
 		if (interval == null) return console.error('Interval not found for ID: ' + id);
 
-		var params: DiscordBot.Interval = {
+		var params: { every: number; nextCall?: any; } = {
 			every: minutes
 		};
 
@@ -960,7 +965,8 @@ class Server extends Changes {
 		return this.permissions.groups[tounique] = {
 			displayName: displayName,
 			name: displayName.replace(/\s/, '').toLowerCase(),
-			perms: []
+			perms: [],
+			groups: []
 		};
 	}
 
@@ -1098,7 +1104,7 @@ class Server extends Changes {
 		return true;
 	}
 
-	public strpToId(str: string): Nullable<string> {
+	public strpToId(str?: string): Nullable<string> {
 		return utils.strpToId(str);
 	}
 

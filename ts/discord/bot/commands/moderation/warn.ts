@@ -13,6 +13,7 @@ const PERMS = {
 };
 
 for(var name in PERMS) {
+	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
@@ -37,13 +38,16 @@ class Warn extends Command {
 			]);
 		}
 
-		var userIdStr = params.shift();
+		var userIdStr = params.shift()!;
 
 		var userType = server.idType(userIdStr);
 
 		if (userType != 'member') return Command.error([[ 'Mute', 'Invalid args. Please refer to warn help.' ]]);
 
 		var userId = server.strpToId(userIdStr);
+
+		if (userId == null) return Command.error([['Mute', 'Invalid User ID.']]);
+
 		var reason = params.join(' ');
 
 		new Punishments({

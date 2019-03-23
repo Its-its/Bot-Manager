@@ -25,7 +25,7 @@ class Perms extends Command {
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
-			return LocalCommands.help.call(params, server, message);
+			return LocalCommands.help.call(this.description, params, server, message);
 		}
 
 

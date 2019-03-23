@@ -11,6 +11,7 @@ import guildClient = require('../../../guildClient');
 
 import TempPunishments = require('../../../models/temp_punishments');
 import Punishments = require('../../../models/punishments');
+import { DiscordBot } from '../../../../../typings/manager';
 
 //! Option to track manual bans (right click -> ban/kick)
 //! Have different punishments for different things.
@@ -114,6 +115,7 @@ const DOCUMENTATION: DiscordBot.CommandDoc = {
 
 
 for(var name in PERMS) {
+	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
@@ -146,25 +148,27 @@ class Punishment extends Command {
 			]);
 		}
 
-		switch(params.shift().toLowerCase()) {
+		switch(params.shift()!.toLowerCase()) {
 			case 'list':
-				if (!server.userHasPerm(message.member, PERMS.LIST)) return false;
+				if (!server.userHasPerm(message.member, PERMS.LIST)) return Command.noPermsMessage('Punishments');
 
 				if (params.length == 0) {
 					return Command.error([['Punishments', 'Please provide @user/id for now.']]);
 				}
 
 				var userIdStr = params.shift();
+				if (userIdStr == null) return Command.error([['Punishments', 'Invalid Params']]);
 
 				var idType = server.idType(userIdStr);
-
 				if (idType != 'member') return Command.error([[ 'Punishments', 'Invalid args. Please refer to mute help.' ]]);
 
 				var userId = server.strpToId(userIdStr);
+				if (userId == null) return Command.error([['Punishments', 'Invalid User ID']]);
 
 				if (!message.guild.members.has(userId)) return Command.error([[ 'Punishments', 'Member does not exist in Guild.' ]]);
 
 				message.channel.send('Grabbing that for you. Please wait...')
+				// @ts-ignore
 				.then((msg: Discord.Message) => {
 					Punishments.find({ server_id: message.guild.id, member_id: userId }, (err, items) => {
 						if (err != null) return console.error(err);
@@ -172,12 +176,12 @@ class Punishment extends Command {
 						msg.edit(Command.table(
 							[ 'ID', 'Type', 'Issued (YY/MM/DD)', 'Length', 'Punished By', 'Reason' ],
 							items.map(i => [
-								i['uid'],
-								i['type'],
-								toDateTime(i['created_at']),
-								secondsToTime(i['length']),
-								punisherToName(i['creator_id']),
-								i['reason'].slice(0, 40)
+								i.pid,
+								i.type,
+								toDateTime(i.created_at),
+								secondsToTime(i.length),
+								punisherToName(i.creator_id),
+								i.reason.slice(0, 40)
 							])
 						));
 
@@ -187,22 +191,23 @@ class Punishment extends Command {
 						}
 					});
 				})
-				.catch(e => console.error(e));
+				.catch((e: any) => console.error(e));
 				break;
 			// case 'info':
 			// 	break;
 			// case 'create':
 			// 	break;
 			case 'remove':
-				if (!server.userHasPerm(message.member, PERMS.REMOVE)) return false;
+				if (!server.userHasPerm(message.member, PERMS.REMOVE)) return Command.noPermsMessage('Punishments');
 
 				var userIdStr = params.shift();
+				if (userIdStr == null) return Command.error([['Punishments', 'Invalid Perms']]);
 
 				var idType = server.idType(userIdStr);
-
 				if (idType != 'member') return Command.error([[ 'Punishments', 'Invalid args. Please refer to mute help.' ]]);
 
 				var userId = server.strpToId(userIdStr);
+				if (userId == null) return Command.error([['Punishments', 'Invalid User ID']]);
 
 				if (!message.guild.members.has(userId)) return Command.error([[ 'Punishments', 'Member does not exist in Guild.' ]]);
 
@@ -214,15 +219,16 @@ class Punishment extends Command {
 				.catch(e => console.error(e));
 				break;
 			case 'clear':
-				if (!server.userHasPerm(message.member, PERMS.CLEAR)) return false;
+				if (!server.userHasPerm(message.member, PERMS.CLEAR)) return Command.noPermsMessage('Punishments');
 
 				var userIdStr = params.shift();
+				if (userIdStr == null) return Command.error([['Punishments', 'Invalid Perms']]);
 
 				var idType = server.idType(userIdStr);
-
 				if (idType != 'member') return Command.error([[ 'Punishments', 'Invalid args. Please refer to mute help.' ]]);
 
 				var userId = server.strpToId(userIdStr);
+				if (userId == null) return Command.error([['Punishments', 'Invalid User ID']]);
 
 				if (!message.guild.members.has(userId)) return Command.error([[ 'Punishments', 'Member does not exist in Guild.' ]]);
 
@@ -234,13 +240,15 @@ class Punishment extends Command {
 			// case 'edit':
 			// 	break;
 			case 'settings':
-				if (!server.userHasPerm(message.member, PERMS.SETTINGS)) return false;
+				if (!server.userHasPerm(message.member, PERMS.SETTINGS)) return Command.noPermsMessage('Punishments');
 
 				if (params.length == 0) {
 					// Paged
 					return Command.error([['Punishment', 'Paged settings goes here.']]);
 				} else {
-					var type = params.shift().toLowerCase();
+					if (params.length == 0) return Command.error([['Punishment', 'Invalid Params']]);
+
+					var type = params.shift()!.toLowerCase();
 
 					if (type == 'punished_role') {
 						if (params.length == 0) {
@@ -248,6 +256,8 @@ class Punishment extends Command {
 						}
 
 						var punishDoType = params.shift();
+
+						if (punishDoType == null) return Command.error([['Punishment', 'Invalid Params']]);
 
 						if (punishDoType == 'auto') {
 							message.guild.createRole({
@@ -272,6 +282,8 @@ class Punishment extends Command {
 							if (roleIdType != null && roleIdType != 'role') return Command.error([['Punishment', 'ID is not a role.']]);
 
 							var roleId = server.strpToId(punishDoType);
+							if (roleId == null) return Command.error([['Punishment', 'Invalid ID']]);
+
 							if (!message.guild.roles.has(roleId)) return Command.error([['Punishment', 'The Role does not exist in this guild']]);
 
 							if (server.punishments.punished_role_id != null && server.punishments.punished_role_id == roleId) {
@@ -289,13 +301,17 @@ class Punishment extends Command {
 		}
 	}
 
-	public onChannelCreate(channel: Discord.GuildChannel, server?: DiscordServer) {
+	public onChannelCreate(channel: Discord.GuildChannel, server: DiscordServer) {
 		if (server.punishments.punished_role_id != null) {
 			var role = channel.guild.roles.get(server.punishments.punished_role_id);
+			if (role == null) return false;
+
 			channel.overwritePermissions(role, DEFAULT_OVERWRITE_PERMS)
 			.catch(e => console.error(e));
+
 			return true;
 		}
+
 		return false;
 	}
 
@@ -313,7 +329,7 @@ class Punishment extends Command {
 		if (server.punishments != null && server.punishments.punished_role_id != null) {
 			if (role.id == server.punishments.punished_role_id) {
 				TempPunishments.remove({ server_id: role.guild.id }).exec();
-				server.punishments.punished_role_id = null;
+				server.punishments.punished_role_id = undefined;
 				server.save();
 				return true;
 			}
@@ -344,15 +360,15 @@ setInterval(() => {
 		if (err != null) return console.error(err);
 
 		async.everyLimit(items, 5, (item, cb) => {
-			const guild = discordClient.guilds.get(item['server_id']);
+			const guild = discordClient.guilds.get(item.server_id);
 			if (guild == null) {
-				console.log('No guild exists: ' + item['server_id']);
+				console.log('No guild exists: ' + item.server_id);
 				return cb();
 			}
 
-			const member = guild.members.get(item['member_id']);
+			const member = guild.members.get(item.member_id);
 			if (member == null) {
-				console.log('No member exists: ' + item['member_id']);
+				console.log('No member exists: ' + item.member_id);
 				return cb();
 			}
 
@@ -363,8 +379,11 @@ setInterval(() => {
 						return cb();
 					}
 
+					if (client.punishments.punished_role_id == null) return cb();
+
+
 					member.removeRole(client.punishments.punished_role_id, 'Expired')
-					.catch(e => console.error(e));
+					.catch((e: any) => console.error(e));
 
 					cb();
 				});

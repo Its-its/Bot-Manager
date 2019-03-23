@@ -16,27 +16,28 @@ import PERMISSIONS = require('../perms');
 
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	if (!this.hasPerms(message.member, server, PERMISSIONS.USER)) return Command.noPermsMessage('Permissions');
+	if (!server.userHasPerm(message.member, PERMISSIONS.USER)) return Command.noPermsMessage('Permissions');
 
 	var userIdFull = params.shift();
 	var calledCmd = params.shift();
 	var permissionOrCalledCmd = params.shift();
 
-	if (calledCmd != null && permissionOrCalledCmd == null) {
-		return Command.error([['Permissions', 'Invalid Params']]);
-	}
-
-	permissionOrCalledCmd = permissionOrCalledCmd.toLowerCase();
+	if (userIdFull == null) return Command.error([['Permissions', 'Invalid Params']]);
 
 	if (calledCmd == null) {
-		if (!this.hasPerms(message.member, server, PERMISSIONS.USER_LIST)) return Command.noPermsMessage('Permissions');
+		if (!server.userHasPerm(message.member, PERMISSIONS.USER_LIST)) return Command.noPermsMessage('Permissions');
 
 		var permission = server.getPermsFrom('users', userIdFull);
 		if (permission == null) permission = { perms: [], groups: [] };
 
 		var commandsList = <Command[]>GlobalCommands.list(true);
 
-		var guildMember = message.guild.members.get(server.strpToId(userIdFull));
+		var stripped = server.strpToId(userIdFull);
+
+		if (stripped == null) return Command.error([['Permissions', 'Invalid ID']]);
+
+		var guildMember = message.guild.members.get(stripped);
+		if (guildMember == null) return Command.error([['Permissions', 'Unable to find Guild Member.']]);
 
 		return Command.info([
 			[
@@ -51,13 +52,20 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				'Commands',
 				commandsList.map(c =>
 					server.getPrefix() + c.commandName[0] + ' | ' +
-					c.hasPermsCount(guildMember, server, c.perms) + '/' + c.perms.length  + ' | ' +
+					c.hasPermsCount(guildMember!, server, c.perms) + '/' + c.perms.length  + ' | ' +
 					c.description
 				).join('\n')
 			]
 		]);
-	} else if (calledCmd == 'add') {
-		if (!this.hasPerms(message.member, server, PERMISSIONS.USER_ADD)) return Command.noPermsMessage('Permissions');
+	}
+
+	if (permissionOrCalledCmd == null) return Command.error([['Permissions', 'Invalid Params']]);
+
+	permissionOrCalledCmd = permissionOrCalledCmd.toLowerCase();
+
+
+	if (calledCmd == 'add') {
+		if (!server.userHasPerm(message.member, PERMISSIONS.USER_ADD)) return Command.noPermsMessage('Permissions');
 
 		if (GlobalCommands.validPerms.indexOf(permissionOrCalledCmd) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
 
@@ -69,7 +77,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			message.channel.send(Command.error([['Permissions', 'Failed']]));
 		}
 	} else if (calledCmd == 'remove') {
-		if (!this.hasPerms(message.member, server, PERMISSIONS.USER_REMOVE)) return Command.noPermsMessage('Permissions');
+		if (!server.userHasPerm(message.member, PERMISSIONS.USER_REMOVE)) return Command.noPermsMessage('Permissions');
 
 		if (GlobalCommands.validPerms.indexOf(permissionOrCalledCmd) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
 
@@ -85,7 +93,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		if (permissionOrCalledCmd == null || groupName == null) return Command.error([['Permissions', 'Invalid Parameters']]);
 
 		if (permissionOrCalledCmd == 'add') {
-			if (!this.hasPerms(message.member, server, PERMISSIONS.GROUP_ADD)) return Command.noPermsMessage('Permissions');
+			if (!server.userHasPerm(message.member, PERMISSIONS.GROUP_ADD)) return Command.noPermsMessage('Permissions');
 
 			var wasPermAdded = server.addGroupTo('users', userIdFull, groupName.toLowerCase());
 
@@ -95,7 +103,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				message.channel.send(Command.error([['Permissions', 'Invalid Group name']]));
 			}
 		} else if (permissionOrCalledCmd == 'remove') {
-			if (!this.hasPerms(message.member, server, PERMISSIONS.GROUP_REMOVE)) return Command.noPermsMessage('Permissions');
+			if (!server.userHasPerm(message.member, PERMISSIONS.GROUP_REMOVE)) return Command.noPermsMessage('Permissions');
 
 			var wasPermAdded = server.removeGroupFrom('users', userIdFull, groupName.toLowerCase());
 

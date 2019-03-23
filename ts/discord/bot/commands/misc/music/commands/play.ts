@@ -11,7 +11,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 	var joined = params.join(' ').trim();
 
-	sendPlay(message.channel.id, message.guild.id, message.member.id, joined.length == 0 ? null : joined);
+	sendPlay(message.channel.id, message.guild.id, message.member.id, joined.length == 0 ? undefined : joined);
 }
 
 export {

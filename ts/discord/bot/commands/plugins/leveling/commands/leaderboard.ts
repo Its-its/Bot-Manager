@@ -6,7 +6,12 @@ import UserLevel = require('../../../../plugins/levels/models/userlevel');
 const LIMIT_PER_PAGE = 10;
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	var page = parseInt(params.shift());
+	if (params.length != 1) {
+		message.channel.send('Invalid args.');
+		return;
+	}
+
+	var page = parseInt(params.shift()!);
 
 	if (isNaN(page)) page = 1;
 	if (page > 10) page = 10;

@@ -40,9 +40,9 @@ function onMessage(message: Discord.Message, server: Server): boolean {
 
 		if (item == null) return true;
 
-		var newLevel = util.expToLevels(item['xp']);
+		var newLevel = util.expToLevels(item.xp);
 
-		if (item['level'] < newLevel) {
+		if (item.level < newLevel) {
 			UserLevel.updateOne({ server_id: message.guild.id, member_id: message.member.id }, { $set: { level: newLevel } }).exec();
 			announceNewLevel(message.member, newLevel, server);
 		}
@@ -73,6 +73,7 @@ function roleRemove(role: Discord.Role, server: Server) {
 				server.leveling.roles.splice(i, 1);
 
 				var args = { $gte: currRole.level };
+				// @ts-ignore
 				if (nextRole != null) args['$lt'] = nextRole.level;
 
 				UserLevel.find({ server_id: role.guild.id, level: args }, (err, items) => {

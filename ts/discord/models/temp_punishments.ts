@@ -1,4 +1,5 @@
 import mongoose = require('mongoose');
+import { CustomDocs } from '../../../typings/manager';
 
 let Schema = mongoose.Schema;
 
@@ -11,4 +12,4 @@ const Punishments = new Schema({
 	expires: Date
 });
 
-export = mongoose.model('discord_temp_punishments', Punishments);
+export = (<mongoose.Model<CustomDocs.discord.TempPunishments>>mongoose.model('discord_temp_punishments', Punishments));

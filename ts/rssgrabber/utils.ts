@@ -196,7 +196,7 @@ function getFeedItems(url: string, cookies: any, cb: (err?: Error, items?: FeedP
 }
 
 
-function addNewFeed(uri: string, cookies: any, title: string, cb: (err?: string, newFeed?: boolean, feed?: RSSFeedFix, article?: ArticleDB) => any) {
+function addNewFeed(uri: string, cookies: any, title: string | null, cb: (err?: string, newFeed?: boolean, feed?: RSSFeedFix, article?: ArticleDB) => any) {
 	// Find db from url
 	//   - Not found? Get items, Check again with one of the items xml urls (usually more proper) if not found, register as new.
 

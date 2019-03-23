@@ -18,6 +18,7 @@ const PERMISSIONS = {
 };
 
 for(var name in PERMISSIONS) {
+	// @ts-ignore
 	if (name != 'MAIN') PERMISSIONS[name] = `${PERMISSIONS.MAIN}.${PERMISSIONS[name]}`;
 }
 

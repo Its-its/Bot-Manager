@@ -55,6 +55,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 			musicPlugin.getSong(songIds.filter((item, pos) => songIds.indexOf(item) == pos), (err, songs) => {
 				if (err != null) return message.channel.send(Command.error([['Music', err]]));
+				if (songs == null || songs.length == 0) return message.channel.send(Command.error([['Music', 'Unable to find songs']]));
 
 				fields = fields.concat(songIds.map((id, pos) => {
 					for(var i = 0; i < songs.length; i++) {

@@ -61,6 +61,7 @@ class Random extends Command {
 				// Ensure params are correct if only calling a max amount.
 				if (params.length == 1) {
 					params[1] = params[0];
+					// @ts-ignore
 					params[0] = null;
 				}
 
@@ -85,7 +86,7 @@ class Random extends Command {
 				if (params.length != 0) {
 					parseList(params, message.channel);
 				} else {
-					const selector = utils.createPageSelector(message.author.id, message.channel);
+					const selector = utils.createPageSelector(message.author.id, message.channel)!;
 
 					selector.setFormat([
 						'Please now paste the list of items or a pastebin URL (soon) with the items.',
@@ -111,29 +112,39 @@ class Random extends Command {
 			case 'reaction':
 				if (!this.hasPerms(message.member, server, PERMS.REACTION)) return Command.noPermsMessage('Random');
 
-				var discordChannelIdStr = params.shift();
-				var msgIdStripped = params.shift();
-				var reactionIdStripped = params.shift();
+				var discordChannelIdStr = params.shift()!;
+				var msgIdStripped = params.shift()!;
+				var reactionIdStripped = params.shift()!;
 
 				if (reactionIdStripped == null) return Command.error([[ 'Random', 'Invalid: random reaction <channel> <message id> <emoji id>' ]]);
 
 				var channelIdType = server.idType(discordChannelIdStr);
 				if (channelIdType != null && channelIdType != 'channel') return Command.error([[ 'Random', 'Channel ID is invalid. Doesn\'t exist or not a channel.' ]]);
 
-				var channelIdStripped = server.strpToId(discordChannelIdStr);
+				var channelIdStripped = server.strpToId(discordChannelIdStr)!;
 
 				var discordChannel = <Discord.TextChannel>message.guild.channels.get(channelIdStripped);
 				if (discordChannel == null || discordChannel.type != 'text') return Command.error([[ 'Random', 'Message ID is invalid. Doesn\'t exist or not a text channel.' ]]);
 
 
 				discordChannel.fetchMessage(msgIdStripped)
-				.then(reqDiscordMessage => {
-					if (reqDiscordMessage == null) return message.channel.send(Command.error([[ 'Random', 'Message not found! Invalid Message ID or not in channel.' ]]));
+				.then((reqDiscordMessage) => {
+					if (reqDiscordMessage == null) {
+						message.channel.send(Command.error([[ 'Random', 'Message not found! Invalid Message ID or not in channel.' ]]));
+						return;
+					}
 
 					var messageReaction = reqDiscordMessage.reactions.get(reactionIdStripped);
 
-					if (messageReaction == null) return message.channel.send(Command.error([[ 'Random', 'Unable to find reaction (emoji) ID in message.' ]]));
-					if (messageReaction.count == 0) return message.channel.send(Command.error([[ 'Random', 'There are no reactions affiliated with this message.' ]]));
+					if (messageReaction == null) {
+						message.channel.send(Command.error([[ 'Random', 'Unable to find reaction (emoji) ID in message.' ]]));
+						return;
+					}
+
+					if (messageReaction.count == 0) {
+						message.channel.send(Command.error([[ 'Random', 'There are no reactions affiliated with this message.' ]]));
+						return;
+					}
 
 					messageReaction.fetchUsers(1, { after: random(0, messageReaction.count - 1) })
 					.then(userCollection => {
@@ -152,7 +163,7 @@ class Random extends Command {
 					})
 					.catch(e => console.error(e));
 				})
-				.catch(e => console.error(e));
+				.catch((e: any) => console.error(e));
 
 				return;
 		}
@@ -231,7 +242,7 @@ function parseList(lines: string[], channel: Discord.TextChannel | Discord.DMCha
 function getCodeblockCount(lines: string[]) {
 	var codeblocks = 0;
 
-	var line: string = null;
+	var line: string;
 	var pos = 0;
 
 	while((line = lines[pos++]) != null) {

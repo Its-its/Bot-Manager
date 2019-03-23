@@ -2,6 +2,7 @@ import Discord = require('discord.js');
 import DiscordServer = require('../../GuildServer');
 
 import Command = require('../../command');
+import { DiscordBot } from '../../../../../typings/manager';
 
 
 const PERMS = {
@@ -14,6 +15,7 @@ const PERMS = {
 };
 
 for(var name in PERMS) {
+	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
@@ -70,6 +72,8 @@ class Blacklist extends Command {
 			} else {
 				var channelIdStripped = server.strpToId(discChannelIdStr);
 
+				if (channelIdStripped == null) return Command.error([['Channel', 'Invalid Channel ID']]);
+
 				var channelBlacklisted = blacklisted[channelIdStripped];
 
 				return Command.info([
@@ -88,6 +92,8 @@ class Blacklist extends Command {
 			if (discChannelIdStr == null || fullCommand.length == 0) return Command.info([[ 'Blacklist', 'Invalid opts. Use: remove <global/#channel/all> <text/all>' ]]);
 
 			var channelIdStripped = server.strpToId(discChannelIdStr);
+
+			if (channelIdStripped == null) return Command.error([['Channel', 'Invalid Channel ID']]);
 
 			var channelBlacklisted = blacklisted[channelIdStripped];
 
@@ -136,19 +142,15 @@ class Blacklist extends Command {
 
 			var channelIdStripped = server.strpToId(params.shift());
 
-			if (channelIdStripped == null) {
-				return Command.error([
-					[ 'Blacklist', 'Invalad params. Please refer to help!' ]
-				]);
-			} else {
-				if (channelIdStripped != 'global') {
-					var discordChannel = message.guild.channels.get(channelIdStripped);
+			if (channelIdStripped == null) return Command.error([['Channel', 'Invalid Channel ID']]);
 
-					if (discordChannel == null || discordChannel.type != 'text') {
-						return Command.error([
-							[ 'Blacklist', 'That text channel does not exist in the guild!' ]
-						]);
-					}
+			if (channelIdStripped != 'global') {
+				var discordChannel = message.guild.channels.get(channelIdStripped);
+
+				if (discordChannel == null || discordChannel.type != 'text') {
+					return Command.error([
+						[ 'Blacklist', 'That text channel does not exist in the guild!' ]
+					]);
 				}
 			}
 
@@ -189,7 +191,7 @@ class Blacklist extends Command {
 				]);
 			}
 
-			var action: DiscordBot.PunishmentTypes = null;
+			var action: DiscordBot.PunishmentTypes;
 
 			if (punishmentType == 'censor') {
 				action = { type: 'censor' };

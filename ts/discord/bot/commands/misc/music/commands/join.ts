@@ -5,11 +5,12 @@ import Command = require('../../../../command');
 
 import { sendReq } from '../../../../../music/plugins/music';
 import PERMS = require('../perms');
+import { Optional } from '../../../../../../../typings/manager';
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member, PERMS.JOIN)) return Command.noPermsMessage('Music');
 
-	var voiceChannel: string = params.shift();
+	var voiceChannel: Optional<string> = params.shift();
 
 	if (voiceChannel == null && message.member.voiceChannel != null) {
 		voiceChannel = message.member.voiceChannel.id;
