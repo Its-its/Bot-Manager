@@ -63,5 +63,4 @@ interface Model extends mongoose.Model<CustomDocs.web.BotsDocument> {
 	appName: (bot: string) => string;
 }
 
-// @ts-ignore
 export = (<Model>mongoose.model('bots', Bots));

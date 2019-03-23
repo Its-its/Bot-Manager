@@ -13,7 +13,7 @@ import Backups = require('../../../models/backup');
 import Command = require('../../command');
 
 import utils = require('../../../utils');
-import { DiscordBot, Optional } from '../../../../../typings/manager';
+import { DiscordBot, Optional, Omit } from '../../../../../typings/manager';
 
 
 const PERMS = {
@@ -42,9 +42,13 @@ interface Backup {
 	created_at: Date;
 }
 
+type ITEMS = 'all' | 'channels' | 'roles' | 'bans' | 'moderation' | 'overview' | 'emojis' | 'commands' | 'ignored' |
+			 'intervals' | 'phrases' | 'blacklists' | 'perms' | 'prefix' | 'ranks' | 'alias' | 'warnings' | 'disabled';
+
 const items = [
 	'channels', 'roles', 'bans', 'moderation', 'overview', 'emojis',
-	'commands', 'intervals', 'phrases', 'blacklists', 'perms', 'prefix', 'ranks', 'alias', 'warnings'
+	'commands', 'intervals', 'phrases', 'blacklists', 'perms', 'prefix', 'ranks', 'alias', 'warnings',
+	'ignored', 'disabled'
 ];
 
 class Restore extends Command {
@@ -70,8 +74,7 @@ class Restore extends Command {
 		var pid = params.shift();
 
 		message.channel.send(Command.info([['Restore', 'Searching for backups from imputted ID.']]))
-		// @ts-ignore
-		.then((resp: Discord.Message) => {
+		.then(resp => {
 			Backups.find({ $or: [ { server_id: pid }, { pid: pid } ]}, (err, backups) => {
 				if (err != null) return message.channel.send(Command.info([['Restore', 'An error occured. Please try again in a few moments.']]));
 				if (backups.length == 0) return message.channel.send(Command.info([['Restore', 'No Backups found for server/pid.']]));
@@ -93,7 +96,7 @@ class Restore extends Command {
 					'_Enter the number for the backup you\'d like to use/view._'
 				])
 				.setCollectionFormat(s => s.input + ' > ' + s.description)
-				.setEditing(resp);
+				.setEditing(Array.isArray(resp) ? resp[0] : resp);
 
 				for(var i = 0; i < backups.length; i++) {
 					(function(pos, backup: Backup) {
@@ -122,8 +125,7 @@ function mainEditPage(backup: Backup, page: utils.MessagePage, server: DiscordSe
 	.setCollectionFormat(s => s.input + ' -> ' + s.description);
 
 	page.addSelection('all', 'Select all for importing.', () => {
-		// @ts-ignore
-		var ignoring: string[] = [].concat(backup.ignore);
+		var ignoring = Array.from(backup.ignore);
 
 		ignoring.forEach(i => {
 			toggleIgnore(i);
@@ -189,8 +191,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 	var items: Compiled = JSON.parse(backup.json);
 
-	function isImporting(name: string) {
-		// @ts-ignore
+	function isImporting(name: ITEMS) {
 		return backup.items.indexOf(name) != -1 && items[name] != null;
 	}
 
@@ -286,7 +287,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 					.catch(e => console.error(e));
 				} else next();
 
-				function createChannels(channels: Optional<CompiledChannel[]>, fin: () => any) {
+				function createChannels(channels: Optional<DiscordBot.BackupChannel[]>, fin: () => any) {
 					if (channels == null || channels.length == 0) return fin();
 
 					channels = channels.sort((c1, c2) => c1.position - c2.position);
@@ -489,24 +490,18 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 					}
 				}
 
-				if (isImporting('disabled_custom_comm')) {
-					// items.disabled_custom_comm.forEach(c => server);
+				if (isImporting('disabled')) {
+					server.moderation.disabledCustomCommands = items.disabled_custom_comm!;
+					server.moderation.disabledDefaultCommands = items.disabled_default_comm!;
 				}
 
-				if (isImporting('disabled_default_comm')) {
-					//items.disabled_default_comm.forEach(c => server);
-				}
-
-				if (isImporting('ignored_channels')) {
-					items.ignored_channels!.forEach(c => server.ignore('channel', c));
-				}
-
-				if (isImporting('ignored_users')) {
-					items.ignored_users!.forEach(c => server.ignore('member', c));
+				if (isImporting('ignored')) {
+					server.moderation.ignoredChannels = items.ignored_channels!;
+					server.moderation.ignoredUsers = items.ignored_users!;
 				}
 
 				if (isImporting('perms')) {
-					var perms = items.perms;
+					var perms = items.perms!;
 					// TODO: Add groups
 
 					for(var id in perms!.groups) {
@@ -522,17 +517,17 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 						// group.groups.forEach(p => server.addGroupTo('groups', id, p));
 					}
 
-					for(var id in perms!.roles) {
+					for(var id in perms.roles) {
 						var actualId = tempIdToNew[id];
 						if (actualId != null) {
-							var role = perms!.roles[id];
+							var role = perms.roles[id];
 							role.perms.forEach(p => server.addPermTo('roles', actualId, p));
 							role.groups.forEach(p => server.addGroupTo('roles', actualId, p));
 						}
 					}
 
-					for(var id in perms!.users) {
-						var user = perms!.users[id];
+					for(var id in perms.users) {
+						var user = perms.users[id];
 						// Only add if member is in guild.
 						if (guild.members.has(id)) {
 							user.perms.forEach(p => server.addPermTo('users', id, p));
@@ -597,64 +592,20 @@ function asdf(items: ((cb: () => any) => any)[], finish: () => any) {
 	}
 }
 
-interface CompiledChannel {
-	id: string;
-	name: string;
-	type: 'category' | 'text' | 'voice';
-	perms: {
-		id: string;
-		allow: number;
-		deny: number;
-		type: string;
-	}[];
-	position: number;
-
-	parent?: string;
-	children?: CompiledChannel[];
-};
-
 interface Compiled {
-	roles?: {
-		_id?: string;
-		id: string;
+	roles?: DiscordBot.Role[];
 
-		position: number;
-		name: string;
-		color: number;
-		hoist: boolean;
-		mentionable: boolean;
-		permissions: number;
-		editable: boolean;
-	}[];
+	channels?: DiscordBot.BackupChannel[];
 
-	channels?: CompiledChannel[];
+	overview?: DiscordBot.BackupOverview;
 
-	overview?: {
-		server_image: string;
-		server_name: string;
-		server_region: string;
-		afk_channel: string;
-		afk_timeout: number;
-		new_member_channel: string;
-		notification_settings: Discord.MessageNotifications;
-	};
-
-	moderation?: {
-		verification: number;
-		content_filter: number;
-	};
+	moderation?: DiscordBot.BackupModeration;
 
 	bans?: string[];
 
-	emojis?: {
-		name: string;
-		animated: boolean;
-		requiresColons: boolean;
-		image: string;
-		roles: string[];
-	}[];
+	emojis?: DiscordBot.BackupEmojis[];
 
-	blacklists?: { [value: string]: { punishment: DiscordBot.PunishmentTypes, items: string[] } };
+	blacklists?: DiscordBot.ModerationBlacklist;
 	disabled_custom_comm?: string[];
 	disabled_default_comm?: string[];
 	ignored_channels?: string[];
@@ -662,24 +613,14 @@ interface Compiled {
 	perms?: DiscordBot.Permissions;
 	prefix?: string;
 	ranks?: string[];
-	alias?: { command: string; alias: string[]; }[];
+	alias?: Omit<DiscordBot.Alias, 'pid'>[];
 
 
-	commands?: { alias: string[]; params: DiscordBot.CommandParam[] }[];
+	commands?: Omit<DiscordBot.Command, '_id' | 'pid'>[];
 
-	intervals?: {
-		active: boolean;
-		displayName: string;
-		events: any;
-		every: number;
-		message: string;
-		nextCall: number;
-	}[]
+	intervals?: DiscordBot.Interval[];
 
-	phrases?: {
-		enabled: boolean;
-		ignoreCase: boolean;
-		phrases: string[];
-		responses: DiscordBot.PhraseResponses[];
-	}[];
+	phrases?: Omit<DiscordBot.Phrase, 'pid' | 'sid'>[];
+
+	[key: string]: any;
 }

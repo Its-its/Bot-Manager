@@ -285,7 +285,6 @@ declare namespace CustomDocs {
 			edited_at: Date;
 		}
 
-		// @ts-ignore
 		export interface UsersDocument extends Document {
 			is_Active: boolean;
 			admin: boolean;
@@ -506,6 +505,49 @@ declare namespace DiscordBot {
 	// 	toDBPrint(): any;
 	// 	toString(): string;
 	// }
+
+	// Backup / Restore
+	interface BackupEmojis {
+		name: string;
+		animated: boolean;
+		requiresColons: boolean;
+		image: string;
+		roles: string[];
+	}
+
+	interface BackupModeration {
+		verification: number;
+		content_filter: number;
+	}
+
+	interface BackupOverview {
+		server_image: string;
+		server_name: string;
+		server_region: string;
+		afk_channel?: string;
+		afk_timeout: number;
+		new_member_channel?: string;
+		notification_settings: Discord.MessageNotifications;
+	}
+
+	interface BackupChannel {
+		id: string;
+		name: string;
+		type: 'category' | 'text' | 'voice';
+		perms: {
+			id: string;
+			allow: number;
+			deny: number;
+			type: string;
+		}[];
+		position: number;
+
+		parent?: string;
+		children?: CompiledChannel[];
+	};
+
+
+	//
 
 	interface CommandDoc {
 		title: string;
@@ -803,16 +845,6 @@ declare namespace DiscordBot {
 		// perms: boolean;
 	}
 
-	interface Overview {
-		server_image: string;
-		server_name: string;
-		server_region: string;
-		afk_channel?: string;
-		afk_timeout: number;
-		new_member_channel?: string;
-		notification_settings: Discord.MessageNotifications;
-	}
-
 	// Role
 	interface Role {
 		id: string;
@@ -820,8 +852,8 @@ declare namespace DiscordBot {
 		color: number;
 		hoist: boolean;
 		position: number;
+		editable: boolean;
 		permissions: number;
-		managed: boolean;
 		mentionable: boolean;
 	}
 

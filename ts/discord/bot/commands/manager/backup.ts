@@ -10,9 +10,13 @@ const PERMISSIONS = {
 	MAIN: 'commands.backup'
 };
 
+type ITEMS = 'all' | 'channels' | 'roles' | 'bans' | 'moderation' | 'overview' | 'emojis' | 'commands' | 'ignored' |
+			 'intervals' | 'phrases' | 'blacklists' | 'perms' | 'prefix' | 'ranks' | 'alias' | 'warnings' | 'disabled';
+
 const items = [
 	'channels', 'roles', 'bans', 'moderation', 'overview', 'emojis',
-	'commands', 'intervals', 'phrases', 'blacklists', 'perms', 'prefix', 'ranks', 'alias', 'warnings'
+	'commands', 'intervals', 'phrases', 'blacklists', 'perms', 'prefix', 'ranks', 'alias', 'warnings',
+	'ignored', 'disabled'
 ];
 
 class Backup extends Command {
@@ -111,7 +115,7 @@ class Backup extends Command {
 			createNewBackup();
 		});
 
-		function inParams(item: string) {
+		function inParams(item: ITEMS) {
 			return params.indexOf(item) != -1;
 		}
 
@@ -190,12 +194,13 @@ class Backup extends Command {
 						if (inParams('channels')) {
 							compiled['channels'] = guild.channels.filter(c => c.parent == null).map(c => parseChannel(c));
 
-							function parseChannel(channel: Discord.GuildChannel): CompiledChannel {
+							function parseChannel(channel: Discord.GuildChannel): DiscordBot.BackupChannel {
 								oldIdsToNew[channel.id] = tempID();
 
-								var opt: CompiledChannel = {
+								var opt: DiscordBot.BackupChannel = {
 									id: oldIdsToNew[channel.id],
 									name: channel.name,
+									// @ts-ignore
 									type: channel.type,
 									perms: channel.permissionOverwrites.map(p => {
 										return {
@@ -371,53 +376,19 @@ function asdf(items: ((cb: () => any) => any)[], finish: () => any) {
 }
 
 
-interface CompiledChannel {
-	id: string;
-	name: string;
-	type: string;
-	perms: {
-		id: string;
-		allow: number;
-		deny: number;
-		type: string;
-	}[];
-	position: number;
-
-	parent?: string;
-	children?: CompiledChannel[];
-};
-
 interface Compiled {
 	// TODO: Convert to global Role in index.d.ts
-	roles?: {
-		position: number;
-		id: string;
-		name: string;
-		color: number;
-		hoist: boolean;
-		mentionable: boolean;
-		permissions: number;
-		editable: boolean;
-	}[];
+	roles?: DiscordBot.Role[];
 
-	channels?: CompiledChannel[];
+	channels?: DiscordBot.BackupChannel[];
 
-	overview?: DiscordBot.Overview;
+	overview?: DiscordBot.BackupOverview;
 
-	moderation?: {
-		verification: number;
-		content_filter: number;
-	};
+	moderation?: DiscordBot.BackupModeration;
 
 	bans?: string[];
 
-	emojis?: {
-		name: string;
-		animated: boolean;
-		requiresColons: boolean;
-		image: string;
-		roles: string[];
-	}[];
+	emojis?: DiscordBot.BackupEmojis[];
 
 	blacklists?: DiscordBot.ModerationBlacklist;
 	disabled_custom_comm?: string[];

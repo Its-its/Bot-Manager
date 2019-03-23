@@ -58,8 +58,7 @@ class Rank extends Command {
 					return [role.name, role.members.size + ' members'];
 				}).filter(f => f != null);
 
-				// @ts-ignore
-				return Command.info([[ 'Public Ranks:', Command.table([], roles) ]]);
+				return Command.info([[ 'Public Ranks:', Command.table([], <string[][]>roles) ]]);
 
 			case 'join':
 				if (!this.hasPerms(guildNember, server, PERMS.JOIN)) return Command.noPermsMessage('Rank');

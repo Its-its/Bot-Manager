@@ -72,14 +72,12 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 			]);
 
 			selector.addSelection('Add', 'Add a role to guild member', page => {
-				// @ts-ignore
-				compiled.event['do'] = 'add';
+				(<DiscordBot.DoGroupEvent>compiled.event).do = 'add';
 				nextPage(page);
 			});
 
 			selector.addSelection('Remove', 'Remove a role from guild member', page => {
-				// @ts-ignore
-				compiled.event['do'] = 'remove';
+				(<DiscordBot.DoGroupEvent>compiled.event).do = 'remove';
 				nextPage(page);
 			});
 
@@ -103,8 +101,7 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 
 					if ((<Discord.TextChannel>selector.channel).guild.roles.get(id) == null) return false;
 
-					// @ts-ignore
-					compiled.event['role_id'] = id;
+					(<DiscordBot.DoGroupEvent>compiled.event).role_id = id;
 
 					server.regrab(copy => {
 						if (copy == null) return;
@@ -136,8 +133,7 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 
 				if ((<Discord.TextChannel>selector.channel).guild.channels.get(id) == null) return false;
 
-				// @ts-ignore
-				compiled.event['channel_id'] = id;
+				(<DiscordBot.DoMessageEvent>compiled.event).channel_id = id;
 
 				const messageSelector = utils.createPageSelector(selector.author_id, selector.channel)!;
 
@@ -149,8 +145,7 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 				]);
 
 				messageSelector.listen(message => {
-					// @ts-ignore
-					compiled.event['message'] = message;
+					(<DiscordBot.DoMessageEvent>compiled.event).message = message;
 
 					server.regrab(copy => {
 						if (copy == null) return;
@@ -176,8 +171,7 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 			]);
 
 			selector.listen(message => {
-				// @ts-ignore
-				compiled.event['message'] = message;
+				(<DiscordBot.DoDirectMessageEvent>compiled.event).message = message;
 
 				server.regrab(copy => {
 					if (copy == null) return;

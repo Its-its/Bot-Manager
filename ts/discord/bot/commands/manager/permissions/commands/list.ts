@@ -49,11 +49,10 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			permissions = server.permissions.roles[cmdToDo];
 		} else if (type == 'group') {
 			permissions = server.permissions.groups[cmdToDo];
-		} else if (type == 'channel') {
+		} else {
 			return Command.error([['Permissions', 'Currently channel listing isn\'t implemented.']]);
 		}
 
-		// @ts-ignore
 		if (permissions == null) return Command.error([['Permissions', `Couldn't find ${type} from ID.`]]);
 
 		message.channel.send(Command.info([

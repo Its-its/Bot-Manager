@@ -178,9 +178,11 @@ function singleDeletions(messages: Discord.Message[], editMessage: Discord.Messa
 
 function recreateChannel(sendingChannel: Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel, channelBeingRecreated: Discord.TextChannel) {
 	send(sendingChannel, Command.success([['Prune', 'Cloning channel']]))
-	// @ts-ignore
-	.then((editMessage: Discord.Message) => {
-		editMessage = Array.isArray(editMessage) ? editMessage[0] : editMessage;
+	.then(m => {
+		var editMessage: Discord.Message;
+		if (Array.isArray(m)) editMessage = m[0];
+		else editMessage = m;
+		if (editMessage == null) return;
 
 		console.log('Clone');
 

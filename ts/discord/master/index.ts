@@ -25,7 +25,6 @@ io.on('connection', (socket: SocketExt) => {
 	let botType: Nullable<string> = null;
 
 	socket.on('init', type => {
-		// @ts-ignore
 		socket.port = config.shards.discord[type + 'Port'];
 		console.log(`init: ${type} - ${socket.port}`);
 

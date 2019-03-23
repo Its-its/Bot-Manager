@@ -171,16 +171,24 @@ function clearPlaylist(guildId: string, discordMemberId: string, playlistPublicI
 
 // Utils
 
+interface SongInfoReponse {
+	error: any;
+
+	songs: (DiscordBot.plugins.SongYT & {
+		description: string;
+		download_count: number;
+		stream_count: number;
+	})[];
+}
 
 function getSong(uri: string | string[], cb: (errorMessage?: string, song?: SongGlobal[]) => any) {
 	request.get(`http://${config.ytdl.full}/info?force=true&id=` + (typeof uri == 'string' ? uri : uri.join(',')), (err, res) => {
 		if (err != null) return cb(err);
 
-		var data = JSON.parse(res.body);
+		var data: SongInfoReponse = JSON.parse(res.body);
 
 		if (data.error) return cb(data.error);
 
-		// @ts-ignore
 		var songs = data.songs.map(s => {
 			s.type = 'youtube';
 			delete s['description'];

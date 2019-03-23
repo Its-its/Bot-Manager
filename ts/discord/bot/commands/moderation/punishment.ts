@@ -168,12 +168,16 @@ class Punishment extends Command {
 				if (!message.guild.members.has(userId)) return Command.error([[ 'Punishments', 'Member does not exist in Guild.' ]]);
 
 				message.channel.send('Grabbing that for you. Please wait...')
-				// @ts-ignore
-				.then((msg: Discord.Message) => {
+				.then(msg => {
+					var singleMsg: Discord.Message;
+					if (Array.isArray(msg)) singleMsg = msg[0];
+					else singleMsg = msg;
+					if (singleMsg == null) return;
+
 					Punishments.find({ server_id: message.guild.id, member_id: userId }, (err, items) => {
 						if (err != null) return console.error(err);
 
-						msg.edit(Command.table(
+						singleMsg.edit(Command.table(
 							[ 'ID', 'Type', 'Issued (YY/MM/DD)', 'Length', 'Punished By', 'Reason' ],
 							items.map(i => [
 								i.pid,

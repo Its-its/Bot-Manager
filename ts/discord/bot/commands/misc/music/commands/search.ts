@@ -26,10 +26,9 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	var search = params.join(' ').trim();
 
 	message.channel.send(Command.info([['Music', 'Searching for videos please wait...']]))
-	// @ts-ignore
-	.then((m: Discord.Message) => {
+	.then(m => {
 		const selector = utils.createPageSelector(message.member.id, message.channel)!;
-		selector.setEditing(m);
+		selector.setEditing(Array.isArray(m) ? m[0] : m);
 
 		nextPage(selector, search, null, () => selector.display());
 

@@ -163,7 +163,7 @@ setInterval(() => {
 				item: TwitterFeedItem
 			}[] = [];
 
-			var feedItems = {};
+			var feedItems: { [name: string]: any } = {};
 
 			for(var i = 0; i < doc.feeds.length; i++) {
 				var feeds = doc.feeds[i];
@@ -179,7 +179,6 @@ setInterval(() => {
 
 				// Saved discord feeds is usually a different length than the Global Feeds.
 				if (feeds.items.length != feeds.feed.items.length || newFeeds.length != 0) {
-					// @ts-ignore
 					feedItems['feeds.' + i + '.items'] = feeds.feed.items.map(i => i.id);
 				}
 			}
@@ -287,7 +286,7 @@ setInterval(() => {
 				item: RSSFeedItem
 			}[] = [];
 
-			var feedItems = {};
+			var feedItems: { [name: string]: any } = {};
 
 			for(var i = 0; i < doc.feeds.length; i++) {
 				var feeds = doc.feeds[i];
@@ -303,7 +302,6 @@ setInterval(() => {
 
 				// Saved discord feeds is a different length than the RSS Feeds.
 				if (feeds.items.length != feeds.feed.items.length || newFeeds.length != 0) {
-					// @ts-ignore
 					feedItems['feeds.' + i + '.items'] = feeds.feed.items.map(i => i.id);
 				}
 			}

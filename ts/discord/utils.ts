@@ -340,8 +340,7 @@ function createPageSelector(responder: string, channel: GChannel, cb?: (value: M
 	if (cb == null) return new MessagePage({ author_id: responder, channel: channel });
 
 	channel.send('Please wait...')
-	// @ts-ignore
-	.then((c: Discord.Message) => {cb(new MessagePage({ author_id: responder, editingMessage: c, channel }))});
+	.then(c => {cb(new MessagePage({ author_id: responder, editingMessage: Array.isArray(c) ? c[0] : c, channel }))});
 }
 
 interface MessagePageConfig {
@@ -369,7 +368,7 @@ const defaultConfigValues = {
 
 // const pageReplaceValues = [ '{input}', '{name}' ];
 
-const formatReplaceValues = {
+const formatReplaceValues: { [name: string]: (page: MessagePage) => string } = {
 	'{page_items}': (page: MessagePage) => page.selections.map(s => s == null ? '' : page.pageSelectionFormat(s)).join('\n'),
 	'{pagination}': (page: MessagePage) => '_Pagination goes here_'
 };
@@ -453,8 +452,7 @@ class MessagePage {
 
 		if (this.editingMessage != null) {
 			this.editingMessage.channel.send(Command.error([[ 'Input Error', `"${input}" is not a valid selection input.` ]]))
-			// @ts-ignore
-			.then((m: Discord.Message) => m.delete(2000).catch(e => console.error('del-2000:', e)))
+			.then(m => (Array.isArray(m) ? m[0]: m).delete(2000).catch(e => console.error('del-2000:', e)))
 			.catch((e: any) => console.error('collect:', e));
 		}
 	}
@@ -503,9 +501,8 @@ class MessagePage {
 	public refresh() {
 		if (this.editingMessage == null) {
 			this.channel.send(this.compileMessage())
-			// @ts-ignore
-			.then((c: Discord.Message) => {
-				this.editingMessage = c;
+			.then(m => {
+				this.editingMessage = Array.isArray(m) ? m[0]: m;
 				this.init();
 			})
 			.catch((e: any) => console.error('refresh:', e));
@@ -613,7 +610,6 @@ class MessagePage {
 			'Pages',
 			this.format.map(f => {
 				for(var format in formatReplaceValues) {
-					// @ts-ignore
 					if (f == format) return formatReplaceValues[format](this);
 				}
 				return f;

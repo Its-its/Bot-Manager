@@ -33,6 +33,8 @@ interface Config {
 			gamesPort: number;
 			intervalPort: number;
 			musicPort: number;
+
+			[name: string]: number;
 		}
 	}
 	music: {

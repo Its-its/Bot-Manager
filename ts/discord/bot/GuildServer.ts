@@ -863,7 +863,7 @@ class Server extends Changes {
 	}
 
 	public setIntervalTime(id: number | string, minutes: number) {
-		var interval: DiscordBot.Interval | null;
+		var interval: DiscordBot.Interval | null = null;
 
 		if (typeof id == 'string') {
 			for(var i = 0; i < this.intervals.length; i++) {
@@ -874,7 +874,6 @@ class Server extends Changes {
 			}
 		} else interval = this.intervals[id - 1];
 
-		// @ts-ignore
 		if (interval == null) return console.error('Interval not found for ID: ' + id);
 
 		var params: { every: number; nextCall?: any; } = {

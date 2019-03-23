@@ -10,26 +10,30 @@ import { CustomDocs, Nullable } from '../../../../../../../typings/manager';
 
 
 
-function call(params: string[], server: DiscordServer, message: Discord.Message) {
+function call(_params: string[], _server: DiscordServer, message: Discord.Message) {
 	message.channel.send(utils.infoMsg([['RSS Feed', 'Finding all RSS Feeds in current Guild.']]))
-	// @ts-ignore
-	.then((m: Discord.Message) => {
-		const guild = m.guild;
+	.then(m => {
+		var singleMsg: Discord.Message;
+		if (Array.isArray(m)) singleMsg = m[0];
+		else singleMsg = m;
+		if (singleMsg == null) return;
+
+		const guild = singleMsg.guild;
 
 		DiscordTwitter.find({ guild_id: guild.id })
 		.exec((err, feeds) => {
 			if (err != null) {
-				m.edit(utils.errorMsg([['RSS Feed', 'An error occured while trying to find RSS Feeds. Please try again in a few moments.']]));
+				singleMsg.edit(utils.errorMsg([['RSS Feed', 'An error occured while trying to find RSS Feeds. Please try again in a few moments.']]));
 				return;
 			}
 
 			if (feeds.length == 0) {
-				m.edit(utils.infoMsg([['RSS Feed', 'No RSS Feeds found in current Guild.\nIf you\'d like to add one please use "!rss add <url>"']]));
+				singleMsg.edit(utils.infoMsg([['RSS Feed', 'No RSS Feeds found in current Guild.\nIf you\'d like to add one please use "!rss add <url>"']]));
 				return;
 			}
 
 			const selector = utils.createPageSelector(message.member.id, message.channel)!;
-			selector.setEditing(m);
+			selector.setEditing(singleMsg);
 
 			selector.setFormat([
 				'**Feed Limit:** 0/0',
@@ -52,7 +56,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 					.populate('feeds.feed')
 					.exec((err, feed: CustomDocs.discord.DiscordTwitterPopulated) => {
 						if (err != null) {
-							m.edit(utils.errorMsg([['RSS Feed', 'An error occured while trying to find RSS Feed for Channel. Please try again in a few moments.']]));
+							singleMsg.edit(utils.errorMsg([['RSS Feed', 'An error occured while trying to find RSS Feed for Channel. Please try again in a few moments.']]));
 							return;
 						}
 

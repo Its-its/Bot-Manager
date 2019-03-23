@@ -101,10 +101,9 @@ function get(commandName: string): Nullable<Command> {
 	return null;
 }
 
-function addCommand(Cmd: typeof Command | typeof Command[], category: string, hidden?: boolean): void {
+function addCommand<C extends Command>(Cmd: (new () => C) | (new () => C)[], category: string, hidden?: boolean): void {
 	if (Array.isArray(Cmd)) return Cmd.forEach(c => addCommand(c, category, hidden));
 
-	// @ts-ignore
 	const command = new Cmd();
 
 	if (command.perms == null || command.perms.length == 0) console.log('No perms for ' + command.commandName[0]);
