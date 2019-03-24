@@ -1,16 +1,20 @@
+// DEPRECATED
+// DEPRECATED
+// Now lives in discord/bot/plugins/interval
+
+
+
 import mongoose = require('mongoose');
 import async = require('async');
 
 
 import GlobalModelIntervals = require('../../models/intervals');
 import GlobalModelRSSFeed = require('../../models/rssfeed');
-import GlobalModelTwitterFeed = require('../../models/twitterfeed');
 
 
 import DiscordModelFeed = require('../models/feed');
 import DiscordModelTwitter = require('../models/twitter');
 
-import Twit = require('twit');
 import Discord = require('discord.js');
 
 import config = require('../../config');
@@ -21,17 +25,8 @@ import client = require('../client');
 import { CustomDocs } from '../../../typings/manager';
 
 mongoose.Promise = global.Promise;
-if (config.debug) mongoose.set('debug', true);
-mongoose.connect(config.database, { useNewUrlParser: true });
-
-var twitter = new Twit({
-	consumer_key:         'dZwMAukw0gd1U3detHh38XvK8',
-	consumer_secret:      'elh1y4iZoqUutXKA86HvfB1yX6xj6vqdAC8c9HBU6ryNxLrmVY',
-	access_token:         '358512140-4r97ewMT0IUOETldmcsEBS3ew0vrPbhKbOBBqkGt',
-	access_token_secret:  'sEk54lu8YyNtxz8IzI3lBLUXl2P4XeTQNig2JMoCOvNxm',
-	timeout_ms:           60*1000,
-	strictSSL:            true
-});
+// if (config.debug) mongoose.set('debug', true);
+// mongoose.connect(config.database, { useNewUrlParser: true });
 
 
 client.options.disabledEvents = [
@@ -79,7 +74,7 @@ client.options.disabledEvents = [
 ];
 
 
-client.login(config.bot.discord.token);+
+// client.login(config.bot.discord.token);+
 
 client.on('error', e => console.error(e));
 
