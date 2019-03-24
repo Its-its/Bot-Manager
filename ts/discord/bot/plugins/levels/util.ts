@@ -66,14 +66,9 @@ function expToLevels(user_total_xp: number) {
 	}
 }
 
-function remainingExp(totalXp: number) {
-	var level = expToLevels(totalXp);
-
-	if (level == 0) return totalXp;
-
-	var xp = levelsToExp(level);
-
-	return totalXp - xp + xpAmountForLevel(level);
+function remainingExp(totalXp: number) { // 677
+	var level = expToLevels(totalXp); // 3
+	return levelsToExp(level + 1) - totalXp;
 }
 
 function regularArcData(cx: number, cy: number, radius: number, startDegrees: number, endDegrees: number, isCounterClockwise: boolean): string {
@@ -115,7 +110,7 @@ export {
 
 	CHECK_IF_ONLINE,
 
-	xpAmountForLevel,
+	// xpAmountForLevel,
 	levelsToExp,
 	expToLevels,
 	remainingExp,

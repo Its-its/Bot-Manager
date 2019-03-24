@@ -98,19 +98,23 @@ function updateServer(serverId: string, cb?: (found: boolean, err: Error | null)
 		if (err == null) return cb && cb(false, err);
 		if (server == null) return cb && cb(false, new Error('No Server'));
 
+		var parsed: DiscordServer;
+
 		if (typeof server.server == 'string') {
-			server.server = JSON.parse(server.server);
+			parsed = JSON.parse(server.server);
+		} else {
+			parsed = server.server;
 		}
 
-		server.server.linked = (server.bot_id != null && server.bot_id.length != 0);
-		server.server.commands = server.command_ids;
-		server.server.phrases = server.phrase_ids;
-		// server.server.intervals = server.interval_ids;
+		parsed.linked = (server.bot_id != null && server.bot_id.length != 0);
+		parsed.commands = server.command_ids;
+		parsed.phrases = server.phrase_ids;
+		// parsed.intervals = server.interval_ids;
 
-		// server.server.alias = server.server.aliasList;
-		// delete server.server['aliasList'];
+		// parsed.alias = parsed.aliasList;
+		// delete parsed['aliasList'];
 
-		put(serverId, server.server, err => cb && cb(true, err));
+		put(serverId, parsed, err => cb && cb(true, err));
 	});
 }
 

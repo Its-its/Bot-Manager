@@ -115,12 +115,12 @@ class Backup extends Command {
 			createNewBackup();
 		});
 
-		function inParams(item: ITEMS) {
+		function isBackingUp(item: ITEMS) {
 			return params.indexOf(item) != -1;
 		}
 
 		function createNewBackup() {
-			var hasAll = inParams('all');
+			var hasAll = isBackingUp('all');
 
 			if (hasAll || params[0][0] == '-') {
 				if (hasAll) params.splice(params.indexOf('all'), 1);
@@ -141,28 +141,28 @@ class Backup extends Command {
 
 
 			var compiled: Compiled = {};
-			var oldIdsToNew: { [str: string]: string; } = {};
 
 			const guild = message.guild;
 
 
-			if (!inParams('roles')) {
+			if (!isBackingUp('roles')) {
 				var sending = [];
 
-				if (inParams('perms')) sending.push('Cannot save role perms if roles aren\'t saved. (FOR NOW)');
-				if (inParams('ranks')) {
+				if (isBackingUp('perms')) sending.push('Cannot save role perms if roles aren\'t saved. (FOR NOW)');
+				if (isBackingUp('ranks')) {
 					params.splice(params.indexOf('ranks'), 1);
 					sending.push('Cannot save ranks if roles aren\'t saved. (FOR NOW)');
 				}
 
 				if (sending.length != 0) {
 					message.channel.send(Command.info([[ 'Backup', sending.join('\n') ]]))
-					.then(msg => run(<any>msg))
+					.then(msg => run(Array.isArray(msg) ? msg[0] : msg))
 					.catch(e => console.error(e));
 
 					return;
 				}
 			}
+
 
 			run();
 
@@ -171,12 +171,11 @@ class Backup extends Command {
 					// Guild
 					function(next) {
 						// Required for: perms.roles, ranks
-						if (inParams('roles')) {
+						if (isBackingUp('roles')) {
 							compiled['roles'] = guild.roles.filter(r => !r.managed).map(r => {
-								oldIdsToNew[r.id] = tempID();
 
 								return {
-									id: oldIdsToNew[r.id],
+									id: r.id,
 
 									position: r.position,
 									name: r.name,
@@ -191,20 +190,19 @@ class Backup extends Command {
 
 						// Required for: overview.afk_channel, overview.new_member_channel
 						// TODO: Proper order.
-						if (inParams('channels')) {
+						if (isBackingUp('channels')) {
 							compiled['channels'] = guild.channels.filter(c => c.parent == null).map(c => parseChannel(c));
 
 							function parseChannel(channel: Discord.GuildChannel): DiscordBot.BackupChannel {
-								oldIdsToNew[channel.id] = tempID();
 
 								var opt: DiscordBot.BackupChannel = {
-									id: oldIdsToNew[channel.id],
+									id: channel.id,
 									name: channel.name,
 									// @ts-ignore
 									type: channel.type,
 									perms: channel.permissionOverwrites.map(p => {
 										return {
-											id: oldIdsToNew[p.id],
+											id: p.id,
 											allow: p.allow,
 											deny: p.deny,
 											type: p.type
@@ -215,7 +213,7 @@ class Backup extends Command {
 
 
 								if (channel.parentID != null) {
-									opt.parent = oldIdsToNew[channel.parentID];
+									opt.parent = channel.parentID;
 								}
 
 								if (channel.type == 'category') {
@@ -226,26 +224,26 @@ class Backup extends Command {
 							}
 						}
 
-						if (inParams('overview')) {
+						if (isBackingUp('overview')) {
 							compiled['overview']! = {
 								server_image: guild.icon,
 								server_name: guild.name,
 								server_region: guild.region,
-								afk_channel: guild.afkChannelID == null ? undefined : oldIdsToNew[guild.afkChannelID],
+								afk_channel: guild.afkChannelID == null ? undefined : guild.afkChannelID,
 								afk_timeout: guild.afkTimeout,
-								new_member_channel: guild.systemChannelID == null ? undefined : oldIdsToNew[guild.systemChannelID],
+								new_member_channel: guild.systemChannelID == null ? undefined : guild.systemChannelID,
 								notification_settings: guild.messageNotifications
 							};
 						}
 
-						if (inParams('moderation')) {
+						if (isBackingUp('moderation')) {
 							compiled['moderation'] = {
 								verification: guild.verificationLevel,
 								content_filter: guild.explicitContentFilter
 							};
 						}
 
-						if (inParams('emojis')) {
+						if (isBackingUp('emojis')) {
 							compiled['emojis'] = guild.emojis.filter(r => !r.managed).map(e => {
 								return {
 									name: e.name,
@@ -257,7 +255,7 @@ class Backup extends Command {
 							});
 						}
 
-						if (inParams('bans')) {
+						if (isBackingUp('bans')) {
 							guild.fetchBans()
 							.then(bans => {
 								compiled['bans'] = bans.keyArray();
@@ -267,11 +265,11 @@ class Backup extends Command {
 					},
 					// Custom
 					function(next) {
-						if (inParams('commands')) {
+						if (isBackingUp('commands')) {
 							compiled['commands'] = server.commands.map(c => { return { alias: c.alias, params: c.params }; });
 						}
 
-						if (inParams('intervals')) {
+						if (isBackingUp('intervals')) {
 							compiled['intervals'] = server.intervals.map(i => {
 								return {
 									active: false,
@@ -284,7 +282,7 @@ class Backup extends Command {
 							});
 						}
 
-						if (inParams('phrases')) {
+						if (isBackingUp('phrases')) {
 							compiled['phrases'] = server.phrases.map(p => {
 								return {
 									enabled: p.enabled,
@@ -295,38 +293,33 @@ class Backup extends Command {
 							});
 						}
 
-						if (inParams('blacklists')) {
+						if (isBackingUp('blacklists')) {
 							compiled['blacklists'] = server.moderation.blacklisted;
 						}
 
-						if (inParams('disabled')) {
+						if (isBackingUp('disabled')) {
 							compiled['disabled_custom_comm'] = server.moderation.disabledCustomCommands;
 							compiled['disabled_default_comm'] = server.moderation.disabledDefaultCommands;
 						}
 
-						if (inParams('ignored')) {
+						if (isBackingUp('ignored')) {
 							compiled['ignored_channels'] = server.moderation.ignoredChannels;
 							compiled['ignored_users'] = server.moderation.ignoredUsers;
 						}
 
-						if (inParams('perms')) {
+						if (isBackingUp('perms')) {
 							var perms = compiled['perms'] = server.permissions;
 
-							if (inParams('roles')) {
-								for(var id in perms.roles) {
-									perms.roles[oldIdsToNew[id]] = perms.roles[id];
-									delete perms.roles[id];
-								}
-							} else delete perms['roles'];
+							if (!isBackingUp('roles')) delete perms['roles'];
 						}
 
-						if (inParams('prefix')) compiled['prefix'] = server.commandPrefix;
+						if (isBackingUp('prefix')) compiled['prefix'] = server.commandPrefix;
 
-						if (inParams('ranks') && inParams('roles')) {
-							compiled['ranks'] = server.ranks.map(r => oldIdsToNew[r]);
+						if (isBackingUp('ranks') && isBackingUp('roles')) {
+							compiled['ranks'] = server.ranks;
 						}
 
-						if (inParams('alias')) compiled['alias'] = server.alias.map(a => { return { command: a.command, alias: a.alias }; });
+						if (isBackingUp('alias')) compiled['alias'] = server.alias.map(a => { return { command: a.command, alias: a.alias }; });
 
 						next();
 					},
@@ -334,6 +327,7 @@ class Backup extends Command {
 				// Finish
 				function() {
 					new Backups({
+						version: 1,
 						server_id: server.serverId,
 						pid: uniqueID(8),
 						items: params,
@@ -377,7 +371,6 @@ function asdf(items: ((cb: () => any) => any)[], finish: () => any) {
 
 
 interface Compiled {
-	// TODO: Convert to global Role in index.d.ts
 	roles?: DiscordBot.Role[];
 
 	channels?: DiscordBot.BackupChannel[];

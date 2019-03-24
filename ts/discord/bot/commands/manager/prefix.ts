@@ -24,11 +24,7 @@ class PrefixCommand extends Command {
 
 		this.description = 'Sets the command prefix.';
 
-		this.perms = [
-			'commands.prefix',
-			'commands.prefix.reset',
-			'commands.prefix.set'
-		];
+		this.perms = Object.values(PERMS);
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {

@@ -11,7 +11,7 @@ import { CustomDocs, Nullable } from '../../../../../../../typings/manager';
 
 
 function call(_params: string[], _server: DiscordServer, message: Discord.Message) {
-	message.channel.send(utils.infoMsg([['RSS Feed', 'Finding all RSS Feeds in current Guild.']]))
+	message.channel.send(utils.infoMsg([['Twitter Feed', 'Finding all Twitter Feeds in current Guild.']]))
 	.then(m => {
 		var singleMsg: Discord.Message;
 		if (Array.isArray(m)) singleMsg = m[0];
@@ -23,12 +23,12 @@ function call(_params: string[], _server: DiscordServer, message: Discord.Messag
 		DiscordTwitter.find({ guild_id: guild.id })
 		.exec((err, feeds) => {
 			if (err != null) {
-				singleMsg.edit(utils.errorMsg([['RSS Feed', 'An error occured while trying to find RSS Feeds. Please try again in a few moments.']]));
+				singleMsg.edit(utils.errorMsg([['Twitter Feed', 'An error occured while trying to find Twitter Feeds. Please try again in a few moments.']]));
 				return;
 			}
 
 			if (feeds.length == 0) {
-				singleMsg.edit(utils.infoMsg([['RSS Feed', 'No RSS Feeds found in current Guild.\nIf you\'d like to add one please use "!rss add <url>"']]));
+				singleMsg.edit(utils.infoMsg([['Twitter Feed', 'No Twitter Feeds found in current Guild.\nIf you\'d like to add one please use "!rss add <url>"']]));
 				return;
 			}
 
@@ -56,7 +56,7 @@ function call(_params: string[], _server: DiscordServer, message: Discord.Messag
 					.populate('feeds.feed')
 					.exec((err, feed: CustomDocs.discord.DiscordTwitterPopulated) => {
 						if (err != null) {
-							singleMsg.edit(utils.errorMsg([['RSS Feed', 'An error occured while trying to find RSS Feed for Channel. Please try again in a few moments.']]));
+							singleMsg.edit(utils.errorMsg([['Twitter Feed', 'An error occured while trying to find Twitter Feed for Channel. Please try again in a few moments.']]));
 							return;
 						}
 

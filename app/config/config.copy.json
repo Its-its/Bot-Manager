@@ -2,14 +2,14 @@
 	"debug": true,
 	"port": 8088,
 	"urlProtocol": "http",
-	"baseUrl": "bots.local",
+	"baseUrl": "127.0.0.1",
 	"session_secret": "new random password goes here",
-	"database": "mongodb://self.local:27017/bot-manager",
+	"database": "mongodb://127.0.0.1:27017/bot-manager",
 	"redis": {
 		"guildsDB": 0,
 		"musicDB": 2,
 		"xpDB": 3,
-		"address": "self.local",
+		"address": "127.0.0.1",
 		"port": 6379
 	},
 	"shards": {

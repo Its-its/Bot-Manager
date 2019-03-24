@@ -60,14 +60,17 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	}
 
 	if (permissionOrCalledCmd == null) return Command.error([['Permissions', 'Invalid Params']]);
-
 	permissionOrCalledCmd = permissionOrCalledCmd.toLowerCase();
 
 
 	if (calledCmd == 'add') {
 		if (!server.userHasPerm(message.member, PERMISSIONS.USER_ADD)) return Command.noPermsMessage('Permissions');
 
-		if (GlobalCommands.validPerms.indexOf(permissionOrCalledCmd) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
+		if (GlobalCommands.validPerms.indexOf(permissionOrCalledCmd) == -1) return Command.error([['Permissions', 'That perm doesn\'t exist!']]);
+
+		if (Object.keys(server.permissions.users).length >= 20) {
+			return Command.error([['Permissions', 'SORRY! There is a limit of 20 users max allowed custom permission. Please use a role instead.']]);
+		}
 
 		var wasPermAdded = server.addPermTo('users', userIdFull, permissionOrCalledCmd);
 
@@ -79,7 +82,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	} else if (calledCmd == 'remove') {
 		if (!server.userHasPerm(message.member, PERMISSIONS.USER_REMOVE)) return Command.noPermsMessage('Permissions');
 
-		if (GlobalCommands.validPerms.indexOf(permissionOrCalledCmd) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
+		if (GlobalCommands.validPerms.indexOf(permissionOrCalledCmd) == -1) return Command.error([['Permissions', 'That perm doesn\'t exist!']]);
 
 		var wasPermAdded = server.removePermFrom('users', userIdFull, permissionOrCalledCmd);
 

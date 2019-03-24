@@ -79,15 +79,7 @@ class Restore extends Command {
 				if (err != null) return message.channel.send(Command.info([['Restore', 'An error occured. Please try again in a few moments.']]));
 				if (backups.length == 0) return message.channel.send(Command.info([['Restore', 'No Backups found for server/pid.']]));
 
-				// if (backups.length == 1) {
-				// 	const selector = chatUtil.createPageSelector(message.author.id, <any>message.channel)
-				// 	.setEditing(resp);
-
-				// 	mainEditPage(backups[0].toJSON(), selector, server);
-				// 	return;
-				// }
-
-				const selector = utils.createPageSelector(message.author.id, <any>message.channel)!
+				const selector = utils.createPageSelector(message.author.id, message.channel)!
 				.setFormat([
 					'Please pick a backup from the list below.',
 					'',
@@ -100,6 +92,7 @@ class Restore extends Command {
 
 				for(var i = 0; i < backups.length; i++) {
 					(function(pos, backup: Backup) {
+						// TODO: Add version
 						selector.addSelection('' + pos, `Created At: ${backup.created_at.toUTCString()}\nItems: \`${backup.items.join(', ')}\``, (page) => {
 							mainEditPage(backup, page, server);
 						});
@@ -191,7 +184,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 	var items: Compiled = JSON.parse(backup.json);
 
-	function isImporting(name: ITEMS) {
+	function isRestoring(name: ITEMS) {
 		return backup.items.indexOf(name) != -1 && items[name] != null;
 	}
 
@@ -208,7 +201,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 		asdf([
 			// Roles || Required for: perms.roles, ranks
 			function(next) {
-				if (isImporting('roles')) {
+				if (isRestoring('roles')) {
 					message.edit(Command.info([
 						[
 							'Restore',
@@ -277,7 +270,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 			},
 			// Channels || Required for: overview.afk_channel, overview.new_member_channel
 			function(next) {
-				if (isImporting('channels')) {
+				if (isRestoring('channels')) {
 					message.edit(Command.info([['Restore', 'Restoring Channels...']]))
 					.then(() => {
 						createChannels(items.channels!, () => {
@@ -342,11 +335,11 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 			},
 			// Overview
 			function(next) {
-				if (!isImporting('moderation') && !isImporting('overview')) return next();
+				if (!isRestoring('moderation') && !isRestoring('overview')) return next();
 
 				message.edit(Command.info([['Restore', 'Restoring Overview/Moderation...']]))
 				.then(() => {
-					if (isImporting('overview')) {
+					if (isRestoring('overview')) {
 						var overview = items.overview;
 
 						async.mapSeries([
@@ -378,7 +371,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 			},
 			// Moderation
 			function(next) {
-				if (isImporting('moderation')) {
+				if (isRestoring('moderation')) {
 					async.mapSeries([
 						guild.setVerificationLevel(items.moderation!.verification),
 						// TODO: Linode crashes @ this one. guild.setExcplicitContentFilter(items.moderation.content_filter)
@@ -395,7 +388,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 			},
 			// Emoji
 			function(next) {
-				if (isImporting('emojis')) {
+				if (isRestoring('emojis')) {
 					// nextEmoji(0);
 					next();
 
@@ -410,7 +403,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 			},
 			// Bans
 			function(next) {
-				if (isImporting('bans')) {
+				if (isRestoring('bans')) {
 					message.edit(Command.info([
 						[
 							'Restore',
@@ -440,7 +433,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 			},
 			// Phrases
 			function(next) {
-				if (isImporting('phrases')) {
+				if (isRestoring('phrases')) {
 					message.edit(Command.info([['Restore', 'Restoring Phrases...']]))
 					.then(() => nextPhrase(0))
 					.catch(e => console.error(e));
@@ -461,7 +454,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 			},
 			// Commands
 			function(next) {
-				if (isImporting('commands')) {
+				if (isRestoring('commands')) {
 					message.edit(Command.info([['Restore', 'Restoring Commands...']]))
 					.then(() => nextCommand(0))
 					.catch(e => console.error(e));
@@ -478,11 +471,11 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 			},
 			// Everything else.
 			function(next) {
-				if (isImporting('alias')) {
+				if (isRestoring('alias')) {
 					items.alias!.forEach(a => server.createAlias(a.alias, a.command));
 				}
 
-				if (isImporting('blacklists')) {
+				if (isRestoring('blacklists')) {
 					for(var cid in items.blacklists) {
 						var item = items.blacklists[cid];
 						item.items.forEach(b => server.blacklist(cid, b));
@@ -490,17 +483,17 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 					}
 				}
 
-				if (isImporting('disabled')) {
+				if (isRestoring('disabled')) {
 					server.moderation.disabledCustomCommands = items.disabled_custom_comm!;
 					server.moderation.disabledDefaultCommands = items.disabled_default_comm!;
 				}
 
-				if (isImporting('ignored')) {
+				if (isRestoring('ignored')) {
 					server.moderation.ignoredChannels = items.ignored_channels!;
 					server.moderation.ignoredUsers = items.ignored_users!;
 				}
 
-				if (isImporting('perms')) {
+				if (isRestoring('perms')) {
 					var perms = items.perms!;
 					// TODO: Add groups
 
@@ -536,7 +529,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 					}
 				}
 
-				if (isImporting('intervals')) {
+				if (isRestoring('intervals')) {
 					items.intervals!.forEach(i => {
 						server.createInterval({
 							guild_id: guild.id,
@@ -552,11 +545,11 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 					});
 				}
 
-				if (isImporting('prefix')) {
+				if (isRestoring('prefix')) {
 					server.commandPrefix = items.prefix;
 				}
 
-				if (isImporting('ranks')) {
+				if (isRestoring('ranks')) {
 					items.ranks!.forEach(r => {
 						var actualId = tempIdToNew[r];
 						if (actualId != null) {

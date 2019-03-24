@@ -4,6 +4,8 @@ import { CustomDocs } from '../../../typings/manager';
 let Schema = mongoose.Schema;
 
 const Backup = new Schema({
+	version: { type: Number, default: 0 },
+
 	server_id: String,
 
 	pid: String,

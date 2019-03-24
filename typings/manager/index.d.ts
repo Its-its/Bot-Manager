@@ -193,6 +193,7 @@ declare namespace CustomDocs {
 		}
 
 		export interface Backup extends Document {
+			version: number;
 			server_id: string;
 			pid: string;
 			items: string[];

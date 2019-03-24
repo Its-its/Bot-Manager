@@ -81,12 +81,12 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	}
 
 	function sendImage(member: Discord.GuildMember, level: Level) {
-		// Level 1: 105
-		// Level 2: 325
-		// Level 3: 670
+		var prevXP = util.levelsToExp(level.level);
+		var nextXP = util.levelsToExp(level.level + 1);
 
-		var prevXP = util.levelsToExp(level.level);		// 325
-		var nextXP = util.levelsToExp(level.level + 1);	// 670
+		console.log('prev: ' + prevXP);
+		console.log('next: ' + nextXP);
+		console.log('XP: ' + level.xp);
 
 		var currentXP = level.xp - prevXP; // 426 - 325 = 101
 
@@ -105,7 +105,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			const url = member.user.displayAvatarURL.replace(/\.webp.*/i, '.png').replace(/\.gif.*/i, '.png');
 
 			addPath('none', '#223', 10, util.regularArcData(cx, cy, 250, 40, 280, false));
-			addPath('none', 'yellow', 12, util.regularArcData(cx, cy, 250, 40, (level.xp/nextXP) * 280, false), 'filter="url(#glow)"');
+			addPath('none', 'yellow', 12, util.regularArcData(cx, cy, 250, 40, ((level.xp - prevXP)/(nextXP - prevXP)) * 280, false), 'filter="url(#glow)"');
 
 			addText('Member Level', '30px', 'bold', '50%', '280px', null, 'alignment-baseline="middle" text-anchor="middle"');
 			addText(level.level, '180px', 'bold', '50%', '70%', null, 'alignment-baseline="middle" text-anchor="middle"');
