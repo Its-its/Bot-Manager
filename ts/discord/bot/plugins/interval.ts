@@ -31,11 +31,11 @@ function onGuildDelete(guild: Discord.Guild) {
 	GlobalModelIntervals.remove({ guild_id: guild.id }).exec();
 }
 
-function onChannelDelete(channel: Discord.TextChannel) {
+function onChannelDelete(channel: Discord.Channel) {
 	if (channel.type == 'text') {
 		// If channel has RSSFeed deactivate it and set channel_id to null.
 		DiscordModelFeed.findOneAndUpdate(
-			{ guild_id: channel.guild.id, channel_id: channel.id },
+			{ guild_id: (<Discord.TextChannel>channel).guild.id, channel_id: channel.id },
 			{ $set: { channel_id: null, active: false, 'feeds.items': [] } },
 			(err, found) => {
 				if (found != null) {
@@ -341,5 +341,8 @@ export = {
 	addInterval,
 	editInterval,
 	removeInterval,
-	getAllFromGuild
+	getAllFromGuild,
+
+	onGuildDelete,
+	onChannelDelete
 };

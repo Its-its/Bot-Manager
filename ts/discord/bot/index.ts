@@ -16,6 +16,7 @@ import ModelStats = require('../models/statistics');
 import commandPlugin = require('./plugins/commands');
 import logsPlugin = require('./plugins/logs');
 import levelsPlugin = require('./plugins/levels');
+import intervalPlugin = require('./plugins/interval');
 
 
 import config = require('../../config');
@@ -203,8 +204,10 @@ client.on('guildDelete', (guild) => {
 
 	limits.guildDelete(guild.id);
 
-	DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: true } }).exec();
+	intervalPlugin.onGuildDelete(guild);
 	PunishmentCmd.onGuildRemove(guild);
+
+	DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: true } }).exec();
 	guildClient.remove(guild.id, () => {});
 });
 
@@ -309,6 +312,8 @@ client.on('guildCreate', guild => {
 });
 
 client.on('channelDelete', channel => {
+	intervalPlugin.onChannelDelete(channel);
+
 	if (channel.type != 'dm' && channel.type != 'group') {
 		guildClient.get((<Discord.GuildChannel>channel).guild.id, server => {
 			if (server == null) return;
