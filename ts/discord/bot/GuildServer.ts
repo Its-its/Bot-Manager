@@ -125,15 +125,6 @@ class Server extends Changes {
 		commands: {
 			enabled: true
 		},
-		// music: {
-		// 	enabled: false
-		// },
-		// interval: {
-		// 	enabled: false
-		// },
-		// rssfeed: {
-		// 	enabled: false
-		// },
 		// logs: {
 		// 	enabled: false
 		// },

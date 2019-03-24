@@ -4,6 +4,7 @@ import DiscordServer = require('../../GuildServer');
 import Command = require('../../command');
 import { DiscordBot } from '../../../../../typings/manager';
 
+// TODO: Check names of people who type.
 
 const PERMS = {
 	MAIN: 'commands.blacklist',

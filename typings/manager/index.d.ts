@@ -60,13 +60,15 @@ declare namespace CustomDocs {
 
 			last_called: Date;
 
-			items: {
-				id: string;
-
-				text: string;
-				link: string;
-			}[];
+			items: TwitterFeedsItem[];
 		}
+
+		export interface TwitterFeedsItem {
+			id: string;
+
+			text: string;
+			link: string;
+		};
 
 		export interface RSSFeeds extends Document {
 			url: string;
@@ -75,20 +77,22 @@ declare namespace CustomDocs {
 
 			sending_to: number;
 
-			items: {
-				id: string;
-				title: string;
-				description: string;
-				date: Date;
-				link: string;
-				guid: string;
-				author: string;
-				generator: string;
-				categories: string[];
-			}[];
+			items: RSSFeedsItem[];
 
 			last_called: Date;
 		}
+
+		export interface RSSFeedsItem {
+			id: string;
+			title: string;
+			description: string;
+			date: Date;
+			link: string;
+			guid: string;
+			author: string;
+			generator: string;
+			categories: string[];
+		};
 
 		export interface Intervals extends Document {
 			guild_id: string;
@@ -822,18 +826,15 @@ declare namespace DiscordBot {
 		};
 	}
 
-	type PLUGIN_NAMES = 'commands' | 'interval' | 'logs' | 'leveling' | 'events';
+	type PLUGIN_NAMES = 'commands' | 'logs' | 'leveling' | 'events';
 
 	interface Plugin {
 		// [name: string]: PluginItem;
 
+		logs?: PluginLogs;
 		commands?: PluginItem;
-		music?: PluginItem;
-		interval?: PluginItem;
-		rssfeed?: PluginItem;
 		leveling?: PluginItem;
 		events?: PluginItem;
-		logs?: PluginLogs;
 	}
 
 	interface PluginLogs extends PluginItem {

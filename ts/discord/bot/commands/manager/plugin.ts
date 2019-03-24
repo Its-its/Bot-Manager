@@ -3,14 +3,10 @@ import DiscordServer = require('../../GuildServer');
 
 import Command = require('../../command');
 
-// Plugins are supposed to be for anything that can be called when not using it.
-// TODO: ?? Remove Interval/Music
 // TODO: ?? Relocate Commands to activate/deactivate.
 
 const displayNames = [
 	'Commands',
-	'Music',
-	'Interval',
 	'Logs',
 	'Leveling'
 ];
@@ -48,7 +44,7 @@ class Plugin extends Command {
 					[	'list',
 						'enable <name/all>',
 						'disable <name/all>'
-					].map(b => server.getPrefix() + 'plugin ' + b).join('\n')
+					].join('\n')
 				]
 			]));
 			return;

@@ -92,6 +92,7 @@ client.on('guildDelete', guild => {
 
 		// GlobalModelRSSFeed.updateOne({  });
 	});
+
 	GlobalModelIntervals.remove({ guild_id: guild.id }).exec();
 });
 
@@ -112,38 +113,12 @@ client.on('channelDelete', (channel: Discord.TextChannel) => {
 	}
 });
 
-const CALL_AGAIN = 1000 * 60 * 5;
+const CALL_EVERY = 1000 * 60 * 5;
 
-
-
-interface TwitterFeedItem {
-	id: string;
-	text: string;
-	link: string;
-}
-
-interface TwitterFeed extends mongoose.Document {
-	url: string;
-	link: string;
-	xmlUrl: string;
-
-	sending_to: number;
-
-	items: TwitterFeedItem[];
-
-	last_called: Date;
-}
-
-interface ChannelTwitterFeedItem {
-	format: string;
-	active: boolean;
-	items: string[];
-	feed: TwitterFeed;
-};
 
 // Twitter Feeds
 setInterval(() => {
-	DiscordModelTwitter.find({ active: true, last_check: { $lte: Date.now() - CALL_AGAIN } })
+	DiscordModelTwitter.find({ active: true, last_check: { $lte: Date.now() - CALL_EVERY } })
 	.populate('feeds.feed')
 	.exec((err, feedDocs: CustomDocs.discord.DiscordTwitterPopulated[]) => {
 		if (err != null) return console.error(err);
@@ -160,7 +135,7 @@ setInterval(() => {
 
 			var newFeeds: {
 				feed: CustomDocs.discord.DiscordTwitterFeeds<CustomDocs.global.TwitterFeeds>,
-				item: TwitterFeedItem
+				item: CustomDocs.global.TwitterFeedsItem
 			}[] = [];
 
 			var feedItems: { [name: string]: any } = {};
@@ -232,41 +207,9 @@ setInterval(() => {
 
 
 
-// RSS Feed
-
-interface RSSFeedItem {
-	id: string;
-	title: string;
-	description: string;
-	date: Date;
-	link: string;
-	guid: string;
-	author: string;
-	generator: string;
-	categories: string[];
-};
-
-interface RSSFeed extends mongoose.Document {
-	url: string;
-	link: string;
-	xmlUrl: string;
-
-	sending_to: number;
-
-	items: RSSFeedItem[];
-
-	last_called: Date;
-}
-
-interface ChannelRSSFeedItem {
-	format: string;
-	active: boolean;
-	items: string[];
-	feed: RSSFeed;
-};
-
+// RSS Feeds
 setInterval(() => {
-	DiscordModelFeed.find({ active: true, last_check: { $lte: Date.now() - CALL_AGAIN } })
+	DiscordModelFeed.find({ active: true, last_check: { $lte: Date.now() - CALL_EVERY } })
 	.populate('feeds.feed')
 	.exec((err, feedDocs: CustomDocs.discord.DiscordRssPopulated[]) => {
 		if (err != null) return console.error(err);
@@ -282,8 +225,8 @@ setInterval(() => {
 			}
 
 			var newFeeds: {
-				feed: ChannelRSSFeedItem,
-				item: RSSFeedItem
+				feed: CustomDocs.discord.DiscordRssFeeds<CustomDocs.global.RSSFeeds>,
+				item: CustomDocs.global.RSSFeedsItem
 			}[] = [];
 
 			var feedItems: { [name: string]: any } = {};
@@ -358,6 +301,7 @@ setInterval(() => {
 		});
 	});
 }, 1000 * 60);
+
 
 // Intervals
 setInterval(() => {
