@@ -6,7 +6,7 @@ import async = require('async');
 
 import util = require('./util');
 import UserLevel = require('./models/userlevel');
-import config = require('../../../../config');
+import config = require('@config');
 
 
 // const redisXP = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.xpDB });

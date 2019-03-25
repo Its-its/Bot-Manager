@@ -1,5 +1,5 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../GuildServer');
+import DiscordServer = require('@discord/bot/GuildServer');
 
 
 const filterTypes = [ 'Title', 'Description', 'Summary', 'Author', 'Tag' ];

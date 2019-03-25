@@ -1,11 +1,11 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../GuildServer');
+import DiscordServer = require('@discord/bot/GuildServer');
 
 import request = require('request');
 import sharp = require('sharp');
 
-import UserLevel = require('../../../../plugins/levels/models/userlevel');
-import util = require('../../../../plugins/levels/util');
+import UserLevel = require('@discord/bot/plugins/levels/models/userlevel');
+import util = require('@discord/bot/plugins/levels/util');
 
 interface Level {
 	xp: number;

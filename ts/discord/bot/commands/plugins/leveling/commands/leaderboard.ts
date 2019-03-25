@@ -1,7 +1,7 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../GuildServer');
+import DiscordServer = require('@discord/bot/GuildServer');
 
-import UserLevel = require('../../../../plugins/levels/models/userlevel');
+import UserLevel = require('@discord/bot/plugins/levels/models/userlevel');
 
 const LIMIT_PER_PAGE = 10;
 

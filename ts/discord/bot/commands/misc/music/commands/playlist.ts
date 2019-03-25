@@ -1,15 +1,15 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../GuildServer');
+import DiscordServer = require('@discord/bot/GuildServer');
 
-import Command = require('../../../../command');
+import Command = require('@discord/bot/command');
 
-import guildClient = require('../../../../../guildClient');
-import utils = require('../../../../../utils');
+import guildClient = require('@discord/guildClient');
+import utils = require('@discord/utils');
 import PERMS = require('../perms');
 
-import Playlists = require('../../../../../../music/models/playlists');
-import musicPlugin = require('../../../../../music/plugins/music');
-import musicPermissions = require('../../../../../../music/permissions');
+import Playlists = require('@base/music/models/playlists');
+import musicPlugin = require('@discord/music/plugins/music');
+import musicPermissions = require('@base/music/permissions');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	var playlistId = params.shift();

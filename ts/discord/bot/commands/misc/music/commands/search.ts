@@ -1,13 +1,13 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../GuildServer');
+import DiscordServer = require('@discord/bot/GuildServer');
 
-import Command = require('../../../../command');
+import Command = require('@discord/bot/command');
 
-import { sendReq, searchForSong, sendQueue, sendPlay } from '../../../../../music/plugins/music';
+import { sendReq, searchForSong, sendQueue, sendPlay } from '@discord/music/plugins/music';
 import PERMS = require('../perms');
 
 
-import utils = require('../../../../../utils');
+import utils = require('@discord/utils');
 import { Nullable } from '../../../../../../../typings/manager';
 
 

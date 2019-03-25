@@ -1,5 +1,10 @@
+import logging = require('@logging');
+
+logging.info('Master Started');
+
 import socketIO = require('socket.io');
-import config = require('../../config');
+import config = require('@config');
+
 import { Nullable } from '../../../typings/manager';
 
 interface SocketExt extends socketIO.Socket {
@@ -7,7 +12,7 @@ interface SocketExt extends socketIO.Socket {
 }
 
 
-let BOTS: { [type: string]: SocketExt } = {
+const BOTS: { [type: string]: SocketExt } = {
 	// 'bot_type': port
 };
 
@@ -20,13 +25,13 @@ const io = socketIO.listen(config.shards.discord.masterPort);
 
 
 io.on('connection', (socket: SocketExt) => {
-	console.log('Connection: ' + socket.id);
+	logging.info('Connection: ' + socket.id);
 
 	let botType: Nullable<string> = null;
 
 	socket.on('init', type => {
 		socket.port = config.shards.discord[type + 'Port'];
-		console.log(`init: ${type} - ${socket.port}`);
+		logging.info(`init: ${type} - ${socket.port}`);
 
 		botType = type;
 		BOTS[type] = socket;
@@ -34,7 +39,7 @@ io.on('connection', (socket: SocketExt) => {
 
 
 	socket.on('send', opts => {
-		console.log(`send: ${opts.from} -> ${opts.to}`);
+		logging.info(`send: ${opts.from} -> ${opts.to}`);
 		BOTS[opts.to].emit('from', opts);
 	});
 

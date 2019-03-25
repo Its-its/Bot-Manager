@@ -1,9 +1,9 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../GuildServer');
+import DiscordServer = require('@discord/bot/GuildServer');
 
-import Command = require('../../../../command');
+import Command = require('@discord/bot/command');
 
-import { sendReq } from '../../../../../music/plugins/music';
+import { sendReq } from '@discord/music/plugins/music';
 import PERMS = require('../perms');
 import { Optional } from '../../../../../../../typings/manager';
 

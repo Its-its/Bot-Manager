@@ -1,7 +1,7 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../GuildServer');
+import DiscordServer = require('@discord/bot/GuildServer');
 
-import util = require('../../../../../utils');
+import util = require('@discord/bot/../utils');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	message.channel.send(util.infoMsg([

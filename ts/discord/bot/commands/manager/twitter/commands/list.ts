@@ -1,11 +1,11 @@
 import mongoose = require('mongoose');
 import Discord = require('discord.js');
 
-import DiscordServer = require('../../../../GuildServer');
-import DiscordTwitter = require('../../../../../models/twitter');
+import DiscordServer = require('@discord/bot/GuildServer');
+import DiscordTwitter = require('@discord/models/twitter');
 import GlobalTwitterFeeds = require('../../../../../../models/twitterfeed');
 
-import utils = require('../../../../../utils');
+import utils = require('@discord/utils');
 import { CustomDocs, Nullable } from '../../../../../../../typings/manager';
 
 

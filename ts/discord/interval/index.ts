@@ -17,7 +17,7 @@ import DiscordModelTwitter = require('../models/twitter');
 
 import Discord = require('discord.js');
 
-import config = require('../../config');
+import config = require('@config');
 
 import util = require('../../rssgrabber/utils');
 

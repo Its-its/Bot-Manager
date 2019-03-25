@@ -8,12 +8,12 @@ import { PassThrough } from 'stream';
 
 import request = require('request');
 import mongoose = require('mongoose');
+//
 
+import Queues = require('@music/models/queue');
+import Playlists = require('@music/models/playlists');
 
-import Queues = require('../../music/models/queue');
-import Playlists = require('../../music/models/playlists');
-
-import config = require('../../config');
+import config = require('@config');
 import musicUtils = require('./plugins/music');
 import utils = require('../utils');
 import { getMusic, Music } from './GuildMusic';

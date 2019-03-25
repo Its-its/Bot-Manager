@@ -7,9 +7,9 @@
  */
 
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../GuildServer');
+import DiscordServer = require('@discord/bot/GuildServer');
 
-import Command = require('../../../../command');
+import Command = require('@discord/bot/command');
 
 import GlobalCommands = require('../../../index');
 import PERMISSIONS = require('../perms');

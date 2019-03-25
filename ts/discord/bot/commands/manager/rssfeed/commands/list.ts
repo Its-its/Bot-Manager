@@ -1,11 +1,11 @@
 import mongoose = require('mongoose');
 import Discord = require('discord.js');
 
-import DiscordServer = require('../../../../GuildServer');
-import DiscordFeeds = require('../../../../../models/feed');
+import DiscordServer = require('@discord/bot/GuildServer');
+import DiscordFeeds = require('@discord/models/feed');
 import RSSFeeds = require('../../../../../../models/rssfeed');
 
-import utils = require('../../../../../utils');
+import utils = require('@discord/utils');
 
 import PERMISSIONS = require('../perms');
 import { CustomDocs } from '../../../../../../../typings/manager';

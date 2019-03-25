@@ -1,13 +1,15 @@
-console.log('DISCORD: BOT');
+import logger = require('@logging');
+
+logger.info('DISCORD: BOT');
+
 
 import mongoose = require('mongoose');
 import * as Discord from 'discord.js';
 
-import logger = require('../logging');
 
 import DiscordServers = require('../models/servers');
-import Validation = require('../../site/models/validation');
-import Bots = require('../../site/models/bots');
+import Validation = require('@site/models/validation');
+import Bots = require('@site/models/bots');
 
 import ModelStats = require('../models/statistics');
 
@@ -19,7 +21,7 @@ import levelsPlugin = require('./plugins/levels');
 import intervalPlugin = require('./plugins/interval');
 
 
-import config = require('../../config');
+import config = require('@config');
 
 import guildClient = require('../guildClient');
 import Server = require('./GuildServer');
@@ -44,6 +46,57 @@ client.options.disabledEvents = [
 	'TYPING_START'
 ];
 
+
+
+// const DISCORD_EVENTS = [
+// 	'channelCreate',
+// 	'channelDelete',
+// 	'channelPinsUpdate',
+// 	'channelUpdate',
+// 	'clientUserGuildSettingsUpdate',
+// 	'clientUserSettingsUpdate',
+// 	'debug',
+// 	'disconnect',
+// 	'emojiCreate',
+// 	'emojiDelete',
+// 	'emojiUpdate',
+// 	'error',
+// 	'guildBanAdd',
+// 	'guildBanRemove',
+// 	'guildCreate',
+// 	'guildDelete',
+// 	'guildMemberAdd',
+// 	'guildMemberAvailable',
+// 	'guildMemberRemove',
+// 	'guildMembersChunk',
+// 	'guildMemberSpeaking',
+// 	'guildMemberUpdate',
+// 	'guildUnavailable',
+// 	'guildUpdate',
+// 	'message',
+// 	'messageDelete',
+// 	'messageDeleteBulk',
+// 	'messageReactionAdd',
+// 	'messageReactionRemove',
+// 	'messageReactionRemoveAll',
+// 	'messageUpdate',
+// 	'presenceUpdate',
+// 	'rateLimit',
+// 	'ready',
+// 	'reconnecting',
+// 	'resume',
+// 	'roleCreate',
+// 	'roleDelete',
+// 	'roleUpdate',
+// 	'typingStart',
+// 	'typingStop',
+// 	'userNoteUpdate',
+// 	'userUpdate',
+// 	'voiceStateUpdate',
+// 	'warn'
+// ];
+
+
 let statistics = defaultStats();
 
 function defaultStats() {
@@ -52,6 +105,8 @@ function defaultStats() {
 		guild_bot_command_count: 0
 	};
 }
+
+
 
 client.on('ready', () => {
 	logger.info(' - Client ID:' + client.user.id);
@@ -94,7 +149,7 @@ function shardListener() {
 	process.on('message', msg => {
 		if (msg._eval || msg._sEval) return; // Discord shard eval starts with _eval/_sEval
 
-		console.log(`[SHARD ${client.shard.id}]:`, msg);
+		logger.info(`[SHARD ${client.shard.id}]:`, msg);
 	});
 }
 
@@ -117,7 +172,7 @@ client.on('roleDelete', role => {
 
 
 client.on('rateLimit', rateLimit => {
-	console.log('Rate Limit:', rateLimit);
+	logger.info('Rate Limit:', rateLimit);
 });
 
 
@@ -307,7 +362,7 @@ client.on('guildCreate', guild => {
 			});
 		});
 	} catch (error) {
-		console.error(error);
+		logger.error(error);
 	}
 });
 
@@ -395,10 +450,10 @@ client.on('guildMemberUpdate', (oldUser, newUser) => {
 				if (newUser.roles.size < oldUser.roles.size) {
 					var removed = oldUser.roles.filterArray(role => !newUser.roles.has(role.id));
 					PunishmentCmd.onGuildMemberRoleRemove(newUser, removed, server);
-					// console.log(removed);
+					// logger.info(removed);
 				} else {
 					var added = newUser.roles.filterArray(role => !oldUser.roles.has(role.id));
-					// console.log(added);
+					// logger.info(added);
 				}
 			});
 		} catch (error) {

@@ -1,10 +1,10 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../GuildServer');
+import DiscordServer = require('@discord/bot/GuildServer');
 
-import Command = require('../../../../command');
+import Command = require('@discord/bot/command');
 
-import guildClient = require('../../../../../guildClient');
-import utils = require('../../../../../utils');
+import guildClient = require('@discord/guildClient');
+import utils = require('@discord/utils');
 import PERMS = require('../perms');
 
 function call(_params: string[], server: DiscordServer, message: Discord.Message) {

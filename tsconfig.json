@@ -2,6 +2,7 @@
 	"compileOnSave": true,
 	"compilerOptions": {
 		"strict": true,
+		"removeComments": true,
 		"lib": ["es2017"],
 		"module": "commonjs",
 		"target": "es6",
@@ -11,13 +12,18 @@
 			"node_modules/@types",
 			"typings"
 		],
-		"skipLibCheck": true
-		// "baseUrl": ".",
-		// "paths": {
-		// 	"@discord/*": ["ts/discord/*"],
-		// 	"@music/*": ["ts/music/*"],
-		// 	"@site/*": ["ts/site/*"]
-		// }
+		"skipLibCheck": true,
+		"baseUrl": "ts",
+		"paths": {
+			"@logging": ["util/logging"],
+			"@config": ["config"],
+
+			"@base/*": ["*"],
+
+			"@discord/*": ["discord/*"],
+			"@music/*": ["music/*"],
+			"@site/*": ["site/*"]
+		}
 	},
 	"include": [
 		"ts/**/*"

@@ -1,8 +1,8 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../GuildServer');
+import DiscordServer = require('@discord/bot/GuildServer');
 
-import UserLevel = require('../../../../plugins/levels/models/userlevel');
-import util = require('../../../../plugins/levels/util');
+import UserLevel = require('@discord/bot/plugins/levels/models/userlevel');
+import util = require('@discord/bot/plugins/levels/util');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (params.length < 3) {

@@ -1,13 +1,13 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../GuildServer');
+import DiscordServer = require('@discord/bot/GuildServer');
 
-import Command = require('../../../../command');
+import Command = require('@discord/bot/command');
 
-import utils = require('../../../../../utils');
+import utils = require('@discord/utils');
 import PERMS = require('../perms');
 
-import musicPlugin = require('../../../../../music/plugins/music');
-import MusicHistory = require('../../../../../../music/models/history');
+import musicPlugin = require('@discord/music/plugins/music');
+import MusicHistory = require('@base/music/models/history');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	var paramToDo = params.shift();

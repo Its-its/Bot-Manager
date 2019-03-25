@@ -1,9 +1,9 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../GuildServer');
+import DiscordServer = require('@discord/bot/GuildServer');
 
-import Command = require('../../../../command');
+import Command = require('@discord/bot/command');
 
-import { sendQueue } from '../../../../../music/plugins/music';
+import { sendQueue } from '@discord/music/plugins/music';
 import PERMS = require('../perms');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {

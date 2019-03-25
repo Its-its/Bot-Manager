@@ -1,7 +1,7 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../GuildServer');
+import DiscordServer = require('@discord/bot/GuildServer');
 
-import utils = require('../../../../../utils');
+import utils = require('@discord/bot/../utils');
 
 import PERMS = require('../perms');
 import { DiscordBot } from '../../../../../../../typings/manager';

@@ -1,7 +1,7 @@
 import { Guild } from 'discord.js';
 
 
-import * as redis from 'redis';
+import redis = require('redis');
 
 import config = require('../config');
 

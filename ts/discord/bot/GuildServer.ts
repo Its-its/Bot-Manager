@@ -4,7 +4,7 @@ import { DiscordBot, CustomDocs, Nullable } from '../../../typings/manager';
 import * as redis from 'redis';
 import * as Discord from 'discord.js';
 
-import config = require('../../config');
+import config = require('@config');
 
 import DiscordServers = require('../models/servers');
 import DiscordMembers = require('../models/members');

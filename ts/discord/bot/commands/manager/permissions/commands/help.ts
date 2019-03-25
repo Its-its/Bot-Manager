@@ -1,7 +1,7 @@
 import Discord = require('discord.js');
-import DiscordServer = require('../../../../GuildServer');
+import DiscordServer = require('@discord/bot/GuildServer');
 
-import Command = require('../../../../command');
+import Command = require('@discord/bot/command');
 
 function call(description: string, _params: string[], _server: DiscordServer, _message: Discord.Message) {
 	return Command.info([

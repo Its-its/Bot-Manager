@@ -1,18 +1,18 @@
 import { DiscordBot } from '../../../typings/manager';
 
 
-import * as redis from 'redis';
-import * as Discord from 'discord.js';
+import redis = require('redis');
+import Discord = require('discord.js');
 
-import MusicPlaylist = require('../../music/models/playlists');
-import MusicHistory = require('../../music/models/history');
-import MusicQueue = require('../../music/models/queue');
+import MusicPlaylist = require('@music/models/playlists');
+import MusicHistory = require('@music/models/history');
+import MusicQueue = require('@music/models/queue');
 
-import musicPermissions = require('../../music/permissions');
+import musicPermissions = require('@music/permissions');
 
 import musicPlugin = require('./plugins/music');
 
-import config = require('../../config');
+import config = require('@config');
 
 
 let redisMusic = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.musicDB });
