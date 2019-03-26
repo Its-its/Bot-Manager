@@ -1,4 +1,6 @@
-import {Model, Document} from 'mongoose';
+import logger = require('@logging');
+
+import mongoose = require('mongoose');
 
 import { Shard, ShardingManager } from 'discord.js';
 import socket = require('socket.io-client');
@@ -24,7 +26,7 @@ let io: SocketIOClient.Socket;
 function launch(client: string) {
 	if (clients.indexOf(client) == -1) throw new Error('Client "' + client + '" is not a valid client.');
 
-	console.log('Launching ' + client.toUpperCase());
+	logger.info('Launching ' + client.toUpperCase());
 
 
 	manager = new ShardingManager(`src/discord/${client}/index.js`, {
@@ -35,13 +37,13 @@ function launch(client: string) {
 
 	manager.on('launch', shard => {
 		SHARD_ID_STATUS[shard.id] = 0;
-		console.log(`Creating shard ${shard.id} [ ${shard.id + 1} of ${manager.totalShards} ]`);
+		logger.info(`Creating shard ${shard.id} [ ${shard.id + 1} of ${manager.totalShards} ]`);
 	});
 
 	manager.on('message', (shard, opts) => {
 		if (typeof opts == 'string') {
 			if (opts == 'ready' || opts == 'update') {
-				if (opts == 'ready') console.log(`Shard [${shard.id}]: Ready`);
+				if (opts == 'ready') logger.info(`Shard [${shard.id}]: Ready`);
 
 				interface EvalOpts {
 					status: number;
@@ -55,17 +57,17 @@ function launch(client: string) {
 					SHARD_ID_STATUS[shard.id] = opts.status;
 					opts.guild_ids.forEach(g => GUILD_ID_SHARD[g] = shard);
 				})
-				.catch(e => console.error(e));
+				.catch(e => logger.error(e));
 			}
 		} else if (typeof opts == 'object') {
 			if (opts._eval == null) {
 				io.emit('send', opts);
-			}// else console.log(message);
-		} else console.log(opts);
+			}// else logger.info(message);
+		} else logger.info(opts);
 		// else if (message.startsWith('cmd')) {
-		// 	console.log(message.slice(4));
+		// 	logger.info(message.slice(4));
 		// } else {
-		// 	// console.log(`MSG [${shard.id}]:`, message);
+		// 	// logger.info(`MSG [${shard.id}]:`, message);
 		// }
 	});
 
@@ -74,7 +76,7 @@ function launch(client: string) {
 		.then(shards => {
 			shards.forEach(s => SHARD_ID_STATUS[s.id] = s.status);
 		})
-		.catch(console.error);
+		.catch(logger.error);
 	}, 1000 * 60 * 5);
 
 	manager.spawn();
@@ -85,9 +87,15 @@ function launch(client: string) {
 }
 
 function botClientSetup() {
-	const ModelStats: Model<Document> = require('./models/statistics');
+	mongoose.Promise = global.Promise;
+	if (config.debug) mongoose.set('debug', true);
+	mongoose.connect(config.database, { useNewUrlParser: true });
+
+	const ModelStats: mongoose.Model<mongoose.Document> = require('./models/statistics');
 
 	setInterval(() => {
+		logger.info('Shard: Statistics');
+
 		manager.broadcastEval('var opts = { user_count: this.users.size, guild_count: this.guilds.size }; opts;')
 		.then(shards => {
 			var guild_count = 0, user_count = 0;
@@ -100,6 +108,7 @@ function botClientSetup() {
 			var date = new Date();
 			date.setUTCHours(0);
 			date.setUTCSeconds(0);
+			date.setMinutes(0);
 			date.setUTCMilliseconds(0);
 
 			ModelStats.updateOne({
@@ -115,8 +124,8 @@ function botClientSetup() {
 			}, { upsert: true })
 			.exec();
 		})
-		.catch(console.error);
-	}, 30 * 60 * 60 * 1000);
+		.catch(logger.error);
+	}, 30 * 60 * 1000);
 }
 
 function initMasterLink(clientName: string) {
@@ -128,11 +137,11 @@ function initMasterLink(clientName: string) {
 	}
 
 	io.on('from', (opts: FromOpts) => {
-		console.log('from:', opts);
+		logger.info('from:', opts);
 
 		var shard = GUILD_ID_SHARD[opts._guild];
 
-		console.log('Guild Exists: ' + (shard != null));
+		logger.info('Guild Exists: ' + (shard != null));
 
 		if (shard != null) {
 			shard.send(opts);
@@ -144,15 +153,15 @@ function initMasterLink(clientName: string) {
 	});
 
 	io.on('disconnect', (reason: any) => {
-		console.log('disconnect:', reason);
+		logger.info('disconnect:', reason);
 
 		if (reason === 'io server disconnect') {
 			socket.connect();
 		}
 	});
 
-	io.on('connect_error', (error: any) => console.error(error));
-	io.on('connect_timeout', (error: any) => console.error(error));
+	io.on('connect_error', (error: any) => logger.error(error));
+	io.on('connect_timeout', (error: any) => logger.error(error));
 }
 
 export = {

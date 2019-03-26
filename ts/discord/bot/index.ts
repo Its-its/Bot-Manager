@@ -117,6 +117,8 @@ client.on('ready', () => {
 
 
 	setInterval(() => {
+		logger.info('Statistics');
+
 		var statistics_copy = statistics;
 
 		// Reset stats since we now have a copy of it and it gets added to the doc.
@@ -126,6 +128,7 @@ client.on('ready', () => {
 		var date = new Date();
 		date.setUTCHours(0);
 		date.setUTCSeconds(0);
+		date.setUTCMinutes(0);
 		date.setUTCMilliseconds(0);
 
 		ModelStats.updateOne({
@@ -136,7 +139,7 @@ client.on('ready', () => {
 				created_at: date
 			}
 		}, { upsert: true }).exec();
-	}, 15 * 60 * 60 * 1000);
+	}, 60 * 1000);
 
 	if (client.shard != null) client.shard.send('ready');
 });
@@ -179,6 +182,9 @@ client.on('rateLimit', rateLimit => {
 client.on('message', msg => {
 	// Possible b/c of webhooks ??
 	if (msg.member == null) return;
+
+	// Bot?
+	if (msg.member.user == null || msg.member.user.bot) return;
 
 	try {
 		guildClient.get(msg.guild.id, server => {

@@ -2,9 +2,9 @@ import mongoose = require('mongoose');
 
 let Schema = mongoose.Schema;
 
-// TODO: Every 5 minutes Activity for major things like; music playing, chat messages so I know when peaks are.
+// TODO: Every 30 minutes Activity for major things like; music playing, chat messages so I know when peaks are.
 
-// TODO: Send update every 30 minutes.
+
 const DailyStats = new Schema({
 	guild_count: { type: Number, default: 0 },
 	user_count: { type: Number, default: 0 },
