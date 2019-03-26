@@ -93,16 +93,21 @@ function botClientSetup() {
 
 	const ModelStats: mongoose.Model<mongoose.Document> = require('./models/statistics');
 
-	setInterval(() => {
-		logger.info('Shard: Statistics');
+	interface Shardd {
+		unique_user_count: number;
+		total_user_count: number;
+		guild_count: number;
+	}
 
-		manager.broadcastEval('var opts = { user_count: this.users.size, guild_count: this.guilds.size }; opts;')
-		.then(shards => {
-			var guild_count = 0, user_count = 0;
+	setInterval(() => {
+		manager.broadcastEval('var opts = { unique_user_count: this.users.size, total_user_count: this.guilds.map(g => g.memberCount).reduce((pv, cv) => pv + cv), guild_count: this.guilds.size }; opts;')
+		.then((shards: Shardd[]) => {
+			var guild_count = 0, unique_user_count = 0, total_user_count = 0;
 
 			shards.forEach(s => {
 				guild_count += s.guild_count;
-				user_count += s.user_count;
+				total_user_count += s.total_user_count;
+				unique_user_count += s.unique_user_count;
 			});
 
 			var date = new Date();
@@ -116,7 +121,8 @@ function botClientSetup() {
 			}, {
 				$set: {
 					guild_count: guild_count,
-					user_count: user_count
+					unique_user_count: unique_user_count,
+					total_user_count: total_user_count
 				},
 				$setOnInsert: {
 					created_at: date
@@ -125,7 +131,7 @@ function botClientSetup() {
 			.exec();
 		})
 		.catch(logger.error);
-	}, 30 * 60 * 1000);
+	}, 15 * 60 * 1000);
 }
 
 function initMasterLink(clientName: string) {

@@ -139,7 +139,7 @@ client.on('ready', () => {
 				created_at: date
 			}
 		}, { upsert: true }).exec();
-	}, 60 * 1000);
+	}, 9 * 60 * 1000);
 
 	if (client.shard != null) client.shard.send('ready');
 });

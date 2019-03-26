@@ -7,7 +7,8 @@ let Schema = mongoose.Schema;
 
 const DailyStats = new Schema({
 	guild_count: { type: Number, default: 0 },
-	user_count: { type: Number, default: 0 },
+	unique_user_count: { type: Number, default: 0 },
+	total_user_count: { type: Number, default: 0 },
 
 	guild_user_chat_count: { type: Number, default: 0 },
 	// private_member_chat_count: { type: Number, default: 0 },
