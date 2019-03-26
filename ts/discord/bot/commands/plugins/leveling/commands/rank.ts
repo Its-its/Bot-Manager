@@ -120,25 +120,18 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			const imgWidth = 640;
 			const imgHeight = 640;
 
-			const avatar = sharp({
-				create: {
-					width: 100,
-					height: 100,
-					channels: 4,
-					background: {
-						r: 0,
-						g: 0,
-						b: 0,
-						alpha: 0
-					}
-				}
-			});
+			const avatar = sharp();
 
 
 			request.get(url + '?size=256')
 			.on('end', () => {
 				// Create Avatar
+				console.log('Avatar');
 				avatar
+				.flatten({ background: { r: 0,
+					g: 0,
+					b: 0,
+					alpha: 0 } })
 				.overlayWith(Buffer.from(`
 					<svg width="100" height="100" viewBox="0 0 100 100">
 						<circle r="50" cx="50" cy="50" />
@@ -147,6 +140,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				.toBuffer()
 				.then(avatarBuffer => {
 					// Create Base
+					console.log('Base');
 					sharp({
 						create: {
 							width: imgWidth,
@@ -173,6 +167,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 					.toBuffer()
 					.then(baseBuffer => {
 						// Combine -> Output
+						console.log('Combine');
 						sharp(baseBuffer)
 						.overlayWith(avatarBuffer, { top: 10, left: 10 })
 						.png()

@@ -7,32 +7,34 @@ interface DefaultCommands {
 	get: (commandName: string) => any;
 }
 
-function parseMessage(defaultCommands: DefaultCommands, userConfig: any, message: string, extra: any, cb: (obj: DiscordBot.PhraseResponses) => void) {
+function parseMessageForCmd(defaultCommands: DefaultCommands, userConfig: any, message: string, extra: any, cb: (obj: DiscordBot.PhraseResponses) => void): boolean {
 	var parts = message.split(' ');
 	var messageCommand = parts[0].toLowerCase();
 
-	// Check defaultCommands first.
+	// Check default made commands first.
 	var parsed = defaultCommands.parseMessage(message, userConfig, extra);
 	if (parsed != null) {
 		if (Array.isArray(parsed)) {
 			for (var a = 0; a < parsed.length; a++) cb(parsed[a]);
 		} else cb(parsed);
 
-		return;
+		return true;
 	}
 
-	if (userConfig.commands.length != 0)
+	// Check user-made commands.
+	if (userConfig.commands.length != 0) {
 		for (var i = 0; i < userConfig.commands.length; i++) {
 			var command: Command = userConfig.commands[i];
 
 			if (command.alias.indexOf(messageCommand) != -1) {
-				//TODO: check if user has the perms.
-
 				var fixedParams = getProperParam(parts, command.params);
 
 				console.log('[CommMan]: Command: ' + message);
 
-				if (fixedParams == null) return console.error('command Manager: fixedParams returned null');
+				if (fixedParams == null) {
+					console.error('command Manager: fixedParams returned null');
+					return false;
+				}
 
 				var calls = dealWithOnCalled(
 					userConfig.commands,
@@ -40,13 +42,21 @@ function parseMessage(defaultCommands: DefaultCommands, userConfig: any, message
 					command.params[fixedParams.pos],
 					command.params);
 
-				if (calls == null) return console.error('command Manager: dealWithOnCalled returned null');
+				if (calls == null) {
+					console.error('command Manager: dealWithOnCalled returned null');
+					return false;
+				}
 
 				if (Array.isArray(calls)) {
 					for (var a = 0; a < calls.length; a++) cb(calls[a]);
 				} else cb(calls);
+
+				return true;
 			}
 		}
+	}
+
+	return false;
 }
 
 function hasPermissions(defaultCommands: DefaultCommands, message: string, isAdmin: boolean): boolean {
@@ -194,7 +204,7 @@ function getCommandMessage(prefix: string, userId: string, message: string) {
 
 
 export = {
-	parseMessage,
+	parseMessageForCmd,
 	dealWithOnCalled,
 	getCommand,
 	getProperParam,

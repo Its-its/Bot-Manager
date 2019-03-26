@@ -15,122 +15,119 @@ function isEnabled(server: Server): boolean {
 function onDidCallCommand(bot_id: string, message: Discord.Message, server: Server): boolean {
 	if (message.author.bot) return false;
 
-	if (!server.memberIgnored(message.member.id)) {
-		if (CommandManager.isCallingCommand(server.getPrefix(), bot_id, message.content)) {
-			if (!limits.canCallCommand(message.guild.id)) return false;
+	if (server.memberIgnored(message.member.id)) return false;
 
-			if (message.content.trim() == `<@${bot_id}>` || message.content.trim() == `<@!${bot_id}>`) {
-				message.channel.send(new Discord.RichEmbed({
-					description: 'You can use @bot_name instead of the command prefix if desired.',
-					fields: [
-						{
-							name: 'Command Prefix',
-							value: server.getPrefix()
-						}
-						// {
-						// 	name: '',
-						// 	value: ''
-						// }
-					]
-				}));
-				return false;
-			}
+	if (CommandManager.isCallingCommand(server.getPrefix(), bot_id, message.content)) {
+		if (!limits.canCallCommand(message.guild.id)) return false;
 
-
-			var commandMessage = CommandManager.getCommandMessage(server.getPrefix(), bot_id, message.content);
-
-			if (commandMessage == null) return false;
-
-			commandMessage = commandMessage.trim();
-
-			if (commandMessage.length == 0) return false;
-
-			var commName = commandMessage.split(' ', 2)[0].toLowerCase();
-
-			// Check for alias's.
-			if (server.alias.length != 0) {
-				for(var i = 0; i < server.alias.length; i++) {
-					var alias = server.alias[i];
-
-					if (alias.alias.indexOf(commName) != -1) {
-						commandMessage = alias.command + commandMessage.substring(commName.length);
-						// commName = alias.command;
-						break;
+		if (message.content.trim() == `<@${bot_id}>` || message.content.trim() == `<@!${bot_id}>`) {
+			message.channel.send(new Discord.RichEmbed({
+				description: 'You can use @bot_name instead of the command prefix if desired.',
+				fields: [
+					{
+						name: 'Command Prefix',
+						value: server.getPrefix()
 					}
-				}
-			}
-
-
-			// Not enabled? Not "plugin" or "perms"? Doesn't have bypasstoggle perm? return
-			if (!isEnabled(server) && commName != 'plugin' && commName != 'perms' && !server.memberHasExactPerm(message.member, 'commands.bypasstoggle')) {
-				return false;
-			}
-
-			// Check if cannot call command.
-			// Not admin? not enabled?
-			// if (!message.member.hasPermission('ADMINISTRATOR') && (!isEnabled(server) && !server.userHasParentPerm(bot_id, 'commands.' + comm))) return true;
-
-			try {
-				CommandManager.parseMessage(defaultCommands, server, commandMessage, message, parseOptions);
-			} catch (e) {
-				console.error(e);
-			}
-
+					// {
+					// 	name: '',
+					// 	value: ''
+					// }
+				]
+			}));
 			return false;
-		} else {
-			var phrase = server.findPhrase(message.content.split(' '));
-
-			if (phrase != null && phrase.responses.length != 0) {
-				phrase.responses.forEach(r => parseOptions(r));
-				return false;
-			}
 		}
 
-		function parseOptions(value: DiscordBot.PhraseResponses) {
-			if (typeof value != 'string') {
-				switch(value.type) {
-					case 'echo':
-						if (value.reply) {
-							message.reply(value.message);
-						} else {
-							message.channel.send(value.message, value.embed ? new Discord.RichEmbed(value.embed) : undefined);
-						}
 
-						return;
-					case 'interval':
-						var id = value.id;
-						var type = value.do;
+		var commandMessage = CommandManager.getCommandMessage(server.getPrefix(), bot_id, message.content);
 
-						if (type == 'reset') {
-							server.resetInterval(id);
-							server.save();
-						}
-						return;
-					case 'alias':
-						// value.do
-						return;
-					// case 'set':
-					// 	var command = value.command;
-					// 	var paramId = value.paramId;
-					// 	var newValue = value.newValue;
+		if (commandMessage == null) return false;
 
-					// 	var param = CommandManager.getCommandParam(command, paramId, server.commands);
-					// 	param.onCalled = newValue;
+		commandMessage = commandMessage.trim();
 
-					// 	server.save(() => message.reply(`Successfully edited command "${command}"`));
+		if (commandMessage.length == 0) return false;
 
-					// 	return;
+		var commName = commandMessage.split(' ', 2)[0].toLowerCase();
+
+		// Check for alias's.
+		if (server.alias.length != 0) {
+			for(var i = 0; i < server.alias.length; i++) {
+				var alias = server.alias[i];
+
+				if (alias.alias.indexOf(commName) != -1) {
+					commandMessage = alias.command + commandMessage.substring(commName.length);
+					// commName = alias.command;
+					break;
 				}
 			}
-
-			console.log(value);
-			console.log(bot_id, server.toString());
-			throw 'Invalid parse Options.';
 		}
 
+
+		// Not enabled? Not "plugin" or "perms"? Doesn't have bypasstoggle perm? return
+		if (!isEnabled(server) && commName != 'plugin' && commName != 'perms' && !server.memberHasExactPerm(message.member, 'commands.bypasstoggle')) {
+			return false;
+		}
+
+		// Check if cannot call command.
+		// Not admin? not enabled?
+		// if (!message.member.hasPermission('ADMINISTRATOR') && (!isEnabled(server) && !server.userHasParentPerm(bot_id, 'commands.' + comm))) return true;
+
+		try {
+			return CommandManager.parseMessageForCmd(defaultCommands, server, commandMessage, message, v => parseOptions(message, server, v));
+		} catch (e) {
+			console.error(e);
+			return false;
+		}
+	} else {
+		var phrase = server.findPhrase(message.content.split(' '));
+
+		if (phrase != null && phrase.responses.length != 0) {
+			phrase.responses.forEach(r => parseOptions(message, server, r));
+			return false;
+		}
 	}
 
-	return true;
+	return false;
+}
+
+function parseOptions(message: Discord.Message, server: Server, value: DiscordBot.PhraseResponses) {
+	if (typeof value != 'string') {
+		switch(value.type) {
+			case 'echo':
+				if (value.reply) {
+					message.reply(value.message);
+				} else {
+					message.channel.send(value.message, value.embed ? new Discord.RichEmbed(value.embed) : undefined);
+				}
+
+				return;
+			case 'interval':
+				var id = value.id;
+				var type = value.do;
+
+				if (type == 'reset') {
+					server.resetInterval(id);
+					server.save();
+				}
+				return;
+			case 'alias':
+				// value.do
+				return;
+			// case 'set':
+			// 	var command = value.command;
+			// 	var paramId = value.paramId;
+			// 	var newValue = value.newValue;
+
+			// 	var param = CommandManager.getCommandParam(command, paramId, server.commands);
+			// 	param.onCalled = newValue;
+
+			// 	server.save(() => message.reply(`Successfully edited command "${command}"`));
+
+			// 	return;
+		}
+	}
+
+	console.log(value);
+	throw 'Invalid parse Options.';
 }
 
 // TODO: Role updates
