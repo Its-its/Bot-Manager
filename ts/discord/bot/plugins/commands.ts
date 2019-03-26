@@ -18,7 +18,7 @@ function onDidCallCommand(bot_id: string, message: Discord.Message, server: Serv
 	if (server.memberIgnored(message.member.id)) return false;
 
 	if (CommandManager.isCallingCommand(server.getPrefix(), bot_id, message.content)) {
-		if (!limits.canCallCommand(message.guild.id)) return false;
+		if (!limits.canCallCommand(message.guild.id)) return true;
 
 		if (message.content.trim() == `<@${bot_id}>` || message.content.trim() == `<@!${bot_id}>`) {
 			message.channel.send(new Discord.RichEmbed({
@@ -34,17 +34,17 @@ function onDidCallCommand(bot_id: string, message: Discord.Message, server: Serv
 					// }
 				]
 			}));
-			return false;
+			return true;
 		}
 
 
 		var commandMessage = CommandManager.getCommandMessage(server.getPrefix(), bot_id, message.content);
 
-		if (commandMessage == null) return false;
+		if (commandMessage == null) return true;
 
 		commandMessage = commandMessage.trim();
 
-		if (commandMessage.length == 0) return false;
+		if (commandMessage.length == 0) return true;
 
 		var commName = commandMessage.split(' ', 2)[0].toLowerCase();
 
@@ -64,7 +64,7 @@ function onDidCallCommand(bot_id: string, message: Discord.Message, server: Serv
 
 		// Not enabled? Not "plugin" or "perms"? Doesn't have bypasstoggle perm? return
 		if (!isEnabled(server) && commName != 'plugin' && commName != 'perms' && !server.memberHasExactPerm(message.member, 'commands.bypasstoggle')) {
-			return false;
+			return true;
 		}
 
 		// Check if cannot call command.
@@ -72,11 +72,12 @@ function onDidCallCommand(bot_id: string, message: Discord.Message, server: Serv
 		// if (!message.member.hasPermission('ADMINISTRATOR') && (!isEnabled(server) && !server.userHasParentPerm(bot_id, 'commands.' + comm))) return true;
 
 		try {
-			return CommandManager.parseMessageForCmd(defaultCommands, server, commandMessage, message, v => parseOptions(message, server, v));
+			CommandManager.parseMessageForCmd(defaultCommands, server, commandMessage, message, v => parseOptions(message, server, v));
 		} catch (e) {
 			console.error(e);
-			return false;
 		}
+
+		return true;
 	} else {
 		var phrase = server.findPhrase(message.content.split(' '));
 
