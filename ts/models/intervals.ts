@@ -1,5 +1,5 @@
 import mongoose = require('mongoose');
-import { CustomDocs } from '../../typings/manager';
+import { CustomDocs } from '@type-manager';
 
 let Schema = mongoose.Schema;
 

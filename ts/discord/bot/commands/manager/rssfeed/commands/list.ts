@@ -8,7 +8,7 @@ import RSSFeeds = require('../../../../../../models/rssfeed');
 import utils = require('@discord/utils');
 
 import PERMISSIONS = require('../perms');
-import { CustomDocs } from '../../../../../../../typings/manager';
+import { CustomDocs } from '@type-manager';
 
 // TODO: Sort out options into respectable files.
 

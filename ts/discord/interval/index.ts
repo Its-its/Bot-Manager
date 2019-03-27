@@ -22,7 +22,7 @@ import config = require('@config');
 import util = require('../../rssgrabber/utils');
 
 import client = require('../client');
-import { CustomDocs } from '../../../typings/manager';
+import { CustomDocs } from '@type-manager';
 
 mongoose.Promise = global.Promise;
 // if (config.debug) mongoose.set('debug', true);

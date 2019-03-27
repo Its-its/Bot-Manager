@@ -13,7 +13,7 @@ import Backups = require('../../../models/backup');
 import Command = require('../../command');
 
 import utils = require('../../../utils');
-import { DiscordBot, Optional, Omit } from '../../../../../typings/manager';
+import { DiscordBot, Optional, Omit } from '@type-manager';
 
 
 const PERMS = {

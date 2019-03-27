@@ -8,7 +8,7 @@ import Playlists = require('../../../../../music/models/playlists');
 
 
 import guildClient = require('../../../../guildClient');
-// import config = require('../../../../../config');
+// import config = require('@config');
 
 import musicPlugin = require('../../../../music/plugins/music');
 import musicPermissions = require('../../../../../music/permissions');

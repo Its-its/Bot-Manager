@@ -1,6 +1,6 @@
 console.log('DISCORD: MUSIC');
 
-import { CustomDocs, DiscordBot } from '../../../typings/manager';
+import { CustomDocs, DiscordBot } from '@type-manager';
 
 import * as Discord from 'discord.js';
 import { PassThrough } from 'stream';

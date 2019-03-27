@@ -16,8 +16,8 @@ require('../../models/phrases');
 
 import discordUtils = require('../../discord/utils');
 
-import config = require('../../config');
-import { CustomDocs, DiscordBot } from '../../../typings/manager';
+import config = require('@config');
+import { CustomDocs, DiscordBot } from '@type-manager';
 
 let redisGuildsClient = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.guildsDB });
 

@@ -5,7 +5,7 @@ import mongoose = require('mongoose');
 import { Shard, ShardingManager } from 'discord.js';
 import socket = require('socket.io-client');
 
-import config = require('../config');
+import config = require('@config');
 
 
 const SHARD_ID_STATUS: { [guild_id: string]: number } = {};

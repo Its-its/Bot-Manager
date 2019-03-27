@@ -8,7 +8,7 @@ import PERMS = require('../perms');
 
 
 import utils = require('@discord/utils');
-import { Nullable } from '../../../../../../../typings/manager';
+import { Nullable } from '@type-manager';
 
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {

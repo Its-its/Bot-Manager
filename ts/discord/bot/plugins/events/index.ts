@@ -1,6 +1,6 @@
 import Discord = require('discord.js');
 import DiscordServer = require('../../GuildServer');
-import { DiscordBot } from '../../../../../typings/manager';
+import { DiscordBot } from '@type-manager';
 
 // Custom events
 // - On react to certain message.

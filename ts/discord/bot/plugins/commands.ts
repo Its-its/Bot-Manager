@@ -5,7 +5,7 @@ import CommandManager = require('../../../command-manager');
 import defaultCommands = require('../commands');
 
 import limits = require('../../limits');
-import { DiscordBot } from '../../../../typings/manager';
+import { DiscordBot } from '@type-manager';
 
 function isEnabled(server: Server): boolean {
 	return server.plugins.commands == null ? true : server.plugins.commands.enabled;

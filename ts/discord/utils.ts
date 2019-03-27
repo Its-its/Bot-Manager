@@ -2,7 +2,7 @@ import Discord = require('discord.js');
 
 import Command = require('./bot/command');
 
-import { Nullable } from '../../typings/manager';
+import { Nullable } from '@type-manager';
 
 
 const startDate = Date.now();

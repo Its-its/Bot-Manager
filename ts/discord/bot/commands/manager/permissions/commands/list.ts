@@ -5,7 +5,7 @@ import Command = require('@discord/bot/command');
 import GlobalCommands = require('../../../index');
 
 import PERMISSIONS = require('../perms');
-import { DiscordBot } from '../../../../../../../typings/manager';
+import { DiscordBot } from '@type-manager';
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member, PERMISSIONS.LIST)) return Command.noPermsMessage('Perms');

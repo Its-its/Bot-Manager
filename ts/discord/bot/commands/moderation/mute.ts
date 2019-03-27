@@ -8,7 +8,7 @@ import Command = require('../../command');
 
 import Punishments = require('../../../models/punishments');
 import TempPunishments = require('../../../models/temp_punishments');
-import { Nullable } from '../../../../../typings/manager';
+import { Nullable } from '@type-manager';
 
 
 const PERMS = {

@@ -1,4 +1,4 @@
-import { DiscordBot } from '../../../typings/manager';
+import { DiscordBot } from '@type-manager';
 
 
 import redis = require('redis');

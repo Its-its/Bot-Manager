@@ -2,7 +2,7 @@ import Discord = require('discord.js');
 import DiscordServer = require('../../GuildServer');
 
 import Command = require('../../command');
-import { Nullable } from '../../../../../typings/manager';
+import { Nullable } from '@type-manager';
 
 
 const PERMS = {

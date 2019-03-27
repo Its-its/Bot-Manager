@@ -3,7 +3,7 @@ import Server = require('./GuildServer');
 import info = require('../utils');
 
 import Discord = require('discord.js');
-import { DiscordBot } from '../../../typings/manager';
+import { DiscordBot } from '@type-manager';
 
 class Command {
 	public commandName: string[];

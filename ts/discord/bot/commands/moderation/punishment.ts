@@ -11,7 +11,7 @@ import guildClient = require('../../../guildClient');
 
 import TempPunishments = require('../../../models/temp_punishments');
 import Punishments = require('../../../models/punishments');
-import { DiscordBot } from '../../../../../typings/manager';
+import { DiscordBot } from '@type-manager';
 
 //! Option to track manual bans (right click -> ban/kick)
 //! Have different punishments for different things.

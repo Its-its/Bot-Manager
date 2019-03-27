@@ -5,7 +5,7 @@ logging.info('Master Started');
 import socketIO = require('socket.io');
 import config = require('@config');
 
-import { Nullable } from '../../../typings/manager';
+import { Nullable } from '@type-manager';
 
 interface SocketExt extends socketIO.Socket {
 	port: number;

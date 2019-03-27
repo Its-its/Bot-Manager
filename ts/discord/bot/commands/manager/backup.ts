@@ -4,7 +4,7 @@ import DiscordServer = require('../../GuildServer');
 import Backups = require('../../../models/backup');
 
 import Command = require('../../command');
-import { DiscordBot, Omit } from '../../../../../typings/manager';
+import { DiscordBot, Omit } from '@type-manager';
 
 const PERMISSIONS = {
 	MAIN: 'commands.backup'

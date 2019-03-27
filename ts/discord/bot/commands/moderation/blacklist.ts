@@ -2,7 +2,7 @@ import Discord = require('discord.js');
 import DiscordServer = require('../../GuildServer');
 
 import Command = require('../../command');
-import { DiscordBot } from '../../../../../typings/manager';
+import { DiscordBot } from '@type-manager';
 
 // TODO: Check names of people who type.
 

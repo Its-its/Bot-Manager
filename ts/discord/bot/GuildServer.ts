@@ -1,5 +1,5 @@
 import { Document, Types } from 'mongoose';
-import { DiscordBot, CustomDocs, Nullable } from '../../../typings/manager';
+import { DiscordBot, CustomDocs, Nullable } from '@type-manager';
 
 import * as redis from 'redis';
 import * as Discord from 'discord.js';

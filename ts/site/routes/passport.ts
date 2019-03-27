@@ -11,7 +11,7 @@ import Bots = require('../models/bots');
 import DiscordServers = require('../../discord/models/servers');
 import DiscordMembers = require('../../discord/models/members');
 
-import config = require('../../config');
+import config = require('@config');
 
 let GoogleStrategy = passportGoogleOauth.OAuth2Strategy;
 let DiscordStrategy = passportDiscord.Strategy;

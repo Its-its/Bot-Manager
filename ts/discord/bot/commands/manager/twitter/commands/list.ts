@@ -6,7 +6,7 @@ import DiscordTwitter = require('@discord/models/twitter');
 import GlobalTwitterFeeds = require('../../../../../../models/twitterfeed');
 
 import utils = require('@discord/utils');
-import { CustomDocs, Nullable } from '../../../../../../../typings/manager';
+import { CustomDocs, Nullable } from '@type-manager';
 
 
 

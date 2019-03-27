@@ -17,6 +17,7 @@
 		"paths": {
 			"@logging": ["util/logging"],
 			"@config": ["config"],
+			"@type-manager": ["../typings/manager"],
 
 			"@base/*": ["*"],
 

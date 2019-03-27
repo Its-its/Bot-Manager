@@ -1,4 +1,4 @@
-import { CustomDocs } from '../../../typings/manager';
+import { CustomDocs } from '@type-manager';
 
 
 import mongoose = require('mongoose');

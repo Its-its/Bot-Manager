@@ -1,5 +1,5 @@
 import Discord = require('discord.js');
-import { CustomDocs } from '../../../../typings/manager';
+import { CustomDocs } from '@type-manager';
 
 
 import async = require('async');

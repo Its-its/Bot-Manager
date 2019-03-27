@@ -4,7 +4,7 @@ import DiscordServer = require('@discord/bot/GuildServer');
 import utils = require('@discord/bot/../utils');
 
 import PERMS = require('../perms');
-import { DiscordBot } from '../../../../../../../typings/manager';
+import { DiscordBot } from '@type-manager';
 
 const ID_TO_NAME = {
 	react_add: 'React Add',

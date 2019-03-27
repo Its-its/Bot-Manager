@@ -2,7 +2,7 @@ import mongoose = require('mongoose');
 import async = require('async');
 import Twit = require('twit');
 
-import config = require('../config');
+import config = require('@config');
 
 import RSSFeed = require('../models/rssfeed');
 import TwitterFeed = require('../models/twitterfeed');

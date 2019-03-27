@@ -3,7 +3,7 @@ import { Guild } from 'discord.js';
 
 import redis = require('redis');
 
-import config = require('../config');
+import config = require('@config');
 
 import DiscordServers = require('./models/servers');
 

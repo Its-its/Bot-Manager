@@ -23,7 +23,7 @@ import CommandManger = require('../../../command-manager');
 import Discord = require('discord.js');
 
 import Server = require('../GuildServer');
-import { Nullable } from '../../../../typings/manager';
+import { Nullable } from '@type-manager';
 
 
 let categoryCommands: { [category: string]: Command[] } = {};
