@@ -11,12 +11,12 @@ import musicRoute = require('../../music/routes');
 
 export = (app: express.Application, socketio: Server) => {
 	app.get('/', (req, res) => {
-		if ((<any>req).isAuthenticated()) return res.redirect('/dashboard');
+		if (req.isAuthenticated()) return res.redirect('/dashboard');
 		res.render('index');
 	});
 
 	app.get('/dashboard', authed, (req, res) => {
-		if (!(<any>req).isAuthenticated()) return res.redirect('/');
+		if (!req.isAuthenticated()) return res.redirect('/');
 		res.render('dashboard');
 	});
 
@@ -26,7 +26,7 @@ export = (app: express.Application, socketio: Server) => {
 	render('/status');
 
 	app.get('/bot/:id([0-9A-Za-z]{24,32})', authed, (req, res) => {
-		if (!(<any>req).isAuthenticated()) return res.redirect('/');
+		if (!req.isAuthenticated()) return res.redirect('/');
 		res.render('bot/dashboard');
 	});
 
@@ -42,17 +42,17 @@ export = (app: express.Application, socketio: Server) => {
 	discord(app);
 
 	app.get('/logout', authed, (req, res) =>{
-		(<any>req).logout();
+		req.logout();
 		res.redirect('/');
 	});
 
 	function render(url: string, fileName?: string) {
 		fileName = fileName || url.replace('/', '');
-		app.get(url, (_, res) => res.render(<string>fileName));
+		app.get(url, (_, res) => res.render(fileName!));
 	}
 }
 
 function authed(req: express.Request, res: express.Response, next: express.NextFunction) {
-	if ((<any>req).isAuthenticated()) return next();
+	if (req.isAuthenticated()) return next();
 	res.status(500).send('Not Authed!');
 }

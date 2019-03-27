@@ -25,7 +25,7 @@ let io = socketio(server);
 if (config.debug) mongoose.set('debug', true);
 
 mongoose.Promise = global.Promise;
-mongoose.connect(config.database);
+mongoose.connect(config.database, { useNewUrlParser: true });
 
 
 app.set('port', config.port);

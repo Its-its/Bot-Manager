@@ -17,38 +17,7 @@ let DiscordServer = new Schema({
 	interval_ids: [{ type: Schema.Types.ObjectId, ref: 'discord_intervals' }],
 
 	// TODO: Change to string.
-	server: Schema.Types.Mixed,/*{
-		region: String,
-		name: String,
-		iconURL: String,
-		createdAt: Number,
-		memberCount: Number,
-		ownerID: String,
-
-		commandPrefix: String,
-
-		aliasList: [],
-
-		permissions: {},
-		intervals: [{ type: Schema.Types.ObjectId, ref: 'discord_intervals' }],
-		ranks: [],
-		roles: [],
-		plugins: {},
-		values: {},
-		moderation: {
-			blacklisted: [],
-			whitelisted: [],
-			ignoredChannels: [],
-			ignoredUsers: [],
-			disabledDefaultCommands: [],
-			disabledCustomCommands: []
-		},
-
-
-		// Added by populate()
-		commands: [],
-		phrases: []
-	},*/
+	server: Schema.Types.Mixed,
 
 	created_at: { type: Date, default: Date.now },
 	edited_at: { type: Date, default: Date.now }

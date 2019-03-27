@@ -240,32 +240,7 @@ declare namespace CustomDocs {
 			interval_ids: I[];
 			phrase_ids: P[];
 
-			server: string | {
-				version: number;
-
-				region: string;
-				name: string;
-				iconURL: string;
-				createdAt: string;
-				memberCount: string;
-				ownerID: string;
-
-				commandPrefix: string;
-
-				aliasList: any[];
-
-				permissions: {};
-				intervals: string[];
-				ranks: any[];
-
-				commands?: any[];
-				phrases?: any[];
-
-				plugins: {};
-				values: {};
-
-				moderation: DiscordBot.Moderation;
-			}
+			server: string;
 
 			created_at: Date;
 			edited_at: Date;
@@ -575,6 +550,37 @@ declare namespace DiscordBot {
 		}[];
 	}
 
+	interface ServerDocument {
+		linked?: boolean;
+		version?: number;
+
+		region: string;
+		name: string;
+		iconURL: string;
+		createdAt: number;
+		memberCount: number;
+		ownerID: string;
+
+		values: any;
+		plugins: any;
+		ranks: string[];
+		moderation: Moderation;
+		permissions: Permissions;
+
+		commandPrefix?: string;
+		channels?: Channels;
+		events?: ListenEvents[];
+		leveling?: Leveling;
+		aliasList?: Alias[];
+		alias?: Alias[];
+		intervals?: Interval[];
+		commands?: Command[];
+		phrases?: Phrase[];
+		roles?: Role[];
+
+		punishments?: Punishments;
+	}
+
 	interface ServerOptions {
 		linked?: boolean;
 		version?: number;
@@ -601,6 +607,7 @@ declare namespace DiscordBot {
 		roles?: Role[];
 		plugins?: any;
 		values?: any;
+
 		moderation?: Moderation;
 		permissions?: Permissions;
 		punishments?: Punishments;
@@ -792,8 +799,9 @@ declare namespace DiscordBot {
 	}
 
 	interface Moderation {
-		disabledDefaultCommands: string[];
-		disabledCustomCommands: string[];
+		disabledDefaultCommands?: string[];
+		disabledCustomCommands?: string[];
+
 		blacklisted: ModerationBlacklist;
 		whitelisted: string[];
 		ignoredChannels: string[];

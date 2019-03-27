@@ -4,6 +4,8 @@ import { CustomDocs } from '../../typings/manager';
 let Schema = mongoose.Schema;
 
 let DiscordIntervals = new Schema({
+	pid: String,
+
 	guild_id: String,
 	channel_id: String,
 

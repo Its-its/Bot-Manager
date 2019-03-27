@@ -22,7 +22,7 @@
 	botId = botId[botId.length - 1];
 
 	// $.post(
-	// 	'/api/bots/' + botId + '/commands', 
+	// 	'/api/bots/' + botId + '/commands',
 	// 	{
 	// 		alias: [ 'ip', 'server' ],
 	// 		enabled: true,
@@ -45,7 +45,7 @@
 			this.icon = icon;
 			this.color = color;
 			this.page = null;
-			
+
 			this.buttonElement = this.button();
 			this.componentContainer = null;
 		}
@@ -73,14 +73,14 @@
 
 		button() {
 			let appCont = createElement('div', { className: 'app ' + this.id });
-			
+
 			let container = createElement('div', { className: 'app-container' });
-	
+
 			let icon = createElement('i', { className: 'icon fa fa-3x ' + this.icon }, container);
 			icon.setAttribute('aria-hidden', 'true');
-	
+
 			let name = createElement('span', { className: 'name', innerText: this.displayName }, container);
-	
+
 			// switch (app.name) {
 			// 	case 'yt': icon.classList.add('fa-youtube-play'); break;
 			// 	case 'ttv': icon.classList.add('fa-twitch'); break;
@@ -92,12 +92,12 @@
 			// 	case 'txt': icon.classList.add('fa-mobile'); break;
 			// 	case 'webr': icon.classList.add('fa-question'); break;
 			// }
-			
+
 			var self = this;
 			container.addEventListener('click', function() {
 				if (displaying != this) self.display();
 			});
-	
+
 			appCont.appendChild(container);
 
 			return appCont;
@@ -142,7 +142,7 @@
 					// addButton('Responses', '/bot/' + botId + '/responses');
 					// addButton('Timers', '/bot/' + botId + '/timers');
 					// addButton('Events', '/bot/' + botId + '/events');
-			
+
 					function addButton(displayName, onClick) {
 						let button = createElement('a', { className: 'header-item', innerText: displayName });
 						if (self.page == displayName) button.classList.add('active');
@@ -304,7 +304,7 @@
 						// Tools
 						var tools = createElement('div', { className: 'grid-x' }, container);
 
-						var toggle = createTogglable('Enabled', 'command-enabled-' + i, cmd.enabled == null ? false : !cmd.enabled);
+						var toggle = createTogglable('Enabled', 'command-enabled-' + i, cmd.enabled == null ? false : cmd.enabled);
 						toggle.container.classList.add('large-4');
 						tools.appendChild(toggle.container);
 
@@ -341,7 +341,7 @@
 						cmd.alias = cmd.alias.map(createAlias);
 
 						if (cmd.alias.length == 0) cmd.alias.push(createAlias(''));
-						
+
 
 						function createAlias(name) {
 							createElement('input', { type: 'text', value: name }, lSection)
@@ -369,7 +369,7 @@
 						cmd.params = cmd.params.map(createParam);
 
 						if (cmd.params.length == 0) cmd.params.push(createParam({ length: 0, response: { type: 'echo', message: '' } }));
-						
+
 
 
 						function createParam(param) {
@@ -698,9 +698,9 @@
 
 		function addChip(name) {
 			contents.push(name);
-			
+
 			var chip = createElement('div', { className: 'chip', innerText: name });
-			
+
 			var ex = createElement('i', { className: 'remove', innerText: 'x' }, chip);
 			ex.addEventListener('click', function() {
 				chipContainer.removeChild(chip);
@@ -932,7 +932,7 @@
 
 
 	function getListenerName(name) {
-		return listeners[name] ? listeners[name].name : name; 
+		return listeners[name] ? listeners[name].name : name;
 	}
 
 	function rowContainer(clazz, func, append) {
