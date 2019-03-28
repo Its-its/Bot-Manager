@@ -8,7 +8,7 @@ let Phrases = new Schema({
 
 	pid: String,
 
-	enabled: Boolean,
+	enabled: { type: Boolean, default: true },
 	ignoreCase: { type: Boolean, default: true },
 
 	phrases: [ { type: String } ],

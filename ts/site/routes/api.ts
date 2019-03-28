@@ -630,7 +630,7 @@ export = (app: express.Application) => {
 				data: doc.phrase_ids.map(c => {
 					return {
 						id: c.pid,
-						enabled: c.enabled,
+						enabled: c.enabled == null ? false : c.enabled,
 						ignoreCase: c.ignoreCase,
 						phrases: c.phrases,
 						responses: c.responses

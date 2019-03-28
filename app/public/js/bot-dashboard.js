@@ -15,7 +15,10 @@
 		},
 		bot: null
 	};
+
+	/** @type {Listener} */
 	let displaying = null;
+	/** @type {HTMLElement} */
 	let listenerContainer = null;
 
 	let botId = window.location.pathname.split('/');
@@ -50,6 +53,11 @@
 			this.componentContainer = null;
 		}
 
+		/**
+		 * @param { string } className
+		 * @param { (elem: HTMLDivElement) => any } func
+		 * @return { HTMLDivElement }
+		*/
 		addComponent(className, func) {
 			let div = createElement('div', { className: className });
 			if (func != null) func(div);
@@ -63,6 +71,11 @@
 			listenerContainer.removeChild(row);
 		}
 
+		/**
+		 * @param { string } className
+		 * @param { (elem: HTMLDivElement) => any } func
+		 * @return { HTMLDivElement }
+		*/
 		addRow(className, func) {
 			let div = createElement('div', { className: className });
 			if (func != null) func(div);
@@ -450,19 +463,16 @@
 
 					console.log('Phrases:', data);
 
-					var commands = data.length;
-
-
-					var server = user.bot.app.server;
-					var phrases = server.phrases.length;
+					var phrases = data.length;
 
 
 					createElement('h4', { className: 'title', innerText: 'Phrases' }, section);
 					createElement('button', { className: 'button success newitem', innerText: 'New' }, section)
 					.addEventListener('click', function() { newPhrase({}, phrases++); });
 
-					server.phrases.forEach(function(p, i) { newPhrase(p, i); });
+					data.forEach(function(p, i) { newPhrase(p, i); });
 
+					/** @param { {id: string, enabled: boolean, ignoreCase: boolean, phrases: string[], responses: DiscordBot.PhraseResponses[]} } [phrase]  */
 					function newPhrase(phrase, i) {
 						var container = createElement('div', { className: 'callout phrase-container' });
 
@@ -471,17 +481,17 @@
 						// Tools
 						var tools = createElement('div', { className: 'grid-x' }, container);
 
-						var toggle = createTogglable('Enabled', 'phrase-enabled-' + i, phrase.enabled == null ? true : phrase.enabled, function(toggle) {
+						var toggle = createTogglable('Enabled', 'phrase-enabled-' + i, phrase.enabled, function(toggle) {
 							phrase.enabled = toggle;
 						});
-						toggle.classList.add('large-4');
-						tools.appendChild(toggle);
+						toggle.container.classList.add('large-4');
+						tools.appendChild(toggle.container);
 
 						var ignoreCase = createTogglable('Ignore Case', 'phrase-ignorecase-' + i, phrase.ignoreCase, function(toggle) {
 							phrase.ignoreCase = toggle;
 						});
-						ignoreCase.classList.add('large-4');
-						tools.appendChild(ignoreCase);
+						ignoreCase.container.classList.add('large-4');
+						tools.appendChild(ignoreCase.container);
 
 						var bsection = createElement('div', { className: 'large-4' }, tools);
 						var saveButton = createElement('button', { className: 'button success', innerText: 'Save', style: 'float: right;' }, bsection);
@@ -536,6 +546,7 @@
 		}
 	}
 
+	/** @param { import("../../../typings/manager/index").DiscordBot.PhraseResponses[] } responses  */
 	function createResponses(responses) {
 		var contents = [];
 
@@ -546,10 +557,12 @@
 		.addEventListener('click', function() { container.appendChild(create()); });
 
 
-		if (responses != null)
+		if (responses != null) {
 			responses.forEach(function(e) { container.appendChild(create(e)); });
+		}
 
 		// Each Response
+		/** @param { import("../../../typings/manager/index").DiscordBot.PhraseResponses } [res]  */
 		function create(res) {
 			var value = new Object();
 			contents.push(value);
@@ -943,6 +956,13 @@
 		return div;
 	}
 
+	/**
+	 * @template {keyof HTMLElementTagNameMap} T
+	 * @param {T} name
+	 * @param { { [name: string]: any } } [opts]
+	 * @param {HTMLElement} [appendTo]
+	 * @return {HTMLElementTagNameMap[T]}
+	 */
 	function createElement(name, opts, appendTo) {
 		let div = document.createElement(name);
 
@@ -957,6 +977,12 @@
 		return div;
 	}
 
+	/**
+	 * @param {string} name
+	 * @param {string} id
+	 * @param {boolean} toggled
+	 * @param {(toggled: boolean) => any} [onClick]
+	 */
 	function createTogglable(name, id, toggled, onClick) {
 		var container = createElement('div', { style: 'height: 32px;' });
 
@@ -980,9 +1006,11 @@
 			container: container,
 			label: label,
 			input: button,
+			/** @param {boolean} [value] */
 			set: function(value) {
 				label.checked = value;
 			},
+			/** @return {boolean} */
 			val: function() {
 				return label.checked;
 			}

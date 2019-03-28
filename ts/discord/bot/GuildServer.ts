@@ -226,8 +226,6 @@ class Server extends Changes {
 		);
 	}
 
-
-	// Plugins
 	public isPluginEnabled(name: DiscordBot.PLUGIN_NAMES) {
 		// Commands is enabled by default even if null.
 		if (name == 'commands') return this.plugins[name] == null || this.plugins[name]!.enabled;
@@ -240,7 +238,8 @@ class Server extends Changes {
 	}
 
 
-	// Events
+//#region Events
+
 	public addOrEditEvent(listener: DiscordBot.ListenEvents) {
 		for(var i = 0; i < this.events.length; i++) {
 			if (this.events[i].uid == listener.uid) {
@@ -276,8 +275,10 @@ class Server extends Changes {
 		return false;
 	}
 
+//#endregion
 
-	// Leveling
+//#region Leveling
+
 	public keepPreviousRoles() {
 		return this.leveling != null && (this.leveling.keepPreviousRoles == null ? false : this.leveling.keepPreviousRoles);
 	}
@@ -343,8 +344,10 @@ class Server extends Changes {
 		return false;
 	}
 
+//#endregion
 
-	// Phrases
+//#region Phrases
+
 	public createPhrase(member: Discord.GuildMember, phraseText: string[], cb: (phrase: DiscordBot.Phrase) => any) {
 		phraseText.slice(0, SERVER.MAX_PHRASE_TEXT);
 
@@ -517,8 +520,10 @@ class Server extends Changes {
 		}
 	}
 
+//#endregion
 
-	// Whitelisted/Blacklisted
+//#region Whitelisted/Blacklisted
+
 	public hasBlacklistedWord(id: string, content: string): boolean {
 		var splt = content.toLowerCase().split(' '); // TODO: URL Check
 
@@ -574,8 +579,9 @@ class Server extends Changes {
 		return true;
 	}
 
+//#endregion
 
-	// Ignore
+//#region Ignore
 	public ignore(type: 'member' | 'channel', id: string): boolean {
 		if (type == 'member') {
 			if (this.moderation.ignoredUsers.indexOf(id) != -1) return false;
@@ -623,8 +629,9 @@ class Server extends Changes {
 		return this.moderation.ignoredUsers.indexOf(id) != -1;
 	}
 
+//#endregion
 
-	// Commands
+//#region Commands
 	public createCommand(
 		member: Discord.GuildMember,
 		commandNames: string | string[],
@@ -692,8 +699,9 @@ class Server extends Changes {
 		return -1;
 	}
 
+//#endregion
 
-	// Alias
+//#region Alias
 
 	public createAlias(alias: string | string[], command: string) {
 		if (!Array.isArray(alias)) alias = [alias.toLowerCase()];
@@ -734,7 +742,10 @@ class Server extends Changes {
 		return -1;
 	}
 
-	// Ranks
+//#endregion
+
+//#region Ranks
+
 	public addRank(name: string): boolean {
 		if (this.isRank(name)) return false;
 		this.ranks.push(name);
@@ -752,8 +763,9 @@ class Server extends Changes {
 		return this.ranks.indexOf(name) != -1;
 	}
 
+//#endregion
 
-	// Roles
+//#region Roles
 	public addRole(role: DiscordBot.Role): DiscordBot.Role[] {
 		if (this.getRoleIndex(role.id) == -1) {
 			this.roles.push(role);
@@ -782,8 +794,10 @@ class Server extends Changes {
 		return -1;
 	}
 
+//#endregion
 
-	//
+//#region Intervals
+
 	public createInterval(opts: DiscordBot.Interval): number {
 		this.intervals.push(opts);
 		var modelId = intervalPlugin.addInterval(opts);
@@ -944,8 +958,10 @@ class Server extends Changes {
 		return true;
 	}
 
+//#endregion
 
-	// Permissions
+//#region Permissions
+
 	public createGroup(displayName: string): Nullable<DiscordBot.PermissionsGroup> {
 		var tounique = displayName.replace(/ /, '').toLowerCase();
 
@@ -1094,14 +1110,6 @@ class Server extends Changes {
 		return true;
 	}
 
-	public strpToId(str?: string): Nullable<string> {
-		return utils.strpToId(str);
-	}
-
-	public idType(str: string) {
-		return utils.getIdType(str);
-	}
-
 
 	// Full Perm, used to detect "commands.bypasstoggle"
 	public memberHasExactPerm(member: Discord.GuildMember, perm: string): boolean {
@@ -1222,8 +1230,18 @@ class Server extends Changes {
 		return false;
 	}
 
+//#endregion
 
-	//
+
+	public strpToId(str?: string): Nullable<string> {
+		return utils.strpToId(str);
+	}
+
+	public idType(str: string) {
+		return utils.getIdType(str);
+	}
+
+
 	public toDBPrint() {
 		return {
 			version: this.migration,
@@ -1240,9 +1258,7 @@ class Server extends Changes {
 			ranks: this.ranks,
 			moderation: this.moderation,
 			plugins: this.plugins,
-			// intervals: this.intervals.map(i => i._id), //TODO: Remove from server, store next to command_ids
-			// commands: this.commands,
-			// phrases: this.phrases,
+
 			values: this.values,
 			roles: this.roles,
 			permissions: this.permissions

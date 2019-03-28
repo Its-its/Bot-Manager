@@ -10,7 +10,7 @@
     "discord_master": "nodemon src/discord/master --delay 3",
     "discord_music": "nodemon src/discord --delay 3 -- --client music",
 
-    "website": "nodemon src/site --delay 3",
+    "website": "nodemon -w src src/site --delay 3",
     "grabber": "nodemon src/rssgrabber --delay 3"
   },
   "dependencies": {
