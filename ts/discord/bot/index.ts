@@ -513,6 +513,259 @@ client.login(config.bot.discord.token);
 // - roleCreate
 // - guildMemberUpdate
 
+
+import async = require('async');
+import util = require('../../rssgrabber/utils');
+
+import GlobalModelIntervals = require('../../models/intervals');
+
+import DiscordModelFeed = require('../models/feed');
+import DiscordModelTwitter = require('../models/twitter');
+import { CustomDocs } from '@type-manager';
+
+
+
+const CALL_EVERY = 1000 * 60 * 5;
+
+
+
+
+// Twitter Feeds
+setInterval(() => {
+	DiscordModelTwitter.find({ active: true, last_check: { $lte: Date.now() - CALL_EVERY } })
+	.populate('feeds.feed')
+	.exec((err, feedDocs: CustomDocs.discord.DiscordTwitterPopulated[]) => {
+		if (err != null) return console.error(err);
+		if (feedDocs.length == 0) return console.log('None.');
+
+
+		async.eachLimit(feedDocs, 10, (doc, cbEach) => {
+			// No feeds? Mark as inactive.
+			if (doc.feeds.length == 0) {
+				DiscordModelTwitter.updateOne({ _id: doc._id }, { $set: { active: false } })
+				.exec(() => cbEach());
+				return;
+			}
+
+			var newFeeds: {
+				feed: CustomDocs.discord.DiscordTwitterFeeds<CustomDocs.global.TwitterFeeds>,
+				item: CustomDocs.global.TwitterFeedsItem
+			}[] = [];
+
+			var feedItems: { [name: string]: any } = {};
+
+			for(var i = 0; i < doc.feeds.length; i++) {
+				var feeds = doc.feeds[i];
+
+				feeds.feed.items.forEach(item => {
+					if (feeds.items.indexOf(item.id) == -1) {
+						newFeeds.push({
+							feed: feeds,
+							item: item
+						});
+					}
+				});
+
+				// Saved discord feeds is usually a different length than the Global Feeds.
+				if (feeds.items.length != feeds.feed.items.length || newFeeds.length != 0) {
+					feedItems['feeds.' + i + '.items'] = feeds.feed.items.map(i => i.id);
+				}
+			}
+
+			if (newFeeds.length != 0) {
+				var guild = client.guilds.get(doc.guild_id);
+
+				if (guild == null) {
+					// Remove
+					DiscordModelTwitter.find({ guild_id: doc.guild_id }, (err, feeds) => {
+						var rssIds: string[] = [];
+
+						feeds.map(f => f.feeds.map(f => f.feed))
+						.forEach(f => rssIds = rssIds.concat(f));
+
+						// TODO: Remove dupes
+
+						DiscordModelTwitter.remove({ guild_id: doc.guild_id }).exec();
+					});
+
+					console.error('Guild doesn\'t exist anymore.')
+					return;
+				}
+
+				var channel = <Discord.TextChannel>guild.channels.get(doc.channel_id);
+
+				if (channel == null) {
+					// TODO: Disable
+					console.error('Channel doesn\'t exist anymore.');
+					return;
+				}
+
+				newFeeds.reverse().forEach(opts => {
+					var { item, feed } = opts;
+					channel.send(util.compileFormat(feed.format == null ? util.DEFAULT_TWITTER_FORMAT : feed.format, {
+						text: item.text,
+						link: item.link
+					}))
+					.catch(e => console.error(e));
+				});
+			}
+
+			if (Object.keys(feedItems).length != 0) {
+				DiscordModelTwitter.updateOne({ _id: doc._id }, { $set: feedItems }).exec();
+			}
+
+			cbEach();
+		});
+	});
+}, 1000 * 60);
+
+
+// RSS Feeds
+setInterval(() => {
+	DiscordModelFeed.find({ active: true, last_check: { $lte: Date.now() - CALL_EVERY } })
+	.populate('feeds.feed')
+	.exec((err, feedDocs: CustomDocs.discord.DiscordRssPopulated[]) => {
+		if (err != null) return console.error(err);
+		if (feedDocs.length == 0) return console.log('None.');
+
+
+		async.eachLimit(feedDocs, 10, (doc, cbEach) => {
+			// No feeds? Mark as inactive.
+			if (doc.feeds.length == 0) {
+				DiscordModelFeed.updateOne({ _id: doc._id }, { $set: { active: false } })
+				.exec(() => cbEach());
+				return;
+			}
+
+			var newFeeds: {
+				feed: CustomDocs.discord.DiscordRssFeeds<CustomDocs.global.RSSFeeds>,
+				item: CustomDocs.global.RSSFeedsItem
+			}[] = [];
+
+			var feedItems: { [name: string]: any } = {};
+
+			for(var i = 0; i < doc.feeds.length; i++) {
+				var feeds = doc.feeds[i];
+
+				feeds.feed.items.forEach(item => {
+					if (feeds.items.indexOf(item.id) == -1) {
+						newFeeds.push({
+							feed: feeds,
+							item: item
+						});
+					}
+				});
+
+				// Saved discord feeds is a different length than the RSS Feeds.
+				if (feeds.items.length != feeds.feed.items.length || newFeeds.length != 0) {
+					feedItems['feeds.' + i + '.items'] = feeds.feed.items.map(i => i.id);
+				}
+			}
+
+			if (newFeeds.length != 0) {
+				var guild = client.guilds.get(doc.guild_id);
+
+				if (guild == null) {
+					// Remove
+					DiscordModelFeed.find({ guild_id: doc.guild_id }, (err, feeds) => {
+						var rssIds: string[] = [];
+
+						feeds.map(f => f.feeds.map(f => f.feed))
+						.forEach(f => rssIds = rssIds.concat(f));
+
+						// TODO: Remove dupes
+
+						DiscordModelFeed.remove({ guild_id: doc.guild_id }).exec();
+					});
+
+					console.error('Guild doesn\'t exist anymore.')
+					return;
+				}
+
+				var channel = <Discord.TextChannel>guild.channels.get(doc.channel_id);
+
+				if (channel == null) {
+					// TODO: Disable
+					console.error('Channel doesn\'t exist anymore.');
+					return;
+				}
+
+				newFeeds.reverse()
+				.forEach(opts => {
+					var { item, feed } = opts;
+					channel.send(util.compileFormat(feed.format == null ? util.DEFAULT_RSS_FORMAT : feed.format, {
+						title: item.title,
+						date: item.date.toString(),
+						author: item.author,
+						description: item.description,
+						link: item.link,
+						guid: item.guid
+						// tags: feed.tags
+					}))
+					.catch(e => console.error(e));
+				});
+			}
+
+			if (Object.keys(feedItems).length != 0) {
+				DiscordModelFeed.updateOne({ _id: doc._id }, { $set: feedItems }).exec();
+			}
+
+			cbEach();
+		});
+	});
+}, 1000 * 60);
+
+
+// Intervals
+setInterval(() => {
+	GlobalModelIntervals.find({ active: true, nextCall: { $lt: Date.now() } })
+	.then(items => {
+		if (items.length == 0) return;
+
+		console.log('Calling ' + items.length + ' intervals.');
+
+		async.every(items, (item, cb) => {
+			var guild = client.guilds.get(item.guild_id);
+
+			if (guild != null) {
+				var channel = <Discord.TextChannel>guild.channels.get(item.channel_id);
+
+				if (channel != null) {
+					// try {
+						// if (item.events.onCall) {
+						// 	var ret = Function(item.events.onCall)
+						// 	.call({
+						// 		message: item.message,
+						// 		nextCall: item.nextCall,
+						// 		send: (msg) => channel.send(msg)
+						// 	});
+
+						// 	if (ret === false) return;
+						// } else {
+							channel.send(item.message);
+						// }
+
+						item.nextCall = Date.now() + (item.every * 1000);
+						item.save();
+
+						return cb();
+					// } catch (error) {
+					// 	console.error(error);
+					// 	channel.send('Error with Interval ' + error);
+					// 	cb();
+					// }
+				}
+			}
+
+			item.active = false;
+			item.save();
+
+			cb();
+		});
+	}, e => console.error(e));
+}, 1000 * 60);
+
+
 export {
 	client
 };
