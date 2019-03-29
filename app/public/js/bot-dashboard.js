@@ -38,6 +38,12 @@
 
 
 	class Listener {
+		/**
+		 * @param { string } id
+		 * @param { string } displayName
+		 * @param { string } color
+		 * @param { string } icon
+		*/
 		constructor(id, displayName, color, icon) {
 			this.setup = false;
 
@@ -65,6 +71,9 @@
 			return div;
 		}
 
+		/**
+		 * @param { HTMLElement } row
+		*/
 		remRow(row) {
 			var index = this.rowCache.indexOf(row);
 			if (index != -1) this.rowCache.splice(index, 1);
@@ -130,6 +139,7 @@
 
 		// Displays
 
+		/** @return { { [name: string]: () => any } } */
 		headerSetup() { return null; }
 
 		setupComponents() {
@@ -156,6 +166,10 @@
 					// addButton('Timers', '/bot/' + botId + '/timers');
 					// addButton('Events', '/bot/' + botId + '/events');
 
+					/**
+					 * @param { string } displayName
+					 * @param { (ev: MouseEvent) => any } onClick
+					 */
 					function addButton(displayName, onClick) {
 						let button = createElement('a', { className: 'header-item', innerText: displayName });
 						if (self.page == displayName) button.classList.add('active');
@@ -534,14 +548,119 @@
 			super.setupComponents();
 
 			this.addComponent('cell large-12 timers', function(section) {
-				createElement('h4', { className: 'title', innerText: 'Timers' }, section);
+				$.get('/api/bots/' + botId + '/intervals', function(data) {
+					if (data.error != null) return console.error(data.error);
+					data = data.data;
 
-				// user.bot.app.server
+					console.log('Timers:', data);
 
-				// $.post('/api/bots/status', { id: botId }, function(res) {
-				// 	if (res.error != null) return console.error(res.error);
-				// 	res = res.data;
-				// });
+					var commands = data.length;
+
+					createElement('h4', { className: 'title', innerText: 'Timers' }, section);
+					createElement('button', { className: 'button success newitem', innerText: 'New' }, section)
+					.addEventListener('click', function() { newTimer({ id: '_' + Date.now() }, commands++); });
+
+					data.forEach(function(c, i) { newTimer(c, i); });
+
+					function newTimer(interval, i) {
+						console.log('new Interval[' + i + ']:', interval);
+
+						var container = createElement('div', { className: 'callout command-container' });
+
+						// Tools
+						var tools = createElement('div', { className: 'grid-x' }, container);
+
+						var toggle = createTogglable('Enabled', 'command-enabled-' + i, interval.enabled == null ? false : interval.enabled);
+						toggle.container.classList.add('large-4');
+						tools.appendChild(toggle.container);
+
+						// Right
+						var bsection = createElement('div', { className: 'large-8' }, tools);
+						var saveButton = createElement('button', { className: 'button success', innerText: 'Save', style: 'float: right;' }, bsection);
+						createElement('button', { className: 'button alert', innerText: 'Delete', style: 'float: right;' }, bsection)
+						.addEventListener('click', function() {
+							if (interval.pid[0] != '_') {
+								$.ajax({
+									type: 'DELETE',
+									url: '/api/bots/' + botId + '/commands/' + interval.pid,
+									dataType: 'json'
+								});
+							}
+
+							section.removeChild(container);
+						});
+
+
+						var bRow = createElement('div', { className: 'grid-x' }, container);
+
+
+
+						// Left Section. Timing
+						var lSection = createElement('div', { className: 'large-2' }, bRow);
+
+
+						createElement('span', { className: 'title', innerText: 'Timing' }, lSection);
+
+						createElement('input', { type: 'text', value: interval.every }, lSection)
+						.addEventListener('keyup', function() { interval.every = this.value; });
+
+
+						// Right Section. Message
+						var rSection = createElement('div', { className: 'large-10', style: 'padding-left: 5px;' }, bRow);
+
+
+						createElement('span', { className: 'title', innerText: 'Display Name' }, rSection);
+
+						createElement('input', { type: 'text', value: interval.displayName }, rSection)
+						.addEventListener('keyup', function() { interval.displayName = this.value; });
+
+
+						createElement('span', { className: 'title', innerText: 'Message' }, rSection);
+
+						createElement('input', { type: 'text', value: interval.message }, rSection)
+						.addEventListener('keyup', function() { interval.message = this.value; });
+
+
+						saveButton.addEventListener('click', function() {
+							function finished(data) {
+								console.log('NEW:', data);
+								console.log(Object.assign({}, interval));
+
+								Object.assign(interval, data);
+
+								toggle.set(interval.enabled);
+
+								// while (lSection.firstChild) lSection.removeChild(lSection.firstChild);
+								// cmd.alias.forEach(createAlias);
+								// if (cmd.alias.length == 0) createAlias('');
+
+								// while (rSection.firstChild) rSection.removeChild(rSection.firstChild);
+								// cmd.params.forEach(createParam);
+								// if (cmd.params.length == 0) createParam({ length: 0 });
+							}
+
+							if (interval.pid[0] == '_') {
+								$.ajax({
+									type: 'POST',
+									url: '/api/bots/' + botId + '/intervals',
+									data: { displayName: interval.displayName, message: interval.message, active: interval.active, every: interval.every },
+									success: finished,
+									dataType: 'json'
+								});
+							} else {
+								$.ajax({
+									type: 'PUT',
+									url: '/api/bots/' + botId + '/intervals/' + interval.pid,
+									data: { displayName: interval.displayName, message: interval.message, active: interval.active, every: interval.every },
+									success: finished,
+									dataType: 'json'
+								});
+							}
+						});
+
+						section.appendChild(container);
+					}
+				});
 			});
 		}
 	}
