@@ -1,16 +1,34 @@
 # Bot Manager
 A Global Bot Manager for Discord, soon to be twitch, and the rest of the world.
 
-List of things needing fixes/todo:
-- ERROR LOGGING AND VIEWING!!!
-- Make restore actually restore if the command is ran in the same discord as it was created in.
-- Implement from Channel for Message Command
-- Move Command Usage Params into own object for greater use of them.
-- Add checks to make sure bot has the correct permissions before running the command(s). (ex: in prune command file)
+
+## Installing
+
+```bash
+npm install             # Installs all the package.json dependencies.
+npm install -g nodemon  # I use it for my development you can replace it with node it in package.json
+npm run build:full      # Builds typescript and corrects @ paths
+```
 
 
+## Running
 
-Code Cleanup since all I did was keep mindlessly adding commands.
+To Run the Discord bots you need to have the master started.
 
+```bash
+npm run discord_master  # Used so the main bot and music bot can "talk" to eachother.
+```
 
-### Anything with @ts-ignore will need to be gone through and fixed.
+Now, you can launch both of these discord bots.
+
+```bash
+npm run discord_bot     # Starts the main discord bot for commands/intervals.
+npm run discord_music   # Starts the music (audio) portion of the bot so the main bot can be updated at any point.
+```
+
+To start the main programs
+
+```bash
+npm run grabber    # Starts the main RSS/Twitter Grabber for Discord.
+npm run website    # Starts the website
+```
