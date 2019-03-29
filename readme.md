@@ -4,11 +4,20 @@ A Global Bot Manager for Discord, soon to be twitch, and the rest of the world.
 
 ## Installing
 
-```bash
-npm install             # Installs all the package.json dependencies.
-npm install -g nodemon  # I use it for my development you can replace it with node it in package.json
-npm run build:full      # Builds typescript and corrects @ paths
+You need these two programs.
 ```
+MongoDB
+Redis
+```
+
+After those are started you can rename the config in app/config/config.copy.json to config.json and edit it with the correct values.
+
+```bash
+npm install                     # Installs all the package.json dependencies.
+npm install --save-dev nodemon  # I use it for my development you can replace it with node in the package.json
+npm run build:full              # Builds typescript and corrects @ paths.
+```
+
 
 
 ## Running

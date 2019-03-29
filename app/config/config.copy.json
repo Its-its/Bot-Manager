@@ -34,7 +34,6 @@
 	},
 	"bot": {
 		"discord": {
-			"main_id": "because I have two bots. This one does nothing. Just for saving the other bot id.",
 			"id": "",
 			"token": "",
 			"main_token": "",
@@ -53,7 +52,6 @@
 		"discord": {
 			"clientID": "",
 			"clientSecret": "",
-			"main_clientSecret": "because I have two bots. This one does nothing. Just for saving the other bot id.",
 			"callbackURL": "/auth/discord/callback",
 			"scopeInvite": [ "bot", "identify", "guilds" ],
 			"scopeAuth": [ "identify", "guilds" ]
