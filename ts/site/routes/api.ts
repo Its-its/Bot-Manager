@@ -15,11 +15,31 @@ require('../../models/intervals');
 require('../../models/phrases');
 
 import discordUtils = require('../../discord/utils');
+import DiscordServer = require('../../discord/bot/GuildServer');
 
 import config = require('@config');
 import { CustomDocs, DiscordBot } from '@type-manager';
 
-let redisGuildsClient = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.guildsDB });
+
+
+const redisGuildsClient = redis.createClient({
+	host: config.redis.address,
+	port: config.redis.port,
+	db: config.redis.guildsDB
+});
+
+
+
+
+function getDiscordServer(id: string, cb: (server?: DiscordServer) => any) {
+	redisGuildsClient.get(id, (err, str) => {
+		if (err != null) { console.error(err); return cb(); }
+		if (str == null) return cb();
+
+		cb(new DiscordServer(id, JSON.parse(str)));
+	});
+}
+
 
 
 const MAX_BOTS = 5;
@@ -454,36 +474,49 @@ export = (app: express.Application) => {
 					return res.status(500).send({ error: 'An Error occured while trying to add the command! Try again in a minute.' });
 				}
 
-				var addTo: any = {
-					command_ids: prod.id
-				};
-
-				if (!enabled) {
-					addTo['server.moderation.disabledCustomCommands'] = prod.pid;
-				}
-
 				DiscordServers.updateOne(
 					{ _id: doc.id },
-					{ $addToSet: addTo }
+					{ $addToSet: { 	command_ids: prod.id } }
 				).exec();
 
-				var discordServer: DiscordBot.ServerDocument = JSON.parse(doc.server);
+				getDiscordServer(doc.server_id, server => {
+					if (server == null) {
+						res.send({
+							data: {
+								pid: prod.pid,
+								alias: prod.alias,
+								params: prod.params,
+								enabled: enabled
+							}
+						});
+						return;
+					}
 
-				discordServer.commands = doc.command_ids.map(c => {
-					return { pid: c.pid, alias: c.alias, params: c.params };
-				});
+					server.commands.push({
+						_id: prod._id,
+						pid: prod.pid,
+						alias: prod.alias,
+						params: prod.params
+					});
 
-				var newComm = {
-					pid: prod.pid,
-					alias: prod.alias,
-					params: prod.params,
-					enabled: enabled
-				};
+					if (!enabled) {
+						if (server.moderation.disabledCustomCommands == null) {
+							server.moderation.disabledCustomCommands = [];
+						}
 
-				discordServer.commands.push(newComm);
+						server.moderation.disabledCustomCommands.push(prod.pid);
+					}
 
-				redisGuildsClient.set(doc.server_id, JSON.stringify(doc['server']), () => {
-					res.send({ data: newComm });
+					server.save();
+
+					res.send({
+						data: {
+							pid: prod.pid,
+							alias: prod.alias,
+							params: prod.params,
+							enabled: enabled
+						}
+					});
 				});
 			});
 		});
@@ -548,15 +581,30 @@ export = (app: express.Application) => {
 				var disabledCommands = discordServer.moderation.disabledCustomCommands || [];
 
 				if (!enabled && disabledCommands.indexOf(cid) == -1) {
-					DiscordServers.updateOne(
-						{ _id: server._id },
-						{ $addToSet: { 'server.moderation.disabledCustomCommands': cid } }
-					).exec();
+					getDiscordServer(server.server_id, server => {
+						if (server == null) return;
+
+						if (server.moderation.disabledCustomCommands == null) {
+							server.moderation.disabledCustomCommands = [];
+						}
+
+						server.moderation.disabledCustomCommands.push(cid);
+
+						server.save();
+					});
 				} else if (enabled && disabledCommands.indexOf(cid) != -1) {
-					DiscordServers.updateOne(
-						{ _id: server._id },
-						{ $pull: { 'server.moderation.disabledCustomCommands': cid } }
-					).exec();
+					getDiscordServer(server.server_id, server => {
+						if (server == null) return;
+
+						if (server.moderation.disabledCustomCommands == null) {
+							server.moderation.disabledCustomCommands = [];
+						}
+
+						var indexOf = server.moderation.disabledCustomCommands.indexOf(cid);
+						if (indexOf != -1) server.moderation.disabledCustomCommands.splice(indexOf, 1);
+
+						server.save();
+					});
 				}
 
 
@@ -595,14 +643,21 @@ export = (app: express.Application) => {
 
 				if (comm == null) return res.status(500).send({ error: 'Command does not exist!' });
 
-				DiscordServers.updateOne(
-					{ _id: server.id },
-					{ $pull: { 'server.moderation.disabledCustomCommands': cid } }
-				).exec();
+				getDiscordServer(server.server_id, server => {
+					if (server == null) return;
+
+					if (server.moderation.disabledCustomCommands == null) {
+						server.moderation.disabledCustomCommands = [];
+					}
+
+					var indexOf = server.moderation.disabledCustomCommands.indexOf(cid);
+					if (indexOf != -1) server.moderation.disabledCustomCommands.splice(indexOf, 1);
+
+					server.save();
+				});
 
 				var index = server.command_ids.indexOf(comm._id);
 				if (index != -1) server.command_ids.splice(index, 1);
-
 
 				server.save(() => {
 					res.send({});

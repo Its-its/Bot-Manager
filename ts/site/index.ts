@@ -57,6 +57,7 @@ console.info('Port:', config.port);
 
 let www = require('./vhost/www')(io);
 app.use(www);
+
 // app.use(vhost(globalOpts.config.baseUrl, www));
 // app.use(vhost('www.' + globalOpts.config.baseUrl, www));
 

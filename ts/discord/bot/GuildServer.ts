@@ -1324,7 +1324,7 @@ function getOrCreateUser(member: Discord.GuildMember, cb: (err: any, doc: Docume
 
 function getServer(serverId: string,  cb: (music?: Server) => any) {
 	redisGuildsClient.get(serverId, (err, str) => {
-		if (err != null) { console.error(err); cb(); }
+		if (err != null) { console.error(err); return cb(); }
 		cb(new Server(serverId, str == null ? {} : JSON.parse(str)));
 	});
 }

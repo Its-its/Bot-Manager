@@ -44,7 +44,7 @@ declare namespace CustomDocs {
 			pid: string;
 
 			alias: string[];
-			params: any[];
+			params: DiscordBot.CommandParam[];
 
 			created_at: Date;
 			edited_at: Date;
