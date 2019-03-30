@@ -80,7 +80,7 @@ setInterval(() => {
 
 					if (hasNew) doc.items = newItems;
 
-					doc.last_called = <any>Date.now();
+					doc.last_called = new Date();
 
 					doc.save(() => cbEvery());
 				}
@@ -108,15 +108,15 @@ setInterval(() => {
 				for(var i = 0; i < newItems.length; i++) {
 					var index = oldIds.indexOf(newItems[i].id);
 					// TODO: Ensure correct.
-					if (index == -1 && newItems[i].date >= doc.last_called.getTime() - (1000 * 60 * 60)/*Date.now() * TWO_DAYS*/) {
+					if (index == -1 && newItems[i].date.getTime() >= doc.last_called.getTime() - (1000 * 60 * 60)/*Date.now() * TWO_DAYS*/) {
 						hasNew = true;
 						break;
 					}
 				}
 
-				if (hasNew) doc.items = <any>newItems;
+				if (hasNew) doc.items = newItems;
 
-				doc.last_called = <any>Date.now();
+				doc.last_called = new Date();
 
 				doc.save(() => cbEvery());
 			});

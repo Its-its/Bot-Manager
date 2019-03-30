@@ -12,6 +12,7 @@ import TwitterFeeds = require('../models/twitterfeed');
 import cheerio = require('cheerio');
 
 import { URL } from 'url';
+import { CustomDocs } from '@type-manager';
 
 const DEFAULT_RSS_FORMAT = ':newspaper:  **{title}**\n\n{link}';
 const DEFAULT_TWITTER_FORMAT = ':bird:  **{text}**\n\n{link}';
@@ -118,19 +119,7 @@ interface ArticleDB {
     xmlUrl: string;
     link: string;
     sending_to: number;
-    items: ArticleItemDB[];
-};
-
-interface ArticleItemDB {
-	id: string;
-	title: string;
-	description: any;
-	date: number;
-	link: string;
-	guid: string;
-	author: string;
-	generator: string;
-	categories: string[];
+    items: CustomDocs.global.RSSFeedsItem[];
 };
 
 interface RSSFeedFix extends Document {
@@ -278,7 +267,7 @@ function articlesToDB(url: string, items: FeedParser.Item[]): ArticleDB {
 	};
 }
 
-function articleItemsToDB(items: FeedParser.Item[]): ArticleItemDB[] {
+function articleItemsToDB(items: FeedParser.Item[]): CustomDocs.global.RSSFeedsItem[] {
 	return items.map(i => {
 		if (i.meta == null) (<any>i.meta) = {};
 
@@ -286,7 +275,7 @@ function articleItemsToDB(items: FeedParser.Item[]): ArticleItemDB[] {
 			id: crypto.createHash('md5').update(getArticleId(i, items)).digest('hex'),
 			title: i.title,
 			description: cheerio.load(i.description).root().text(), // TODO: HTML -> String
-			date: i.date == null ? 0 : i.date.getTime(),
+			date: i.date == null ? new Date(0) : i.date,
 			link: i.link,
 			guid: i.guid,
 			author: i.author,
@@ -315,10 +304,10 @@ function getArticleId(article: FeedParser.Item, articles: FeedParser.Item[]) {
 	return article.guid;
 }
 
-function returnArticlesAfter(last_item_id: string, savedArticles: ArticleItemDB[]): ArticleItemDB[] {
+function returnArticlesAfter(last_item_id: string, savedArticles: CustomDocs.global.RSSFeedsItem[]): CustomDocs.global.RSSFeedsItem[] {
 	if (last_item_id == null) return savedArticles;
 
-	var articles: ArticleItemDB[] = [];
+	var articles: CustomDocs.global.RSSFeedsItem[] = [];
 
 	for(var i = 0; i < savedArticles.length; i++) {
 		var article = savedArticles[i];

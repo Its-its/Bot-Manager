@@ -91,7 +91,7 @@ globalRoute.post('/bot/queue', ensure({ id: 'string', skip: 'number' }), (req, r
 
 
 globalRoute.post('/playlist/create', (req, res) => {
-	if (!(<any>req).isAuthenticated()) return res.send({ error: 'Not Authenticated!' });
+	if (!req.isAuthenticated()) return res.send({ error: 'Not Authenticated!' });
 
 	new Playlists({
 		creator: req['user'].id,
@@ -136,7 +136,7 @@ globalRoute.post('/playlist/create', (req, res) => {
 });
 
 globalRoute.post('/playlist/list', (req, res) => {
-	if (!(<any>req).isAuthenticated()) return res.send({ error: 'Not Authenticated!' });
+	if (!req.isAuthenticated()) return res.send({ error: 'Not Authenticated!' });
 
 	Playlists.find({ creator: req['user'].id }, (err, playlists) => {
 		if (err != null) {

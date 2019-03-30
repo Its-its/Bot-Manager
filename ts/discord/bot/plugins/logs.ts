@@ -15,7 +15,7 @@ function messageDelete(message: Discord.Message) {
 			var channel = <Discord.TextChannel>message.guild.channels.get(server.plugins.logs!.textChannelId);
 
 			if (channel != null) {
-				channel.send(messageDeleted(<any>message.channel, message.member, message));
+				channel.send(messageDeleted(message.channel, message.member, message));
 			} else {
 				server.plugins.logs!.textChannelId = undefined;
 				server.save();
@@ -56,7 +56,7 @@ function messageUpdate(oldMessage: Discord.Message, newMessage: Discord.Message)
 			var channel = <Discord.TextChannel>oldMessage.guild.channels.get(server.plugins.logs!.textChannelId);
 
 			if (channel != null) {
-				channel.send(messageEdited(<any>newMessage.channel, newMessage.member, oldMessage, newMessage));
+				channel.send(messageEdited(newMessage.channel, newMessage.member, oldMessage, newMessage));
 			} else {
 				server.plugins.logs!.textChannelId = undefined;
 				server.save();
@@ -101,7 +101,7 @@ function guildMemberRemove(guildMember: Discord.GuildMember) {
 
 
 
-function messageEdited(channel: Discord.TextChannel, member: Discord.GuildMember, oldMessage: Discord.Message, newMessage: Discord.Message) {
+function messageEdited(channel: Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel, member: Discord.GuildMember, oldMessage: Discord.Message, newMessage: Discord.Message) {
 	return {
 		embed: {
 			description: `**Message edited in <#${channel.id}>**`,
@@ -128,7 +128,7 @@ function messageEdited(channel: Discord.TextChannel, member: Discord.GuildMember
 	}
 }
 
-function messageDeleted(channel: Discord.TextChannel, member: Discord.GuildMember, message: Discord.Message) {
+function messageDeleted(channel: Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel, member: Discord.GuildMember, message: Discord.Message) {
 	return {
 		embed: {
 			description: `**Message sent by <@${member.id}> deleted from <#${channel.id}> **\n` + message.content.slice(0, 1900),

@@ -115,7 +115,7 @@ class Phrase extends Command {
 					} else if (name == 'response') {
 						if (!this.hasPerms(message.member, server, PERMS.ADD_RESPONSE)) return Command.noPermsMessage('Phrase');
 
-						server.setPhraseResponse(cmdCallOrPhraseId, <any>params.join(' ').split(',').map(i => { return { type: 'echo', message: i } }));
+						server.setPhraseResponse(cmdCallOrPhraseId, params.join(' ').split(',').map(i => { return { type: 'echo', message: i } }));
 						server.save(() => message.channel.send(Command.info([['Phrase', 'Changed Phrase Response.']])));
 					}
 				} else if (dodis == 'remove') {

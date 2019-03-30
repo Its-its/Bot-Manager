@@ -57,7 +57,7 @@ class Plugin extends Command {
 				return Command.table(['Name', 'Active'], plugins.map((name, i) => {
 					return [
 						displayNames[i],
-						(server.isPluginEnabled(<any>name) ? 'Enabled' : 'Disabled')
+						(server.isPluginEnabled(name) ? 'Enabled' : 'Disabled')
 					]
 				}));
 

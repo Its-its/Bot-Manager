@@ -165,7 +165,7 @@ function shardListener() {
 										getMusic(guild_id, music => {
 											if (music == null) return send(utils.errorMsg([['Music', 'Unable to find music.']]));
 
-											var fields = [
+											var fields: [string, string][] = [
 												[
 													'Music',
 													[
@@ -186,7 +186,7 @@ function shardListener() {
 												].join('\n')
 											]));
 
-											return send(utils.successMsg(<any>fields));
+											return send(utils.successMsg(fields));
 										});
 									});
 								});
@@ -325,7 +325,7 @@ function joinVoiceChannel(guildId: string, channelId: string, cb: (errMsg?: stri
 			music.playing = undefined;
 			music.save();
 
-			joinChannel(<any>channel, () => cb());
+			joinChannel(<Discord.VoiceChannel>channel, () => cb());
 		});
 	} else cb([
 		'Unable to join channel provided.',

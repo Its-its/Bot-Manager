@@ -320,7 +320,7 @@ client.on('guildCreate', guild => {
 
 							item.is_active = true;
 
-							item.botType = (<any>Bots).appName('discord');
+							item.botType = Bots.appName('discord');
 							item.botId = server!.id;
 							item.displayName = guild.name;
 
