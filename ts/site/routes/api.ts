@@ -11,11 +11,12 @@ import DiscordMembers = require('../../discord/models/members');
 import Users = require('../models/users');
 import Bots = require('../models/bots');
 
-require('../../models/intervals');
-require('../../models/phrases');
+import Intervals = require('../../models/intervals');
+import Phrases = require('../../models/phrases');
 
 import discordUtils = require('../../discord/utils');
 import DiscordServer = require('../../discord/bot/GuildServer');
+import discordClient = require('../../discord/guildClient');
 
 import config = require('@config');
 import { CustomDocs, DiscordBot } from '@type-manager';
@@ -653,6 +654,8 @@ export = (app: express.Application) => {
 					var indexOf = server.moderation.disabledCustomCommands.indexOf(cid);
 					if (indexOf != -1) server.moderation.disabledCustomCommands.splice(indexOf, 1);
 
+					if (comm.alias[0] != null) server.removeCommand(comm.alias[0]);
+
 					server.save();
 				});
 
@@ -702,9 +705,40 @@ export = (app: express.Application) => {
 	// 	var { pid } = req.params;
 	// });
 
-	// bots.delete('/:bid/phrases/:pid', registerBot, (req, res) => {
-	// 	var { pid } = req.params;
-	// });
+	bots.delete('/:bid/phrases/:pid', registerBot, (req, res) => {
+		var { pid } = req.params;
+
+		// @ts-ignore
+		var bot: CustomDocs.web.BotsDocument = req['bot'];
+
+		DiscordServers.findOne({ _id: bot.botId }, (err, server) => {
+			if (err != null) {
+				console.error(err);
+				res.status(500).send({ error: 'An Error Occured while trying to find the server.' });
+				return;
+			}
+
+			if (server == null) return res.status(500).send({ error: 'Server does not exist!' });
+
+			Phrases.findOneAndRemove({ pid: pid }, (err, phr) => {
+				if (err != null) {
+					console.error(err);
+					res.status(500).send({ error: 'An Error Occured while trying to remove the command.' });
+					return;
+				}
+
+				if (phr == null) return res.status(500).send({ error: 'Command does not exist!' });
+
+				var index = server.phrase_ids.indexOf(phr._id);
+				if (index != -1) server.phrase_ids.splice(index, 1);
+
+				server.save(() => {
+					discordClient.updateServer(server.server_id);
+					res.send({});
+				});
+			});
+		});
+	});
 
 //#endregion
 
@@ -712,8 +746,31 @@ export = (app: express.Application) => {
 //#region Ranks
 
 	// Get All Bot Ranks
-	// bots.get('/:bid/ranks', registerBot, (req, res) => {
-	// });
+	bots.get('/:bid/ranks', registerBot, (req, res) => {
+		// @ts-ignore
+		var bot: CustomDocs.web.BotsDocument = req['bot'];
+
+		DiscordServers.findOne({ _id: bot.botId })
+		.exec((err, doc: CustomDocs.discord.ServersDocument) => {
+			if (err != null) return res.send({ error: err });
+
+			getDiscordServer(doc.server_id, server => {
+				if (server == null) {
+					var jsonServer: DiscordBot.ServerOptions = JSON.parse(doc.server);
+
+					res.send({
+						data: jsonServer.ranks || []
+					});
+
+					return;
+				}
+
+				res.send({
+					data: server.ranks
+				});
+			});
+		});
+	});
 
 	// bots.post('/:bid/ranks', registerBot, (req, res) => {
 	// });
@@ -831,9 +888,40 @@ export = (app: express.Application) => {
 	// 	var { iid } = req.params;
 	// });
 
-	// bots.delete('/:bid/intervals/:iid', registerBot, (req, res) => {
-	// 	var { iid } = req.params;
-	// });
+	bots.delete('/:bid/intervals/:pid', registerBot, (req, res) => {
+		var { pid } = req.params;
+
+		// @ts-ignore
+		var bot: CustomDocs.web.BotsDocument = req['bot'];
+
+		DiscordServers.findOne({ _id: bot.botId }, (err, server) => {
+			if (err != null) {
+				console.error(err);
+				res.status(500).send({ error: 'An Error Occured while trying to find the server.' });
+				return;
+			}
+
+			if (server == null) return res.status(500).send({ error: 'Server does not exist!' });
+
+			Intervals.findOneAndRemove({ pid: pid }, (err, inter) => {
+				if (err != null) {
+					console.error(err);
+					res.status(500).send({ error: 'An Error Occured while trying to remove the command.' });
+					return;
+				}
+
+				if (inter == null) return res.status(500).send({ error: 'Command does not exist!' });
+
+				var index = server.interval_ids.indexOf(inter._id);
+				if (index != -1) server.interval_ids.splice(index, 1);
+
+				server.save(() => {
+					discordClient.updateServer(server.server_id);
+					res.send({});
+				});
+			});
+		});
+	});
 
 //#endregion
 
