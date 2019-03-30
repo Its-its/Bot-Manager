@@ -91,7 +91,7 @@ function updateServerFromDB(serverId: string, cb?: (found: boolean, err: Error |
 	DiscordServers.findOne({ server_id: serverId })
 	.populate({ path: 'command_ids', select: 'pid alias params' })
 	.populate({ path: 'phrase_ids', select: 'pid enabled ignoreCase phrases responses' })
-	.populate({ path: 'interval_ids', select: 'pid' })
+	.populate('interval_ids')
 	.exec((err, server: CustomDocs.discord.ServersPopulatedDocument) => {
 		if (err == null) return cb && cb(false, err);
 		if (server == null) return cb && cb(false, new Error('No Server'));
