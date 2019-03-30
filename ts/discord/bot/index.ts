@@ -269,7 +269,7 @@ client.on('guildDelete', (guild) => {
 	PunishmentCmd.onGuildRemove(guild);
 
 	DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: true } }).exec();
-	guildClient.remove(guild.id, () => {});
+	guildClient.removeFromCache(guild.id, () => {});
 });
 
 // Server joined
@@ -288,7 +288,7 @@ client.on('guildCreate', guild => {
 			// 	return;
 			// }
 
-			guildClient.exists(guild.id, exists => {
+			guildClient.existsInCache(guild.id, exists => {
 				if (exists) return;
 
 				DiscordServers.findOne({ server_id: guild.id }, (err, server) => {
@@ -299,7 +299,7 @@ client.on('guildCreate', guild => {
 					// Server exists? Update DB, update and add to redis.
 					if (!newServer) {
 						DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: false } }).exec();
-						guildClient.updateServer(guild.id, () => {
+						guildClient.updateServerFromDB(guild.id, () => {
 							logger.info('Grabbed From DB!');
 						});
 					}

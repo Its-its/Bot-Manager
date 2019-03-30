@@ -14,14 +14,14 @@ import { CustomDocs } from '@type-manager';
 
 // TODO: Cache Server even though it takes milliseconds to JSON.parse each get.
 
-let redisGuildsClient = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.guildsDB });
-let redisMusic = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.musicDB });
+const redisGuildsClient = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.guildsDB });
+const redisMusic = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.musicDB });
 
-function put(serverId: string, server: DiscordServer, cb?: redis.Callback<"OK">) {
+function putInCache(serverId: string, server: DiscordServer, cb?: redis.Callback<"OK">) {
 	redisGuildsClient.set(serverId, JSON.stringify(server), cb);
 }
 
-function exists(serverId: string, cb: (client: boolean) => any) {
+function existsInCache(serverId: string, cb: (client: boolean) => any) {
 	redisGuildsClient.get(serverId, (err, str) => {
 		if (err != null) { console.error(err); cb(false); }
 		if (str == null) cb(false);
@@ -55,11 +55,8 @@ function get(serverId: string, cb: (client?: DiscordServer) => any) {
 		if (err != null) { console.error(err); return cb(); }
 
 		if (str == null) {
-			updateServer(serverId, (found, err) => {
-				if (err != null) {
-					console.error(found ? 'Not Found:' : 'Found:', err);
-					return cb();
-				}
+			updateServerFromDB(serverId, (found, err) => {
+				if (err != null || !found) return cb();
 
 				redisGuildsClient.get(serverId, (err, str) => {
 					if (err != null) { console.error(err); return cb(); }
@@ -74,7 +71,7 @@ function get(serverId: string, cb: (client?: DiscordServer) => any) {
 	});
 }
 
-function remove(serverId: string, cb: (count?: number) => any) {
+function removeFromCache(serverId: string, cb: (count?: number) => any) {
 	var doCb = false;
 
 	redisMusic.del(serverId, fin);
@@ -90,7 +87,7 @@ function remove(serverId: string, cb: (count?: number) => any) {
 	}
 }
 
-function updateServer(serverId: string, cb?: (found: boolean, err: Error | null) => any) {
+function updateServerFromDB(serverId: string, cb?: (found: boolean, err: Error | null) => any) {
 	DiscordServers.findOne({ server_id: serverId })
 	.populate({ path: 'command_ids', select: 'pid alias params' })
 	.populate({ path: 'phrase_ids', select: 'pid enabled ignoreCase phrases responses' })
@@ -154,17 +151,17 @@ function updateServer(serverId: string, cb?: (found: boolean, err: Error | null)
 		// parsed.alias = parsed.aliasList;
 		// delete parsed['aliasList'];
 
-		put(serverId, parsed, err => cb && cb(true, err));
+		putInCache(serverId, parsed, err => cb && cb(true, err));
 	});
 }
 
 export {
-	exists,
-	put,
+	existsInCache,
+	putInCache,
 	get,
 	getOrCreate,
-	remove,
-	updateServer,
+	removeFromCache,
+	updateServerFromDB,
 
 	getMusic
 };

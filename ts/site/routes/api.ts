@@ -733,7 +733,7 @@ export = (app: express.Application) => {
 				if (index != -1) server.phrase_ids.splice(index, 1);
 
 				server.save(() => {
-					discordClient.updateServer(server.server_id);
+					discordClient.updateServerFromDB(server.server_id);
 					res.send({});
 				});
 			});
@@ -916,7 +916,7 @@ export = (app: express.Application) => {
 				if (index != -1) server.interval_ids.splice(index, 1);
 
 				server.save(() => {
-					discordClient.updateServer(server.server_id);
+					discordClient.updateServerFromDB(server.server_id);
 					res.send({});
 				});
 			});
