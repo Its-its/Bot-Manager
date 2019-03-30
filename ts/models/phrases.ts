@@ -1,4 +1,5 @@
 import mongoose = require('mongoose');
+import { CustomDocs } from '@type-manager';
 
 let Schema = mongoose.Schema;
 
@@ -18,4 +19,4 @@ let Phrases = new Schema({
 	edited_at: { type: Date, default: Date.now }
 });
 
-export = mongoose.model('phrases', Phrases);
+export = (<mongoose.Model<CustomDocs.global.Phrases>>mongoose.model('phrases', Phrases));

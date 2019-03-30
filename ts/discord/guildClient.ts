@@ -9,6 +9,7 @@ import DiscordServers = require('./models/servers');
 
 import DiscordServer = require('./bot/GuildServer');
 import { getMusic } from './music/GuildMusic';
+import { CustomDocs } from '@type-manager';
 
 
 // TODO: Cache Server even though it takes milliseconds to JSON.parse each get.
@@ -93,8 +94,8 @@ function updateServer(serverId: string, cb?: (found: boolean, err: Error | null)
 	DiscordServers.findOne({ server_id: serverId })
 	.populate({ path: 'command_ids', select: 'pid alias params' })
 	.populate({ path: 'phrase_ids', select: 'pid enabled ignoreCase phrases responses' })
-	// .populate({ path: 'interval_ids', select: 'pid ' })
-	.exec((err, server: any) => {
+	.populate({ path: 'interval_ids', select: 'pid' })
+	.exec((err, server: CustomDocs.discord.ServersPopulatedDocument) => {
 		if (err == null) return cb && cb(false, err);
 		if (server == null) return cb && cb(false, new Error('No Server'));
 
@@ -107,9 +108,48 @@ function updateServer(serverId: string, cb?: (found: boolean, err: Error | null)
 		}
 
 		parsed.linked = (server.bot_id != null && server.bot_id.length != 0);
-		parsed.commands = server.command_ids;
-		parsed.phrases = server.phrase_ids;
-		// parsed.intervals = server.interval_ids;
+
+		parsed.commands = server.command_ids.map(c => {
+			return {
+				_id: c._id,
+				pid: c.pid,
+
+				alias: c.alias,
+				params: c.params
+			}
+		});
+
+		parsed.phrases = server.phrase_ids.map(p => {
+			return {
+				_id: p._id,
+				pid: p.pid,
+				sid: serverId,
+
+				enabled: p.enabled,
+				phrases: p.phrases,
+				responses: p.responses,
+				ignoreCase: p.ignoreCase
+			};
+		});
+
+		parsed.intervals = server.interval_ids.map(i => {
+			return {
+				_id: i._id,
+				pid: i.pid,
+
+				guild_id: i.guild_id,
+				channel_id: i.channel_id,
+
+				displayName: i.displayName,
+				message: i.message,
+				active: i.active,
+
+				every: i.every,
+				nextCall: i.nextCall,
+
+				events: i.events
+			};
+		});
 
 		// parsed.alias = parsed.aliasList;
 		// delete parsed['aliasList'];

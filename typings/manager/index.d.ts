@@ -37,6 +37,8 @@ declare interface CommandClient {
 // 	cb?: (params: Array<string>) => any;
 // }
 
+type ObjectId = string;
+
 declare namespace CustomDocs {
 	namespace global {
 		export interface CommandsDoc extends Document {
@@ -95,6 +97,8 @@ declare namespace CustomDocs {
 		};
 
 		export interface Intervals extends Document {
+			pid: string;
+
 			guild_id: string;
 			channel_id: string;
 
@@ -111,6 +115,21 @@ declare namespace CustomDocs {
 
 			created_at: Date;
 			edited_at: Date;
+		}
+
+		export interface Phrases extends Document {
+			user_id: ObjectId,
+
+			pid: string,
+
+			enabled: boolean,
+			ignoreCase: boolean,
+
+			phrases: string[],
+			responses: any[],
+
+			created_at: Date,
+			edited_at: Date
 		}
 	}
 
@@ -222,7 +241,9 @@ declare namespace CustomDocs {
 		}
 
 		export interface ServersPopulatedDocument extends ServersDocumentTemp<
-			DiscordBot.Command, DiscordBot.Interval, DiscordBot.Phrase> {}
+			CustomDocs.global.CommandsDoc,
+			CustomDocs.global.Intervals,
+			CustomDocs.global.Phrases> {}
 
 		export interface ServersDocument extends ServersDocumentTemp<
 			string, string, string> {}
