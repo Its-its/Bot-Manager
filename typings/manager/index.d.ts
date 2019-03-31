@@ -1,5 +1,6 @@
 import Discord = require ('discord.js');
 import { Document, Schema } from "mongoose";
+import { ObjectID } from 'bson';
 
 // import { Message } from 'discord.js';
 
@@ -37,12 +38,10 @@ declare interface CommandClient {
 // 	cb?: (params: Array<string>) => any;
 // }
 
-type ObjectId = string;
-
 declare namespace CustomDocs {
 	namespace global {
 		export interface CommandsDoc extends Document {
-			user_id: Schema.Types.ObjectId;
+			user_id: ObjectID;
 			pid: string;
 
 			alias: string[];
@@ -118,7 +117,7 @@ declare namespace CustomDocs {
 		}
 
 		export interface Phrases extends Document {
-			user_id: ObjectId,
+			user_id: ObjectID,
 
 			pid: string,
 
@@ -161,7 +160,7 @@ declare namespace CustomDocs {
 
 		// Temp Punishment
 
-		export interface TempPunishments extends _TempPunishments<string> {}
+		export interface TempPunishments extends _TempPunishments<ObjectID> {}
 		export interface TempPunishmentsPopulated extends _TempPunishments<Punishments> {}
 
 		export interface _TempPunishments<P> extends Document {
@@ -174,7 +173,7 @@ declare namespace CustomDocs {
 		}
 
 		// RSS
-		export interface DiscordRss extends DiscordFeedsTemp<string> {}
+		export interface DiscordRss extends DiscordFeedsTemp<ObjectID> {}
 		export interface DiscordRssPopulated extends DiscordFeedsTemp<CustomDocs.global.RSSFeeds> {}
 
 		export interface DiscordFeedsTemp<F> extends Document {
@@ -195,7 +194,7 @@ declare namespace CustomDocs {
 		}
 
 		// Twitter
-		export interface DiscordTwitter extends DiscordTwitterTemp<string> {}
+		export interface DiscordTwitter extends DiscordTwitterTemp<ObjectID> {}
 		export interface DiscordTwitterPopulated extends DiscordTwitterTemp<CustomDocs.global.TwitterFeeds> {}
 
 		export interface DiscordTwitterTemp<F> extends Document {
@@ -246,11 +245,11 @@ declare namespace CustomDocs {
 			CustomDocs.global.Phrases> {}
 
 		export interface ServersDocument extends ServersDocumentTemp<
-			string, string, string> {}
+			ObjectID, ObjectID, ObjectID> {}
 
 		export interface ServersDocumentTemp<C, I, P> extends Document {
-			user_id: string;
-			bot_id: string;
+			user_id: ObjectID;
+			bot_id: ObjectID;
 
 			server_id: string;
 			key: string;
@@ -272,7 +271,7 @@ declare namespace CustomDocs {
 		export interface BotsDocument extends Document {
 			getBot: (cb: (err?: Error, res?: Document) => any) => any;
 
-			user_id: string;
+			user_id: ObjectID;
 			uid: string;
 
 			botType: string;
@@ -627,7 +626,6 @@ declare namespace DiscordBot {
 		phrases?: Phrase[];
 		roles?: Role[];
 		plugins?: any;
-		values?: any;
 
 		moderation?: Moderation;
 		permissions?: Permissions;
@@ -775,7 +773,7 @@ declare namespace DiscordBot {
 		_id?: string;
 
 		pid: string;
-		sid: string;
+		// sid: string;
 
 		enabled: boolean;
 		ignoreCase: boolean;
@@ -858,12 +856,13 @@ declare namespace DiscordBot {
 	type PLUGIN_NAMES = 'commands' | 'logs' | 'leveling' | 'events';
 
 	interface Plugin {
-		// [name: string]: PluginItem;
 
 		logs?: PluginLogs;
 		commands?: PluginItem;
 		leveling?: PluginItem;
 		events?: PluginItem;
+
+		[name: string]: PluginItem;
 	}
 
 	interface PluginLogs extends PluginItem {

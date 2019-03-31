@@ -133,7 +133,6 @@ class Server extends Changes {
 		// }
 	};
 
-	public values: any;
 
 	public permissions: DiscordBot.Permissions = {
 		roles: {}, users: {}, groups: {}
@@ -160,7 +159,6 @@ class Server extends Changes {
 		this.commands = def([], options.commands)!;
 		this.phrases = def([], options.phrases)!;
 		this.plugins = def({}, options.plugins);
-		this.values = def({}, options.values);
 		this.channels = def({}, options.channels)!;
 		this.punishments = def({}, options.punishments)!;
 
@@ -226,7 +224,7 @@ class Server extends Changes {
 		);
 	}
 
-	public isPluginEnabled(name: DiscordBot.PLUGIN_NAMES) {
+	public isPluginEnabled(name: DiscordBot.PLUGIN_NAMES | string) {
 		// Commands is enabled by default even if null.
 		if (name == 'commands') return this.plugins[name] == null || this.plugins[name]!.enabled;
 
@@ -1259,7 +1257,6 @@ class Server extends Changes {
 			moderation: this.moderation,
 			plugins: this.plugins,
 
-			values: this.values,
 			roles: this.roles,
 			permissions: this.permissions
 		};
@@ -1285,7 +1282,6 @@ class Server extends Changes {
 			intervals: this.intervals,
 			commands: this.commands,
 			phrases: this.phrases,
-			values: this.values,
 			roles: this.roles,
 			permissions: this.permissions
 		});

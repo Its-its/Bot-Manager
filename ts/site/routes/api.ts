@@ -72,7 +72,6 @@ interface EnsureNumber {
 	$filter?: (value: any) => boolean;
 }
 
-
 interface EnsureArray {
 	type: EnsureItems[];
 	value?: any[];
@@ -82,6 +81,8 @@ interface EnsureArray {
 
 	$filter?: (value: any) => boolean;
 }
+
+
 
 type EnsureArgs = {
 	fieldLocation?: 'body' | 'params';
@@ -98,8 +99,6 @@ function ensure(opts: EnsureOpts) {
 	var corrected: CorrectedArgs[] = [];
 
 	for (var key in opts) corrected.push(correctOpts(key, opts[key]));
-
-	// console.log(JSON.stringify(corrected, null, 4));
 
 	function correctOpts(key: string, item: any): CorrectedArgs {
 		if (typeof item == 'string') {
@@ -169,6 +168,8 @@ function ensure(opts: EnsureOpts) {
 				if (item.$min != null && value.length < item.$min) return { err: 'Field "%s" is too short!' };
 				if (item.$max != null && value.length > item.$max) return { err: 'Field "%s" is too long!' };
 				break;
+			// case 'any':
+			// 	break;
 			// case 'object':
 			// 	if (Array.isArray(value) || typeof value != 'object') return 'Field "%s" is supposed to be an object!';
 			// 	break;
@@ -206,7 +207,7 @@ export = (app: express.Application) => {
 	const route = express.Router();
 
 	route.use(function(req, res, next) {
-		if ((<any>req).isAuthenticated()) return next();
+		if (req.isAuthenticated()) return next();
 
 		// TODO: Check body for user uid.
 		res.status(400).send({ error: 'Not Authenticated' });
@@ -698,8 +699,112 @@ export = (app: express.Application) => {
 		});
 	});
 
-	// bots.post('/:bid/phrases', registerBot, (req, res) => {
-	// });
+	// TODO: Double Check | responses can be incorrect.
+	bots.post('/:bid/phrases', ensure({
+		phrases: {
+			type: [
+				{ type: 'string', $min: 1 }
+			],
+			required: true,
+			$min: 1
+		},
+		responses: {
+			type: 'array',
+			required: true,
+			$min: 1,
+			$max: 2
+		},
+		enabled: {
+			type: 'boolean',
+			default: false
+		},
+		ignoreCase: {
+			type: 'boolean',
+			default: true
+		}
+	}), registerBot, (req, res) => {
+		var { bid, cid } = req.params;
+
+		var { enabled, ignoreCase, phrases, responses } = req.body;
+
+		// @ts-ignore
+		var bot: CustomDocs.web.BotsDocument = req['bot'];
+
+		DiscordServers.findOne({ _id: bot.botId })
+		.populate('phrase_ids')
+		.exec((err, doc: CustomDocs.discord.ServersPopulatedDocument) => {
+			if (err != null) return res.status(500).send({ error: err });
+			if (doc == null) return res.status(500).send({ error: 'Unable to find Discord Server.' });
+
+			var phrasesPopulated = doc.phrase_ids;
+
+			if (phrasesPopulated.length >= 20) return res.status(500).send({ error: 'Maximum Commands used in bot.' })
+
+			for(var i = 0; i < phrasesPopulated.length; i++) {
+				var cmd = phrasesPopulated[i];
+
+				// New Command Alias's
+				for(var a = 0; a < phrases.length; a++) {
+					if (cmd.phrases.indexOf(phrases[a].toLowerCase()) != -1) {
+						return res.send({ error: 'A Command with one or more of those alias\'s exists!' });
+					}
+				}
+			}
+
+			new Phrases({
+				user_id: bot.user_id,
+				pid: uniqueID(),
+
+				enabled: enabled,
+				ignoreCase: ignoreCase,
+				phrases: phrases,
+				responses: responses
+			})
+			.save((err, prod) => {
+				if (err != null) {
+					console.error(err);
+					return res.status(500).send({ error: 'An Error occured while trying to add the command! Try again in a minute.' });
+				}
+
+				DiscordServers.updateOne(
+					{ _id: doc.id },
+					{ $addToSet: { 	phrase_ids: prod.id } }
+				).exec();
+
+				getDiscordServer(doc.server_id, server => {
+					if (server != null) {
+						server.phrases.push({
+							pid: prod.pid,
+							enabled: prod.enabled,
+							ignoreCase: prod.ignoreCase,
+							phrases: prod.phrases,
+							responses: prod.responses
+						});
+
+						if (!enabled) {
+							if (server.moderation.disabledCustomCommands == null) {
+								server.moderation.disabledCustomCommands = [];
+							}
+
+							server.moderation.disabledCustomCommands.push(prod.pid);
+						}
+
+						server.save();
+					}
+
+					res.send({
+						data: {
+							pid: prod.pid,
+							enabled: prod.enabled,
+							ignoreCase: prod.ignoreCase,
+							phrases: prod.phrases,
+							responses: prod.responses
+						}
+					});
+				});
+			});
+		});
+	});
 
 	// bots.put('/:bid/phrases/:pid', registerBot, (req, res) => {
 	// 	var { pid } = req.params;
@@ -775,13 +880,44 @@ export = (app: express.Application) => {
 	// bots.post('/:bid/ranks', registerBot, (req, res) => {
 	// });
 
-	// bots.put('/:bid/ranks/:rid', registerBot, (req, res) => {
-	// 	var { rid } = req.params;
+	// bots.put('/:bid/ranks/:name', registerBot, (req, res) => {
+	// 	var { name } = req.params;
 	// });
 
-	// bots.delete('/:bid/ranks/:rid', registerBot, (req, res) => {
-	// 	var { rid } = req.params;
-	// });
+	bots.delete('/:bid/ranks/:name', ensure({ name: { type: 'string', $min: 1 } }), registerBot, (req, res) => {
+		var { name } = req.params;
+
+		// @ts-ignore
+		var bot: CustomDocs.web.BotsDocument = req['bot'];
+
+		DiscordServers.findOne({ _id: bot.botId })
+		.exec((err, doc: CustomDocs.discord.ServersDocument) => {
+			if (err != null) return res.send({ error: err });
+
+			getDiscordServer(doc.server_id, server => {
+				if (server == null) {
+					var jsonServer: DiscordBot.ServerOptions = JSON.parse(doc.server);
+
+					var ranks = jsonServer.ranks || [];
+
+					var indexOf = ranks.indexOf(name);
+					if (indexOf != -1) ranks.splice(indexOf, 1);
+
+					DiscordServers.updateOne({ _id: bot.botId }, { $set: { server: JSON.stringify(jsonServer) } }).exec();
+
+					res.send({ data: true });
+
+					return;
+				}
+
+				server.removeRank(name);
+
+				server.save();
+
+				res.send({ data: true });
+			});
+		});
+	});
 
 //#endregion
 
@@ -789,9 +925,31 @@ export = (app: express.Application) => {
 //#region Roles
 
 	// Get All Bot Roles
-	// bots.get('/:bid/roles', registerBot, (req, res) => {
-	// 	var { bid } = req.params;
-	// });
+	bots.get('/:bid/roles', registerBot, (req, res) => {
+		// @ts-ignore
+		var bot: CustomDocs.web.BotsDocument = req['bot'];
+
+		DiscordServers.findOne({ _id: bot.botId })
+		.exec((err, doc: CustomDocs.discord.ServersDocument) => {
+			if (err != null) return res.send({ error: err });
+
+			getDiscordServer(doc.server_id, server => {
+				if (server == null) {
+					var jsonServer: DiscordBot.ServerOptions = JSON.parse(doc.server);
+
+					res.send({
+						data: jsonServer.roles || []
+					});
+
+					return;
+				}
+
+				res.send({
+					data: server.roles
+				});
+			});
+		});
+	});
 
 	// bots.post('/:bid/roles', registerBot, (req, res) => {
 	// 	var { bid } = req.params;
@@ -801,9 +959,46 @@ export = (app: express.Application) => {
 	// 	var { rid } = req.params;
 	// });
 
-	// bots.delete('/:bid/roles/:rid', registerBot, (req, res) => {
-	// 	var { rid } = req.params;
-	// });
+	bots.delete('/:bid/roles/:pid', registerBot, (req, res) => {
+		var { pid } = req.params;
+
+		// @ts-ignore
+		var bot: CustomDocs.web.BotsDocument = req['bot'];
+
+		DiscordServers.findOne({ _id: bot.botId })
+		.exec((err, doc: CustomDocs.discord.ServersDocument) => {
+			if (err != null) return res.send({ error: err });
+
+			getDiscordServer(doc.server_id, server => {
+				if (server == null) {
+					var jsonServer: DiscordBot.ServerOptions = JSON.parse(doc.server);
+
+					var roles = jsonServer.roles || [];
+
+					for(var i = 0; i < roles.length; i++) {
+						var role = roles[i];
+
+						if (role.id == pid) {
+							roles.splice(i, 1);
+							break;
+						}
+					}
+
+					DiscordServers.updateOne({ _id: bot.botId }, { $set: { server: JSON.stringify(jsonServer) } }).exec();
+
+					res.send({ data: true });
+
+					return;
+				}
+
+				server.removeRole(pid);
+
+				server.save();
+
+				res.send({ data: true });
+			});
+		});
+	});
 
 //#endregion
 

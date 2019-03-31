@@ -7,15 +7,13 @@ import passportTwitch = require('passport-twitch');
 import passport = require('passport');
 
 import Users = require('../models/users');
-import Bots = require('../models/bots');
-import DiscordServers = require('../../discord/models/servers');
 import DiscordMembers = require('../../discord/models/members');
 
 import config = require('@config');
 
-let GoogleStrategy = passportGoogleOauth.OAuth2Strategy;
-let DiscordStrategy = passportDiscord.Strategy;
-let TwitchStrategy = passportTwitch.Strategy;
+const GoogleStrategy = passportGoogleOauth.OAuth2Strategy;
+const DiscordStrategy = passportDiscord.Strategy;
+const TwitchStrategy = passportTwitch.Strategy;
 
 import * as express from 'express';
 export = (app: express.Application) => {
@@ -185,14 +183,15 @@ export = (app: express.Application) => {
 
 	// Login
 	passport.serializeUser((user: any, done) => {
-		console.log('passport.serializeUser:', user);
+		// console.log('passport.serializeUser:', user);
 		done(null, user.id);
 	});
 
 	// Logout
 	passport.deserializeUser((id: any, done) => {
-		console.log('passport.deserializeUser:', id);
+		// console.log('passport.deserializeUser:', id);
 		Users.findById(id, (err, user) => {
+			if (user != null) console.log(user._id);
 			// @ts-ignore
 			done(err, user);
 		});

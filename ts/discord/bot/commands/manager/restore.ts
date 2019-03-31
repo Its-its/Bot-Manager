@@ -613,7 +613,7 @@ interface Compiled {
 
 	intervals?: DiscordBot.Interval[];
 
-	phrases?: Omit<DiscordBot.Phrase, 'pid' | 'sid'>[];
+	phrases?: Omit<DiscordBot.Phrase, 'pid'>[];
 
 	[key: string]: any;
 }

@@ -297,6 +297,7 @@
 			};
 		}
 
+
 		pageHome() {
 			super.setupComponents();
 
@@ -319,7 +320,7 @@
 
 					createElement('h4', { className: 'title', innerText: 'Commands' }, section);
 					createElement('button', { className: 'button success newitem', innerText: 'New' }, section)
-					.addEventListener('click', function() { newCommand({ id: '_' + Date.now() }, commands++); });
+					.addEventListener('click', function() { newCommand({}, commands++); });
 
 					data.forEach(function(c, i) { newCommand(c, i); });
 
@@ -340,7 +341,7 @@
 						var saveButton = createElement('button', { className: 'button success', innerText: 'Save', style: 'float: right;' }, bsection);
 						createElement('button', { className: 'button alert', innerText: 'Delete', style: 'float: right;' }, bsection)
 						.addEventListener('click', function() {
-							if (cmd.id[0] != '_') {
+							if (cmd.id != null) {
 								$.ajax({
 									type: 'DELETE',
 									url: '/api/bots/' + botId + '/commands/' + cmd.id,
@@ -442,7 +443,7 @@
 								// if (cmd.params.length == 0) createParam({ length: 0 });
 							}
 
-							if (cmd.id[0] == '_') {
+							if (cmd.id == null) {
 								$.ajax({
 									type: 'POST',
 									url: '/api/bots/' + botId + '/commands',
@@ -482,7 +483,14 @@
 
 					createElement('h4', { className: 'title', innerText: 'Phrases' }, section);
 					createElement('button', { className: 'button success newitem', innerText: 'New' }, section)
-					.addEventListener('click', function() { newPhrase({}, phrases++); });
+					.addEventListener('click', function() {
+						newPhrase({
+							enabled: true,
+							ignoreCase: true,
+							responses: [],
+							phrases: []
+						}, phrases++);
+					});
 
 					data.forEach(function(p, i) { newPhrase(p, i); });
 
@@ -554,11 +562,13 @@
 
 					console.log('Timers:', data);
 
-					var commands = data.length;
+					var timersLength = data.length;
 
 					createElement('h4', { className: 'title', innerText: 'Timers' }, section);
 					createElement('button', { className: 'button success newitem', innerText: 'New' }, section)
-					.addEventListener('click', function() { newTimer({ id: '_' + Date.now() }, commands++); });
+					.addEventListener('click', function() {
+						newTimer({ every: '30m', displayName: 'New Interval', message: '' }, timersLength++);
+					});
 
 					data.forEach(function(c, i) { newTimer(c, i); });
 
@@ -579,7 +589,7 @@
 						var saveButton = createElement('button', { className: 'button success', innerText: 'Save', style: 'float: right;' }, bsection);
 						createElement('button', { className: 'button alert', innerText: 'Delete', style: 'float: right;' }, bsection)
 						.addEventListener('click', function() {
-							if (interval.pid[0] != '_') {
+							if (interval.pid != null) {
 								$.ajax({
 									type: 'DELETE',
 									url: '/api/bots/' + botId + '/commands/' + interval.pid,
@@ -601,7 +611,7 @@
 
 						createElement('span', { className: 'title', innerText: 'Timing' }, lSection);
 
-						createElement('input', { type: 'text', value: interval.every }, lSection)
+						createElement('input', { type: 'text', value: interval.every}, lSection)
 						.addEventListener('keyup', function() { interval.every = this.value; });
 
 
@@ -639,7 +649,7 @@
 								// if (cmd.params.length == 0) createParam({ length: 0 });
 							}
 
-							if (interval.pid[0] == '_') {
+							if (interval.pid == null) {
 								$.ajax({
 									type: 'POST',
 									url: '/api/bots/' + botId + '/intervals',
