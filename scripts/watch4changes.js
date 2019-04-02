@@ -2,16 +2,14 @@ const child = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-
-console.log('Watching for file changes...');
-
-
 const WAIT_TIME = 3000;
 
 var buildTimeout;
 var isBuilding = false;
 var shouldBuildAgain = false;
 
+
+runBuild();
 
 fs.watch(path.join(__dirname, '../ts'), { recursive: true  }, (event, filename) => {
 	runTimeout(event + ' - ' + filename);
