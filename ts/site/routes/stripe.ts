@@ -1,7 +1,7 @@
 import * as express from 'express';
 
 import Stripe = require('stripe');
-// const stripe = new Stripe('pk_test_rTGVMCIvL2l9fC66mgCnBUk9002mK4svjI');
+// const stripe = new Stripe('');
 
 function errorHandler(error: any) {
 	switch (error.type) {
