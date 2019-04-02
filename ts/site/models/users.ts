@@ -1,4 +1,5 @@
 import mongoose = require('mongoose');
+import { CustomDocs } from '@type-manager';
 
 const Schema = mongoose.Schema;
 
@@ -30,13 +31,16 @@ const User = new Schema({
 
 	discord: {
 		id: String,
-		token: String
+
+		token: String,
+		refreshToken: String,
+		tokenExpires: Number
 	},
 
 	created_at: { type: Date, default: Date.now }
 });
 
-User.virtual('listeners', {
+User.virtual('bot_listeners', {
 	ref: 'bots',
 	localField: '_id',
 	foreignField: 'user_id'
@@ -57,4 +61,4 @@ User.virtual('listeners', {
 // });
 
 
-export = mongoose.model('users', User);
+export = (<mongoose.Model<CustomDocs.web.UsersDocument>>mongoose.model('users', User));

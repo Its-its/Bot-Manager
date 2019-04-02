@@ -133,6 +133,41 @@ declare namespace CustomDocs {
 	}
 
 	namespace discord {
+		export interface Member extends Document {
+			user_id: ObjectID,
+
+			did: string,
+			name: string,
+			avatar: string,
+			locale: string,
+			flags: number,
+			premium_type: number,
+			mfa_enabled: boolean,
+			// provider: string,
+			discriminator: string,
+
+			connections: {
+				id: string,
+				name: string,
+				type: string,
+				revoked: boolean,
+				integrations: any[]
+			}[],
+
+			guilds: {
+				owner: boolean,
+				permissions: number,
+				icon: string,
+				id: string,
+				name: string
+			}[];
+
+			updated_guilds_at: Date;
+
+			created_at: Date;
+			edited_at: Date;
+		}
+
 		export interface UserLevel extends Document {
 			server_id: string;
 			member_id: string;
@@ -223,22 +258,6 @@ declare namespace CustomDocs {
 			created_at: Date;
 		}
 
-		export interface MembersDocument extends Document {
-			user_id: Schema.Types.ObjectId;
-
-			did: string;
-			name: string;
-			avatar: string;
-
-			mfa_enabled: boolean;
-			discriminator: string;
-
-			connections: any[];
-			guilds: any[];
-
-			created_at: Date;
-		}
-
 		export interface ServersPopulatedDocument extends ServersDocumentTemp<
 			CustomDocs.global.CommandsDoc,
 			CustomDocs.global.Intervals,
@@ -288,6 +307,7 @@ declare namespace CustomDocs {
 		export interface UsersDocument extends Document {
 			is_Active: boolean;
 			admin: boolean;
+
 			bots: {
 				amount: number;
 				twitch_amount: number;
@@ -312,17 +332,19 @@ declare namespace CustomDocs {
 			discord: {
 				id: string;
 				token: string;
+				refreshToken: string;
+				tokenExpires?: number;
 			}
 
 			created_at: Date;
 
-			listeners?: BotsDocument[];
+			bot_listeners?: BotsDocument[];
 		}
 	}
 
 	namespace music {
 		export interface Playlists extends Document {
-			creator: Schema.Types.ObjectId;
+			creator: ObjectID;
 
 			type: number; // default, custom, generated
 			visibility: number; // public, private, hidden

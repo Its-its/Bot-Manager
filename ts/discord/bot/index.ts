@@ -581,7 +581,7 @@ setInterval(() => {
 						var rssIds: string[] = [];
 
 						feeds.map(f => f.feeds.map(f => f.feed))
-						.forEach(f => rssIds = rssIds.concat(f));
+						.forEach(f => rssIds = rssIds.concat(f.map(o => o.toHexString())));
 
 						// TODO: Remove dupes
 
@@ -671,7 +671,7 @@ setInterval(() => {
 						var rssIds: string[] = [];
 
 						feeds.map(f => f.feeds.map(f => f.feed))
-						.forEach(f => rssIds = rssIds.concat(f));
+						.forEach(f => rssIds = rssIds.concat(f.map(o => o.toHexString())));
 
 						// TODO: Remove dupes
 

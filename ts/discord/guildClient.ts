@@ -104,7 +104,7 @@ function updateServerFromDB(serverId: string, cb?: (found: boolean, err: Error |
 			parsed = server.server;
 		}
 
-		parsed.linked = (server.bot_id != null && server.bot_id.length != 0);
+		parsed.linked = (server.bot_id != null);
 
 		parsed.commands = server.command_ids.map(c => {
 			return {

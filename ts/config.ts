@@ -6,7 +6,7 @@ let config: Config = JSON.parse(fs.readFileSync(path.join(__dirname, '../app/con
 for (var key in config.passport) {
 	// @ts-ignore
 	let item = config.passport[key];
-	item['callbackURL'] = config.urlProtocol + '://' + config.baseUrl + item['callbackURL'];
+	item.callbackURL = `${config.urlProtocol}://${config.baseUrl}${config.port == 80 ? '' : ':' + config.port}${item.callbackURL}`;
 }
 
 config.ytdl.full = config.ytdl.address + (config.ytdl.port == 80 ? '' : ':' + config.ytdl.port);

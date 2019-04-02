@@ -125,24 +125,37 @@ export = (app: express.Application) => {
 				if (err != null) return done(err);
 
 				if (user != null) {
+					user.discord.refreshToken = refreshToken;
+					user.discord.token = accessToken;
+
+					user.save();
+
 					DiscordMembers.updateOne(
 						{ user_id: user._id },
 						{
 							$set: {
-								guilds: profile.guilds
-							},
-							$setOnInsert: {
-								user_id: user._id,
-								did: profile.id,
 								name: profile.username,
 								avatar: profile.avatar,
 								mfa_enabled: profile.mfa_enabled,
 								discriminator: profile.discriminator,
-								connections: profile.connections
+								locale: profile.locale,
+								flags: profile.flags,
+								premium_type: profile.premium_type,
+
+								connections: profile.connections,
+								guilds: profile.guilds,
+
+								updated_guilds_at: new Date(),
+								edited_at: new Date()
+							},
+							$setOnInsert: {
+								user_id: user._id,
+								did: profile.id,
 							}
-						}, { upsert: true }).exec(() => done(null, user));
-					// user.discord.guilds = profile.guilds;
-					// user.save(() => done(null, user));
+						},
+						{ upsert: true }
+					)
+					.exec(() => done(null, user));
 
 					return;
 				}
@@ -151,8 +164,6 @@ export = (app: express.Application) => {
 					'discord.id': profile.id,
 					'discord.token': accessToken
 				});
-
-				// guilds: [{ owner: Boolean, permissions: Number, icon: String, id: String, name: String }]
 
 				user.save((err: any, doc: any) => {
 					if (err) {
@@ -166,12 +177,21 @@ export = (app: express.Application) => {
 						$set: {
 							user_id: doc._id,
 							did: profile.id,
+
 							name: profile.username,
 							avatar: profile.avatar,
 							mfa_enabled: profile.mfa_enabled,
 							discriminator: profile.discriminator,
+							locale: profile.locale,
+							flags: profile.flags,
+							premium_type: profile.premium_type,
+
 							connections: profile.connections,
-							guilds: profile.guilds
+							guilds: profile.guilds,
+
+							updated_guilds_at: new Date(),
+							edited_at: new Date(),
+							created_at: new Date()
 						}
 					}, { upsert: true }).exec();
 
@@ -181,19 +201,10 @@ export = (app: express.Application) => {
 		}
 	));
 
-	// Login
-	passport.serializeUser((user: any, done) => {
-		// console.log('passport.serializeUser:', user);
-		done(null, user.id);
-	});
+	// After Login
+	passport.serializeUser((user: any, done) => done(null, user.id));
 
-	// Logout
 	passport.deserializeUser((id: any, done) => {
-		// console.log('passport.deserializeUser:', id);
-		Users.findById(id, (err, user) => {
-			if (user != null) console.log(user._id);
-			// @ts-ignore
-			done(err, user);
-		});
+		Users.findById(id, (err, user: any) => done(err, user));
 	});
 }

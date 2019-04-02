@@ -1,5 +1,6 @@
 import express = require('express');
 import mongoose = require('mongoose');
+import request = require('request');
 
 import * as redis from 'redis';
 
@@ -202,6 +203,45 @@ function ensure(opts: EnsureOpts) {
 
 const validBots = [ 'twitch', 'discord', 'youtube' ];
 
+interface TokenResponse {
+    access_token: string;
+    token_type: string;
+    expires_in: number;
+    refresh_token: string;
+    scope: string;
+}
+
+function refreshToken(refresh_token: string, cb: (err?: any, response?: TokenResponse) => any) {
+	request.post(
+		'https://discordapp.com/api/oauth2/token',
+		{
+			form: {
+				refresh_token: refresh_token,
+				grant_type: 'refresh_token',
+				client_id: config.passport.discord.clientID,
+				client_secret: config.passport.discord.clientSecret,
+				redirect_uri: config.passport.discord.callbackURL,
+				scope: config.passport.discord.scopeAuth.join(' ')
+			},
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded'
+			}
+		},
+		(err, resp, body) => {
+			if (err != null) return cb(err);
+
+			try {
+				var parsed = JSON.parse(body);
+
+				if (parsed.error != null) cb(parsed.error_description);
+				else cb(undefined, parsed);
+			} catch(e) {
+				cb('Unable to parse token body..');
+			}
+		}
+	);
+}
+
 export = (app: express.Application) => {
 	// api/
 	const route = express.Router();
@@ -211,6 +251,132 @@ export = (app: express.Application) => {
 
 		// TODO: Check body for user uid.
 		res.status(400).send({ error: 'Not Authenticated' });
+	});
+
+
+	const discordRoute = express.Router();
+
+	discordRoute.get('/guilds', (req, res) => {
+		// @ts-ignore
+		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		var user: CustomDocs.web.UsersDocument = req.user;
+
+		DiscordMembers.findOne({ user_id: user._id }, (err, member) => {
+			if (err != null) return res.status(500).send({ error: err });
+			if (member == null) return res.status(500).send({ error: 'Discord member doesn\'t exist.' });
+
+			// Refresh after 10 minutes?
+			if (member.updated_guilds_at.getTime() > Date.now() - 1000 * 60 * 15) {
+				console.log('Cached');
+
+				res.send({
+					data: {
+						last_updated: member.updated_guilds_at,
+						guilds: member.guilds
+							.filter(g => discordUtils.getPermissions(g.permissions).has(discordUtils.Permissions.FLAGS.ADMINISTRATOR))
+							.map(g => { return { id: g.id, name: g.name, isOwner: g.owner, icon: g.icon }})
+					}
+				});
+			} else {
+				// Attempt to re-get the members guilds.
+				request.get(
+					'https://discordapp.com/api/users/@me/guilds',
+					{ headers: { Authentication: `Bearer ${user.discord.token}` } },
+					(err, resp, body) => {
+						console.log('re-get: ' + resp.statusCode);
+
+						if (err != null) return res.status(500).send(err);
+
+						if (resp.statusCode != 401) {
+							if (resp.statusCode == 429) {
+								// rate limited
+
+								try {
+									var json = JSON.parse(body);
+									res.send({ error: json.message });
+								} catch(e) {
+									console.error('Unable to parse (RL):', e);
+									res.send({ error: 'Unable to parse rate limited body..' });
+								}
+							} else {
+								// success
+
+								try {
+									var json = JSON.parse(body);
+
+									member.updated_guilds_at = new Date();
+									member.guilds = json;
+
+									member.save(() => {
+										res.send({
+											data: {
+												last_updated: member.updated_guilds_at,
+												guilds: json
+											}
+										});
+									});
+								} catch(e) {
+									console.error('Unable to parse (S):', e);
+									res.send({ error: 'Unable to parse..' });
+								}
+							}
+						} else {
+							// unauthorized
+
+							if (user.discord.refreshToken == null) {
+								return res.status(500).send({ error: 'No refresh token! Please logout and log back in to update guilds this time..' });
+							}
+
+							refreshToken(user.discord.refreshToken, (err, resp) => {
+								if (err != null) return res.status(500).send({ error: err });
+								if (resp == null) return res.status(500).send({ error: 'Refresh token response didn\'t return anything!' });
+
+								console.log('Refresh');
+
+								console.log(resp);
+
+								if (resp.refresh_token == null || resp.access_token == null) return console.log('Returned');
+
+								user.discord.refreshToken = resp.refresh_token;
+								user.discord.token = resp.access_token;
+								user.discord.tokenExpires = resp.expires_in;
+
+								user.save();
+
+								// Attempt to re-get the members guilds.
+								request.get(
+									'https://discordapp.com/api/users/@me/guilds',
+									{ headers: { Authentication: `Bearer ${user.discord.token}` } },
+									(err, resp, body) => {
+										if (err != null) return res.status(500).send({ error: err });
+										if (resp.statusCode != 200) return res.status(500).send({ error: `Status Code: ${resp.statusCode}` });
+
+										try {
+											var json = JSON.parse(body);
+
+											member.updated_guilds_at = new Date();
+											member.guilds = json;
+
+											member.save(() => {
+												res.send({
+													data: {
+														last_updated: member.updated_guilds_at,
+														guilds: json
+													}
+												});
+											});
+										} catch(e) {
+											console.error('Unable to parse (S):', e);
+											res.send({ error: 'Unable to parse..' });
+										}
+									}
+								);
+							});
+						}
+					}
+				);
+			}
+		});
 	});
 
 
@@ -258,10 +424,10 @@ export = (app: express.Application) => {
 
 		console.log('/status populate lis');
 		// Main Dashboard
-		req['user'].populate('listeners', (err: any, resp: CustomDocs.web.UsersDocument) => {
+		req['user'].populate('bot_listeners', (err: any, resp: CustomDocs.web.UsersDocument) => {
 			res.send({
 				error: err,
-				data: resp.listeners!.map(b => {
+				data: resp.bot_listeners!.map(b => {
 					return {
 						displayName: b.displayName,
 						uid: b.uid,
@@ -301,62 +467,39 @@ export = (app: express.Application) => {
 
 //#region Main
 
-	bots.post('/status', (req, res) => {
+	bots.post('/status', registerBot, (req, res) => {
 		var id = req.body.id;
 
-		Bots.findOne({ uid: id }, (err, bot) => {
-			var user: CustomDocs.web.UsersDocument = req.user;
+		// @ts-ignore
+		var bot: CustomDocs.web.BotsDocument = req['bot'];
 
-			if (err == null && bot != null) {
-				// TODO: Remove
-				DiscordMembers.findOne({ user_id: user.id }, (err, member: CustomDocs.discord.MembersDocument) => {
-					if (member == null) return;
+		var user: CustomDocs.web.UsersDocument = req.user;
 
-					var data = {
-						user: {
-							twitch: {
-								linked: user.twitch.id != null
-							},
-							discord: {
-								linked: user.discord.id != null,
-								guilds: member['guilds']
-									.filter(g => discordUtils.getPermissions(g.permissions).has(discordUtils.Permissions.FLAGS.ADMINISTRATOR))
-									.map(g => { return { id: g.id, name: g.name }})
-							},
-							youtube: {
-								linked: user.youtube.id != null
-							}
-						},
-						bot: {
-							displayName: bot.displayName,
-							active: bot.is_active,
-							uid: bot.uid,
-							app: null,
-							created: bot.created_at,
-							edited: bot.edited_at
-						}
-					};
-
-					// TODO: Remove? Just send type of bot?
-					bot.getBot((err, app) => {
-						if (app != null) {
-							delete app['__v'];
-							delete app['_id'];
-							// @ts-ignore
-							delete app['user_id'];
-							// @ts-ignore
-							delete app['server_id'];
-							// @ts-ignore
-							delete app['bot_id'];
-						}
-
-						// @ts-ignore
-						data.bot.app = app!;
-
-						res.send({ data: data });
-					});
-				});
-			} else res.send({ error: err || 'Bot doesn\'t exist.' });
+		res.send({
+			data: {
+				user: {
+					twitch: {
+						linked: user.twitch.id != null
+					},
+					discord: {
+						linked: user.discord.id != null,
+						// guilds: member.guilds
+						// 	.filter(g => discordUtils.getPermissions(g.permissions).has(discordUtils.Permissions.FLAGS.ADMINISTRATOR))
+						// 	.map(g => { return { id: g.id, name: g.name }})
+					},
+					youtube: {
+						linked: user.youtube.id != null
+					}
+				},
+				bot: {
+					displayName: bot.displayName,
+					active: bot.is_active,
+					uid: bot.uid,
+					// app: null,
+					created: bot.created_at,
+					edited: bot.edited_at
+				}
+			}
 		});
 	});
 
@@ -1133,6 +1276,7 @@ export = (app: express.Application) => {
 
 	route.use('/bots', bots);
 	route.use('/dashboard', dashboard);
+	route.use('/discord', discordRoute);
 
 
 	app.use('/api', route);
