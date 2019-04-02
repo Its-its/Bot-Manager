@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 import * as express from 'express';
 
-
+import stripe = require('./stripe');
 import passport = require('./passport');
 import apiSetup = require('./api');
 import discord = require('./discord');
@@ -33,6 +33,8 @@ export = (app: express.Application, socketio: Server) => {
 	app.get('/settings', authed, (req, res) => {
 		res.render('index');
 	});
+
+	stripe(app);
 
 	var route = musicRoute(socketio);
 	app.use(route.loc, route.route);

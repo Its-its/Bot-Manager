@@ -37,7 +37,8 @@ app.set('trust proxy', true);
 app.use(morgan('common'));
 app.use(cookieParse());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.use(bodyParser.json({ type: '*/*' }));
+// app.use(bodyParser.raw({ type: '*/*' }));
 
 app.use(session({
 	secret: config.session_secret,
