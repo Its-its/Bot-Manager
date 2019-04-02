@@ -1,7 +1,11 @@
 import * as express from 'express';
 
 import Stripe = require('stripe');
-// const stripe = new Stripe('');
+
+import config = require('@config');
+
+
+// const stripe = new Stripe(config.stripe.publishable_key);
 
 function errorHandler(error: any) {
 	switch (error.type) {

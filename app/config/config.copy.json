@@ -5,6 +5,9 @@
 	"baseUrl": "127.0.0.1",
 	"session_secret": "new random password goes here",
 	"database": "mongodb://127.0.0.1:27017/bot-manager",
+	"stripe": {
+		"publishable_key": ""
+	},
 	"redis": {
 		"guildsDB": 0,
 		"musicDB": 2,

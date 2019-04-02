@@ -21,6 +21,9 @@ interface Config {
 	baseUrl: string;
 	session_secret: string;
 	database: string;
+	stripe: {
+		publishable_key: string;
+	}
 	ytdl: {
 		full: string;
 		address: string;
