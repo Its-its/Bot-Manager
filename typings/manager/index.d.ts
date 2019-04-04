@@ -333,7 +333,7 @@ declare namespace CustomDocs {
 				id: string;
 				token: string;
 				refreshToken: string;
-				tokenExpires?: number;
+				tokenExpires?: Date;
 			}
 
 			created_at: Date;

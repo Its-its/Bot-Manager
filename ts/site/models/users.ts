@@ -34,7 +34,7 @@ const User = new Schema({
 
 		token: String,
 		refreshToken: String,
-		tokenExpires: Number
+		tokenExpires: Date
 	},
 
 	created_at: { type: Date, default: Date.now }

@@ -266,7 +266,7 @@ export = (app: express.Application) => {
 			if (member == null) return res.status(500).send({ error: 'Discord member doesn\'t exist.' });
 
 			// Refresh after 10 minutes?
-			if (member.updated_guilds_at.getTime() > Date.now() - 1000 * 60 * 15) {
+			if (member.updated_guilds_at.getTime() > Date.now() - (1000 * 60 * 15)) {
 				console.log('Cached');
 
 				res.send({
@@ -278,28 +278,26 @@ export = (app: express.Application) => {
 					}
 				});
 			} else {
-				// Attempt to re-get the members guilds.
-				request.get(
-					'https://discordapp.com/api/users/@me/guilds',
-					{ headers: { Authentication: `Bearer ${user.discord.token}` } },
-					(err, resp, body) => {
-						console.log('re-get: ' + resp.statusCode);
+				// Refresh cache and get guilds.
+				if (user.discord.tokenExpires != null && user.discord.tokenExpires.getTime() < Date.now() + (1000 * 60 * 60)) {
+					console.log('Refreshing Token - Getting Guilds');
+					refreshToken(user.discord.refreshToken, (err, resp) => {
+						if (err != null) return res.status(500).send({ error: err });
+						if (resp == null) return res.status(500).send({ error: 'Refresh token response didn\'t return anything!' });
 
-						if (err != null) return res.status(500).send(err);
+						user.discord.refreshToken = resp.refresh_token;
+						user.discord.token = resp.access_token;
+						user.discord.tokenExpires = new Date(Date.now() + (resp.expires_in * 1000));
 
-						if (resp.statusCode != 401) {
-							if (resp.statusCode == 429) {
-								// rate limited
+						user.save();
 
-								try {
-									var json = JSON.parse(body);
-									res.send({ error: json.message });
-								} catch(e) {
-									console.error('Unable to parse (RL):', e);
-									res.send({ error: 'Unable to parse rate limited body..' });
-								}
-							} else {
-								// success
+						// Attempt to re-get the members guilds.
+						request.get(
+							'https://discordapp.com/api/users/@me/guilds',
+							{ headers: { Authorization: `Bearer ${user.discord.token}` } },
+							(err, resp, body) => {
+								if (err != null) return res.status(500).send({ error: err });
+								if (resp.statusCode != 200) return res.status(500).send({ error: `Status Code: ${resp.statusCode}` });
 
 								try {
 									var json = JSON.parse(body);
@@ -320,61 +318,106 @@ export = (app: express.Application) => {
 									res.send({ error: 'Unable to parse..' });
 								}
 							}
-						} else {
-							// unauthorized
+						);
+					});
+				}
+				// Attempt to re-get the members guilds.
+				// If token isnt working; refresh token, get guilds.
+				else {
+					console.log('Getting Guilds. Refresh token if need be; try again.');
+					request.get(
+						'https://discordapp.com/api/users/@me/guilds',
+						{ headers: { Authorization: `Bearer ${user.discord.token}` } },
+						(err, resp, body) => {
+							if (err != null) return res.status(500).send(err);
 
-							if (user.discord.refreshToken == null) {
-								return res.status(500).send({ error: 'No refresh token! Please logout and log back in to update guilds this time..' });
-							}
+							if (resp.statusCode != 401) {
+								if (resp.statusCode == 429) {
+									// rate limited
 
-							refreshToken(user.discord.refreshToken, (err, resp) => {
-								if (err != null) return res.status(500).send({ error: err });
-								if (resp == null) return res.status(500).send({ error: 'Refresh token response didn\'t return anything!' });
+									console.log('Rate limited..');
 
-								console.log('Refresh');
-
-								console.log(resp);
-
-								if (resp.refresh_token == null || resp.access_token == null) return console.log('Returned');
-
-								user.discord.refreshToken = resp.refresh_token;
-								user.discord.token = resp.access_token;
-								user.discord.tokenExpires = resp.expires_in;
-
-								user.save();
-
-								// Attempt to re-get the members guilds.
-								request.get(
-									'https://discordapp.com/api/users/@me/guilds',
-									{ headers: { Authentication: `Bearer ${user.discord.token}` } },
-									(err, resp, body) => {
-										if (err != null) return res.status(500).send({ error: err });
-										if (resp.statusCode != 200) return res.status(500).send({ error: `Status Code: ${resp.statusCode}` });
-
-										try {
-											var json = JSON.parse(body);
-
-											member.updated_guilds_at = new Date();
-											member.guilds = json;
-
-											member.save(() => {
-												res.send({
-													data: {
-														last_updated: member.updated_guilds_at,
-														guilds: json
-													}
-												});
-											});
-										} catch(e) {
-											console.error('Unable to parse (S):', e);
-											res.send({ error: 'Unable to parse..' });
-										}
+									try {
+										var json = JSON.parse(body);
+										res.send({ error: json.message });
+									} catch(e) {
+										console.error('Unable to parse (RL):', e);
+										res.send({ error: 'Unable to parse rate limited body..' });
 									}
-								);
-							});
+								} else {
+									// success
+
+									try {
+										var json = JSON.parse(body);
+
+										member.updated_guilds_at = new Date();
+										member.guilds = json;
+
+										member.save(() => {
+											res.send({
+												data: {
+													last_updated: member.updated_guilds_at,
+													guilds: json
+												}
+											});
+										});
+									} catch(e) {
+										console.error('Unable to parse (S):', e);
+										res.send({ error: 'Unable to parse..' });
+									}
+								}
+							} else {
+								// unauthorized
+
+								if (user.discord.refreshToken == null) {
+									return res.status(500).send({ error: 'No refresh token! Please logout and log back in to update guilds this time..' });
+								}
+
+								console.log('Attempting to refresh token and get guilds.');
+
+								refreshToken(user.discord.refreshToken, (err, resp) => {
+									if (err != null) return res.status(500).send({ error: err });
+									if (resp == null) return res.status(500).send({ error: 'Refresh token response didn\'t return anything!' });
+
+									user.discord.refreshToken = resp.refresh_token;
+									user.discord.token = resp.access_token;
+									user.discord.tokenExpires = new Date(Date.now() + (resp.expires_in * 1000));
+
+									user.save();
+
+									// Attempt to re-get the members guilds.
+									request.get(
+										'https://discordapp.com/api/users/@me/guilds',
+										{ headers: { Authorization: `Bearer ${user.discord.token}` } },
+										(err, resp, body) => {
+											if (err != null) return res.status(500).send({ error: err });
+											if (resp.statusCode != 200) return res.status(500).send({ error: `Status Code: ${resp.statusCode}` });
+
+											try {
+												var json = JSON.parse(body);
+
+												member.updated_guilds_at = new Date();
+												member.guilds = json;
+
+												member.save(() => {
+													res.send({
+														data: {
+															last_updated: member.updated_guilds_at,
+															guilds: json
+														}
+													});
+												});
+											} catch(e) {
+												console.error('Unable to parse (S):', e);
+												res.send({ error: 'Unable to parse..' });
+											}
+										}
+									);
+								});
+							}
 						}
-					}
-				);
+					);
+				}
 			}
 		});
 	});
