@@ -1,3 +1,6 @@
+MAKE USER FRIENDLY
+
+
 List of things needing fixes/todo:
 - ERROR LOGGING AND VIEWING!!!
 - Make restore actually restore if the command is ran in the same discord as it was created in.

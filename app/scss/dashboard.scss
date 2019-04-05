@@ -26,7 +26,7 @@ html, body {
 	height: 100%;
 }
 
-$body-bg: #131625;
+$body-bg: #2f3135;
 
 body {
 	background: $body-bg;
@@ -40,7 +40,7 @@ body {
 
 	.edit-app {
 		display: none;
-	
+
 		&.shown {
 			display: block;
 		}
@@ -57,7 +57,7 @@ body {
 
 		.tools {
 			text-align: right;
-			
+
 			a {
 				margin-left: 5px;
 			}
@@ -97,7 +97,7 @@ body {
 
 		.tools {
 			text-align: right;
-			
+
 			.button {
 				margin-left: 5px;
 			}
@@ -222,7 +222,7 @@ button.togglable {
 	}
 
 	.text {
-		// 
+		//
 	}
 }
 
@@ -281,15 +281,162 @@ button.togglable {
 }
 
 
-.bot-preview {
-	transition: background-color 200ms;
-	cursor: pointer;
+$bot-preview-bg: #2f333b;
+$bot-preview-header-bg: #23272b;
+$bot-preview-footer-bg: $bot-preview-header-bg;
+
+.dashboard-container {
+	display: flex;
+	height: 100%;
+
+	.dashboard-sidebar {
+		width: 14rem;
+		background-color: #24282f;
+	}
+
+	.dashboard-inner-container {
+		#bots {
+			padding: 1rem;
+			display: flex;
+			flex-wrap: wrap;
+			box-sizing: border-box;
+		}
+
+		.bot-preview-container {
+			padding: 8px;
+			flex-grow: 0;
+			max-width: 33.333333%;
+			flex-basis: 33.333333%;
+			box-sizing: border-box;
+
+			.bot-preview {
+				transition: background-color 200ms;
+				background: $bot-preview-bg;
+				height: 100%;
+				display: flex;
+				position: relative;
+				flex-direction: column;
+
+				.bot-header {
+					border-bottom: 1px solid #1a1a1a;
+					background: $bot-preview-header-bg;
+					height: 46px;
+					display: flex;
+					padding: 0 16px;
+
+					.header-visual {
+						flex: 1 1 auto;
+						min-width: 0;
+						display: flex;
+						flex-wrap: wrap;
+						box-sizing: border-box;
+
+						.visual-inner {
+							flex: 1;
+							display: flex;
+							min-width: 0;
+							align-items: center;
+
+							.visual-icon {
+								color: #00b159;
+
+								&.not-active {
+									color: #b10000;
+								}
+
+								svg {
+									vertical-align: middle;
+								}
+							}
+
+							.visual-title {
+								margin-left: 10px;
+
+								overflow: hidden;
+								white-space: nowrap;
+								text-overflow: ellipsis;
+								color: #f4f4f4;
+								font-size: 1rem;
+								font-family: Verdana;
+								font-weight: 400;
+								line-height: 1rem;
+								margin: 0;
+							}
+						}
+					}
+
+					.header-dropdown {
+						cursor: pointer;
+						flex: 0 0 auto;
+						align-self: flex-start;
+						display: flex;
+						align-items: center;
+						justify-content: flex-end;
+						height: 46px;
+
+						&:hover {
+							.dropdown-item {
+								color: #3d8eeb;
+							}
+						}
+
+						svg {
+							fill: currentColor;
+							width: 1em;
+							height: 1em;
+							font-size: 28px;
+						}
+
+						.dropdown-item {
+							color: #3683dc;
+							cursor: pointer;
+						}
+					}
+				}
+
+				.bot-inner-container {
+					min-height: 200px;
+					padding: 14px;
+
+					font-size: 0.875rem;
+					line-height: 1rem;
+
+					.inner-section {
+						font-family: sans-serif;
+						color: white;
+					}
+				}
+
+				.bot-footer {
+					border-top: 1px solid #1a1a1a;
+					background: $bot-preview-footer-bg;
+					display: flex;
+					height: 40px;
+
+					.footer-button {
+						flex: 1 1 auto;
+						padding: 12px 12px 14px;
+						font-size: .9rem;
+						color: #3683dc;
+						cursor: pointer;
+
+						transition: background-color 400ms, color 400ms;
+
+						&:hover {
+							background-color: #3683dc;
+							color: black;
+						}
+					}
+				}
+			}
+		}
+
+		.bot-preview > p {
+			margin-bottom: 0;
+		}
+	}
 }
 
-.bot-preview > p {
-	margin-bottom: 0;
-}
-
-.bot-preview:hover {
-	background-color: #d2d2d2;
-}
+// .bot-preview:hover {
+// 	background-color: #d2d2d2;
+// }

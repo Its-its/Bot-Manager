@@ -2,7 +2,7 @@ html, body {
   height: 100%; }
 
 body {
-  background: #131625;
+  background: #2f3135;
   color: #ebebeb; }
 
 #bot-container > .cell {
@@ -66,10 +66,10 @@ body {
       .apps .apps-cont .app .app-container:hover {
         background-color: #2f3141; }
       .apps .apps-cont .app .app-container .icon {
-        color: #131625; }
+        color: #2f3135; }
       .apps .apps-cont .app .app-container .name {
         position: absolute;
-        text-shadow: -3px -3px 0 #131625, -3px -2px 0 #131625, -3px -1px 0 #131625, -3px 0px 0 #131625, -3px 1px 0 #131625, -3px 2px 0 #131625, -3px 3px 0 #131625, -2px -3px 0 #131625, -2px -2px 0 #131625, -2px -1px 0 #131625, -2px 0px 0 #131625, -2px 1px 0 #131625, -2px 2px 0 #131625, -2px 3px 0 #131625, -1px -3px 0 #131625, -1px -2px 0 #131625, -1px -1px 0 #131625, -1px 0px 0 #131625, -1px 1px 0 #131625, -1px 2px 0 #131625, -1px 3px 0 #131625, 0px -3px 0 #131625, 0px -2px 0 #131625, 0px -1px 0 #131625, 0px 0px 0 #131625, 0px 1px 0 #131625, 0px 2px 0 #131625, 0px 3px 0 #131625, 1px -3px 0 #131625, 1px -2px 0 #131625, 1px -1px 0 #131625, 1px 0px 0 #131625, 1px 1px 0 #131625, 1px 2px 0 #131625, 1px 3px 0 #131625, 2px -3px 0 #131625, 2px -2px 0 #131625, 2px -1px 0 #131625, 2px 0px 0 #131625, 2px 1px 0 #131625, 2px 2px 0 #131625, 2px 3px 0 #131625, 3px -3px 0 #131625, 3px -2px 0 #131625, 3px -1px 0 #131625, 3px 0px 0 #131625, 3px 1px 0 #131625, 3px 2px 0 #131625, 3px 3px 0 #131625;
+        text-shadow: -3px -3px 0 #2f3135, -3px -2px 0 #2f3135, -3px -1px 0 #2f3135, -3px 0px 0 #2f3135, -3px 1px 0 #2f3135, -3px 2px 0 #2f3135, -3px 3px 0 #2f3135, -2px -3px 0 #2f3135, -2px -2px 0 #2f3135, -2px -1px 0 #2f3135, -2px 0px 0 #2f3135, -2px 1px 0 #2f3135, -2px 2px 0 #2f3135, -2px 3px 0 #2f3135, -1px -3px 0 #2f3135, -1px -2px 0 #2f3135, -1px -1px 0 #2f3135, -1px 0px 0 #2f3135, -1px 1px 0 #2f3135, -1px 2px 0 #2f3135, -1px 3px 0 #2f3135, 0px -3px 0 #2f3135, 0px -2px 0 #2f3135, 0px -1px 0 #2f3135, 0px 0px 0 #2f3135, 0px 1px 0 #2f3135, 0px 2px 0 #2f3135, 0px 3px 0 #2f3135, 1px -3px 0 #2f3135, 1px -2px 0 #2f3135, 1px -1px 0 #2f3135, 1px 0px 0 #2f3135, 1px 1px 0 #2f3135, 1px 2px 0 #2f3135, 1px 3px 0 #2f3135, 2px -3px 0 #2f3135, 2px -2px 0 #2f3135, 2px -1px 0 #2f3135, 2px 0px 0 #2f3135, 2px 1px 0 #2f3135, 2px 2px 0 #2f3135, 2px 3px 0 #2f3135, 3px -3px 0 #2f3135, 3px -2px 0 #2f3135, 3px -1px 0 #2f3135, 3px 0px 0 #2f3135, 3px 1px 0 #2f3135, 3px 2px 0 #2f3135, 3px 3px 0 #2f3135;
         bottom: 5px;
         left: 25px;
         font-size: 20px;
@@ -160,12 +160,104 @@ button.togglable .sign {
     box-sizing: content-box;
     transition: box-shadow .3s, border .3s, -webkit-box-shadow .3s; }
 
-.bot-preview {
-  transition: background-color 200ms;
-  cursor: pointer; }
-
-.bot-preview > p {
-  margin-bottom: 0; }
-
-.bot-preview:hover {
-  background-color: #d2d2d2; }
+.dashboard-container {
+  display: flex;
+  height: 100%; }
+  .dashboard-container .dashboard-sidebar {
+    width: 14rem;
+    background-color: #24282f; }
+  .dashboard-container .dashboard-inner-container #bots {
+    padding: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    box-sizing: border-box; }
+  .dashboard-container .dashboard-inner-container .bot-preview-container {
+    padding: 8px;
+    flex-grow: 0;
+    max-width: 33.333333%;
+    flex-basis: 33.333333%;
+    box-sizing: border-box; }
+    .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview {
+      transition: background-color 200ms;
+      background: #2f333b;
+      height: 100%;
+      display: flex;
+      position: relative;
+      flex-direction: column; }
+      .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header {
+        border-bottom: 1px solid #1a1a1a;
+        background: #23272b;
+        height: 46px;
+        display: flex;
+        padding: 0 16px; }
+        .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-visual {
+          flex: 1 1 auto;
+          min-width: 0;
+          display: flex;
+          flex-wrap: wrap;
+          box-sizing: border-box; }
+          .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-visual .visual-inner {
+            flex: 1;
+            display: flex;
+            min-width: 0;
+            align-items: center; }
+            .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-visual .visual-inner .visual-icon {
+              color: #00b159; }
+              .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-visual .visual-inner .visual-icon.not-active {
+                color: #b10000; }
+              .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-visual .visual-inner .visual-icon svg {
+                vertical-align: middle; }
+            .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-visual .visual-inner .visual-title {
+              margin-left: 10px;
+              overflow: hidden;
+              white-space: nowrap;
+              text-overflow: ellipsis;
+              color: #f4f4f4;
+              font-size: 1rem;
+              font-family: Verdana;
+              font-weight: 400;
+              line-height: 1rem;
+              margin: 0; }
+        .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-dropdown {
+          cursor: pointer;
+          flex: 0 0 auto;
+          align-self: flex-start;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          height: 46px; }
+          .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-dropdown:hover .dropdown-item {
+            color: #3d8eeb; }
+          .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-dropdown svg {
+            fill: currentColor;
+            width: 1em;
+            height: 1em;
+            font-size: 28px; }
+          .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-dropdown .dropdown-item {
+            color: #3683dc;
+            cursor: pointer; }
+      .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-inner-container {
+        min-height: 200px;
+        padding: 14px;
+        font-size: 0.875rem;
+        line-height: 1rem; }
+        .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-inner-container .inner-section {
+          font-family: sans-serif;
+          color: white; }
+      .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-footer {
+        border-top: 1px solid #1a1a1a;
+        background: #23272b;
+        display: flex;
+        height: 40px; }
+        .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-footer .footer-button {
+          flex: 1 1 auto;
+          padding: 12px 12px 14px;
+          font-size: .9rem;
+          color: #3683dc;
+          cursor: pointer;
+          transition: background-color 400ms, color 400ms; }
+          .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-footer .footer-button:hover {
+            background-color: #3683dc;
+            color: black; }
+  .dashboard-container .dashboard-inner-container .bot-preview > p {
+    margin-bottom: 0; }

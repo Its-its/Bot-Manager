@@ -9,55 +9,33 @@
 		<link rel="stylesheet" href="/css/dashboard.css">
 	</head>
 	<body>
-		<!-- Top Menu -->
-		<div class="top-bar">
-			<div class="top-bar-left title">
-				<ul class="menu">
-					<li class="topbar-title">
-						<a href="/dashboard">Video Manager</a>
-					</li>
-				</ul>
-			</div>
-			
-			<div class="top-bar-right">
-				<ul class="dropdown menu" data-dropdown-menu>
-					<li>
-						<a href="javascript:void(0)">Options</a>
-						<ul class="menu vertical">
-							<li><a href="/accessed">Access</a></li>
-							<li><a href="/settings">Settings</a></li>
-							<li><a href="/logout">Logout</a></li>
+		<div class="dashboard-container">
+			<div class="dashboard-sidebar"></div>
+			<div class="dashboard-inner-container">
+				<!-- Top Menu -->
+				<div class="top-bar">
+					<div class="top-bar-left title">
+						<ul class="menu">
+							<li><button type="button" class="button">Create</button></li>
+							<li><input type="search" placeholder="Search for Bots.."></li>
 						</ul>
-					</li>
-				</ul>
-			</div>
-		</div>
+					</div>
 
-		<div class="grid-container fluid">
-			<div class="container grid-x grid-margin-x">
-				<div class="medium-6 large-8 cell">
-					<div id="bot"></div>
+					<div class="top-bar-right">
+						<ul class="dropdown menu" data-dropdown-menu>
+							<li>
+								<a href="javascript:void(0)">Options</a>
+								<ul class="menu vertical">
+									<li><a href="/accessed">Access</a></li>
+									<li><a href="/settings">Settings</a></li>
+									<li><a href="/logout">Logout</a></li>
+								</ul>
+							</li>
+						</ul>
+					</div>
 				</div>
-				<div class="medium-6 large-4 cell" id="bots">
-					<div class="callout secondary">
-						<a href="javascript:void(null)" class="button" id="createBot">Create Bot</a>
-					</div>
-					<!--div class="callout secondary bot-preview" data-bots="twitch">
-						<h5>Twitch</h5>
-						<p>Active Bots: <span data-connections>0</span></p>
-						<p>Errors: <span data-errors>0</span></p>
-					</div>
-					<div class="callout secondary bot-preview" data-bots="discord">
-						<h5>Discord</h5>
-						<p>Active Bots: <span data-connections>0</span></p>
-						<p>Errors: <span data-errors>0</span></p>
-					</div>
-					<div class="callout secondary bot-preview" data-bots="youtube">
-						<h5>Youtube</h5>
-						<p>Active Bots: <span data-connections>0</span></p>
-						<p>Errors: <span data-errors>0</span></p>
-					</div-->
-				</div>
+
+				<div class="grid-container fluid" id="bots"></div>
 			</div>
 		</div>
 
