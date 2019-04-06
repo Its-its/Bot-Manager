@@ -206,9 +206,11 @@ button.togglable .sign {
               .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-visual .visual-inner .visual-icon.not-active {
                 color: #b10000; }
               .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-visual .visual-inner .visual-icon svg {
-                vertical-align: middle; }
+                vertical-align: middle;
+                width: 38px;
+                height: 38px; }
             .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-visual .visual-inner .visual-title {
-              margin-left: 10px;
+              margin-left: 10px !important;
               overflow: hidden;
               white-space: nowrap;
               text-overflow: ellipsis;
@@ -225,17 +227,15 @@ button.togglable .sign {
           display: flex;
           align-items: center;
           justify-content: flex-end;
-          height: 46px; }
-          .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-dropdown:hover .dropdown-item {
-            color: #3d8eeb; }
+          height: 46px;
+          color: #3683dc; }
+          .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-dropdown:hover {
+            color: #4295f3; }
           .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-dropdown svg {
             fill: currentColor;
             width: 1em;
             height: 1em;
             font-size: 28px; }
-          .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-header .header-dropdown .dropdown-item {
-            color: #3683dc;
-            cursor: pointer; }
       .dashboard-container .dashboard-inner-container .bot-preview-container .bot-preview .bot-inner-container {
         min-height: 200px;
         padding: 14px;

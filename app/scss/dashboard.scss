@@ -346,11 +346,13 @@ $bot-preview-footer-bg: $bot-preview-header-bg;
 
 								svg {
 									vertical-align: middle;
+									width: 38px;
+									height: 38px;
 								}
 							}
 
 							.visual-title {
-								margin-left: 10px;
+								margin-left: 10px !important;
 
 								overflow: hidden;
 								white-space: nowrap;
@@ -373,11 +375,10 @@ $bot-preview-footer-bg: $bot-preview-header-bg;
 						align-items: center;
 						justify-content: flex-end;
 						height: 46px;
+						color: #3683dc;
 
 						&:hover {
-							.dropdown-item {
-								color: #3d8eeb;
-							}
+							color: #4295f3;
 						}
 
 						svg {
@@ -385,11 +386,6 @@ $bot-preview-footer-bg: $bot-preview-header-bg;
 							width: 1em;
 							height: 1em;
 							font-size: 28px;
-						}
-
-						.dropdown-item {
-							color: #3683dc;
-							cursor: pointer;
 						}
 					}
 				}
