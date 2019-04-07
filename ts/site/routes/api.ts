@@ -242,280 +242,30 @@ function refreshToken(refresh_token: string, cb: (err?: any, response?: TokenRes
 	);
 }
 
-export = (app: express.Application) => {
-	// api/
-	const route = express.Router();
+function registerBot(req: express.Request, res: express.Response, next: express.NextFunction) {
+	var botId = (req.params.bid || req.body.bid);
 
-	route.use(function(req, res, next) {
-		if (req.isAuthenticated()) return next();
-
-		// TODO: Check body for user uid.
-		res.status(400).send({ error: 'Not Authenticated' });
-	});
+	if (botId == null) return res.status(500).send({ error: 'Bot doesn\'t exist.' });
 
 
-	const discordRoute = express.Router();
-
-	discordRoute.get('/guilds', (req, res) => {
+	Bots.findOne({ uid: botId }, (err, bot) => {
+		if (err != null) return res.status(500).send({ error: err });
+		if (bot == null) return res.status(500).send({ error: 'Bot doesn\'t exist.' });
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
-		var user: CustomDocs.web.UsersDocument = req.user;
-
-		DiscordMembers.findOne({ user_id: user._id }, (err, member) => {
-			if (err != null) return res.status(500).send({ error: err });
-			if (member == null) return res.status(500).send({ error: 'Discord member doesn\'t exist.' });
-
-			// Refresh after 10 minutes?
-			if (member.updated_guilds_at.getTime() > Date.now() - (1000 * 60 * 15)) {
-				console.log('Cached');
-
-				res.send({
-					data: {
-						last_updated: member.updated_guilds_at,
-						guilds: member.guilds
-							.filter(g => discordUtils.getPermissions(g.permissions).has(discordUtils.Permissions.FLAGS.ADMINISTRATOR))
-							.map(g => { return { id: g.id, name: g.name, isOwner: g.owner, icon: g.icon }})
-					}
-				});
-			} else {
-				// Refresh cache and get guilds.
-				if (user.discord.tokenExpires != null && user.discord.tokenExpires.getTime() < Date.now() + (1000 * 60 * 60)) {
-					console.log('Refreshing Token - Getting Guilds');
-					refreshToken(user.discord.refreshToken, (err, resp) => {
-						if (err != null) return res.status(500).send({ error: err });
-						if (resp == null) return res.status(500).send({ error: 'Refresh token response didn\'t return anything!' });
-
-						user.discord.refreshToken = resp.refresh_token;
-						user.discord.token = resp.access_token;
-						user.discord.tokenExpires = new Date(Date.now() + (resp.expires_in * 1000));
-
-						user.save();
-
-						// Attempt to re-get the members guilds.
-						request.get(
-							'https://discordapp.com/api/users/@me/guilds',
-							{ headers: { Authorization: `Bearer ${user.discord.token}` } },
-							(err, resp, body) => {
-								if (err != null) return res.status(500).send({ error: err });
-								if (resp.statusCode != 200) return res.status(500).send({ error: `Status Code: ${resp.statusCode}` });
-
-								try {
-									var json = JSON.parse(body);
-
-									member.updated_guilds_at = new Date();
-									member.guilds = json;
-
-									member.save(() => {
-										res.send({
-											data: {
-												last_updated: member.updated_guilds_at,
-												guilds: json
-											}
-										});
-									});
-								} catch(e) {
-									console.error('Unable to parse (S):', e);
-									res.send({ error: 'Unable to parse..' });
-								}
-							}
-						);
-					});
-				}
-				// Attempt to re-get the members guilds.
-				// If token isnt working; refresh token, get guilds.
-				else {
-					console.log('Getting Guilds. Refresh token if need be; try again.');
-					request.get(
-						'https://discordapp.com/api/users/@me/guilds',
-						{ headers: { Authorization: `Bearer ${user.discord.token}` } },
-						(err, resp, body) => {
-							if (err != null) return res.status(500).send(err);
-
-							if (resp.statusCode != 401) {
-								if (resp.statusCode == 429) {
-									// rate limited
-
-									console.log('Rate limited..');
-
-									try {
-										var json = JSON.parse(body);
-										res.send({ error: json.message });
-									} catch(e) {
-										console.error('Unable to parse (RL):', e);
-										res.send({ error: 'Unable to parse rate limited body..' });
-									}
-								} else {
-									// success
-
-									try {
-										var json = JSON.parse(body);
-
-										member.updated_guilds_at = new Date();
-										member.guilds = json;
-
-										member.save(() => {
-											res.send({
-												data: {
-													last_updated: member.updated_guilds_at,
-													guilds: json
-												}
-											});
-										});
-									} catch(e) {
-										console.error('Unable to parse (S):', e);
-										res.send({ error: 'Unable to parse..' });
-									}
-								}
-							} else {
-								// unauthorized
-
-								if (user.discord.refreshToken == null) {
-									return res.status(500).send({ error: 'No refresh token! Please logout and log back in to update guilds this time..' });
-								}
-
-								console.log('Attempting to refresh token and get guilds.');
-
-								refreshToken(user.discord.refreshToken, (err, resp) => {
-									if (err != null) return res.status(500).send({ error: err });
-									if (resp == null) return res.status(500).send({ error: 'Refresh token response didn\'t return anything!' });
-
-									user.discord.refreshToken = resp.refresh_token;
-									user.discord.token = resp.access_token;
-									user.discord.tokenExpires = new Date(Date.now() + (resp.expires_in * 1000));
-
-									user.save();
-
-									// Attempt to re-get the members guilds.
-									request.get(
-										'https://discordapp.com/api/users/@me/guilds',
-										{ headers: { Authorization: `Bearer ${user.discord.token}` } },
-										(err, resp, body) => {
-											if (err != null) return res.status(500).send({ error: err });
-											if (resp.statusCode != 200) return res.status(500).send({ error: `Status Code: ${resp.statusCode}` });
-
-											try {
-												var json = JSON.parse(body);
-
-												member.updated_guilds_at = new Date();
-												member.guilds = json;
-
-												member.save(() => {
-													res.send({
-														data: {
-															last_updated: member.updated_guilds_at,
-															guilds: json
-														}
-													});
-												});
-											} catch(e) {
-												console.error('Unable to parse (S):', e);
-												res.send({ error: 'Unable to parse..' });
-											}
-										}
-									);
-								});
-							}
-						}
-					);
-				}
-			}
-		});
+		req['bot'] = bot;
+		next();
 	});
+}
 
-
-	// api/dashboard/
-	const dashboard = express.Router();
-
-	dashboard.post('/status', (req, res) => {
-		var botType = req.body.botType;
-
-		//
-		if (botType != null) {
-			botType = botType.toLowerCase();
-
-			console.error('uhhh, ' + botType);
-			res.send({ error: 'Unknown.' });
-
-			// if (validBots.indexOf(botType) == -1) return res.send({ error: 'Invalid.' });
-
-			// var botParam = botType + '_bots';
-
-			// req['user']
-			// .populate(botParam, (err, resp) => {
-			// 	if (err != null) return res.send({ error: err });
-
-			// 	res.send({
-			// 		data: {
-			// 			bots: resp[botParam].map(item => {
-			// 				return {
-			// 					created_at: item.created_at,
-			// 					// custom_token: item.custom_token,
-			// 					server_id: item.server_id,
-			// 					edited_at: item.edited_at,
-			// 					is_active: item.is_active,
-			// 					is_disconnected: item.is_disconnected,
-			// 					is_registered: item.is_registered,
-			// 					displayName: item.displayName
-			// 				};
-			// 			})
-			// 		}
-			// 	});
-			// });
-
-			return;
-		}
-
-		console.log('/status populate lis');
-		// Main Dashboard
-		req['user'].populate('bot_listeners', (err: any, resp: CustomDocs.web.UsersDocument) => {
-			res.send({
-				error: err,
-				data: resp.bot_listeners!.map(b => {
-					return {
-						displayName: b.displayName,
-						uid: b.uid,
-						is_active: b.is_active,
-						created_at: b.created_at,
-						selectedBot: Bots.collectionToName!(b.botType)
-					};
-				})
-			});
-		});
-	});
-
-	dashboard.post('/create', (req, res) => {
-		console.log('/create pre');
-		var user = req['user'];
-
-		if (!user.admin && user.bots.amount >= MAX_BOTS) return res.send({ error: 'Max Bot count reached!' });
-
-		const bot = new Bots({
-			user_id: user.id,
-			uid: uniqueID()
-		});
-
-		bot.save((err) => {
-			if (err != null) return res.send({ error: err });
-
-			Users.updateOne({ _id: user._id }, { $inc: { 'bots.amount': 1 } }).exec(() => {
-				console.log('/create post');
-				res.send({ data: 'Created!' });
-			});
-		});
-	});
-
-
+function apiBots() {
 	// api/bots/
 	const bots = express.Router();
 
 //#region Main
 
 	bots.post('/status', registerBot, (req, res) => {
-		var id = req.body.id;
-
 		// @ts-ignore
 		var bot: CustomDocs.web.BotsDocument = req['bot'];
-
 		var user: CustomDocs.web.UsersDocument = req.user;
 
 		res.send({
@@ -525,20 +275,17 @@ export = (app: express.Application) => {
 						linked: user.twitch.id != null
 					},
 					discord: {
-						linked: user.discord.id != null,
-						// guilds: member.guilds
-						// 	.filter(g => discordUtils.getPermissions(g.permissions).has(discordUtils.Permissions.FLAGS.ADMINISTRATOR))
-						// 	.map(g => { return { id: g.id, name: g.name }})
+						linked: user.discord.id != null
 					},
 					youtube: {
 						linked: user.youtube.id != null
 					}
 				},
 				bot: {
+					type: bot.botType == null ? null : Bots.collectionToName(bot.botType).toLowerCase(),
 					displayName: bot.displayName,
 					active: bot.is_active,
 					uid: bot.uid,
-					// app: null,
 					created: bot.created_at,
 					edited: bot.edited_at
 				}
@@ -1306,18 +1053,300 @@ export = (app: express.Application) => {
 
 //#endregion
 
-	function registerBot(req: express.Request, res: express.Response, next: express.NextFunction) {
-		Bots.findOne({ uid: req.params.bid }, (err, bot) => {
-			if (err != null) return res.status(500).send({ error: err });
-			if (bot == null) return res.status(500).send({ error: 'Bot doesn\'t exist.' });
-			// @ts-ignore
-			req['bot'] = bot;
-			next();
+	return bots;
+}
+
+
+export = (app: express.Application) => {
+	// api/
+	const route = express.Router();
+
+	route.use(function(req, res, next) {
+		if (req.isAuthenticated()) return next();
+
+		// TODO: Check body for user uid.
+		res.status(400).send({ error: 'Not Authenticated' });
+	});
+
+	//
+
+
+	app.get('/profile', (req, res) => {
+		res.send({
+			data: {
+				//
+			}
 		});
-	}
+	});
+
+	app.get('/account/notifications', (req, res) => {
+		res.send({
+			data: {
+				//
+			}
+		});
+	});
+
+	app.get('/account/settings', (req, res) => {
+		res.send({
+			data: {
+				//
+			}
+		});
+	});
+
+	const discordRoute = express.Router();
+
+	discordRoute.get('/guilds', (req, res) => {
+		// @ts-ignore
+		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		var user: CustomDocs.web.UsersDocument = req.user;
+
+		DiscordMembers.findOne({ user_id: user._id }, (err, member) => {
+			if (err != null) return res.status(500).send({ error: err });
+			if (member == null) return res.status(500).send({ error: 'Discord member doesn\'t exist.' });
+
+			// Refresh after 10 minutes?
+			if (member.updated_guilds_at.getTime() > Date.now() - (1000 * 60 * 15)) {
+				console.log('Cached');
+
+				res.send({
+					data: {
+						last_updated: member.updated_guilds_at,
+						guilds: member.guilds
+							.filter(g => discordUtils.getPermissions(g.permissions).has(discordUtils.Permissions.FLAGS.ADMINISTRATOR))
+							.map(g => { return { id: g.id, name: g.name, isOwner: g.owner, icon: g.icon }})
+					}
+				});
+			} else {
+				// Refresh cache and get guilds.
+				if (user.discord.tokenExpires != null && user.discord.tokenExpires.getTime() < Date.now() + (1000 * 60 * 60)) {
+					console.log('Refreshing Token - Getting Guilds');
+					refreshToken(user.discord.refreshToken, (err, resp) => {
+						if (err != null) return res.status(500).send({ error: err });
+						if (resp == null) return res.status(500).send({ error: 'Refresh token response didn\'t return anything!' });
+
+						user.discord.refreshToken = resp.refresh_token;
+						user.discord.token = resp.access_token;
+						user.discord.tokenExpires = new Date(Date.now() + (resp.expires_in * 1000));
+
+						user.save();
+
+						// Attempt to re-get the members guilds.
+						request.get(
+							'https://discordapp.com/api/users/@me/guilds',
+							{ headers: { Authorization: `Bearer ${user.discord.token}` } },
+							(err, resp, body) => {
+								if (err != null) return res.status(500).send({ error: err });
+								if (resp.statusCode != 200) return res.status(500).send({ error: `Status Code: ${resp.statusCode}` });
+
+								try {
+									var json = JSON.parse(body);
+
+									member.updated_guilds_at = new Date();
+									member.guilds = json;
+
+									member.save(() => {
+										res.send({
+											data: {
+												last_updated: member.updated_guilds_at,
+												guilds: json
+											}
+										});
+									});
+								} catch(e) {
+									console.error('Unable to parse (S):', e);
+									res.send({ error: 'Unable to parse..' });
+								}
+							}
+						);
+					});
+				}
+				// Attempt to re-get the members guilds.
+				// If token isnt working; refresh token, get guilds.
+				else {
+					console.log('Getting Guilds. Refresh token if need be; try again.');
+					request.get(
+						'https://discordapp.com/api/users/@me/guilds',
+						{ headers: { Authorization: `Bearer ${user.discord.token}` } },
+						(err, resp, body) => {
+							if (err != null) return res.status(500).send(err);
+
+							if (resp.statusCode != 401) {
+								if (resp.statusCode == 429) {
+									// rate limited
+
+									console.log('Rate limited..');
+
+									try {
+										var json = JSON.parse(body);
+										res.send({ error: json.message });
+									} catch(e) {
+										console.error('Unable to parse (RL):', e);
+										res.send({ error: 'Unable to parse rate limited body..' });
+									}
+								} else {
+									// success
+
+									try {
+										var json = JSON.parse(body);
+
+										member.updated_guilds_at = new Date();
+										member.guilds = json;
+
+										member.save(() => {
+											res.send({
+												data: {
+													last_updated: member.updated_guilds_at,
+													guilds: json
+												}
+											});
+										});
+									} catch(e) {
+										console.error('Unable to parse (S):', e);
+										res.send({ error: 'Unable to parse..' });
+									}
+								}
+							} else {
+								// unauthorized
+
+								if (user.discord.refreshToken == null) {
+									return res.status(500).send({ error: 'No refresh token! Please logout and log back in to update guilds this time..' });
+								}
+
+								console.log('Attempting to refresh token and get guilds.');
+
+								refreshToken(user.discord.refreshToken, (err, resp) => {
+									if (err != null) return res.status(500).send({ error: err });
+									if (resp == null) return res.status(500).send({ error: 'Refresh token response didn\'t return anything!' });
+
+									user.discord.refreshToken = resp.refresh_token;
+									user.discord.token = resp.access_token;
+									user.discord.tokenExpires = new Date(Date.now() + (resp.expires_in * 1000));
+
+									user.save();
+
+									// Attempt to re-get the members guilds.
+									request.get(
+										'https://discordapp.com/api/users/@me/guilds',
+										{ headers: { Authorization: `Bearer ${user.discord.token}` } },
+										(err, resp, body) => {
+											if (err != null) return res.status(500).send({ error: err });
+											if (resp.statusCode != 200) return res.status(500).send({ error: `Status Code: ${resp.statusCode}` });
+
+											try {
+												var json = JSON.parse(body);
+
+												member.updated_guilds_at = new Date();
+												member.guilds = json;
+
+												member.save(() => {
+													res.send({
+														data: {
+															last_updated: member.updated_guilds_at,
+															guilds: json
+														}
+													});
+												});
+											} catch(e) {
+												console.error('Unable to parse (S):', e);
+												res.send({ error: 'Unable to parse..' });
+											}
+										}
+									);
+								});
+							}
+						}
+					);
+				}
+			}
+		});
+	});
 
 
-	route.use('/bots', bots);
+	// api/dashboard/
+	const dashboard = express.Router();
+
+	dashboard.post('/status', (req, res) => {
+		var botType = req.body.botType;
+
+		//
+		if (botType != null) {
+			botType = botType.toLowerCase();
+
+			console.error('uhhh, ' + botType);
+			res.send({ error: 'Unknown.' });
+
+			// if (validBots.indexOf(botType) == -1) return res.send({ error: 'Invalid.' });
+
+			// var botParam = botType + '_bots';
+
+			// req['user']
+			// .populate(botParam, (err, resp) => {
+			// 	if (err != null) return res.send({ error: err });
+
+			// 	res.send({
+			// 		data: {
+			// 			bots: resp[botParam].map(item => {
+			// 				return {
+			// 					created_at: item.created_at,
+			// 					// custom_token: item.custom_token,
+			// 					server_id: item.server_id,
+			// 					edited_at: item.edited_at,
+			// 					is_active: item.is_active,
+			// 					is_disconnected: item.is_disconnected,
+			// 					is_registered: item.is_registered,
+			// 					displayName: item.displayName
+			// 				};
+			// 			})
+			// 		}
+			// 	});
+			// });
+
+			return;
+		}
+
+		console.log('/status populate lis');
+		// Main Dashboard
+		req['user'].populate('bot_listeners', (err: any, resp: CustomDocs.web.UsersDocument) => {
+			res.send({
+				error: err,
+				data: resp.bot_listeners!.map(b => {
+					return {
+						displayName: b.displayName,
+						uid: b.uid,
+						is_active: b.is_active,
+						created_at: b.created_at,
+						selectedBot: Bots.collectionToName!(b.botType)
+					};
+				})
+			});
+		});
+	});
+
+	dashboard.post('/create', (req, res) => {
+		console.log('/create pre');
+		var user = req['user'];
+
+		if (!user.admin && user.bots.amount >= MAX_BOTS) return res.send({ error: 'Max Bot count reached!' });
+
+		const bot = new Bots({
+			user_id: user.id,
+			uid: uniqueID()
+		});
+
+		bot.save((err) => {
+			if (err != null) return res.send({ error: err });
+
+			Users.updateOne({ _id: user._id }, { $inc: { 'bots.amount': 1 } }).exec(() => {
+				console.log('/create post');
+				res.send({ data: 'Created!' });
+			});
+		});
+	});
+
+
+	route.use('/bots', apiBots());
 	route.use('/dashboard', dashboard);
 	route.use('/discord', discordRoute);
 

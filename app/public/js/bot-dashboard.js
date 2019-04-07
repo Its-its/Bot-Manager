@@ -197,7 +197,7 @@
 
 			this.displaySetup();
 
-			if (user.bot.app != null) this.setupComponents();
+			if (user.bot.type != null) this.setupComponents();
 		}
 
 		displaySetup() {
@@ -227,7 +227,7 @@
 		}
 
 		displaySetup() {
-			if (super.displaySetup() || user.bot.app != null) return;
+			if (super.displaySetup() || user.bot.type != null) return;
 
 			// Setup
 			this.addRow('cell large-12 setup', function(row) {
@@ -251,7 +251,7 @@
 					}, row);
 				}
 
-				if (user.bot.app != null) {
+				if (user.bot.type != null) {
 					$.post('/api/listener/status', { type: user.bot.type, id: user.bot.id }, function(data) {
 						if (data.error != null) return console.error(data.error);
 						data = data.data;
@@ -318,151 +318,330 @@
 
 					var commands = data.length;
 
-					createElement('h4', { className: 'title', innerText: 'Commands' }, section);
-					createElement('button', { className: 'button success newitem', innerText: 'New' }, section)
+
+					const headerRow = createElement('div', { className: 'header-row' }, section);
+					createElement('h4', { className: 'title', innerText: 'Commands' }, headerRow);
+					createElement('button', { className: 'button success newitem', innerText: 'New' }, headerRow)
 					.addEventListener('click', function() { newCommand({}, commands++); });
 
+					// Table init
+					const table = createTable({
+						footer: false
+					});
+
+					const tableRowElement = table.addHeaderRow();
+					createElement('th', { innerText: 'Status', style: 'width: 6rem;' }, tableRowElement);
+					createElement('th', { innerText: 'Command' }, tableRowElement);
+					createElement('th', { innerText: 'Message' }, tableRowElement);
+					createElement('th', { innerText: 'Perms', style: 'width: 10rem;' }, tableRowElement);
+					createElement('th', { innerText: 'Actions', style: 'width: 6rem;' }, tableRowElement);
+
+
+					section.appendChild(table.tableElement);
+
 					data.forEach(function(c, i) { newCommand(c, i); });
+
+					const popup = createPopup();
+
+					popup.addFormGroup({
+						label: 'Command',
+						helpText: 'The command name. It\'s prefixed with the current bot prefix.',
+						input: {
+							type: 'text',
+							required: 'true',
+							value: 'Testing',
+							placeholder: 'Stuff Goes here',
+							maxlength: '20'
+						}
+					});
+
+					popup.addFormGroup({
+						label: 'Message',
+						helpText: 'This is the commands\' response. You can also use the command variables (soon) to make more-dynamic responses.',
+						input: {
+							type: 'textarea',
+							required: 'true',
+							placeholder: 'Follow me on twitter!',
+							maxlength: '600'
+						}
+					});
+
+					popup.addFormGroup({
+						label: '',
+						helpText: '',
+						input: {
+							type: ''
+						}
+					});
+
+					popup.addFormGroup({
+						label: '',
+						helpText: '',
+						input: {
+							type: ''
+						}
+					});
+
+					// popup.open();
+
+					function createPopup() {
+						const containerElement = createElement('div', { className: 'popup-container' });
+						const innerContainer = createElement('div', { className: 'popup-inner' }, containerElement);
+
+						const titleContainer = createElement('div', { className: 'popup-title' }, innerContainer);
+						createElement('h3', { innerText: 'Example Popup Title' }, titleContainer);
+
+						const popupContents = createElement('form', { className: 'popup-contents' }, innerContainer);
+
+						function addFormGroup(opts) {
+							const container = createElement('div', { className: 'form-group grid-x' });
+
+							createElement('label', { className: 'cell small-2 control-label', innerText: opts.label }, container);
+
+							const rightContainer = createElement('div', { className: 'cell small-10 control-right' }, container);
+
+							switch(opts.input.type) {
+								case 'button':
+								case 'checkbox':
+								case 'color':
+								case 'date':
+								case 'datetime-local':
+								case 'email':
+								case 'file':
+								case 'hidden':
+								case 'image':
+								case 'month':
+								case 'number':
+								case 'password':
+								case 'radio':
+								case 'range':
+								case 'reset':
+								case 'search':
+								case 'submit':
+								case 'tel':
+								case 'text':
+								case 'time':
+								case 'url':
+								case 'week': // Same element, different attr type
+									var element = createElement('input', { type: opts.input.type, className: 'form-control' }, rightContainer);
+									for(var item in opts.input) {
+										if (item != 'type') {
+											element.setAttribute(item, opts.input[item]);
+										}
+									}
+									break;
+
+								case 'button':
+								case 'meter':
+								case 'textarea': // Different elements but don't require any internal elements.
+									var element = createElement(opts.input.type, { type: opts.input.type, className: 'form-control' }, rightContainer);
+									for(var item in opts.input) {
+										element.setAttribute(item, opts.input[item]);
+									}
+									break;
+								case 'datalist':
+								case 'option':
+								case 'select': // All lists w/ <option value="">
+									var element = createElement(opts.input.type, { className: 'form-control' }, rightContainer);
+									for(var item in opts.input) {
+										if (item != 'type' && item != 'items') {
+											element.setAttribute(item, opts.input[item]);
+										}
+									}
+
+									if (opts.input.items != null) {
+										opts.input.items.forEach(i => {
+											const itemElement = createElement('option', null, element);
+											for(var item in i) {
+												itemElement.setAttribute(item, i[item]);
+											}
+										});
+									}
+									break;
+							}
+
+							createElement('span', { className: 'form-control-help', innerText: opts.helpText }, rightContainer);
+
+							popupContents.appendChild(container);
+
+							return;
+						}
+
+						function open() {
+							document.body.appendChild(containerElement);
+						}
+
+						function close() {
+							if (containerElement.parentElement == null) {
+								document.body.removeChild(containerElement);
+							}
+						}
+
+						return {
+							containerElement,
+
+							open,
+							close,
+							addFormGroup
+						};
+					}
 
 					function newCommand(cmd, i) {
 						console.log('new Command[' + i + ']:', cmd);
 
-						var container = createElement('div', { className: 'callout command-container' });
+						const tableRowElement = table.addBodyRow();
+						createElement('td', { innerText: cmd.enabled ? 'Enabled' : 'Disabled' }, tableRowElement);
+						createElement('td', { innerText: cmd.alias.join(', ') }, tableRowElement);
+						createElement('td', { innerText: cmd.params.map(p => p.response.message).join(', ') }, tableRowElement);
+						createElement('td', { innerText: 'Anything' }, tableRowElement);
 
-						// Tools
-						var tools = createElement('div', { className: 'grid-x' }, container);
-
-						var toggle = createTogglable('Enabled', 'command-enabled-' + i, cmd.enabled == null ? false : cmd.enabled);
-						toggle.container.classList.add('large-4');
-						tools.appendChild(toggle.container);
-
-						// Right
-						var bsection = createElement('div', { className: 'large-8' }, tools);
-						var saveButton = createElement('button', { className: 'button success', innerText: 'Save', style: 'float: right;' }, bsection);
-						createElement('button', { className: 'button alert', innerText: 'Delete', style: 'float: right;' }, bsection)
+						const actions = createElement('td', null, tableRowElement);
+						createElement('button', { className: 'button tiny warning', innerText: 'E', style: 'margin: 0 0.5rem 0 0;' }, actions)
 						.addEventListener('click', function() {
-							if (cmd.id != null) {
-								$.ajax({
-									type: 'DELETE',
-									url: '/api/bots/' + botId + '/commands/' + cmd.id,
-									dataType: 'json'
-								});
-							}
-
-							section.removeChild(container);
+							//
 						});
 
-
-						var bRow = createElement('div', { className: 'grid-x' }, container);
-
-
-
-						// Alias's
-						var lSection = createElement('div', { className: 'large-2' }, bRow);
-						createElement('span', { className: 'title', innerText: 'Alias\'s' }, lSection);
-
-						var newAlias = createElement('button', { className: 'button success add-button', innerText: '+' }, lSection);
-						newAlias.addEventListener('click', function() { cmd.alias.length < 5 && cmd.alias.push(createAlias('')); });
-
-						if (cmd.alias == null) cmd.alias = [];
-
-						cmd.alias = cmd.alias.map(createAlias);
-
-						if (cmd.alias.length == 0) cmd.alias.push(createAlias(''));
-
-
-						function createAlias(name) {
-							createElement('input', { type: 'text', value: name }, lSection)
-							.addEventListener('keyup', function() { name = this.value; });
-
-							return {
-								val: function() {
-									return name;
-								}
-							}
-						}
-
-
-
-						// Responses
-						var rSection = createElement('div', { className: 'large-10', style: 'padding-left: 5px;' }, bRow);
-						createElement('span', { className: 'title', innerText: 'Responses' }, rSection);
-
-						var newParam = createElement('button', { className: 'button success add-button', innerText: '+' }, rSection);
-						newParam.addEventListener('click', function() { cmd.params.length < 1 && cmd.params.push(createParam({ length: 0 })); });
-
-
-						if (cmd.params == null) cmd.params = [];
-
-						cmd.params = cmd.params.map(createParam);
-
-						if (cmd.params.length == 0) cmd.params.push(createParam({ length: 0, response: { type: 'echo', message: '' } }));
-
-
-
-						function createParam(param) {
-							var group = createElement('div', { className: 'input-group' }, rSection);
-
-							// Dropdown
-							var section = createElement('select', { style: 'width: auto;' }, group);
-							createElement('option', { value: 'echo', innerText: 'Echo' }, section);
-							createElement('option', { value: 'interval', innerText: 'Interval', disabled: 'true' }, section);
-							createElement('option', { value: 'set', innerText: 'Set', disabled: 'true' }, section);
-
-							section.addEventListener('change', function() {
-								// param.response.type = section.value;
-							});
-
-							createElement('input', { type: 'text', value: param.response.message }, group)
-							.addEventListener('keyup', function() {
-								param.response.message = this.value;
-							});
-
-							return {
-								val: function() {
-									return param;
-								}
-							}
-						}
-
-						saveButton.addEventListener('click', function() {
-							function finished(data) {
-								console.log('NEW:', data);
-								console.log(Object.assign({}, cmd));
-
-								Object.assign(cmd, data);
-
-								toggle.set(cmd.enabled);
-
-								// while (lSection.firstChild) lSection.removeChild(lSection.firstChild);
-								// cmd.alias.forEach(createAlias);
-								// if (cmd.alias.length == 0) createAlias('');
-
-								// while (rSection.firstChild) rSection.removeChild(rSection.firstChild);
-								// cmd.params.forEach(createParam);
-								// if (cmd.params.length == 0) createParam({ length: 0 });
-							}
-
-							if (cmd.id == null) {
-								$.ajax({
-									type: 'POST',
-									url: '/api/bots/' + botId + '/commands',
-									data: { alias: cmd.alias.map(a => a.val()), enabled: toggle.val(), params: cmd.params.map(p => p.val()) },
-									success: finished,
-									dataType: 'json'
-								});
-							} else {
-								$.ajax({
-									type: 'PUT',
-									url: '/api/bots/' + botId + '/commands/' + cmd.id,
-									data: { alias: cmd.alias.map(a => a.val()), enabled: toggle.val(), params: cmd.params.map(p => p.val()) },
-									success: finished,
-									dataType: 'json'
-								});
-							}
+						createElement('button', { className: 'button tiny alert', innerText: 'D', style: 'margin: 0;' }, actions)
+						.addEventListener('click', function() {
+							//
 						});
 
-						section.appendChild(container);
+						// var container = createElement('div', { className: 'callout command-container' });
+
+						// // Tools
+						// var tools = createElement('div', { className: 'grid-x' }, container);
+
+						// var toggle = createTogglable('Enabled', 'command-enabled-' + i, cmd.enabled == null ? false : cmd.enabled);
+						// toggle.container.classList.add('large-4');
+						// tools.appendChild(toggle.container);
+
+						// // Right
+						// var bsection = createElement('div', { className: 'large-8' }, tools);
+						// var saveButton = createElement('button', { className: 'button success', innerText: 'Save', style: 'float: right;' }, bsection);
+						// createElement('button', { className: 'button alert', innerText: 'Delete', style: 'float: right;' }, bsection)
+						// .addEventListener('click', function() {
+						// 	if (cmd.id != null) {
+						// 		$.ajax({
+						// 			type: 'DELETE',
+						// 			url: '/api/bots/' + botId + '/commands/' + cmd.id,
+						// 			dataType: 'json'
+						// 		});
+						// 	}
+
+						// 	// section.removeChild(container);
+						// });
+
+
+						// var bRow = createElement('div', { className: 'grid-x' }, container);
+
+
+
+						// // Alias's
+						// var lSection = createElement('div', { className: 'large-2' }, bRow);
+						// createElement('span', { className: 'title', innerText: 'Alias\'s' }, lSection);
+
+						// var newAlias = createElement('button', { className: 'button success add-button', innerText: '+' }, lSection);
+						// newAlias.addEventListener('click', function() { cmd.alias.length < 5 && cmd.alias.push(createAlias('')); });
+
+						// if (cmd.alias == null) cmd.alias = [];
+
+						// cmd.alias = cmd.alias.map(createAlias);
+
+						// if (cmd.alias.length == 0) cmd.alias.push(createAlias(''));
+
+
+						// function createAlias(name) {
+						// 	createElement('input', { type: 'text', value: name }, lSection)
+						// 	.addEventListener('keyup', function() { name = this.value; });
+
+						// 	return {
+						// 		val: function() {
+						// 			return name;
+						// 		}
+						// 	}
+						// }
+
+
+
+						// // Responses
+						// var rSection = createElement('div', { className: 'large-10', style: 'padding-left: 5px;' }, bRow);
+						// createElement('span', { className: 'title', innerText: 'Responses' }, rSection);
+
+						// var newParam = createElement('button', { className: 'button success add-button', innerText: '+' }, rSection);
+						// newParam.addEventListener('click', function() { cmd.params.length < 1 && cmd.params.push(createParam({ length: 0 })); });
+
+
+						// if (cmd.params == null) cmd.params = [];
+
+						// cmd.params = cmd.params.map(createParam);
+
+						// if (cmd.params.length == 0) cmd.params.push(createParam({ length: 0, response: { type: 'echo', message: '' } }));
+
+
+
+						// function createParam(param) {
+						// 	var group = createElement('div', { className: 'input-group' }, rSection);
+
+						// 	// Dropdown
+						// 	var section = createElement('select', { style: 'width: auto;' }, group);
+						// 	createElement('option', { value: 'echo', innerText: 'Echo' }, section);
+						// 	createElement('option', { value: 'interval', innerText: 'Interval', disabled: 'true' }, section);
+						// 	createElement('option', { value: 'set', innerText: 'Set', disabled: 'true' }, section);
+
+						// 	section.addEventListener('change', function() {
+						// 		// param.response.type = section.value;
+						// 	});
+
+						// 	createElement('input', { type: 'text', value: param.response.message }, group)
+						// 	.addEventListener('keyup', function() {
+						// 		param.response.message = this.value;
+						// 	});
+
+						// 	return {
+						// 		val: function() {
+						// 			return param;
+						// 		}
+						// 	}
+						// }
+
+						// saveButton.addEventListener('click', function() {
+						// 	function finished(data) {
+						// 		console.log('NEW:', data);
+						// 		console.log(Object.assign({}, cmd));
+
+						// 		Object.assign(cmd, data);
+
+						// 		toggle.set(cmd.enabled);
+
+						// 		// while (lSection.firstChild) lSection.removeChild(lSection.firstChild);
+						// 		// cmd.alias.forEach(createAlias);
+						// 		// if (cmd.alias.length == 0) createAlias('');
+
+						// 		// while (rSection.firstChild) rSection.removeChild(rSection.firstChild);
+						// 		// cmd.params.forEach(createParam);
+						// 		// if (cmd.params.length == 0) createParam({ length: 0 });
+						// 	}
+
+						// 	if (cmd.id == null) {
+						// 		$.ajax({
+						// 			type: 'POST',
+						// 			url: '/api/bots/' + botId + '/commands',
+						// 			data: { alias: cmd.alias.map(a => a.val()), enabled: toggle.val(), params: cmd.params.map(p => p.val()) },
+						// 			success: finished,
+						// 			dataType: 'json'
+						// 		});
+						// 	} else {
+						// 		$.ajax({
+						// 			type: 'PUT',
+						// 			url: '/api/bots/' + botId + '/commands/' + cmd.id,
+						// 			data: { alias: cmd.alias.map(a => a.val()), enabled: toggle.val(), params: cmd.params.map(p => p.val()) },
+						// 			success: finished,
+						// 			dataType: 'json'
+						// 		});
+						// 	}
+						// });
+
+						// // section.appendChild(container);
 					}
 				});
 			});
@@ -672,6 +851,122 @@
 					}
 				});
 			});
+		}
+	}
+
+
+	function createTable(opts) {
+		const container = document.createElement('table');
+
+		let thead = document.createElement('thead');
+		let tbody = document.createElement('tbody');
+		let tfoot = document.createElement('tfoot');
+
+		if (opts.header === false) thead = null;
+		if (opts.footer === false) tfoot = null;
+		if (opts.body === false) tbody = null;
+
+
+		if (thead != null) {
+			var header = opts.header;
+			if (Array.isArray(header)) {
+				header.forEach(h => {
+					addHeaderRow(...h);
+				});
+			}
+
+			container.appendChild(thead);
+		}
+
+		if (tbody != null) {
+			if (Array.isArray(opts.body)) {
+				var body = opts.body;
+				if (Array.isArray(body)) {
+					body.forEach(h => {
+						addBodyRow(...h);
+					});
+				}
+			}
+
+			container.appendChild(tbody);
+		}
+
+		if (tfoot != null) {
+			if (Array.isArray(opts.footer)) {
+				var footer = opts.footer;
+				if (Array.isArray(footer)) {
+					footer.forEach(h => {
+						addFooterRow(...h);
+					});
+				}
+			}
+
+			container.appendChild(tfoot);
+		}
+
+		function addHeaderRow(...items) {
+			if (thead == null) return;
+
+			const row = document.createElement('tr');
+
+			if (items != null && items.length != 0) {
+				items.forEach(i => {
+					var item = document.createElement('th');
+					item.innerText = i;
+					row.appendChild(item);
+				});
+			}
+
+			thead.appendChild(row);
+
+			return row;
+		}
+
+		function addBodyRow(...items) {
+			if (tbody == null) return;
+
+			const row = document.createElement('tr');
+
+			if (items != null && items.length != 0) {
+				items.forEach(i => {
+					var item = document.createElement('td');
+					item.innerText = i;
+					row.appendChild(item);
+				});
+			}
+
+			tbody.appendChild(row);
+
+			return row;
+		}
+
+		function addFooterRow(...items) {
+			if (tfoot == null) return;
+
+			const row = document.createElement('tr');
+
+			if (items != null && items.length != 0) {
+				items.forEach(i => {
+					var item = document.createElement('th');
+					item.innerText = i;
+					row.appendChild(item);
+				});
+			}
+
+			tfoot.appendChild(row);
+
+			return row;
+		}
+
+		return {
+			addHeaderRow,
+			addBodyRow,
+			addFooterRow,
+
+			tableElement: container,
+			headerElement: thead,
+			bodyElement: tbody,
+			footerElement: tfoot
 		}
 	}
 
@@ -936,7 +1231,7 @@
 	}
 
 
-	let listeners = {
+	const listeners = {
 		'twitch': new TwitchListener(),
 		'discord': new DiscordListener(),
 		'youtube': new YoutubeListener(),
@@ -948,7 +1243,7 @@
 
 
 	// App Selection
-	var appSelection = rowContainer('cell large-12 apps', function(cont) {
+	const appSelection = rowContainer('cell large-12 apps', function(cont) {
 		createElement('h4', { className: 'title', innerText: 'Set Listener' }, cont);
 
 		let container = createElement('div', { className: 'apps-cont' });
@@ -977,7 +1272,7 @@
 	listenerContainer = rowContainer('cell large-12 listener', null, false);
 
 
-	$.post('/api/bots/status', { id: botId }, function(data) {
+	$.post('/api/bots/status', { bid: botId }, function(data) {
 		if (data.error != null) return console.error(data.error);
 		data = data.data;
 
@@ -1000,8 +1295,8 @@
 		var bc = document.getElementById('bot-container');
 		var dd = document.getElementById('dropdown');
 
-		if (bot.app != null) {
-			listeners[bot.app.type].display();
+		if (bot.type != null) {
+			listeners[bot.type].display();
 
 			var liL = createElement('li');
 			var aL = createElement('a', { href: 'javascript:void()', innerText: 'Listener' }, liL);
