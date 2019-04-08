@@ -341,13 +341,14 @@
 
 					data.forEach(function(c, i) { newCommand(c, i); });
 
-					const popup = createPopup();
+					const popup = createPopup('Editing Command');
 
 					popup.addFormGroup({
 						label: 'Command',
 						helpText: 'The command name. It\'s prefixed with the current bot prefix.',
 						input: {
 							type: 'text',
+							name: 'command',
 							required: 'true',
 							value: 'Testing',
 							placeholder: 'Stuff Goes here',
@@ -360,6 +361,7 @@
 						helpText: 'This is the commands\' response. You can also use the command variables (soon) to make more-dynamic responses.',
 						input: {
 							type: 'textarea',
+							name: 'message',
 							required: 'true',
 							placeholder: 'Follow me on twitter!',
 							maxlength: '600'
@@ -382,16 +384,29 @@
 						}
 					});
 
-					// popup.open();
+					popup.onSubmit(function(values) {
+						console.log(values);
+					});
 
-					function createPopup() {
+					popup.open();
+
+					function createPopup(title) {
 						const containerElement = createElement('div', { className: 'popup-container' });
 						const innerContainer = createElement('div', { className: 'popup-inner' }, containerElement);
 
 						const titleContainer = createElement('div', { className: 'popup-title' }, innerContainer);
-						createElement('h3', { innerText: 'Example Popup Title' }, titleContainer);
+						createElement('span', { innerText: 'x', className: 'exit' }, titleContainer)
+						.addEventListener('click', close);
+						createElement('h6', { innerText: title }, titleContainer);
 
-						const popupContents = createElement('form', { className: 'popup-contents' }, innerContainer);
+						const formElement = createElement('form', { className: 'popup-contents' }, innerContainer);
+
+						const bodyElement = createElement('div', { className: 'form-body' }, formElement);
+						const footerElement = createElement('div', { className: 'form-footer' }, formElement);
+
+						createElement('button', { className: 'button', innerText: 'Submit', type: 'submit' }, footerElement);
+						createElement('a', { className: 'button', innerText: 'Cancel' }, footerElement)
+						.addEventListener('click', close, true);
 
 						function addFormGroup(opts) {
 							const container = createElement('div', { className: 'form-group grid-x' });
@@ -462,7 +477,7 @@
 
 							createElement('span', { className: 'form-control-help', innerText: opts.helpText }, rightContainer);
 
-							popupContents.appendChild(container);
+							bodyElement.appendChild(container);
 
 							return;
 						}
@@ -472,8 +487,30 @@
 						}
 
 						function close() {
-							if (containerElement.parentElement == null) {
+							if (containerElement.parentElement != null) {
 								document.body.removeChild(containerElement);
+							}
+						}
+
+						function onSubmit(todo) {
+							if (typeof todo == 'string') {
+								// URL
+								formElement.method = 'post';
+								formElement.action = todo;
+							} else if (typeof todo == 'function') {
+								// CALLBACK
+								formElement.addEventListener('submit', function(e) {
+									var cerial = $(formElement).serializeArray();
+									// TODO: Account for "name = item[test]"
+									var proper = {};
+									cerial.forEach(c => proper[c.name] = c.value);
+									todo(proper);
+
+									e.preventDefault();
+									return false;
+								}, true);
+							} else {
+								throw new Error('Invalid onSubmit. needs to be a string or function, found: ' + (typeof todo));
 							}
 						}
 
@@ -482,6 +519,7 @@
 
 							open,
 							close,
+							onSubmit,
 							addFormGroup
 						};
 					}
