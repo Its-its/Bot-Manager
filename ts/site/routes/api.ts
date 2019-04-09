@@ -20,7 +20,7 @@ import DiscordServer = require('../../discord/bot/GuildServer');
 import discordClient = require('../../discord/guildClient');
 
 import config = require('@config');
-import { CustomDocs, DiscordBot } from '@type-manager';
+import { CustomDocs, DiscordBot, Nullable } from '@type-manager';
 
 
 
@@ -56,8 +56,10 @@ const MAX_BOTS = 5;
 //       /remove
 //       /edit
 
+type EnsureArgsTypes = EnsureArgs | string;
+
 interface EnsureOpts {
-	[test: string]: EnsureArgs | string;
+	[test: string]: EnsureArgsTypes | Array<EnsureArgsTypes>;
 }
 
 
@@ -92,24 +94,34 @@ type EnsureArgs = {
 } & EnsureItems;
 
 type CorrectedArgs = {
-	fieldName: string;
+	fieldName: Nullable<string>;
 } & EnsureArgs;
 
 
 function ensure(opts: EnsureOpts) {
-	var corrected: CorrectedArgs[] = [];
+	const corrected: CorrectedArgs[][] = [];
 
 	for (var key in opts) corrected.push(correctOpts(key, opts[key]));
 
-	function correctOpts(key: string, item: any): CorrectedArgs {
+	function correctOpts(key: Nullable<string>, item: EnsureArgsTypes | EnsureArgsTypes[]): CorrectedArgs[] {
+		// Type 'CorrectedArgs[][]' is not assignable to type 'CorrectedArgs[]'.
+		// 	Type 'CorrectedArgs[]' is not assignable to type 'CorrectedArgs'.
+		// 		Type 'CorrectedArgs[]' is not assignable to type '{ fieldName: string; } & { fieldLocation?: "body" | "params" | undefined; required?: boolean | undefined; default?: any; } & EnsureArray'.
+		// 		Property 'fieldName' is missing in type 'CorrectedArgs[]' but required in type '{ fieldName: string; }'.ts(2322)
+		// 	api.ts(97, 2): 'fieldName' is declared here.
+
+		if (Array.isArray(item)) return item.map(i => correctOpts(key, i)[0]);
+
 		if (typeof item == 'string') {
-			return {
-				fieldLocation: 'body',
-				fieldName: key,
-				type: <any>item,
-				required: false,
-				default: null
-			};
+			return [
+				{
+					fieldLocation: 'body',
+					fieldName: key,
+					type: <any>item,
+					required: false,
+					default: null
+				}
+			];
 		} else {
 			var obj = Object.assign({
 				fieldLocation: 'body',
@@ -119,25 +131,25 @@ function ensure(opts: EnsureOpts) {
 			}, item);
 
 			if (Array.isArray(obj.type)) {
-				// @ts-ignore
-				obj.type = obj.type.map(a => correctOpts(null, a));
+				obj.type = obj.type.map(a => correctOpts(null, a)[0]);
 			}
 
-			return obj;
+			return [obj];
 		}
 	}
 
-	function verify(item: EnsureItems): { value?: any, err?: any; } {
+	function verifyCorrectValue(item: EnsureItems): { value?: any, err?: any; } {
 		var value = item.value;
 
+		// Array Object...
 		if (Array.isArray(item.type)) {
-			var errorMsg = verify(Object.assign({}, item, { type: 'array' }));
+			var errorMsg = verifyCorrectValue(Object.assign({}, item, { type: 'array' }));
 			if (errorMsg.err != null) return errorMsg;
 
 			var fixed = [];
 
 			for(var i = 0; i < errorMsg.value.length; i++) {
-				var msg = verify(Object.assign({}, item.type[0], { value: errorMsg.value[i] }));
+				var msg = verifyCorrectValue(Object.assign({}, item.type[0], { value: errorMsg.value[i] }));
 				if (msg.err != null) return msg;
 				fixed.push(msg.value);
 			}
@@ -158,8 +170,13 @@ function ensure(opts: EnsureOpts) {
 				break;
 			case 'boolean':
 				if (typeof value == 'string') {
-					if (value != 'true' && value != 'false') return { err: 'Field "%s" is supposed to be a boolean!' };
-					value = (value == 'true');
+					if (value == 'true' || value == 'false') {
+						value = (value == 'true');
+					} else if (value == 'on' || value == 'off') {
+						value = (value == 'on');
+					} else {
+						return { err: 'Field "%s" is supposed to be a boolean!' };
+					}
 				}
 				if (typeof value != 'boolean') return { err: 'Field "%s" is supposed to be a boolean!' };
 				break;
@@ -181,20 +198,33 @@ function ensure(opts: EnsureOpts) {
 
 	return function(req: express.Request, res: express.Response, next: express.NextFunction) {
 		for(var i = 0; i < corrected.length; i++) {
-			var item = corrected[i];
+			var items = corrected[i];
 
-			item.value = req[item.fieldLocation!][item.fieldName];
+			var subErrorMsg = [];
 
-			// Check if exists.
-			if (item.value == null) {
-				if (item.required) return res.status(400).send({ error: 'Missing required field "' + item.fieldName  });
-				if (item.default != null) req[item.fieldLocation!][item.fieldName] = item.default;
-				continue;
+			for(var s = 0; s < items.length; s++) {
+				var item = items[s];
+
+				item.value = req[item.fieldLocation!][item.fieldName!];
+
+				// Check if exists.
+				if (item.value == null) {
+					if (item.required) return res.status(400).send({ error: 'Missing required field "' + item.fieldName });
+					if (item.default != null) req[item.fieldLocation!][item.fieldName!] = item.default;
+					continue;
+				}
+
+				var returnMsg = verifyCorrectValue(item);
+
+				if (returnMsg.err != null) {
+					subErrorMsg.push(returnMsg.err.replace('%s', item.fieldName));
+				} else {
+					req[item.fieldLocation!][item.fieldName!] = returnMsg.value;
+					subErrorMsg = [];
+				}
 			}
 
-			var errorMsg = verify(item);
-			if (errorMsg.err != null) return res.status(400).send({ error: errorMsg.err.replace('%s', item.fieldName) });
-			req[item.fieldLocation!][item.fieldName] = errorMsg.value;
+			if (subErrorMsg.length != 0) return res.status(400).send({ error: subErrorMsg });
 		}
 
 		next();
@@ -471,12 +501,18 @@ function apiBots() {
 			type: 'boolean',
 			default: false
 		},
-		params: {
-			type: 'array',
-			required: true,
-			$min: 1,
-			$max: 2
-		}
+		params: [
+			// {
+			// 	type: 'array', // TODO: Deep check
+			// 	required: true,
+			// 	$min: 1,
+			// 	$max: 2
+			// },
+			{
+				type: 'string', // TODO: Deep check
+				required: true
+			}
+		]
 	}), registerBot, (req, res) => {
 		var { bid, cid } = req.params;
 
