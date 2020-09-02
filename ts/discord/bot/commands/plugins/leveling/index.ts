@@ -33,7 +33,7 @@ class Leveling extends Command {
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (!server.isPluginEnabled('leveling')) return Command.error([['Error', 'Please enable the Leveling Plugin!']]);
 
-		var callType = params.shift();
+		let callType = params.shift();
 
 		// @ts-ignore
 		if (callType != null && PERMS[callType.toUpperCase()] != null) {
@@ -42,7 +42,7 @@ class Leveling extends Command {
 		}
 
 		switch(callType == null ? null : callType.toLowerCase()) {
-			case 'rank': return comm.Rank.call(params, server, message);
+			// case 'rank': return comm.Rank.call(params, server, message);
 			case 'leaderboard': return comm.Leaderboard.call(params, server, message);
 			case 'config': return comm.Config.call(params, server, message);
 			case 'set': return comm.Set.call(params, server, message);
