@@ -48,15 +48,22 @@ class Prune extends Command {
 			]);
 		}
 
-		if (params[0] != 'user' && params[0] != 'channel') {
-			var type = server.idType(params[0]);
+		let first_arg = params.shift()!;
+
+		if (first_arg != 'user' && first_arg != 'channel') {
+			var type = server.idType(first_arg);
 			if (type != null) {
 				if (type == 'channel') params = ['channel'].concat(params);
 				else if (type == 'member') params = ['user'].concat(params);
 			}
 		}
 
-		switch(params.shift()) {
+		// let amnt = parseInt(first_arg);
+		// if (!isNaN(amnt)) {
+		// 	params = ['channel', message.channel.id];
+		// }
+
+		switch (first_arg) {
 			case 'user': // TODO:
 				if (!this.hasPerms(message.member, server, PERMS.USER)) return Command.noPermsMessage('Prune');
 				return Command.error([['Prune', 'Not implemented yet.']]);
