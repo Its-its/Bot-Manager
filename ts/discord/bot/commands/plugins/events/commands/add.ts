@@ -17,20 +17,20 @@ const TYPES = [
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMS.ADD)) return utils.noPermsMessage('Events');
 
-	var eventType = params.shift();
+	let eventType = params.shift();
 	if (eventType == null) return message.channel.send('Invalid args');
 
 	eventType = eventType.toLowerCase();
 
 	if (TYPES.indexOf(eventType) == -1) return message.channel.send('Type must be one of these: ' + TYPES.join(','));
 
-	var compiled: any = {
+	let compiled: any = {
 		type: eventType
 	};
 
 	if (eventType == 'react_add') {
-		var id = params.shift();
-		var emoji = params.shift();
+		let id = params.shift();
+		let emoji = params.shift();
 
 		if (id == null || emoji == null) return message.channel.send('Invalid args for react_add');
 		if (!message.guild!.emojis.cache.has(emoji)) return;

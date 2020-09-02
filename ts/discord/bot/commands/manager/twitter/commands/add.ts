@@ -11,7 +11,7 @@ import GlobalTwitterFeeds = require('../../../../../../models/twitterfeed');
 import intervalUtils = require('../../../../../../rssgrabber/utils');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	var urlOrName = params.join(' ');
+	let urlOrName = params.join(' ');
 
 	intervalUtils.addTwitterFeed(urlOrName, (err, isNew, feedDoc, statues) => {
 		if (err != null) {
@@ -59,11 +59,11 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 					return;
 				}
 
-				for(var f = 0; f < dFeeds.length; f++) {
-					var dFeed = dFeeds[f];
+				for(let f = 0; f < dFeeds.length; f++) {
+					let dFeed = dFeeds[f];
 
-					for(var i = 0; i < dFeed.feeds.length; i++) {
-						var feed = dFeed.feeds[i];
+					for(let i = 0; i < dFeed.feeds.length; i++) {
+						let feed = dFeed.feeds[i];
 
 						if (feed.feed.toString() == feedDoc!._id.toString()) {
 							return message.channel.send(utils.infoMsg([['Twitter', 'Twitter handle is already being used in the discord!']]));

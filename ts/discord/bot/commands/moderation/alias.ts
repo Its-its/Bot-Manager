@@ -58,8 +58,8 @@ class Alias extends Command {
 			case 'add':
 				if (!this.hasPerms(message.member!, server, PERMISSIONS.ADD)) return Command.noPermsMessage('Alias');
 
-				var alias = params.shift();
-				var command = params.join(' ');
+				let alias = params.shift();
+				let command = params.join(' ');
 
 				if (alias == null || command.length == 0) return Command.error([['Alias', 'Incorrect Usage.']]);
 
@@ -71,7 +71,7 @@ class Alias extends Command {
 			case 'remove':
 				if (!this.hasPerms(message.member!, server, PERMISSIONS.REMOVE)) return Command.noPermsMessage('Alias');
 
-				var name = params.shift();
+				let name = params.shift();
 
 				if (name == null) return Command.error([['Alias', 'Pleave provide an alias name to remove.']]);
 

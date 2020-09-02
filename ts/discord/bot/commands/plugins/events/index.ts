@@ -19,7 +19,7 @@ class Events extends Command {
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (!server.isPluginEnabled('events')) return Command.error([['Error', 'Please enable the Events Plugin!']]);
 
-		var callType = params.shift();
+		let callType = params.shift();
 
 		switch(callType == null ? null : callType.toLowerCase()) {
 			case 'list': return comm.List.call(params, server, message);

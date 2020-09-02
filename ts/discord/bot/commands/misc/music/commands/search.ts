@@ -23,7 +23,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	// 	page: null
 	// });
 
-	var search = params.join(' ').trim();
+	let search = params.join(' ').trim();
 
 	message.channel.send(Command.info([['Music', 'Searching for videos please wait...']]))
 	.then(m => {

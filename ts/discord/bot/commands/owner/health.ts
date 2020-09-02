@@ -29,12 +29,12 @@ class Health extends Command {
 		if (client.shard == null) return Command.error([['Health', 'Bot is currently not sharded!']])
 
 		if (client.shard.count != 0) {
-			client.shard.broadcastEval('var opts = { id: this.shard.id, guildCount: this.guilds.size, status: this.status }; opts;')
+			client.shard.broadcastEval('let opts = { id: this.shard.id, guildCount: this.guilds.size, status: this.status }; opts;')
 			.then(shards => {
-				var output = [];
+				let output = [];
 
-				for (var i = 0; i < shards.length; i++) {
-					var shard = shards[i];
+				for (let i = 0; i < shards.length; i++) {
+					let shard = shards[i];
 					output.push(`Shard ${shard.id}: ${statuses[shard.status]}, serving ${shard.guildCount} guilds`);
 				}
 

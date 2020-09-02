@@ -8,8 +8,8 @@ import comm = require('./commands');
 import PERMS = require('./perms');
 
 
-// for(var name in comm) {
-// 	var perms = comm[name].PERMS;
+// for(let name in comm) {
+// 	let perms = comm[name].PERMS;
 // }
 
 // https://i.thick.at/AdulterineBlanche.png
@@ -23,7 +23,7 @@ class RSSFeed extends Command {
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
-		var callType = params.shift();
+		let callType = params.shift();
 
 		if (callType == null || callType.toLowerCase() == 'help') return comm.Help.call(params, server, message);
 

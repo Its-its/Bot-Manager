@@ -10,7 +10,7 @@ const PERMS = {
 	SET: 'set'
 };
 
-for(var name in PERMS) {
+for(let name in PERMS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
@@ -41,7 +41,7 @@ class PrefixCommand extends Command {
 			]);
 		}
 
-		var type = params.shift();
+		let type = params.shift();
 
 		switch(type) {
 			case 'reset':
@@ -57,7 +57,7 @@ class PrefixCommand extends Command {
 			case 'set':
 				if (!this.hasPerms(message.member!, server, PERMS.SET)) return Command.noPermsMessage('Prefix');
 
-				var prefix = params.shift();
+				let prefix = params.shift();
 
 				if (prefix != null && new RegExp('[~\\!@#$%^&\*\-=+:;<>,.?]{1,4}', 'i').test(prefix)) {
 					server.commandPrefix = prefix;

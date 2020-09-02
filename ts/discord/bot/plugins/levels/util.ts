@@ -43,9 +43,9 @@ function xpAmountForLevel(level: number) {
 
 
 function levelsToExp(levels: number) {
-	var xp = 0;
+	let xp = 0;
 
-	for(var level = 0; level <= levels; level++) {
+	for(let level = 0; level <= levels; level++) {
 		xp += xpAmountForLevel(level);
 	}
 
@@ -53,9 +53,9 @@ function levelsToExp(levels: number) {
 }
 
 function expToLevels(user_total_xp: number) {
-	var level = 0;
+	let level = 0;
 
-	var total_xp = 0;
+	let total_xp = 0;
 
 	while(true) {
 		total_xp += levelsToExp(level);
@@ -67,25 +67,25 @@ function expToLevels(user_total_xp: number) {
 }
 
 function remainingExp(totalXp: number) { // 677
-	var level = expToLevels(totalXp); // 3
+	let level = expToLevels(totalXp); // 3
 	return levelsToExp(level + 1) - totalXp;
 }
 
 function regularArcData(cx: number, cy: number, radius: number, startDegrees: number, endDegrees: number, isCounterClockwise: boolean): string {
-	var offsetRadians = Math.PI/2;
-	var sweepFlag = isCounterClockwise ? 0 : 1;
+	let offsetRadians = Math.PI/2;
+	let sweepFlag = isCounterClockwise ? 0 : 1;
 
-	var startRadians = offsetRadians + startDegrees * Math.PI / 180;
-	var endRadians = offsetRadians + (startDegrees + endDegrees) * Math.PI / 180;
-	var largeArc = ((endRadians - startRadians) % (2 * Math.PI)) > Math.PI ? 1 : 0;
+	let startRadians = offsetRadians + startDegrees * Math.PI / 180;
+	let endRadians = offsetRadians + (startDegrees + endDegrees) * Math.PI / 180;
+	let largeArc = ((endRadians - startRadians) % (2 * Math.PI)) > Math.PI ? 1 : 0;
 
-	var startX = (cx + radius * Math.cos(startRadians));
-	var startY = (cy + radius * Math.sin(startRadians));
-	var endX = (cx + radius * Math.cos(endRadians));
-	var endY = (cy + radius * Math.sin(endRadians));
+	let startX = (cx + radius * Math.cos(startRadians));
+	let startY = (cy + radius * Math.sin(startRadians));
+	let endX = (cx + radius * Math.cos(endRadians));
+	let endY = (cy + radius * Math.sin(endRadians));
 
-	var space = " ";
-	var arcData = "";
+	let space = " ";
+	let arcData = "";
 
 	arcData += "M" + space + startX + space + startY + space;
 	arcData += "A" + space + radius + space + radius + space + offsetRadians + space + largeArc + space + sweepFlag + space + endX + space + endY;

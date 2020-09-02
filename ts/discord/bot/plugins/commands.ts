@@ -38,7 +38,7 @@ function onDidCallCommand(bot_id: string, message: Discord.Message, server: Serv
 		}
 
 
-		var commandMessage = CommandManager.getCommandMessage(server.getPrefix(), bot_id, message.content);
+		let commandMessage = CommandManager.getCommandMessage(server.getPrefix(), bot_id, message.content);
 
 		if (commandMessage == null) return true;
 
@@ -46,12 +46,12 @@ function onDidCallCommand(bot_id: string, message: Discord.Message, server: Serv
 
 		if (commandMessage.length == 0) return true;
 
-		var commName = commandMessage.split(' ', 2)[0].toLowerCase();
+		let commName = commandMessage.split(' ', 2)[0].toLowerCase();
 
 		// Check for alias's.
 		if (server.alias.length != 0) {
-			for(var i = 0; i < server.alias.length; i++) {
-				var alias = server.alias[i];
+			for(let i = 0; i < server.alias.length; i++) {
+				let alias = server.alias[i];
 
 				if (alias.alias.indexOf(commName) != -1) {
 					commandMessage = alias.command + commandMessage.substring(commName.length);
@@ -79,7 +79,7 @@ function onDidCallCommand(bot_id: string, message: Discord.Message, server: Serv
 
 		return true;
 	} else {
-		var phrase = server.findPhrase(message.content.split(' '));
+		let phrase = server.findPhrase(message.content.split(' '));
 
 		if (phrase != null && phrase.responses.length != 0) {
 			phrase.responses.forEach(r => parseOptions(message, server, r));
@@ -102,8 +102,8 @@ function parseOptions(message: Discord.Message, server: Server, value: DiscordBo
 
 				return;
 			case 'interval':
-				var id = value.id;
-				var type = value.do;
+				let id = value.id;
+				let type = value.do;
 
 				if (type == 'reset') {
 					server.resetInterval(id);
@@ -114,11 +114,11 @@ function parseOptions(message: Discord.Message, server: Server, value: DiscordBo
 				// value.do
 				return;
 			// case 'set':
-			// 	var command = value.command;
-			// 	var paramId = value.paramId;
-			// 	var newValue = value.newValue;
+			// 	let command = value.command;
+			// 	let paramId = value.paramId;
+			// 	let newValue = value.newValue;
 
-			// 	var param = CommandManager.getCommandParam(command, paramId, server.commands);
+			// 	let param = CommandManager.getCommandParam(command, paramId, server.commands);
 			// 	param.onCalled = newValue;
 
 			// 	server.save(() => message.reply(`Successfully edited command "${command}"`));

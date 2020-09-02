@@ -46,7 +46,7 @@ function launch(client: string) {
 				if (opts == 'ready' || opts == 'update') {
 					if (opts == 'ready') logger.info(`Shard [${shard.id}]: Ready`);
 
-					shard.eval('var opts = this.guilds.cache.map(g => g.id); opts;')
+					shard.eval('let opts = this.guilds.cache.map(g => g.id); opts;')
 					.then((opts: string[]) => {
 						// TODO: Remove
 						GUILD_ID_SHARD = {};
@@ -89,9 +89,9 @@ function botClientSetup() {
 	}
 
 	setInterval(() => {
-		manager.broadcastEval('var opts = { unique_user_count: this.users.cache.size, total_user_count: this.guilds.cache.map(g => g.memberCount).reduce((pv, cv) => pv + cv), guild_count: this.guilds.cache.size }; opts;')
+		manager.broadcastEval('let opts = { unique_user_count: this.users.cache.size, total_user_count: this.guilds.cache.map(g => g.memberCount).reduce((pv, cv) => pv + cv), guild_count: this.guilds.cache.size }; opts;')
 		.then((shards: Shardd[]) => {
-			var guild_count = 0, unique_user_count = 0, total_user_count = 0;
+			let guild_count = 0, unique_user_count = 0, total_user_count = 0;
 
 			shards.forEach(s => {
 				guild_count += s.guild_count;
@@ -99,7 +99,7 @@ function botClientSetup() {
 				unique_user_count += s.unique_user_count;
 			});
 
-			var date = new Date();
+			let date = new Date();
 			date.setUTCHours(0);
 			date.setUTCSeconds(0);
 			date.setMinutes(0);
@@ -134,7 +134,7 @@ function initMasterLink(clientName: string) {
 	io.on('from', (opts: FromOpts) => {
 		logger.info('from:', opts);
 
-		var shard = GUILD_ID_SHARD[opts._guild];
+		let shard = GUILD_ID_SHARD[opts._guild];
 
 		logger.info('Guild Exists: ' + (shard != null));
 

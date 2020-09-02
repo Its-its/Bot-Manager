@@ -10,7 +10,7 @@ import musicPlugin = require('@discord/music/plugins/music');
 import MusicHistory = require('@base/music/models/history');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	var paramToDo = params.shift();
+	let paramToDo = params.shift();
 
 	if (paramToDo == 'clear') {
 		if (!server.userHasPerm(message.member!, PERMS.HISTORY_CLEAR)) return Command.noPermsMessage('Music');
@@ -21,11 +21,11 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	} else {
 		if (!server.userHasPerm(message.member!, PERMS.HISTORY_LIST)) return Command.noPermsMessage('Music');
 
-		var page = 1;
-		var maxItems = 5;
+		let page = 1;
+		let maxItems = 5;
 
 		if (paramToDo != null) {
-			var parsed = parseInt(paramToDo);
+			let parsed = parseInt(paramToDo);
 			if (Number.isInteger(parsed)) page = parsed;
 		}
 
@@ -40,26 +40,26 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 			if (item == null || item.song_count == 0) return message.channel.send(Command.info([['Music', 'Nothing in History!']]));
 
-			var maxPages = Math.ceil(item.song_count/maxItems);
+			let maxPages = Math.ceil(item.song_count/maxItems);
 
 			if (page > maxPages) return message.channel.send(Command.info([['Music', 'Exceeded max history pages. (' + page + '/' + maxPages + ')']]));
 
-			var fields = [
+			let fields = [
 				[
 					'Music',
 					'Items In History: ' + item.song_count + '\nPage: ' + page + '/' + maxPages
 				]
 			];
 
-			var songIds = item.songs.map(s => s.song_id);
+			let songIds = item.songs.map(s => s.song_id);
 
 			musicPlugin.getSong(songIds.filter((item, pos) => songIds.indexOf(item) == pos), (err, songs) => {
 				if (err != null) return message.channel.send(Command.error([['Music', err]]));
 				if (songs == null || songs.length == 0) return message.channel.send(Command.error([['Music', 'Unable to find songs']]));
 
 				fields = fields.concat(songIds.map((id, pos) => {
-					for(var i = 0; i < songs.length; i++) {
-						var song = songs[i];
+					for(let i = 0; i < songs.length; i++) {
+						let song = songs[i];
 
 						if (song.id == id) {
 							return [
@@ -69,7 +69,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 						}
 					}
 
-					return [ 'ID: ' + i, 'Unknown.' ];
+					return [ 'ID: ' + pos, 'Unknown.' ];
 				}));
 
 				message.channel.send(Command.info(fields));

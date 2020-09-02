@@ -40,7 +40,7 @@ class Changes {
 	}
 
 	init_changes() {
-		var i = 0;
+		let i = 0;
 		// for (const value in this) {
 		// 	if (this.hasOwnProperty(value)) {
 		// 		// const element = this[value];
@@ -50,7 +50,7 @@ class Changes {
 	}
 
 	public copy(value: any): any {
-		var type = typeof value;
+		let type = typeof value;
 
 		switch(typeof value) {
 			case 'string': return String(value);
@@ -67,8 +67,8 @@ class Changes {
 						return new Date(value.getDate());
 					}
 
-					var clonedObj = new value.constructor();
-					for(var prop in value) {
+					let clonedObj = new value.constructor();
+					for(let prop in value) {
 						if(value.hasOwnProperty(prop)){
 							clonedObj[prop] = this.copy(value[prop]);
 						}
@@ -208,8 +208,8 @@ class Server extends Changes {
 				}
 			};
 		} else if (this.moderation.blacklisted) {
-			for(var name in this.moderation.blacklisted) {
-				var item = this.moderation.blacklisted[name];
+			for(let name in this.moderation.blacklisted) {
+				let item = this.moderation.blacklisted[name];
 
 				if (Array.isArray(item)) {
 					this.moderation.blacklisted[name] = {
@@ -262,7 +262,7 @@ class Server extends Changes {
 //#region Events
 
 	public addOrEditEvent(listener: DiscordBot.ListenEvents) {
-		for(var i = 0; i < this.events.length; i++) {
+		for(let i = 0; i < this.events.length; i++) {
 			if (this.events[i].uid == listener.uid) {
 				this.events[i].event = listener.event;
 				return true;
@@ -275,7 +275,7 @@ class Server extends Changes {
 	}
 
 	public editEvent(id: string, event: DiscordBot.DoEvents) {
-		for(var i = 0; i < this.events.length; i++) {
+		for(let i = 0; i < this.events.length; i++) {
 			if (this.events[i].uid == id) {
 				this.events[i].event = event;
 				return true;
@@ -286,7 +286,7 @@ class Server extends Changes {
 	}
 
 	public removeEvent(id: string) {
-		for(var i = 0; i < this.events.length; i++) {
+		for(let i = 0; i < this.events.length; i++) {
 			if (this.events[i].uid == id) {
 				this.events.splice(i, 1);
 				return true;
@@ -307,8 +307,8 @@ class Server extends Changes {
 	public roleForLevel(level: number) {
 		if (this.leveling == null || this.leveling.roles.length == 0) return null;
 
-		for(var i = this.leveling.roles.length - 1; i >= 0; i--) {
-			var role = this.leveling.roles[i];
+		for(let i = this.leveling.roles.length - 1; i >= 0; i--) {
+			let role = this.leveling.roles[i];
 			if (role.level <= level) return role.id;
 		}
 
@@ -317,8 +317,8 @@ class Server extends Changes {
 
 	public addLevelingRole(id: string, level: number) {
 		if (this.leveling != null) {
-			for(var i = 0; i < this.leveling.roles.length; i++) {
-				var role = this.leveling.roles[i];
+			for(let i = 0; i < this.leveling.roles.length; i++) {
+				let role = this.leveling.roles[i];
 				if (role.id == id) return false;
 			}
 		} else {
@@ -339,8 +339,8 @@ class Server extends Changes {
 	public removeLevelingRole(id: string) {
 		if (this.leveling == null) return false;
 
-		for(var i = 0; i < this.leveling.roles.length; i++) {
-			var role = this.leveling.roles[i];
+		for(let i = 0; i < this.leveling.roles.length; i++) {
+			let role = this.leveling.roles[i];
 			if (role.id == id) {
 				this.leveling.roles.splice(i, 1);
 				return true;
@@ -353,8 +353,8 @@ class Server extends Changes {
 	public editLevelingRole(id: string, level: number) {
 		if (this.leveling == null) return false;
 
-		for(var i = 0; i < this.leveling.roles.length; i++) {
-			var role = this.leveling.roles[i];
+		for(let i = 0; i < this.leveling.roles.length; i++) {
+			let role = this.leveling.roles[i];
 			if (role.id == id) {
 				if (role.level == level) return false;
 				role.level = level;
@@ -374,7 +374,7 @@ class Server extends Changes {
 
 		if (this.findPhrase(phraseText) != null) return null;
 
-		var phrase = {
+		let phrase = {
 			_id: undefined,
 			enabled: true,
 			sid: this.serverId,
@@ -409,12 +409,12 @@ class Server extends Changes {
 	public removePhrase(id: number | string, phrases?: string[]): Nullable<DiscordBot.Phrase> {
 		if (this.phrases.length < id) return null;
 
-		var phrase: Nullable<DiscordBot.Phrase> = null;
-		var pos = -1;
+		let phrase: Nullable<DiscordBot.Phrase> = null;
+		let pos = -1;
 
 		if (typeof id == 'string') {
-			for(var i = 0; i < this.phrases.length; i++) {
-				var p = this.phrases[i];
+			for(let i = 0; i < this.phrases.length; i++) {
+				let p = this.phrases[i];
 				if (p.pid == id) {
 					phrase = p;
 					pos = i;
@@ -436,7 +436,7 @@ class Server extends Changes {
 		} else {
 			Phrases.updateOne({ _id: phrase._id }, { $pull: { phrases: { $in: phrases } } }).exec();
 			phrases.forEach((p, i) => {
-				var index = phrase!.phrases.indexOf(p);
+				let index = phrase!.phrases.indexOf(p);
 				if (index != -1) phrase!.phrases.splice(index, 1);
 			});
 		}
@@ -448,8 +448,8 @@ class Server extends Changes {
 		if (this.phrases.length < id) return false;
 
 		if (typeof id == 'string') {
-			for(var i = 0; i < this.phrases.length; i++) {
-				var phrase = this.phrases[i];
+			for(let i = 0; i < this.phrases.length; i++) {
+				let phrase = this.phrases[i];
 				if (phrase.pid == id) {
 					Phrases.updateOne({ _id: phrase._id }, { $push: { phrases: { $each: phrases } } }).exec();
 					phrase.phrases = phrase.phrases.concat(phrases).slice(0, SERVER.MAX_PHRASE_TEXT);
@@ -457,7 +457,7 @@ class Server extends Changes {
 				}
 			}
 		} else {
-			var phrase = this.phrases[id - 1];
+			let phrase = this.phrases[id - 1];
 			Phrases.updateOne({ _id: phrase._id }, { $push: { phrases: { $each: phrases } } }).exec();
 			phrase.phrases = phrase.phrases.concat(phrases).slice(0, SERVER.MAX_PHRASE_TEXT);
 		}
@@ -471,8 +471,8 @@ class Server extends Changes {
 		response.splice(0, SERVER.MAX_PHRASE_RESPONSES);
 
 		if (typeof id == 'string') {
-			for(var i = 0; i < this.phrases.length; i++) {
-				var phrase = this.phrases[i];
+			for(let i = 0; i < this.phrases.length; i++) {
+				let phrase = this.phrases[i];
 				if (phrase.pid == id || phrase._id == id) {
 					Phrases.updateOne({ _id: phrase._id }, { $set: { responses: response } }).exec();
 					phrase.responses = response;
@@ -480,7 +480,7 @@ class Server extends Changes {
 				}
 			}
 		} else {
-			var phrase = this.phrases[id - 1];
+			let phrase = this.phrases[id - 1];
 			Phrases.updateOne({ _id: phrase._id }, { $set: { responses: response } }).exec();
 			phrase.responses = response;
 		}
@@ -490,8 +490,8 @@ class Server extends Changes {
 
 	public setPhraseIgnoreCase(id: number | string, ignoreCase: boolean): boolean {
 		if (typeof id == 'string') {
-			for(var i = 0; i < this.phrases.length; i++) {
-				var phrase = this.phrases[i];
+			for(let i = 0; i < this.phrases.length; i++) {
+				let phrase = this.phrases[i];
 
 				if (phrase.pid == id || phrase._id == id) {
 					Phrases.updateOne({ _id: phrase._id }, { $set: { ignoreCase: ignoreCase } }).exec();
@@ -501,7 +501,7 @@ class Server extends Changes {
 		} else {
 			if (this.phrases.length < id) return false;
 
-			var phrase = this.phrases[id - 1];
+			let phrase = this.phrases[id - 1];
 			Phrases.updateOne({ _id: phrase._id }, { $set: { ignoreCase: ignoreCase } }).exec();
 			phrase.ignoreCase = ignoreCase;
 		}
@@ -513,16 +513,16 @@ class Server extends Changes {
 		if (Array.isArray(text)) {
 			text = text.slice(0, SERVER.MAX_PHRASE_TEXT);
 
-			for(var i = 0; i < text.length; i++) {
-				var phrase = this.findPhrase(text[i]);
+			for(let i = 0; i < text.length; i++) {
+				let phrase = this.findPhrase(text[i]);
 				if (phrase != null) return phrase;
 			}
 
 			return null;
 		}
 
-		for(var i = 0; i < this.phrases.length; i++) {
-			var ePhrase = this.phrases[i];
+		for(let i = 0; i < this.phrases.length; i++) {
+			let ePhrase = this.phrases[i];
 
 			if (ePhrase.phrases.find(p => ePhrase.ignoreCase == null || ePhrase.ignoreCase ? p.toLowerCase() == (<string>text).toLowerCase() : p == text))
 				return ePhrase;
@@ -546,11 +546,11 @@ class Server extends Changes {
 //#region Whitelisted/Blacklisted
 
 	public hasBlacklistedWord(id: string, content: string): boolean {
-		var splt = content.toLowerCase().split(' '); // TODO: URL Check
+		let splt = content.toLowerCase().split(' '); // TODO: URL Check
 
-		var blacklisted = this.moderation.blacklisted;
+		let blacklisted = this.moderation.blacklisted;
 
-		var channelBlacklist = blacklisted[id];
+		let channelBlacklist = blacklisted[id];
 
 		if (channelBlacklist == null || channelBlacklist.items.length == 0) return false;
 
@@ -562,9 +562,9 @@ class Server extends Changes {
 	}
 
 	public isBlacklistedItem(id: string, item: string): boolean {
-		var blacklisted = this.moderation.blacklisted;
+		let blacklisted = this.moderation.blacklisted;
 
-		var channelBlacklist = blacklisted[id];
+		let channelBlacklist = blacklisted[id];
 
 		if (channelBlacklist == null || channelBlacklist.items.length == 0) return false;
 
@@ -572,13 +572,13 @@ class Server extends Changes {
 	}
 
 	public blacklist(id: string, item: string): boolean {
-		var blacklisted = this.moderation.blacklisted;
+		let blacklisted = this.moderation.blacklisted;
 
-		var channelBlacklist = blacklisted[id];
+		let channelBlacklist = blacklisted[id];
 
 		if (channelBlacklist == null || channelBlacklist.items.length == 0) return false;
 
-		var indexOf = channelBlacklist.items.indexOf(item);
+		let indexOf = channelBlacklist.items.indexOf(item);
 
 		if (indexOf != -1) {
 			// items.splice(indexOf, 1);
@@ -591,7 +591,7 @@ class Server extends Changes {
 	}
 
 	public blacklistPunishment(id: string, punishment: DiscordBot.PunishmentTypes): boolean {
-		var channelBlacklist = this.moderation.blacklisted[id];
+		let channelBlacklist = this.moderation.blacklisted[id];
 
 		if (channelBlacklist == null) return false;
 
@@ -617,13 +617,13 @@ class Server extends Changes {
 
 	public removeIgnore(type: 'member' | 'channel', id: string): boolean {
 		if (type == 'member') {
-			var indexOf = this.moderation.ignoredUsers.indexOf(id);
+			let indexOf = this.moderation.ignoredUsers.indexOf(id);
 
 			if (indexOf != -1) this.moderation.ignoredUsers.splice(indexOf, 1);
 
 			return indexOf != -1;
 		} else {
-			var indexOf = this.moderation.ignoredChannels.indexOf(id);
+			let indexOf = this.moderation.ignoredChannels.indexOf(id);
 
 			if (indexOf != -1) this.moderation.ignoredChannels.splice(indexOf, 1);
 
@@ -662,12 +662,12 @@ class Server extends Changes {
 		if (!Array.isArray(commandNames)) commandNames = [commandNames.toLowerCase()];
 		else commandNames = commandNames.map(c => c.toLowerCase());
 
-		for(var i = 0; i < commandNames.length; i++) {
-			var name = commandNames[i];
+		for(let i = 0; i < commandNames.length; i++) {
+			let name = commandNames[i];
 			if (this.commandIndex(name) != -1 || this.aliasIndex(name) != -1 || Commands.is(name)) return cb(false);
 		}
 
-		var comm: DiscordBot.Command = {
+		let comm: DiscordBot.Command = {
 			_id: undefined,
 			pid: uniqueID(4),
 			alias: commandNames,
@@ -702,9 +702,9 @@ class Server extends Changes {
 	public removeCommand(commandName: string, paramId?: number): boolean {
 		commandName = commandName.toLowerCase();
 
-		var index = this.commandIndex(commandName);
+		let index = this.commandIndex(commandName);
 		if (index != -1) {
-			var comm = this.commands.splice(index, 1)[0];
+			let comm = this.commands.splice(index, 1)[0];
 			Command.remove({ _id: Types.ObjectId(comm._id) }).exec();
 		}
 
@@ -712,7 +712,7 @@ class Server extends Changes {
 	}
 
 	public commandIndex(commandName: string): number {
-		for (var i = 0; i < this.commands.length; i++) {
+		for (let i = 0; i < this.commands.length; i++) {
 			if (this.commands[i].alias.indexOf(commandName) != -1) {
 				return i;
 			}
@@ -728,8 +728,8 @@ class Server extends Changes {
 		if (!Array.isArray(alias)) alias = [alias.toLowerCase()];
 		else alias = alias.map(c => c.toLowerCase());
 
-		for(var i = 0; i < alias.length; i++) {
-			var name = alias[i];
+		for(let i = 0; i < alias.length; i++) {
+			let name = alias[i];
 			if (this.commandIndex(name) != -1 || this.aliasIndex(name) != -1 || Commands.is(name)) return false;
 		}
 
@@ -745,7 +745,7 @@ class Server extends Changes {
 	public removeAlias(alias: string) {
 		alias = alias.toLowerCase();
 
-		var index = this.aliasIndex(alias);
+		let index = this.aliasIndex(alias);
 		if (index != -1) {
 			this.alias.splice(index, 1)[0];
 		}
@@ -754,7 +754,7 @@ class Server extends Changes {
 	}
 
 	public aliasIndex(aliasName: string): number {
-		for (var i = 0; i < this.alias.length; i++) {
+		for (let i = 0; i < this.alias.length; i++) {
 			if (this.alias[i].alias.indexOf(aliasName) != -1) {
 				return i;
 			}
@@ -774,7 +774,7 @@ class Server extends Changes {
 	}
 
 	public removeRank(name: string): boolean {
-		var index = this.ranks.indexOf(name);
+		let index = this.ranks.indexOf(name);
 		if (index == -1) return false;
 		this.ranks.splice(index, 1);
 		return true;
@@ -797,18 +797,18 @@ class Server extends Changes {
 	}
 
 	public removeRole(roleId: string): DiscordBot.Role[] {
-		var index = this.getRoleIndex(roleId);
+		let index = this.getRoleIndex(roleId);
 		if (index != -1) this.roles.splice(index, 1);
 		return this.roles;
 	}
 
 	public getRole(roleId: string): Nullable<DiscordBot.Role> {
-		var index = this.getRoleIndex(roleId);
+		let index = this.getRoleIndex(roleId);
 		return index == -1 ? null : this.roles[index];
 	}
 
 	public getRoleIndex(roleId: string): number {
-		for (var i = 0; i < this.roles.length; i++) {
+		for (let i = 0; i < this.roles.length; i++) {
 			if (this.roles[i].id == roleId) return i;
 		}
 
@@ -821,7 +821,7 @@ class Server extends Changes {
 
 	public createInterval(opts: DiscordBot.Interval): number {
 		this.intervals.push(opts);
-		var modelId = intervalPlugin.addInterval(opts);
+		let modelId = intervalPlugin.addInterval(opts);
 		opts._id = modelId;
 
 		return this.intervals.length;
@@ -844,24 +844,24 @@ class Server extends Changes {
 
 	public removeInterval(id: number | string) {
 		if (typeof id == 'string') {
-			for(var i = 0; i < this.intervals.length; i++) {
+			for(let i = 0; i < this.intervals.length; i++) {
 				if (this.intervals[i].pid == id) {
 					intervalPlugin.removeInterval(this.intervals[i]._id!);
 					break;
 				}
 			}
 		} else {
-			var interval = this.intervals.splice(id - 1, 1)[0];
+			let interval = this.intervals.splice(id - 1, 1)[0];
 			if (interval == null) return console.error('Remove Interval, id does not exist!');
 			intervalPlugin.removeInterval(interval._id!);
 		}
 	}
 
 	public toggleInterval(id: number | string): Nullable<boolean> {
-		var interval = null;
+		let interval = null;
 
 		if (typeof id == 'string') {
-			for(var i = 0; i < this.intervals.length; i++) {
+			for(let i = 0; i < this.intervals.length; i++) {
 				if (this.intervals[i].pid == id) {
 					interval = this.intervals[i];
 					break;
@@ -877,7 +877,7 @@ class Server extends Changes {
 		interval.active = !interval.active;
 		interval.nextCall = undefined;
 
-		var opts: any = { active: interval.active };
+		let opts: any = { active: interval.active };
 
 		if (interval.active) {
 			interval.nextCall = opts.nextCall = Date.now() + (interval.every! * 1000);
@@ -889,10 +889,10 @@ class Server extends Changes {
 	}
 
 	public setIntervalTime(id: number | string, minutes: number) {
-		var interval: DiscordBot.Interval | null = null;
+		let interval: DiscordBot.Interval | null = null;
 
 		if (typeof id == 'string') {
-			for(var i = 0; i < this.intervals.length; i++) {
+			for(let i = 0; i < this.intervals.length; i++) {
 				if (this.intervals[i].pid == id) {
 					interval = this.intervals[i];
 					break;
@@ -902,7 +902,7 @@ class Server extends Changes {
 
 		if (interval == null) return console.error('Interval not found for ID: ' + id);
 
-		var params: { every: number; nextCall?: any; } = {
+		let params: { every: number; nextCall?: any; } = {
 			every: minutes
 		};
 
@@ -916,10 +916,10 @@ class Server extends Changes {
 	}
 
 	public setIntervalName(id: number | string, name: string) {
-		var interval = null;
+		let interval = null;
 
 		if (typeof id == 'string') {
-			for(var i = 0; i < this.intervals.length; i++) {
+			for(let i = 0; i < this.intervals.length; i++) {
 				if (this.intervals[i].pid == id) {
 					interval = this.intervals[i];
 					break;
@@ -934,10 +934,10 @@ class Server extends Changes {
 	}
 
 	public setIntervalMessage(id: number | string, name: string) {
-		var interval = null;
+		let interval = null;
 
 		if (typeof id == 'string') {
-			for(var i = 0; i < this.intervals.length; i++) {
+			for(let i = 0; i < this.intervals.length; i++) {
 				if (this.intervals[i].pid == id) {
 					interval = this.intervals[i];
 					break;
@@ -952,7 +952,7 @@ class Server extends Changes {
 	}
 
 	// public setIntervalEvent(id: number, event: 'onCall' | 'onReset', content: string) {
-	// 	var interval = this.intervals[id - 1];
+	// 	let interval = this.intervals[id - 1];
 	// 	if (interval == null) return console.error('Interval not found for ID: ' + (id - 1));
 
 	// 	if (interval.events == null) interval.events = {};
@@ -962,10 +962,10 @@ class Server extends Changes {
 	// }
 
 	public resetInterval(id: number | string): boolean {
-		var interval = null;
+		let interval = null;
 
 		if (typeof id == 'string') {
-			for(var i = 0; i < this.intervals.length; i++) {
+			for(let i = 0; i < this.intervals.length; i++) {
 				if (this.intervals[i].pid == id) {
 					interval = this.intervals[i];
 					break;
@@ -984,7 +984,7 @@ class Server extends Changes {
 //#region Permissions
 
 	public createGroup(displayName: string): Nullable<DiscordBot.PermissionsGroup> {
-		var tounique = displayName.replace(/ /, '').toLowerCase();
+		let tounique = displayName.replace(/ /, '').toLowerCase();
 
 		if (Object.keys(this.permissions.groups).length >= 15) return null;
 		if (this.permissions.groups[tounique] != null) return null;
@@ -1002,17 +1002,17 @@ class Server extends Changes {
 
 		delete this.permissions.groups[name];
 
-		for(var id in this.permissions.roles) {
-			var role = this.permissions.roles[id];
+		for(let id in this.permissions.roles) {
+			let role = this.permissions.roles[id];
 
-			var index = role.groups.indexOf(name);
+			let index = role.groups.indexOf(name);
 			if (index != -1) role.groups.splice(index, 1);
 		}
 
-		for(var id in this.permissions.users) {
-			var user = this.permissions.users[id];
+		for(let id in this.permissions.users) {
+			let user = this.permissions.users[id];
 
-			var index = user.groups.indexOf(name);
+			let index = user.groups.indexOf(name);
 			if (index != -1) user.groups.splice(index, 1);
 		}
 
@@ -1020,7 +1020,7 @@ class Server extends Changes {
 	}
 
 	public getPermsFrom(type: 'roles' | 'users' | 'groups', id: string): Nullable<DiscordBot.PermissionTypes> {
-		var sid = this.strpToId(id);
+		let sid = this.strpToId(id);
 
 		if (sid == null) return null;
 
@@ -1032,9 +1032,9 @@ class Server extends Changes {
 
 		saved.push(id);
 
-		var group = this.permissions.groups[id];
+		let group = this.permissions.groups[id];
 
-		for(var i = 0; i < group.groups!.length; i++) {
+		for(let i = 0; i < group.groups!.length; i++) {
 			if (this.isGroupsRecursive(group.groups![i], saved)) return true;
 		}
 
@@ -1042,7 +1042,7 @@ class Server extends Changes {
 	}
 
 	public addGroupTo(type: 'roles' | 'users' | 'groups', id: string, groupId: string): boolean {
-		var perms = this.permissions[type];
+		let perms = this.permissions[type];
 
 		if (this.permissions.groups[groupId] == null) return false;
 
@@ -1057,7 +1057,7 @@ class Server extends Changes {
 
 		if (type == 'groups' && this.isGroupsRecursive(id, [ groupId ])) return false;
 
-		var groups = perms[id].groups!;
+		let groups = perms[id].groups!;
 
 		if (groups.length >= 5) return false;
 
@@ -1068,9 +1068,9 @@ class Server extends Changes {
 	}
 
 	public addPermTo(type: 'roles' | 'groups' | 'users', id: string, perm: string): boolean {
-		var perms = this.permissions[type];
+		let perms = this.permissions[type];
 
-		var sid = this.strpToId(id);
+		let sid = this.strpToId(id);
 
 		if (sid == null) return false;
 
@@ -1083,13 +1083,13 @@ class Server extends Changes {
 			} else return false;
 		}
 
-		var ps = perms[sid].perms;
+		let ps = perms[sid].perms;
 
 		if (ps.length >= 25) return false;
 
-		var permSplit = perm.split('.');
+		let permSplit = perm.split('.');
 
-		for(var i = 0; i < permSplit.length; i++) {
+		for(let i = 0; i < permSplit.length; i++) {
 			if (ps.indexOf(permSplit.slice(0, i + 1).join('.')) != -1) return false;
 		}
 
@@ -1099,15 +1099,15 @@ class Server extends Changes {
 	}
 
 	public removePermFrom(type: 'roles' | 'groups' | 'users', id: string, perm: string): boolean {
-		var sid = this.strpToId(id);
+		let sid = this.strpToId(id);
 
 		if (sid == null) return false;
 
-		var perms = this.permissions[type];
+		let perms = this.permissions[type];
 
 		if (perms[sid] == null) return false;
 
-		var index = perms[sid].perms.indexOf(perm);
+		let index = perms[sid].perms.indexOf(perm);
 
 		if (index == -1) return false;
 		perms[sid].perms.splice(index, 1);
@@ -1116,14 +1116,14 @@ class Server extends Changes {
 	}
 
 	public removeGroupFrom(type: 'roles' | 'users', id: string, group: string): boolean {
-		var sid = this.strpToId(id);
+		let sid = this.strpToId(id);
 
 		if (sid == null) return false;
 
-		var perms = this.permissions[type];
+		let perms = this.permissions[type];
 
 		if (perms[sid] == null) return false;
-		var index = perms[sid].groups.indexOf(group);
+		let index = perms[sid].groups.indexOf(group);
 
 		if (index == -1) return false;
 		perms[sid].groups.splice(index, 1);
@@ -1139,7 +1139,7 @@ class Server extends Changes {
 	}
 
 	public rolesHaveAnyChildPerm(roleIds: string[], perms: string[]) {
-		for(var i = 0; i < perms.length; i++) {
+		for(let i = 0; i < perms.length; i++) {
 			if (this.anyRoleHasBasePerm(roleIds, perms[i])) return true;
 		}
 
@@ -1147,7 +1147,7 @@ class Server extends Changes {
 	}
 
 	public anyRoleHasExactPerm(ids: string[], perm: string) {
-		for(var i = 0; i < ids.length; i++) {
+		for(let i = 0; i < ids.length; i++) {
 			if (this.roleHasExactPerm(ids[i], perm)) return true;
 		}
 
@@ -1155,14 +1155,14 @@ class Server extends Changes {
 	}
 
 	public roleHasExactPerm(id: string, perm: string): boolean {
-		var rolePerm = this.permissions.roles[id];
+		let rolePerm = this.permissions.roles[id];
 		if (rolePerm == null) return false;
 
 		return rolePerm.perms.indexOf(perm) != -1;
 	}
 
 	public userHasExactPerm(id: string, perm: string): boolean {
-		var userPerm = this.permissions.users[id];
+		let userPerm = this.permissions.users[id];
 		if (userPerm == null) return false;
 
 		return userPerm.perms.indexOf(perm) != -1;
@@ -1170,7 +1170,7 @@ class Server extends Changes {
 
 
 	public anyRoleHasBasePerm(ids: string[], perm: string) {
-		for(var i = 0; i < ids.length; i++) {
+		for(let i = 0; i < ids.length; i++) {
 			if (this.roleHasBasePerm(ids[i], perm)) return true;
 		}
 
@@ -1178,12 +1178,12 @@ class Server extends Changes {
 	}
 
 	public roleHasBasePerm(id: string, perm: string): boolean {
-		var rolePerm = this.permissions.roles[id];
+		let rolePerm = this.permissions.roles[id];
 		if (rolePerm == null) return false;
 
-		var expandedPerm = expandPerm(perm);
+		let expandedPerm = expandPerm(perm);
 
-		for(var i = 0; i < expandedPerm.length; i++) {
+		for(let i = 0; i < expandedPerm.length; i++) {
 			if (rolePerm.perms.indexOf(expandedPerm[i]) != -1) return true;
 		}
 
@@ -1191,12 +1191,12 @@ class Server extends Changes {
 	}
 
 	public userHasParentPerm(id: string, perm: string): boolean {
-		var userPerm = this.permissions.users[id];
+		let userPerm = this.permissions.users[id];
 		if (userPerm == null) return false;
 
-		var expandedPerm = expandPerm(perm);
+		let expandedPerm = expandPerm(perm);
 
-		for(var i = 0; i < expandedPerm.length; i++) {
+		for(let i = 0; i < expandedPerm.length; i++) {
 			if (userPerm.perms.indexOf(expandedPerm[i]) != -1) return true;
 		}
 
@@ -1204,7 +1204,7 @@ class Server extends Changes {
 	}
 
 	public userHasAnyChildPerm(user_id: string, perms: string[]): boolean {
-		for(var i = 0; i < perms.length; i++) {
+		for(let i = 0; i < perms.length; i++) {
 			if (this.userHasParentPerm(user_id, perms[i])) return true;
 		}
 
@@ -1212,26 +1212,26 @@ class Server extends Changes {
 	}
 
 	public hasPerms(userId: string, roleIds: string[], permItem: string): boolean {
-		var userPerm = this.permissions.users[userId];
+		let userPerm = this.permissions.users[userId];
 
 		if (userPerm != null) {
 			if (userPerm.perms.indexOf(permItem) != -1) return true;
 
-			for(var i = 0; i < userPerm.groups.length; i++) {
-				var id = userPerm.groups[i];
-				var group = this.permissions.groups[id];
+			for(let i = 0; i < userPerm.groups.length; i++) {
+				let id = userPerm.groups[i];
+				let group = this.permissions.groups[id];
 				if (group.perms.indexOf(permItem) != -1) return true;
 			}
 		}
 
-		for(var i = 0; i < roleIds.length; i++) {
-			var id = roleIds[i];
-			var role = this.permissions.roles[id];
+		for(let i = 0; i < roleIds.length; i++) {
+			let id = roleIds[i];
+			let role = this.permissions.roles[id];
 			if (role.perms.indexOf(permItem) != -1) return true;
 
-			for(var x = 0; i < role.groups.length; x++) {
-				var id = role.groups[x];
-				var group = this.permissions.groups[id];
+			for(let x = 0; i < role.groups.length; x++) {
+				let id = role.groups[x];
+				let group = this.permissions.groups[id];
 				if (group.perms.indexOf(permItem) != -1) return true;
 			}
 		}
@@ -1312,7 +1312,7 @@ class Server extends Changes {
 }
 
 function def<D, I>(def: D, ...opts: I[]): D | I {
-	for(var i = 0; i < opts.length; i++) {
+	for(let i = 0; i < opts.length; i++) {
 		if (opts[i] != null) return opts[i];
 	}
 
@@ -1349,14 +1349,14 @@ function getServer(serverId: string,  cb: (music?: Server) => any) {
 }
 
 function expandPerm(perm: string): string[] {
-	var splt = perm.split('.');
+	let splt = perm.split('.');
 	return splt.map((str, i) => splt.slice(0, i + 1).join('.'));
 }
 
 function uniqueID(size: number): string {
-	var bloc = [];
+	let bloc = [];
 
-	for(var i = 0; i < size; i++)
+	for(let i = 0; i < size; i++)
 		bloc.push(Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1));
 
 	return bloc.join('');

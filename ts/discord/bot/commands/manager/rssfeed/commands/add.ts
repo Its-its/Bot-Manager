@@ -15,7 +15,7 @@ import PERMISSIONS = require('../perms');
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMISSIONS.ADD)) return utils.noPermsMessage('RSS Feed');
 
-	var url = params.join(' ');
+	let url = params.join(' ');
 
 	intervalUtils.addNewFeed(url, null, null, (err, isNew, feedDoc, article) => {
 		if (err != null) {
@@ -63,11 +63,11 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 					return;
 				}
 
-				for(var f = 0; f < dFeeds.length; f++) {
-					var dFeed = dFeeds[f];
+				for(let f = 0; f < dFeeds.length; f++) {
+					let dFeed = dFeeds[f];
 
-					for(var i = 0; i < dFeed.feeds.length; i++) {
-						var feed = dFeed.feeds[i];
+					for(let i = 0; i < dFeed.feeds.length; i++) {
+						let feed = dFeed.feeds[i];
 
 						if (feed.feed.toString() == feedDoc!._id.toString()) {
 							return message.channel.send(utils.infoMsg([['RSS Feed', 'RSS Feed url is already being used in the discord!']]));

@@ -21,7 +21,7 @@ interface EnsureArgs {
 }
 
 function ensure(opts: EnsureOpts) {
-	for (var key in opts) {
+	for (let key in opts) {
 		if (typeof opts[key] == 'string') {
 			opts[key] = {
 				type: opts[key],
@@ -78,8 +78,8 @@ globalRoute.post('/bot', ensure({ id: 'string' }), (req, res) => {
 
 
 globalRoute.post('/bot/queue', ensure({ id: 'string', skip: 'number' }), (req, res) => {
-	var serverId = req.body.id;
-	var skip = parseInt(req.body.skip);
+	let serverId = req.body.id;
+	let skip = parseInt(req.body.skip);
 
 	Queues.findOne({ server_id: serverId }, { items: { $slice: [ skip, 11 ] } })
 	.populate('items.song')
@@ -172,13 +172,13 @@ globalRoute.post('/playlist/list', (req, res) => {
 });
 
 globalRoute.post('/playlist/items', ensure({ id: 'string', skip: 'number' }), (req, res) => {
-	var skip = parseInt(req.body.skip);
-	var pid = req.body.id;
+	let skip = parseInt(req.body.skip);
+	let pid = req.body.id;
 
 	Playlists.findOne({ public_id: pid }, { songs: { $slice: [skip, 16] } }, (err, playlist) => {
 		if (playlist == null) return res.send({ error: 'No known playlist with said Public ID!' });
 
-		var songs = playlist.songs.map(item => {
+		let songs = playlist.songs.map(item => {
 			return {
 				added: item.added,
 				plays: item.plays,
@@ -229,8 +229,8 @@ globalRoute.post('/playlist', ensure({ id: 'string' }), (req, res) => {
 });
 
 globalRoute.post('/history', ensure({ id: 'string', skip: 'number' }), (req, res) => {
-	var skip = req.body.skip;
-	var pid = req.body.id;
+	let skip = req.body.skip;
+	let pid = req.body.id;
 });
 
 
@@ -243,9 +243,9 @@ export = (io: SocketIO.Server) => {
 
 
 function uniqueID(size: number): string {
-	var bloc = [];
+	let bloc = [];
 
-	for(var i = 0; i < size; i++)
+	for(let i = 0; i < size; i++)
 		bloc.push(Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1));
 
 	return bloc.join('');

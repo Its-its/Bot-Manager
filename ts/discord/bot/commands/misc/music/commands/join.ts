@@ -10,7 +10,7 @@ import { Optional } from '@type-manager';
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMS.JOIN)) return Command.noPermsMessage('Music');
 
-	var voiceChannel: Optional<string> = params.shift();
+	let voiceChannel: Optional<string> = params.shift();
 
 	if (voiceChannel == null && message.member!.voice.channel != null) {
 		voiceChannel = message.member!.voice.channel.id;

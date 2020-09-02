@@ -24,12 +24,12 @@ class Command {
 	}
 
 	public hasPermsCount(member: Discord.GuildMember, server: Server, perms: string[]): number {
-		var count = 0;
+		let count = 0;
 
-		var lastFound = null;
+		let lastFound = null;
 
-		for(var i = 0; i < perms.length; i++) {
-			var perm = perms[i];
+		for(let i = 0; i < perms.length; i++) {
+			let perm = perms[i];
 
 			if (lastFound != null) {
 				if (perm.startsWith(lastFound)) {

@@ -72,7 +72,7 @@ function get(serverId: string, cb: (client?: DiscordServer) => any) {
 }
 
 function removeFromCache(serverId: string, cb: (count?: number) => any) {
-	var doCb = false;
+	let doCb = false;
 
 	redisMusic.del(serverId, fin);
 	redisGuildsClient.del(serverId, fin);
@@ -96,7 +96,7 @@ function updateServerFromDB(serverId: string, cb?: (found: boolean, err: Error |
 		if (err == null) return cb && cb(false, err);
 		if (server == null) return cb && cb(false, new Error('No Server'));
 
-		var parsed: DiscordServer;
+		let parsed: DiscordServer;
 
 		if (typeof server.server == 'string') {
 			parsed = JSON.parse(server.server);

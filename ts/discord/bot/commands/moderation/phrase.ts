@@ -17,7 +17,7 @@ const PERMS = {
 	IGNORECASE: 'ignorecase'
 };
 
-for(var name in PERMS) {
+for(let name in PERMS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
@@ -50,12 +50,12 @@ class Phrase extends Command {
 			]);
 		}
 
-		var cmdCallOrPhraseId = params.shift()!;
+		let cmdCallOrPhraseId = params.shift()!;
 		switch (cmdCallOrPhraseId) {
 			case 'list':
 				if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Phrase');
 
-				var args = [
+				let args = [
 					'**Phrase List**',
 					'Phrase Count: ' + server.phrases.length
 				];
@@ -72,7 +72,7 @@ class Phrase extends Command {
 
 				if (params.length < 2) return;
 
-				var phraseName = params.shift();
+				let phraseName = params.shift();
 
 				if (phraseName == null) return Command.error([['Phrase', 'Invalid Params']]);
 
@@ -81,7 +81,7 @@ class Phrase extends Command {
 				server.createPhrase(message.member!, phraseName.split(','), (phrase) => {
 					if (phrase == null) return;
 
-					var resp = params.join(' ');
+					let resp = params.join(' ');
 
 					phrase.responses = [ { type: 'echo', message: resp } ];
 					server.save(() => message.channel.send(Command.info([['Phrase', 'Created Phrase Successfully.']])));
@@ -93,7 +93,7 @@ class Phrase extends Command {
 
 				if (params.length < 2) return Command.error([['Phrase', 'Invalid Params']]);
 
-				var id = parseInt(params.shift()!);
+				let id = parseInt(params.shift()!);
 				if (isNaN(id)) return;
 
 				server.setPhraseIgnoreCase(id, params.shift() == 'true');
@@ -101,8 +101,8 @@ class Phrase extends Command {
 				break;
 
 			default:
-				var dodis = params.shift();
-				var name = params.shift();
+				let dodis = params.shift();
+				let name = params.shift();
 
 				if (dodis == null || name == null) return;
 
@@ -122,7 +122,7 @@ class Phrase extends Command {
 					if (name == 'phrase') {
 						if (!this.hasPerms(message.member!, server, PERMS.REMOVE_PHRASE)) return Command.noPermsMessage('Phrase');
 
-						var phrases = undefined;
+						let phrases = undefined;
 						if (params.length != 0) phrases = params.join(' ').split(',');
 
 						server.removePhrase(cmdCallOrPhraseId, phrases);
@@ -135,7 +135,7 @@ class Phrase extends Command {
 
 			// case 'add':
 			// 	if (params.length < 2) return;
-			// 	var id = parseInt(params.shift());
+			// 	let id = parseInt(params.shift());
 			// 	if (isNaN(id)) return;
 
 			// 	server.addPhrase(id, params.join(' ').split(','));
@@ -143,10 +143,10 @@ class Phrase extends Command {
 			// 	break;
 			// case 'remove':
 			// 	if (params.length < 1) return;
-			// 	var id = parseInt(params.shift());
+			// 	let id = parseInt(params.shift());
 			// 	if (isNaN(id)) return;
 
-			// 	var phrases = null;
+			// 	let phrases = null;
 			// 	if (params.length != 0) phrases = params.join(' ').split(',');
 
 			// 	server.removePhrase(id, phrases);
@@ -154,7 +154,7 @@ class Phrase extends Command {
 			// 	break;
 			// case 'response':
 			// 	if (params.length < 2) return;
-			// 	var id = parseInt(params.shift());
+			// 	let id = parseInt(params.shift());
 			// 	if (isNaN(id)) return;
 
 			// 	server.setPhraseResponse(id, params.join(' ').split(','));

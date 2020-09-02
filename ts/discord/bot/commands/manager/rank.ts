@@ -14,7 +14,7 @@ const PERMS = {
 	REMOVE: 'remove'
 };
 
-for(var name in PERMS) {
+for(let name in PERMS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
@@ -31,7 +31,7 @@ class Rank extends Command {
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
-		var ranks = server.ranks;
+		let ranks = server.ranks;
 
 		if (params.length == 0) {
 			return Command.info([
@@ -40,11 +40,11 @@ class Rank extends Command {
 			]);
 		}
 
-		var guildNember = message.member!;
-		var roleId: Nullable<string>;
+		let guildNember = message.member!;
+		let roleId: Nullable<string>;
 
-		var parameterBeingCalled = params.shift();
-		var valueOfParameter = params.shift();
+		let parameterBeingCalled = params.shift();
+		let valueOfParameter = params.shift();
 
 		switch (parameterBeingCalled) {
 			case 'list':
@@ -52,8 +52,8 @@ class Rank extends Command {
 
 				if (ranks.length == 0) return Command.info([[ 'Public Ranks:', 'No Ranks Public' ]]);
 
-				var roles = ranks.map(b => {
-					var role = message.guild!.roles.cache.get(b);
+				let roles = ranks.map(b => {
+					let role = message.guild!.roles.cache.get(b);
 					if (role == null) return null;
 					return [role.name, role.members.size + ' members'];
 				}).filter(f => f != null);
@@ -117,9 +117,9 @@ class Rank extends Command {
 		function getRoleId(name: string): Nullable<string> {
 			name = name.toLowerCase();
 
-			var roles = message.guild!.roles.cache.array();
-			for(var i = 0; i < roles.length; i++) {
-				var role = roles[i];
+			let roles = message.guild!.roles.cache.array();
+			for(let i = 0; i < roles.length; i++) {
+				let role = roles[i];
 				if (role.name.toLowerCase() == name)
 					return role.id;
 			}

@@ -40,7 +40,7 @@ function onMessage(message: Discord.Message, server: Server): boolean {
 
 		if (item == null) return true;
 
-		var newLevel = util.expToLevels(item.xp);
+		let newLevel = util.expToLevels(item.xp);
 
 		if (item.level < newLevel) {
 			UserLevel.updateOne({ server_id: message.guild!.id, member_id: message.member!.id }, { $set: { level: newLevel } }).exec();
@@ -57,9 +57,9 @@ function roleRemove(role: Discord.Role, server: Server) {
 
 	if (server.leveling == null) return;
 
-	var lRoles = server.leveling.roles;
-	for(var i = 0; i < lRoles.length; i++) {
-		var currRole = lRoles[i];
+	let lRoles = server.leveling.roles;
+	for(let i = 0; i < lRoles.length; i++) {
+		let currRole = lRoles[i];
 
 		if (currRole.id == role.id) {
 			if (server.leveling.keepPreviousRoles) {
@@ -67,12 +67,12 @@ function roleRemove(role: Discord.Role, server: Server) {
 			} else {
 				if (i == 0) return; // No need if it's the first role.
 
-				var prevRole = lRoles[i - 1];
-				var nextRole = (i == lRoles.length - 1 ? null : lRoles[i + 1]);
+				let prevRole = lRoles[i - 1];
+				let nextRole = (i == lRoles.length - 1 ? null : lRoles[i + 1]);
 
 				server.leveling.roles.splice(i, 1);
 
-				var args: { [str: string]: any } = { $gte: currRole.level };
+				let args: { [str: string]: any } = { $gte: currRole.level };
 
 				if (nextRole != null) args['$lt'] = nextRole.level;
 
@@ -80,7 +80,7 @@ function roleRemove(role: Discord.Role, server: Server) {
 					// All the users who had this role.
 
 					async.eachLimit(items, 10, (item, callback) => {
-						var member = role.guild.member(item['member_id']);
+						let member = role.guild.member(item['member_id']);
 						if (member == null) return callback();
 
 						member.roles.add(prevRole.id)

@@ -3,7 +3,7 @@ import path = require('path');
 
 let config: Config = JSON.parse(fs.readFileSync(path.join(__dirname, '../app/config/config.json'), 'utf8'));
 
-for (var key in config.passport) {
+for (let key in config.passport) {
 	// @ts-ignore
 	let item = config.passport[key];
 	item.callbackURL = `${config.urlProtocol}://${config.baseUrl}${config.port == 80 ? '' : ':' + config.port}${item.callbackURL}`;

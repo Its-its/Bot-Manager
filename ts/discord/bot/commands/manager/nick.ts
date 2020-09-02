@@ -29,7 +29,7 @@ class Nick extends Command {
 
 		if (!this.hasPerms(message.member!, server, PERMISSIONS.MAIN)) return Command.noPermsMessage('Nick');
 
-		var name = params.join(' ');
+		let name = params.join(' ');
 
 		message.guild!.me!.setNickname(name, 'Requested by ' + message.member!.user.tag)
 		.then(() => {

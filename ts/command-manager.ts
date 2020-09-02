@@ -8,14 +8,14 @@ interface DefaultCommands {
 }
 
 function parseMessageForCmd(defaultCommands: DefaultCommands, userConfig: any, message: string, extra: any, cb: (obj: DiscordBot.PhraseResponses) => void): boolean {
-	var parts = message.split(' ');
-	var messageCommand = parts[0].toLowerCase();
+	let parts = message.split(' ');
+	let messageCommand = parts[0].toLowerCase();
 
 	// Check default made commands first.
-	var parsed = defaultCommands.parseMessage(message, userConfig, extra);
+	let parsed = defaultCommands.parseMessage(message, userConfig, extra);
 	if (parsed != null) {
 		if (Array.isArray(parsed)) {
-			for (var a = 0; a < parsed.length; a++) cb(parsed[a]);
+			for (let a = 0; a < parsed.length; a++) cb(parsed[a]);
 		} else cb(parsed);
 
 		return true;
@@ -23,11 +23,11 @@ function parseMessageForCmd(defaultCommands: DefaultCommands, userConfig: any, m
 
 	// Check user-made commands.
 	if (userConfig.commands.length != 0) {
-		for (var i = 0; i < userConfig.commands.length; i++) {
-			var command: Command = userConfig.commands[i];
+		for (let i = 0; i < userConfig.commands.length; i++) {
+			let command: Command = userConfig.commands[i];
 
 			if (command.alias.indexOf(messageCommand) != -1) {
-				var fixedParams = getProperParam(parts, command.params);
+				let fixedParams = getProperParam(parts, command.params);
 
 				console.log('[CommMan]: Command: ' + message);
 
@@ -36,7 +36,7 @@ function parseMessageForCmd(defaultCommands: DefaultCommands, userConfig: any, m
 					return false;
 				}
 
-				var calls = dealWithOnCalled(
+				let calls = dealWithOnCalled(
 					userConfig.commands,
 					fixedParams.newParams,
 					command.params[fixedParams.pos],
@@ -48,7 +48,7 @@ function parseMessageForCmd(defaultCommands: DefaultCommands, userConfig: any, m
 				}
 
 				if (Array.isArray(calls)) {
-					for (var a = 0; a < calls.length; a++) cb(calls[a]);
+					for (let a = 0; a < calls.length; a++) cb(calls[a]);
 				} else cb(calls);
 
 				return true;
@@ -62,8 +62,8 @@ function parseMessageForCmd(defaultCommands: DefaultCommands, userConfig: any, m
 function hasPermissions(defaultCommands: DefaultCommands, message: string, isAdmin: boolean): boolean {
 	if (isAdmin) return true;
 
-	var parts = message.split(' ');
-	var command = message[0].toLowerCase();
+	let parts = message.split(' ');
+	let command = message[0].toLowerCase();
 
 	//
 
@@ -76,7 +76,7 @@ function dealWithOnCalled(
 	usedParam: CommandParam,
 	allParams?: Array<CommandParam>): Nullable<DiscordBot.PhraseResponses> {
 
-	var response = usedParam.onCalled || usedParam.response;
+	let response = usedParam.onCalled || usedParam.response;
 
 	if (response == null) {
 		console.log(messageParams);
@@ -84,22 +84,22 @@ function dealWithOnCalled(
 	}
 
 	// if (typeof response == 'string') {
-	// 	var calledText = response.split(' ');
+	// 	let calledText = response.split(' ');
 
 	// 	switch(calledText.shift().toLowerCase()) {
 	// 		case 'echo': return { type: 'echo', message: calledText.join(' ') };
 	// 		case 'set':
-	// 			var command = calledText.shift();
-	// 			var paramId = parseInt(calledText.shift());
+	// 			let command = calledText.shift();
+	// 			let paramId = parseInt(calledText.shift());
 
-	// 			var newValue = calledText.join(' '); // TODO: Fix new Value
+	// 			let newValue = calledText.join(' '); // TODO: Fix new Value
 	// 			messageParams.forEach((m, i) => newValue = newValue.replace('%' + i, m));
 
 
-	// 			var guildCommand = getCommand(commands, command);
-	// 			var commandParam = getParam(guildCommand, paramId);
+	// 			let guildCommand = getCommand(commands, command);
+	// 			let commandParam = getParam(guildCommand, paramId);
 
-	// 			var oldValue = commandParam.onCalled;
+	// 			let oldValue = commandParam.onCalled;
 
 	// 			commandParam.onCalled = newValue;
 
@@ -116,7 +116,7 @@ function dealWithOnCalled(
 }
 
 function getCommand(commands: Array<Command>, command: string): Nullable<Command> {
-	for (var i = 0; i < commands.length; i++) {
+	for (let i = 0; i < commands.length; i++) {
 		if (commands[i].alias.indexOf(command) != -1) return commands[i];
 	}
 
@@ -124,8 +124,8 @@ function getCommand(commands: Array<Command>, command: string): Nullable<Command
 }
 
 function getProperParam(message: string[], params: Array<CommandParam>): Nullable<{ pos: number; newParams: Array<string>; }> {
-	for (var a = 0; a < params.length; a++) {
-		var param = params[a];
+	for (let a = 0; a < params.length; a++) {
+		let param = params[a];
 
 		if (param.length != null) {
 			if (param.length != message.length - 1) continue;
@@ -135,20 +135,20 @@ function getProperParam(message: string[], params: Array<CommandParam>): Nullabl
 				(param.maxLength == -1 ? false : param.maxLength != null && param.maxLength < message.length - 1)
 			) continue;
 
-			var paramReg = param.paramReg;
+			let paramReg = param.paramReg;
 
 			if (paramReg != null) {
-				var parts = paramReg.split(' ');
+				let parts = paramReg.split(' ');
 
-				var messageRemains = message;
+				let messageRemains = message;
 
-				var newMessageParams: string[] = [];
+				let newMessageParams: string[] = [];
 				newMessageParams.push(<string>messageRemains.shift());
 
 				parts.forEach(part => {
-					var points = parseInt(part);
+					let points = parseInt(part);
 
-					var array = [];
+					let array = [];
 
 					while (messageRemains.length != 0 && array.length != points) {
 						array.push(messageRemains.shift());
@@ -175,11 +175,11 @@ function getParam(command: Command, id: number): CommandParam {
 }
 
 function getCommandParam(commandName: string, id: number, commands: Array<Command>): Nullable<CommandParam> {
-	var command = getCommand(commands, commandName);
+	let command = getCommand(commands, commandName);
 
 	if (command == null) return null;
 
-	var param = getParam(command, id);
+	let param = getParam(command, id);
 
 	return param;
 }
@@ -191,7 +191,7 @@ function isCallingCommand(prefix: string, userId: string, message: string) {
 function getCommandMessage(prefix: string, userId: string, message: string) {
 	if (message[0] == prefix) return message.substr(1);
 
-	var myId = `<@${userId}>`;
+	let myId = `<@${userId}>`;
 
 	if (message.indexOf(myId) != 0) {
 		myId = `<@!${userId}>`;

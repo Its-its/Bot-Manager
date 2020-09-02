@@ -36,7 +36,7 @@ export = (app: express.Application, socketio: Server) => {
 
 	stripe(app);
 
-	var route = musicRoute(socketio);
+	let route = musicRoute(socketio);
 	app.use(route.loc, route.route);
 
 	apiSetup(app);

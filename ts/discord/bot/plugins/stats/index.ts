@@ -12,7 +12,7 @@ const STATS: any[] = [];
 
 
 // Possibly seperate into different docs. hourly / daily.
-var example = {
+let example = {
 	// 1 week max? 168 items x channel x role | a lot of crap.
 	hourly: {
 		channel: {

@@ -31,10 +31,10 @@ class Message extends Command {
 			]);
 		}
 
-		var roleId = params.shift();
-		// var isGroupDM = params[0].toLowerCase() == 'group';
+		let roleId = params.shift();
+		// let isGroupDM = params[0].toLowerCase() == 'group';
 		// if (isGroupDM) params.shift();
-		var messageToSend = params.join(' ');
+		let messageToSend = params.join(' ');
 
 		// if (isGroupDM) {
 		// 	return Command.error([['Error', 'Group DM\'s not implemented yet']])
@@ -49,7 +49,7 @@ class Message extends Command {
 			]);
 		}
 
-		var sRoleId = server.strpToId(roleId);
+		let sRoleId = server.strpToId(roleId);
 		if (sRoleId == null) return Command.error([['Message', 'Invalid ID']]);
 
 		const discordGuildRole = message.guild!.roles.cache.get(sRoleId);
@@ -67,7 +67,7 @@ class Message extends Command {
 		// if (!isGroupDM) {
 			function nextMessage(pos: number) {
 				if (pos == membersInRole.length) return message.channel.send(Command.success([['Success', `Sent a DM to ${membersInRole.length} players in the role ${discordGuildRole!.name}`]]));
-				var member = membersInRole[pos];
+				let member = membersInRole[pos];
 
 				member.createDM()
 				.then(channel => {
@@ -84,7 +84,7 @@ class Message extends Command {
 		// 	.then(dm => {
 		// 		function addNextMember(pos: number) {
 		// 			if (pos == members.length) return message.channel.send(Command.success([['Success', `Sent a DM to ${members.length} players in the role ${server_role.name}`]]));
-		// 			var member = members[pos];
+		// 			let member = members[pos];
 
 		// 			// member.user.
 

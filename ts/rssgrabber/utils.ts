@@ -49,10 +49,10 @@ interface TwitterFeedFix extends Document {
 }
 
 function addTwitterFeed(urlOrScreenName: string, cb: (err?: string, newFeed?: boolean, feed?: TwitterFeedFix, items?: TwitterStatusesDB[]) => any) {
-	var urlRegex = new RegExp('twitter.com/(\\w+)', 'i');
+	let urlRegex = new RegExp('twitter.com/(\\w+)', 'i');
 
 	if (urlRegex.test(urlOrScreenName)) {
-		var exec = urlRegex.exec(urlOrScreenName);
+		let exec = urlRegex.exec(urlOrScreenName);
 		if (exec != null) urlOrScreenName = exec[1];
 	}
 
@@ -71,7 +71,7 @@ function addTwitterFeed(urlOrScreenName: string, cb: (err?: string, newFeed?: bo
 			twitter.get('statuses/user_timeline', { id: user.id_str, count: 10, include_rts: true }, (err, statuses: Twit.Twitter.Status[]) => {
 				if (err != null) return cb(err.toString());
 
-				var feedItems = twitterStatusesToDB(statuses);
+				let feedItems = twitterStatusesToDB(statuses);
 
 				// Exists already? Return with statuses
 				if (feed != null) return cb(undefined, false, feed, feedItems);
@@ -145,7 +145,7 @@ interface RSSFeedFix extends Document {
 }
 
 function getFeedItems(url: string, cookies: any, cb: (err?: Error, items?: FeedParser.Item[]) => any) {
-	var cbCalled = false;
+	let cbCalled = false;
 
 	function callback(err?: Error, items?: FeedParser.Item[]) {
 		if (cbCalled) return;
@@ -163,9 +163,9 @@ function getFeedItems(url: string, cookies: any, cb: (err?: Error, items?: FeedP
 	});
 
 	// if (cookies != null) {
-	// 	var j = request.jar();
+	// 	let j = request.jar();
 
-	// 	var cookie = request.cookie('');
+	// 	let cookie = request.cookie('');
 	// 	j.setCookie(cookie, '');
 
 	// 	req.jar(j);
@@ -174,7 +174,7 @@ function getFeedItems(url: string, cookies: any, cb: (err?: Error, items?: FeedP
 	req.pipe(feedparser);
 
 
-	var feedItems: FeedParser.Item[] = [];
+	let feedItems: FeedParser.Item[] = [];
 
 
 	feedparser.on('error', (err: any) => {
@@ -182,7 +182,7 @@ function getFeedItems(url: string, cookies: any, cb: (err?: Error, items?: FeedP
 	});
 
 	feedparser.on('readable', function(this: FeedParser) {
-		var item: FeedParser.Item;
+		let item: FeedParser.Item;
 		while(item = this.read()) {
 			feedItems.push(item);
 		}
@@ -218,7 +218,7 @@ function addNewFeed(uri: string, cookies: any, title: string | null, cb: (err?: 
 			if (feed != null) return cb(undefined, false, feed, articlesToDB(uri, items));
 
 
-			var fItem = items[0];
+			let fItem = items[0];
 
 			if (fItem == null) return cb('XML page didn\'t have any items on it.');
 
@@ -240,7 +240,7 @@ function addNewFeed(uri: string, cookies: any, title: string | null, cb: (err?: 
 
 
 			function createFeed() {
-				var articles = articlesToDB(uri, <FeedParser.Item[]>items);
+				let articles = articlesToDB(uri, <FeedParser.Item[]>items);
 
 				new RSSFeeds(articles)
 				.save((err, feed) => {
@@ -251,7 +251,7 @@ function addNewFeed(uri: string, cookies: any, title: string | null, cb: (err?: 
 
 			// console.log(JSON.stringify(items[0], null, 2));
 
-			// for(var i = 0; i < items.length; i++) {
+			// for(let i = 0; i < items.length; i++) {
 			// 	console.log('ID: ' + getArticleId(items[i], items));
 			// }
 		});
@@ -259,7 +259,7 @@ function addNewFeed(uri: string, cookies: any, title: string | null, cb: (err?: 
 }
 
 function articlesToDB(url: string, items: FeedParser.Item[]): ArticleDB {
-	var fItem = items[0];
+	let fItem = items[0];
 
 	if (fItem.meta.link == null || fItem.meta.link.length == 0) {
 		fItem.meta.link = fItem.meta.xmlurl;
@@ -295,10 +295,10 @@ function articleItemsToDB(items: FeedParser.Item[]): CustomDocs.global.RSSFeedsI
 }
 
 function getArticleId(article: FeedParser.Item, articles: FeedParser.Item[]) {
-	var equalGuids = (articles.length != 1);
+	let equalGuids = (articles.length != 1);
 
 	if (equalGuids && articles[0].guid) {
-		for (var i = 1; i < articles.length; i++) {
+		for (let i = 1; i < articles.length; i++) {
 			if (articles[i].guid !== articles[i - 1].guid) equalGuids = false;
 		}
 	}
@@ -316,10 +316,10 @@ function getArticleId(article: FeedParser.Item, articles: FeedParser.Item[]) {
 function returnArticlesAfter(last_item_id: string, savedArticles: CustomDocs.global.RSSFeedsItem[]): CustomDocs.global.RSSFeedsItem[] {
 	if (last_item_id == null) return savedArticles;
 
-	var articles: CustomDocs.global.RSSFeedsItem[] = [];
+	let articles: CustomDocs.global.RSSFeedsItem[] = [];
 
-	for(var i = 0; i < savedArticles.length; i++) {
-		var article = savedArticles[i];
+	for(let i = 0; i < savedArticles.length; i++) {
+		let article = savedArticles[i];
 		if (article.id == last_item_id) break;
 		articles.push(article);
 	}

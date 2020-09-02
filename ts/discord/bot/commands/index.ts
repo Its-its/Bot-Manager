@@ -46,25 +46,25 @@ function initCommands() {
 }
 
 function parseMessage(message: string, server: Server, defaultMessage: Discord.Message) {
-	var parts = [];
-	var toFix = message.split(' ');
+	let parts = [];
+	let toFix = message.split(' ');
 
 	// fixes \n ex: "!replace list\n```\nitem\n```" https://i.thick.at/HydrographicalFrances.png
-	for(var i = 0; i < toFix.length; i++) {
-		var part = toFix[i];
+	for(let i = 0; i < toFix.length; i++) {
+		let part = toFix[i];
 
 		if (part.includes('\n')) {
-			var split = part.split('\n');
+			let split = part.split('\n');
 			parts.push(...split);
 		} else {
 			parts.push(part);
 		}
 	}
 
-	var messageCommand = parts[0].toLowerCase();
+	let messageCommand = parts[0].toLowerCase();
 
-	for (var i = 0; i < defaultCommands.length; i++) {
-		var command = defaultCommands[i];
+	for (let i = 0; i < defaultCommands.length; i++) {
+		let command = defaultCommands[i];
 
 		if (command.is(messageCommand)) {
 			if (command.ownerOnly && defaultMessage.member!.id != OWNER_ID) return;
@@ -86,7 +86,7 @@ function parseMessage(message: string, server: Server, defaultMessage: Discord.M
 }
 
 function is(commandName: string) {
-	for (var i = 0; i < defaultCommands.length; i++) {
+	for (let i = 0; i < defaultCommands.length; i++) {
 		if (defaultCommands[i].is(commandName)) return true;
 	}
 
@@ -94,7 +94,7 @@ function is(commandName: string) {
 }
 
 function get(commandName: string): Nullable<Command> {
-	for (var i = 0; i < defaultCommands.length; i++) {
+	for (let i = 0; i < defaultCommands.length; i++) {
 		if (defaultCommands[i].is(commandName)) return defaultCommands[i];
 	}
 

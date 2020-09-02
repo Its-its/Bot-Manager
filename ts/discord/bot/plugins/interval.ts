@@ -61,7 +61,7 @@ function addInterval(params: DiscordBot.Interval) {
 		params.nextCall = Date.now() * (params.every * 1000);
 	}
 
-	var model = new GlobalModelIntervals(params);
+	let model = new GlobalModelIntervals(params);
 	model.save(() => {});
 	return model._id;
 }

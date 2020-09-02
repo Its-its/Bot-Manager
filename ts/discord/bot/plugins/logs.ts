@@ -43,7 +43,7 @@ function messageDelete(message: Discord.Message | Discord.PartialMessage) {
 			});
 
 			if (log_channel != null) {
-				var channel = <Discord.TextChannel>message.guild!.channels.cache.get(log_channel.id);
+				let channel = <Discord.TextChannel>message.guild!.channels.cache.get(log_channel.id);
 
 				if (channel != null) {
 					channel.send(messageDeleted(message.channel, message.member!, message));
@@ -59,10 +59,10 @@ function messageDelete(message: Discord.Message | Discord.PartialMessage) {
 }
 
 function messageDeleteBulk(messageCollection: Discord.Collection<string, Discord.Message | Discord.PartialMessage>) {
-	var messages = messageCollection.array().filter(m => m.type == 'DEFAULT' && !m.member!.user.bot);
+	let messages = messageCollection.array().filter(m => m.type == 'DEFAULT' && !m.member!.user.bot);
 
 	if (messages.length != 0) {
-		var guildID = messages[0].guild!.id;
+		let guildID = messages[0].guild!.id;
 		guildClient.get(guildID, server => {
 			if (server == null || !server.isPluginEnabled('logs')) return;
 
@@ -92,7 +92,7 @@ function messageDeleteBulk(messageCollection: Discord.Collection<string, Discord
 				});
 
 				if (log_channel != null) {
-					var channel = <Discord.TextChannel>messages[0].guild!.channels.cache.get(log_channel.id);
+					let channel = <Discord.TextChannel>messages[0].guild!.channels.cache.get(log_channel.id);
 
 					if (channel != null) {
 						channel.send(messagesDeleted(messages));
@@ -138,7 +138,7 @@ function messageUpdate(oldMessage: Discord.Message | Discord.PartialMessage, new
 		});
 
 		if (log_channel != null) {
-			var channel = <Discord.TextChannel>oldMessage.guild!.channels.cache.get(log_channel.id);
+			let channel = <Discord.TextChannel>oldMessage.guild!.channels.cache.get(log_channel.id);
 
 			if (channel != null) {
 				channel.send(messageEdited(newMessage.channel, newMessage.member!, oldMessage, newMessage));
@@ -169,7 +169,7 @@ function guildMemberAdd(guildMember: Discord.GuildMember) {
 		});
 
 		if (log_channel != null) {
-			var channel = <Discord.TextChannel>guildMember.guild.channels.cache.get(log_channel.id);
+			let channel = <Discord.TextChannel>guildMember.guild.channels.cache.get(log_channel.id);
 
 			if (channel != null) {
 				//
@@ -200,7 +200,7 @@ function guildMemberRemove(guildMember: Discord.GuildMember) {
 		});
 
 		if (log_channel != null) {
-			var channel = <Discord.TextChannel>guildMember.guild.channels.cache.get(log_channel.id);
+			let channel = <Discord.TextChannel>guildMember.guild.channels.cache.get(log_channel.id);
 
 			if (channel != null) {
 				//

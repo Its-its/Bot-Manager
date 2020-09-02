@@ -18,7 +18,7 @@ import { DiscordBot } from '@type-manager';
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMISSIONS.GROUP)) return Command.noPermsMessage('Permissions');
 
-	var name = params.shift();
+	let name = params.shift();
 
 	if (name == null) return Command.error([['Permissions', 'Invalid Params']]);
 
@@ -26,11 +26,11 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		if (!server.userHasPerm(message.member!, PERMISSIONS.GROUP_CREATE)) return Command.noPermsMessage('Permissions');
 
 		if (params.length == 0) return Command.error([['Permissions', 'Invalid Params']]);
-		var displayName = params.join(' ');
+		let displayName = params.join(' ');
 
 		if (!/^[a-z0-9 ]+$/i.test(displayName)) return Command.error([['Permissions', 'Invalid Display Name. A-Z, 0-9, spaces only.']]);
 
-		var group = server.createGroup(displayName);
+		let group = server.createGroup(displayName);
 
 		if (group == null) return Command.error([['Permissions', 'Group with that name already exists!']]);
 
@@ -46,10 +46,10 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		]);
 	}
 	// else if (name == 'list') {
-	// 	var groups = [];
+	// 	let groups = [];
 
-	// 	for(var name in server.permissions.groups) {
-	// 		var listGroup = server.permissions.groups[name];
+	// 	for(let name in server.permissions.groups) {
+	// 		let listGroup = server.permissions.groups[name];
 
 	// 		groups.push(
 	// 			'Display Name: ' + listGroup.displayName,
@@ -64,12 +64,12 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	// 	return groups.join('\n');
 	// }
 	else {
-		var paramAddOrRemove = params.shift();
+		let paramAddOrRemove = params.shift();
 
 		if (paramAddOrRemove == null) {
 			if (!server.userHasPerm(message.member!, PERMISSIONS.GROUP_LIST)) return Command.noPermsMessage('Permissions');
 
-			var permissionsFromGroup = <DiscordBot.PermissionsGroup>server.getPermsFrom('groups', name);
+			let permissionsFromGroup = <DiscordBot.PermissionsGroup>server.getPermsFrom('groups', name);
 			if (permissionsFromGroup == null) return Command.error([['Permissions', 'Group not valid']]);
 
 			message.channel.send(Command.info([
@@ -84,7 +84,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		}
 
 
-		var paramCommandOrPermission = params.shift();
+		let paramCommandOrPermission = params.shift();
 
 		if (paramCommandOrPermission == null) return Command.error([['Permissions', 'Invalid Params.']]);
 

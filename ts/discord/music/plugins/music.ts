@@ -76,13 +76,13 @@ function addToPlaylist(
 
 		if (playlistPublicId == 'default') playlistPublicId = music.currentPlaylist;
 
-		var val = /(?:(?:https?:\/\/)?(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11})/g.exec(songId);
+		let val = /(?:(?:https?:\/\/)?(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11})/g.exec(songId);
 		if (val == null) val = /^([a-zA-Z0-9-_]{11})$/.exec(songId);
 
 		// TODO:  Search by ID, if failed, search by string?
 
 		if (val != null) {
-			var id = val[1];
+			let id = val[1];
 
 			getSong(id, (errMsg, song) => {
 				if (errMsg != null) return cb(errMsg);
@@ -185,11 +185,11 @@ function getSong(uri: string | string[], cb: (errorMessage?: string, song?: Song
 	request.get(`http://${config.ytdl.full}/info?force=true&id=` + (typeof uri == 'string' ? uri : uri.join(',')), (err, res) => {
 		if (err != null) return cb(err);
 
-		var data: SongInfoReponse = JSON.parse(res.body);
+		let data: SongInfoReponse = JSON.parse(res.body);
 
 		if (data.error) return cb(data.error);
 
-		var songs = data.songs.map(s => {
+		let songs = data.songs.map(s => {
 			let clone: any = Object.assign({}, s);
 
 			clone.type = 'youtube';
@@ -233,7 +233,7 @@ function searchForSong(search: string, page: string | null | undefined, cb: (err
 	request.get(`http://${config.ytdl.full}/search?query=${search}${page == null ? '' : '&pageToken=' + page}`, (err, res) => {
 		if (err != null) return cb(err);
 
-		var data = JSON.parse(res.body);
+		let data = JSON.parse(res.body);
 
 		if (data.error) return cb(data.error);
 
@@ -244,7 +244,7 @@ function searchForSong(search: string, page: string | null | undefined, cb: (err
 function findFirstSong(search: string, cb: (errorMsg?: any, song?: SongGlobal) => any) {
 	request.get(`http://${config.ytdl.full}/info?search=${search}`, (err, res) => {
 		if (err != null) return cb(err);
-		var song = JSON.parse(res.body);
+		let song = JSON.parse(res.body);
 
 		if (song.error) return cb(song.error);
 

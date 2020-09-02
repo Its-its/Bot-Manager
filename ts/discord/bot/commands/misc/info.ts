@@ -10,7 +10,7 @@ const PERMS = {
 	MEMBER: 'member'
 };
 
-for(var name in PERMS) {
+for(let name in PERMS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
@@ -34,13 +34,13 @@ class Info extends Command {
 			]);
 		}
 
-		var discordId = params.shift();
+		let discordId = params.shift();
 		if (discordId == null) return Command.error([['Info', 'Invalid Params']]);
 
-		var idType = utils.getIdType(discordId);
+		let idType = utils.getIdType(discordId);
 		if (idType == null) return Command.error([[ 'Info', 'Unknown type. Please @ or # the user, group, or channel.' ]]);
 
-		var strippedDiscordId = utils.strpToId(discordId);
+		let strippedDiscordId = utils.strpToId(discordId);
 		if (strippedDiscordId == null) return Command.error([['Info', 'Invalid Params']]);
 
 
@@ -48,10 +48,10 @@ class Info extends Command {
 			case 'member':
 				if (!this.hasPerms(message.member!, server, PERMS.MEMBER)) return Command.noPermsMessage('Info');
 
-				var guildMember = message.guild!.members.cache.get(strippedDiscordId);
+				let guildMember = message.guild!.members.cache.get(strippedDiscordId);
 				if (guildMember == null) return Command.error([[ 'Info', 'Member not in Guild!' ]]);
 
-				var roles = guildMember.roles.cache.array()
+				let roles = guildMember.roles.cache.array()
 				.filter(r => r.name != '@everyone')
 				.map(r => r.name)
 				.join(', ');

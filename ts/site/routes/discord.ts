@@ -9,8 +9,8 @@ export = (app: express.Application) => {
 	});
 
 	app.post('/discord/invite', authed, (req, res) => {
-		var botId = req.body.botId;
-		var guildId = req.body.guildId;
+		let botId = req.body.botId;
+		let guildId = req.body.guildId;
 		if (botId == null || guildId == null) return res.send('error');
 
 		Validation.findOne({
@@ -26,7 +26,7 @@ export = (app: express.Application) => {
 
 			if (item != null) return res.send({ error: 'There is already a pending invite. Please wait 5 minutes and try again.' });
 
-			var validate = new Validation({
+			let validate = new Validation({
 				user_id: (<any>req.user).id,
 				bot_id: botId,
 				listener_id: guildId,
@@ -40,7 +40,7 @@ export = (app: express.Application) => {
 					return;
 				}
 
-				var params = [
+				let params = [
 					'client_id=' + config.bot.discord.id,
 					'scope=bot',
 					'permissions=8',

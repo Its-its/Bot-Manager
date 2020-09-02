@@ -13,7 +13,7 @@ const PERMS = {
 	FILTER_REMOVE: 'filter.remove'
 };
 
-for(var name in PERMS) {
+for(let name in PERMS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }

@@ -51,21 +51,21 @@ function infoMsg(array: [string, string][]) {
 //! Text is different widths if not in code blocks.
 // TODO: Max cell width
 function tableMsg(header: string[], body: any[][], opts?: { delimiter?: string; spacing?: number; monospaced?: boolean; }): string {
-	var compOpts = Object.assign({
+	let compOpts = Object.assign({
 		delimiter: ' ',
 		spacing: 2,
 		monospaced: true
 	}, opts);
 
-	var largestCell: number[] = [];
-	var rows: string[] = [];
+	let largestCell: number[] = [];
+	let rows: string[] = [];
 
 	// Column Lengths
 	header.forEach((h, i) => largestCell[i] = String(h).length);
 	body.forEach(b => {
 		b.forEach((c, i) => {
-			var len = String(c).length;
-			var curLen = largestCell[i];
+			let len = String(c).length;
+			let curLen = largestCell[i];
 
 			if (curLen == null) {
 				largestCell[i] = len;
@@ -84,7 +84,7 @@ function tableMsg(header: string[], body: any[][], opts?: { delimiter?: string; 
 	});
 
 
-	var comp = rows.join('\n');
+	let comp = rows.join('\n');
 
 
 	if (compOpts.monospaced) comp = '```' + comp + '```';
@@ -103,7 +103,7 @@ function strpToId(str?: string): Nullable<string> {
 
 	if (str.length < 3) return null;
 
-	var sub = str.substr(2, str.length - 3);
+	let sub = str.substr(2, str.length - 3);
 
 	// Roles are <@&1234>
 	if (sub[0] == '&') return sub.substr(1);
@@ -128,9 +128,9 @@ function getIdType(str: string): Nullable<'role' | 'member' | 'channel'> {
 
 
 function timeSince(time: number) {
-	var seconds = Math.floor((new Date().getTime() - time) / 1000);
+	let seconds = Math.floor((new Date().getTime() - time) / 1000);
 
-	var interval = Math.floor(seconds / 31536000);
+	let interval = Math.floor(seconds / 31536000);
 
 	if (interval > 1) return interval + ' years';
 
@@ -545,8 +545,8 @@ class MessagePage {
 	}
 
 	public editSelection(inputValue: string, opts: PageSelection) {
-		for(var i = 0; i < this.selections.length; i++) {
-			var selection = this.selections[i];
+		for(let i = 0; i < this.selections.length; i++) {
+			let selection = this.selections[i];
 			if (selection != null && selection.input == inputValue) {
 				Object.assign(selection, opts);
 				break;
@@ -603,7 +603,7 @@ class MessagePage {
 		return infoMsg([[
 			'Pages',
 			this.format.map(f => {
-				for(var format in formatReplaceValues) {
+				for(let format in formatReplaceValues) {
 					if (f == format) return formatReplaceValues[format](this);
 				}
 				return f;

@@ -13,7 +13,7 @@ import { CustomDocs, Nullable } from '@type-manager';
 function call(_params: string[], _server: DiscordServer, message: Discord.Message) {
 	message.channel.send(utils.infoMsg([['Twitter Feed', 'Finding all Twitter Feeds in current Guild.']]))
 	.then(m => {
-		var singleMsg: Discord.Message;
+		let singleMsg: Discord.Message;
 		if (Array.isArray(m)) singleMsg = m[0];
 		else singleMsg = m;
 		if (singleMsg == null) return;
@@ -73,7 +73,7 @@ function call(_params: string[], _server: DiscordServer, message: Discord.Messag
 
 
 function showChannel(page: utils.MessagePage, channelFeed: CustomDocs.discord.DiscordTwitterPopulated) {
-	var channel = <Discord.TextChannel>page.channel;
+	let channel = <Discord.TextChannel>page.channel;
 
 	// TODO
 	// const isSameGuild = (channel.guild.id == channelFeed.guild_id);
@@ -108,13 +108,13 @@ function showChannel(page: utils.MessagePage, channelFeed: CustomDocs.discord.Di
 		]);
 
 		pageMove.listen(message => {
-			var type = utils.getIdType(message);
+			let type = utils.getIdType(message);
 			if (type != null || type != 'channel') return false;
 
-			var id = utils.strpToId(message);
+			let id = utils.strpToId(message);
 			if (id == null) return false;
 
-			var channel = (<Discord.TextChannel>page.channel).guild.channels.cache.get(id);
+			let channel = (<Discord.TextChannel>page.channel).guild.channels.cache.get(id);
 			if (channel == null) return false;
 
 			DiscordTwitter.updateOne({ _id: channelFeed._id }, { $set: { channel_id: channel.id } }).exec();
@@ -159,7 +159,7 @@ const DEFAULT_TWITTER_FORMAT = ':bird:  **{text}**\n\n{link}';
 
 
 function showPageFeed(page: utils.MessagePage, channelFeed: CustomDocs.discord.DiscordTwitterPopulated, pos: number) {
-	var feed = channelFeed.feeds[pos];
+	let feed = channelFeed.feeds[pos];
 
 	page.setFormat([
 		// '**Active**: ​' + channelFeed.active,
@@ -191,7 +191,7 @@ function showPageFeed(page: utils.MessagePage, channelFeed: CustomDocs.discord.D
 		]);
 
 		pageTemplate.listen(value => {
-			var setting: Nullable<string>;
+			let setting: Nullable<string>;
 
 			if (value.length == 0 || value == 'default') setting = null;
 			else setting = value.replace(/\</g, '\\<').replace(/\>/g, '\\>');

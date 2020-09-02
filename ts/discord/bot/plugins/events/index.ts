@@ -19,15 +19,15 @@ import { DiscordBot } from '@type-manager';
 function onReactAdd(reaction: Discord.MessageReaction, user: Discord.User, server: DiscordServer) {
 	if (!server.isPluginEnabled('events') || server.events.length == 0) return false;
 
-	for(var i = 0; i < server.events.length; i++) {
-		var listening = server.events[i];
+	for(let i = 0; i < server.events.length; i++) {
+		let listening = server.events[i];
 
 		if (listening.type == 'react_add') {
 			if (listening.message_id == reaction.message.id) {
 				if (listening.emoji_id == reaction.emoji.id) {
 					switch(listening.event.type) {
 						case 'role':
-							var member = reaction.message.guild!.members.cache.get(user.id);
+							let member = reaction.message.guild!.members.cache.get(user.id);
 
 							if (member == null) return;
 
@@ -50,8 +50,8 @@ function onReactAdd(reaction: Discord.MessageReaction, user: Discord.User, serve
 function guildMemberAdd(member: Discord.GuildMember, server: DiscordServer) {
 	if (!server.isPluginEnabled('events') || server.events.length == 0) return false;
 
-	for(var i = 0; i < server.events.length; i++) {
-		var listening = server.events[i];
+	for(let i = 0; i < server.events.length; i++) {
+		let listening = server.events[i];
 
 		if (listening.type == 'member_add') {
 			switch(listening.event.type) {
@@ -70,8 +70,8 @@ function guildMemberAdd(member: Discord.GuildMember, server: DiscordServer) {
 function guildMemberRemove(member: Discord.GuildMember, server: DiscordServer) {
 	if (!server.isPluginEnabled('events') || server.events.length == 0) return false;
 
-	for(var i = 0; i < server.events.length; i++) {
-		var listening = server.events[i];
+	for(let i = 0; i < server.events.length; i++) {
+		let listening = server.events[i];
 
 		if (listening.type == 'member_remove') {
 			switch(listening.event.type) {
@@ -106,7 +106,7 @@ function doGroup(event: DiscordBot.DoGroupEvent, guild: Discord.Guild, member: D
 function doMessage(event: DiscordBot.DoMessageEvent, member: Discord.GuildMember) {
 	if (event.channel_id == null) return;
 
-	var channel = <Discord.TextChannel>member.guild.channels.cache.get(event.channel_id);
+	let channel = <Discord.TextChannel>member.guild.channels.cache.get(event.channel_id);
 
 	if (channel != null) {
 		channel.send(event.message)

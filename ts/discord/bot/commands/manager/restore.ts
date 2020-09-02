@@ -20,7 +20,7 @@ const PERMS = {
 	MAIN: 'commands.restore'
 };
 
-for(var name in PERMS) {
+for(let name in PERMS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
@@ -71,7 +71,7 @@ class Restore extends Command {
 			]);
 		}
 
-		var pid = params.shift();
+		let pid = params.shift();
 
 		message.channel.send(Command.info([['Restore', 'Searching for backups from imputted ID.']]))
 		.then(resp => {
@@ -90,7 +90,7 @@ class Restore extends Command {
 				.setCollectionFormat(s => s.input + ' > ' + s.description)
 				.setEditing(Array.isArray(resp) ? resp[0] : resp);
 
-				for(var i = 0; i < backups.length; i++) {
+				for(let i = 0; i < backups.length; i++) {
 					(function(pos, backup: Backup) {
 						// TODO: Add version
 						selector.addSelection('' + pos, `Created At: ${backup.created_at.toUTCString()}\nItems: \`${backup.items.join(', ')}\``, (page) => {
@@ -118,7 +118,7 @@ function mainEditPage(backup: Backup, page: utils.MessagePage, server: DiscordSe
 	.setCollectionFormat(s => s.input + ' -> ' + s.description);
 
 	page.addSelection('all', 'Select all for importing.', () => {
-		var ignoring = Array.from(backup.ignore);
+		let ignoring = Array.from(backup.ignore);
 
 		ignoring.forEach(i => {
 			toggleIgnore(i);
@@ -158,7 +158,7 @@ function mainEditPage(backup: Backup, page: utils.MessagePage, server: DiscordSe
 
 
 	function toggleIgnore(name: string) {
-		var indexOf = backup.ignore.indexOf(name);
+		let indexOf = backup.ignore.indexOf(name);
 
 		if (indexOf == -1) backup.ignore.push(name);
 		else backup.ignore.splice(indexOf, 1);
@@ -182,19 +182,19 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 	}
 
 
-	var items: Compiled = JSON.parse(backup.json);
+	let items: Compiled = JSON.parse(backup.json);
 
 	function isRestoring(name: ITEMS) {
 		return backup.items.indexOf(name) != -1 && items[name] != null;
 	}
 
-	var tempIdToNew: { [str: string]: string } = {};
+	let tempIdToNew: { [str: string]: string } = {};
 
 	const guild = message.guild!;
 
-	var startTime = Date.now();
+	let startTime = Date.now();
 
-	var failed = [];
+	let failed = [];
 
 	message.edit(Command.info([['Restore', 'Starting restore process...\n__' + backup.items.join(',') + '__']]))
 	.then(() => {
@@ -221,12 +221,12 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 					function nextRole(pos: number) {
 						if (items.roles!.length == pos) return next();
 
-						var or = items.roles![pos];
+						let or = items.roles![pos];
 
 						if (or.name == '@everyone' && or.position == 0) {
-							var roles = guild.roles.cache.array();
-							for(var i = 0; i < roles.length; i++) {
-								var role = roles[i];
+							let roles = guild.roles.cache.array();
+							for(let i = 0; i < roles.length; i++) {
+								let role = roles[i];
 								if (role.position == 0) {
 									role.edit({
 										permissions: or.permissions,//<any>utils.getPermissions(or.permissions).toArray()
@@ -297,7 +297,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 					function create(pos: number) {
 						if (channels!.length == pos) return fin && fin();
 
-						var c = channels![pos];
+						let c = channels![pos];
 
 						guild.channels.create(c.name, {
 							type: c.type,
@@ -330,7 +330,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 				message.edit(Command.info([['Restore', 'Restoring Overview/Moderation...']]))
 				.then(() => {
 					if (isRestoring('overview')) {
-						var overview = items.overview;
+						let overview = items.overview;
 
 						async.mapSeries([
 							guild.setName(overview!.server_name),
@@ -385,7 +385,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 					function nextEmoji(pos: number) {
 						if (items.emojis!.length == pos) return next();
 
-						var emoji = items.emojis![pos];
+						let emoji = items.emojis![pos];
 
 						// emoji.
 					}
@@ -410,7 +410,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 					function nextBan(pos: number) {
 						if (items.bans!.length == pos) return next();
 
-						var b = items.bans![pos];
+						let b = items.bans![pos];
 
 						guild.members.ban(b/*, { days: null, reason: null }*/)
 						.then(b => nextWait(pos + 1))
@@ -431,7 +431,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 					function nextPhrase(pos: number) {
 						if (items.phrases!.length == pos) return next();
 
-						var p = items.phrases![pos];
+						let p = items.phrases![pos];
 
 						server.createPhrase(message.member!, p.phrases, phrase => {
 							server.setPhraseIgnoreCase(phrase.pid, p.ignoreCase);
@@ -453,7 +453,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 					function nextCommand(pos: number) {
 						if (items.commands!.length == pos) return next();
 
-						var c = items.commands![pos];
+						let c = items.commands![pos];
 
 						server.createCommand(guild.owner!, c.alias, c.params, () => nextCommand(pos + 1));
 					}
@@ -466,8 +466,8 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 				}
 
 				if (isRestoring('blacklists')) {
-					for(var cid in items.blacklists) {
-						var item = items.blacklists[cid];
+					for(let cid in items.blacklists) {
+						let item = items.blacklists[cid];
 						item.items.forEach(b => server.blacklist(cid, b));
 						server.blacklistPunishment(cid, item.punishment);
 					}
@@ -484,12 +484,12 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 				}
 
 				if (isRestoring('perms')) {
-					var perms = items.perms!;
+					let perms = items.perms!;
 					// TODO: Add groups
 
-					for(var id in perms!.groups) {
-						var group = perms!.groups[id];
-						var roleClazz = guild.roles.cache.get(tempIdToNew[id]);
+					for(let id in perms!.groups) {
+						let group = perms!.groups[id];
+						let roleClazz = guild.roles.cache.get(tempIdToNew[id]);
 
 						if (roleClazz != null) {
 							group.perms.forEach(p => server.addPermTo('groups', roleClazz!.id, p));
@@ -500,17 +500,17 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 						// group.groups.forEach(p => server.addGroupTo('groups', id, p));
 					}
 
-					for(var id in perms.roles) {
-						var actualId = tempIdToNew[id];
+					for(let id in perms.roles) {
+						let actualId = tempIdToNew[id];
 						if (actualId != null) {
-							var role = perms.roles[id];
+							let role = perms.roles[id];
 							role.perms.forEach(p => server.addPermTo('roles', actualId, p));
 							role.groups.forEach(p => server.addGroupTo('roles', actualId, p));
 						}
 					}
 
-					for(var id in perms.users) {
-						var user = perms.users[id];
+					for(let id in perms.users) {
+						let user = perms.users[id];
 						// Only add if member is in guild.
 						if (guild.members.cache.has(id)) {
 							user.perms.forEach(p => server.addPermTo('users', id, p));
@@ -541,7 +541,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 				if (isRestoring('ranks')) {
 					items.ranks!.forEach(r => {
-						var actualId = tempIdToNew[r];
+						let actualId = tempIdToNew[r];
 						if (actualId != null) {
 							server.addRank(actualId);
 						}
@@ -565,7 +565,7 @@ export = Restore;
 
 
 function asdf(items: ((cb: () => any) => any)[], finish: () => any) {
-	var pos = 0;
+	let pos = 0;
 
 	next();
 

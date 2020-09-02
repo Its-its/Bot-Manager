@@ -83,7 +83,7 @@ class Backup extends Command {
 			}
 
 			function parseChannel(channel: Discord.GuildChannel): DiscordBot.BackupChannel {
-				var opt: DiscordBot.BackupChannel = {
+				let opt: DiscordBot.BackupChannel = {
 					id: channel.id,
 					name: channel.name,
 					// @ts-ignore
@@ -127,7 +127,7 @@ class Backup extends Command {
 				function create(pos: number) {
 					if (channels!.length == pos) return fin && fin();
 
-					var c = channels![pos];
+					let c = channels![pos];
 
 					message.guild!.channels.create(c.name, {
 						type: c.type,
@@ -140,7 +140,7 @@ class Backup extends Command {
 						// c.perms.forEach(p => {
 						// 	if (tempIdToNew[p.id] == null) return console.log('Channel Perms: ', p);
 
-						// 	var obj: { [name: string]: boolean } = {};
+						// 	let obj: { [name: string]: boolean } = {};
 
 						// 	utils.getPermissions(p.allow).toArray().forEach(p => obj[p] = true);
 						// 	utils.getPermissions(p.deny).toArray().forEach(p => obj[p] = false);
@@ -224,19 +224,19 @@ class Backup extends Command {
 		}
 
 		function createNewBackup() {
-			var hasAll = isBackingUp('all');
+			let hasAll = isBackingUp('all');
 
 			if (hasAll || params[0][0] == '-') {
 				if (hasAll) params.splice(params.indexOf('all'), 1);
 
-				var removeList = params;
+				let removeList = params;
 				params = items;
 
-				for(var i = 0; i < removeList.length; i++) {
-					var remove = removeList[i];
+				for(let i = 0; i < removeList.length; i++) {
+					let remove = removeList[i];
 
 					if (remove[0] == '-') {
-						var index = params.indexOf(remove.slice(1));
+						let index = params.indexOf(remove.slice(1));
 						if (index != -1) params.splice(index, 1);
 						else return message.channel.send(Command.error([['Backup', 'Invalid item to remove "' + remove.slice(1) + '"']]));
 					} else return message.channel.send(Command.error([['Backup', 'Invalid backup usage.']]));
@@ -244,13 +244,13 @@ class Backup extends Command {
 			}
 
 
-			var compiled: Compiled = {};
+			let compiled: Compiled = {};
 
 			let guild = message.guild!;
 
 
 			if (!isBackingUp('roles')) {
-				var sending = [];
+				let sending = [];
 
 				if (isBackingUp('perms')) sending.push('Cannot save role perms if roles aren\'t saved. (FOR NOW)');
 				if (isBackingUp('ranks')) {
@@ -299,7 +299,7 @@ class Backup extends Command {
 
 							function parseChannel(channel: Discord.GuildChannel): DiscordBot.BackupChannel {
 
-								var opt: DiscordBot.BackupChannel = {
+								let opt: DiscordBot.BackupChannel = {
 									id: channel.id,
 									name: channel.name,
 									// @ts-ignore
@@ -412,7 +412,7 @@ class Backup extends Command {
 						}
 
 						if (isBackingUp('perms')) {
-							var perms: Partial<DiscordBot.Permissions> = compiled['perms'] = server.permissions;
+							let perms: Partial<DiscordBot.Permissions> = compiled['perms'] = server.permissions;
 
 							if (!isBackingUp('roles')) delete perms['roles'];
 						}
@@ -439,7 +439,7 @@ class Backup extends Command {
 						created_at: Date.now()
 					}).save();
 
-					var toSend = Command.success([
+					let toSend = Command.success([
 						[
 							'Backup',
 							'Completed.'
@@ -463,7 +463,7 @@ class Backup extends Command {
 
 
 function asdf(items: ((cb: () => any) => any)[], finish: () => any) {
-	var pos = 0;
+	let pos = 0;
 
 	next();
 
@@ -529,9 +529,9 @@ function tempID() {
 }
 
 function uniqueID(size: number): string {
-	var bloc = [];
+	let bloc = [];
 
-	for(var i = 0; i < size; i++)
+	for(let i = 0; i < size; i++)
 		bloc.push(Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1));
 
 	return bloc.join('');

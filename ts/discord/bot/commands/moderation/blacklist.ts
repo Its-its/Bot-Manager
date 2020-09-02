@@ -15,7 +15,7 @@ const PERMS = {
 	ACTION: 'action'
 };
 
-for(var name in PERMS) {
+for(let name in PERMS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
@@ -31,9 +31,9 @@ class Blacklist extends Command {
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
-		var blacklisted = server.moderation.blacklisted;
+		let blacklisted = server.moderation.blacklisted;
 
-		var cmdToCall = params.shift();
+		let cmdToCall = params.shift();
 
 		if (cmdToCall == null) {
 			return Command.info([
@@ -54,10 +54,10 @@ class Blacklist extends Command {
 		if (cmdToCall == 'list') {
 			if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Blacklist');
 
-			var discChannelIdStr = params.shift();
+			let discChannelIdStr = params.shift();
 
 			if (discChannelIdStr == null) {
-				var blacklistedChannelIds = Object.keys(blacklisted);
+				let blacklistedChannelIds = Object.keys(blacklisted);
 
 				if (blacklistedChannelIds.length == 0) {
 					return Command.info([
@@ -71,11 +71,11 @@ class Blacklist extends Command {
 					return;
 				}
 			} else {
-				var channelIdStripped = server.strpToId(discChannelIdStr);
+				let channelIdStripped = server.strpToId(discChannelIdStr);
 
 				if (channelIdStripped == null) return Command.error([['Channel', 'Invalid Channel ID']]);
 
-				var channelBlacklisted = blacklisted[channelIdStripped];
+				let channelBlacklisted = blacklisted[channelIdStripped];
 
 				return Command.info([
 					[
@@ -87,16 +87,16 @@ class Blacklist extends Command {
 		} else if (cmdToCall == 'remove') {
 			if (!this.hasPerms(message.member!, server, PERMS.CLEAR)) return Command.noPermsMessage('Blacklist');
 
-			var discChannelIdStr = params.shift();
-			var fullCommand = params.join(' ');
+			let discChannelIdStr = params.shift();
+			let fullCommand = params.join(' ');
 
 			if (discChannelIdStr == null || fullCommand.length == 0) return Command.info([[ 'Blacklist', 'Invalid opts. Use: remove <global/#channel/all> <text/all>' ]]);
 
-			var channelIdStripped = server.strpToId(discChannelIdStr);
+			let channelIdStripped = server.strpToId(discChannelIdStr);
 
 			if (channelIdStripped == null) return Command.error([['Channel', 'Invalid Channel ID']]);
 
-			var channelBlacklisted = blacklisted[channelIdStripped];
+			let channelBlacklisted = blacklisted[channelIdStripped];
 
 			if (channelBlacklisted == null || channelBlacklisted.items.length == 0) {
 				return Command.info([
@@ -110,14 +110,14 @@ class Blacklist extends Command {
 				if (fullCommand == 'all') {
 					delete server.moderation.blacklisted[channelIdStripped];
 				} else {
-					var channel_blacklists = server.moderation.blacklisted[channelIdStripped];
+					let channel_blacklists = server.moderation.blacklisted[channelIdStripped];
 
 					if (channel_blacklists == null) {
 						return Command.info([
 							[ 'Blacklist', 'There are no Blacklists for that channel!' ]
 						]);
 					} else {
-						var indexOf = channel_blacklists.items.indexOf(fullCommand.toLowerCase());
+						let indexOf = channel_blacklists.items.indexOf(fullCommand.toLowerCase());
 
 						if (indexOf == -1) {
 							return Command.info([
@@ -141,12 +141,12 @@ class Blacklist extends Command {
 		} else if (cmdToCall == 'add') {
 			if (!this.hasPerms(message.member!, server, PERMS.ADD)) return Command.noPermsMessage('Blacklist');
 
-			var channelIdStripped = server.strpToId(params.shift());
+			let channelIdStripped = server.strpToId(params.shift());
 
 			if (channelIdStripped == null) return Command.error([['Channel', 'Invalid Channel ID']]);
 
 			if (channelIdStripped != 'global') {
-				var discordChannel = message.guild!.channels.cache.get(channelIdStripped);
+				let discordChannel = message.guild!.channels.cache.get(channelIdStripped);
 
 				if (discordChannel == null || discordChannel.type != 'text') {
 					return Command.error([
@@ -161,7 +161,7 @@ class Blacklist extends Command {
 				]);
 			}
 
-			var fullCommand = params.join(' ').trim().toLowerCase();
+			let fullCommand = params.join(' ').trim().toLowerCase();
 
 			if (!server.blacklist(channelIdStripped, fullCommand)) {
 				return Command.error([
@@ -175,8 +175,8 @@ class Blacklist extends Command {
 		} else if (cmdToCall == 'action') {
 			if (!this.hasPerms(message.member!, server, PERMS.ACTION)) return Command.noPermsMessage('Blacklist');
 
-			var channelIdStripped = server.strpToId(params.shift());
-			var punishmentType = params.shift();
+			let channelIdStripped = server.strpToId(params.shift());
+			let punishmentType = params.shift();
 
 			if (channelIdStripped == null) {
 				return Command.error([
@@ -184,7 +184,7 @@ class Blacklist extends Command {
 				]);
 			}
 
-			var channelBlacklisted = blacklisted[channelIdStripped];
+			let channelBlacklisted = blacklisted[channelIdStripped];
 
 			if (channelBlacklisted == null || channelBlacklisted.items.length == 0) {
 				return Command.info([
@@ -192,7 +192,7 @@ class Blacklist extends Command {
 				]);
 			}
 
-			var action: DiscordBot.PunishmentTypes;
+			let action: DiscordBot.PunishmentTypes;
 
 			if (punishmentType == 'censor') {
 				action = { type: 'censor' };
@@ -221,8 +221,8 @@ class Blacklist extends Command {
 		if (!server.userHasPerm(message.member!, PERMS.IGNORE)) return false;
 
 
-		var opts1 = dealWithBlacklists(server, 'global', message.content);
-		var opts2 = dealWithBlacklists(server, message.channel.id, opts1.editedMessage);
+		let opts1 = dealWithBlacklists(server, 'global', message.content);
+		let opts2 = dealWithBlacklists(server, message.channel.id, opts1.editedMessage);
 
 		if (opts1.edited || opts2.edited) {
 			message.edit(opts2.editedMessage)
@@ -245,9 +245,9 @@ class Blacklist extends Command {
 }
 
 function dealWithBlacklists(server: DiscordServer, channel: string, message: string) {
-	var blacklisted = server.moderation.blacklisted[channel];
+	let blacklisted = server.moderation.blacklisted[channel];
 
-	var edited = message;
+	let edited = message;
 
 	if (blacklisted == null || blacklisted.items.length == 0) return { edited: false, editedMessage: edited, type: null };
 

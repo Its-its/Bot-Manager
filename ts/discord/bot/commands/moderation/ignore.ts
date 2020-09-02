@@ -12,7 +12,7 @@ const PERMS = {
 	USER: 'user'
 };
 
-for(var name in PERMS) {
+for(let name in PERMS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
@@ -44,13 +44,13 @@ class Ignore extends Command {
 			]);
 		}
 
-		var type = params.shift()!;
+		let type = params.shift()!;
 
 		switch (type) {
-			case 'list':
+			case 'list': {
 				if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Ignore');
 
-				var mod = server.moderation;
+				let mod = server.moderation;
 
 				return Command.success([
 					[
@@ -66,10 +66,12 @@ class Ignore extends Command {
 							mod.ignoredUsers.map(c => ' - <@' + c + '>').join('\n')
 					]
 				]);
-			case 'clear':
+			}
+
+			case 'clear': {
 				if (!this.hasPerms(message.member!, server, PERMS.CLEAR)) return Command.noPermsMessage('Ignore');
 
-				var clearType = (params.shift() || '').toLowerCase();
+				let clearType = (params.shift() || '').toLowerCase();
 
 				if (clearType == 'channel') {
 					server.clearIgnoreList('channel');
@@ -82,22 +84,24 @@ class Ignore extends Command {
 				server.save();
 
 				break;
-			case 'channel':
+			}
+
+			case 'channel': {
 				if (!this.hasPerms(message.member!, server, PERMS.CHANNEL)) return Command.noPermsMessage('Ignore');
 
-				var channelIdStr = params.shift();
+				let channelIdStr = params.shift();
 
 				if (channelIdStr == null) return Command.error([['Ignore', 'Invalid ID.']]);
 
-				var idType = server.idType(channelIdStr);
+				let idType = server.idType(channelIdStr);
 
 				if (idType != null && idType != 'channel') return Command.error([['Ignore', 'Not a valid channel.']]);
 
-				var id = server.strpToId(channelIdStr);
+				let id = server.strpToId(channelIdStr);
 
 				if (id == null) return Command.error([['Ignore', 'Invalid ID.']]);
 
-				var channel = message.guild!.channels.cache.get(id);
+				let channel = message.guild!.channels.cache.get(id);
 
 				if (channel != null) {
 					server.ignore('channel', id);
@@ -105,23 +109,24 @@ class Ignore extends Command {
 
 					return Command.success([['Ignore', 'Now ignoring channel "' + channel.name + '"']]);
 				} else return Command.error([['Ignore', 'Unable to find channel! Does it Exist?!']]);
+			}
 
-			case 'user':
+			case 'user': {
 				if (!this.hasPerms(message.member!, server, PERMS.USER)) return Command.noPermsMessage('Ignore');
 
-				var userIdStr = params.shift();
+				let userIdStr = params.shift();
 
 				if (userIdStr == null) return Command.error([['Ignore', 'Invalid Params.']]);
 
-				var idType = server.idType(userIdStr);
+				let idType = server.idType(userIdStr);
 
 				if (idType != null && idType != 'member') return Command.error([['Ignore', 'Not a valid User']]);
 
-				var id = server.strpToId(userIdStr);
+				let id = server.strpToId(userIdStr);
 
 				if (id == null) return Command.error([['Ignore', 'Invalid ID.']]);
 
-				var member = message.guild!.member(id);
+				let member = message.guild!.member(id);
 
 				if (member != null) {
 					server.ignore('member', id);
@@ -129,20 +134,21 @@ class Ignore extends Command {
 
 					return Command.success([['Ignore', 'Now ignoring user "' + member.displayName + '"']]);
 				} else return Command.error([['Ignore', 'Unable to find member! Does it Exist?!']]);
+			}
 
 			case 'role': break;
 
-			default:
-				var idType = server.idType(type);
+			default: {
+				let idType = server.idType(type);
 
 				if (idType == 'member') {
 					if (!this.hasPerms(message.member!, server, PERMS.USER)) return Command.noPermsMessage('Ignore');
 
-					var id = server.strpToId(type);
+					let id = server.strpToId(type);
 
 					if (id == null) return Command.error([['Ignore', 'Invalid ID.']]);
 
-					var member = message.guild!.member(id);
+					let member = message.guild!.member(id);
 
 					if (member != null) {
 						server.ignore('member', id);
@@ -153,11 +159,11 @@ class Ignore extends Command {
 				} else if (idType == 'channel') {
 					if (!this.hasPerms(message.member!, server, PERMS.CHANNEL)) return Command.noPermsMessage('Ignore');
 
-					var id = server.strpToId(type);
+					let id = server.strpToId(type);
 
 					if (id == null) return Command.error([['Ignore', 'Invalid ID.']]);
 
-					var channel = message.guild!.channels.cache.get(id);
+					let channel = message.guild!.channels.cache.get(id);
 
 					if (channel != null) {
 						server.ignore('channel', id);
@@ -168,6 +174,7 @@ class Ignore extends Command {
 				} else {
 					return Command.error([['Ignore', 'ID Type not valid.']]);
 				}
+			}
 		}
 
 		return Command.error([[

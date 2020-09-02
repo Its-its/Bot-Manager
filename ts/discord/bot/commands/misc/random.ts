@@ -24,7 +24,7 @@ class Random extends Command {
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
-		var item = params.shift();
+		let item = params.shift();
 
 		if (item == null) {
 			return Command.info([
@@ -46,7 +46,7 @@ class Random extends Command {
 			case 'color':
 				if (!this.hasPerms(message.member!, server, PERMS.COLOR)) return Command.noPermsMessage('Random');
 
-				var newColor = randomColor();
+				let newColor = randomColor();
 
 				return Command.defCall(parseInt(newColor), [
 					[
@@ -65,8 +65,8 @@ class Random extends Command {
 					params[0] = null;
 				}
 
-				var minNumber = strToNumber(params[0], 0);
-				var maxNumber = strToNumber(params[1], 100);
+				let minNumber = strToNumber(params[0], 0);
+				let maxNumber = strToNumber(params[1], 100);
 
 				if (minNumber >= maxNumber) {
 					return Command.error([
@@ -112,18 +112,18 @@ class Random extends Command {
 			case 'reaction':
 				if (!this.hasPerms(message.member!, server, PERMS.REACTION)) return Command.noPermsMessage('Random');
 
-				var discordChannelIdStr = params.shift()!;
-				var msgIdStripped = params.shift()!;
-				var reactionIdStripped = params.shift()!;
+				let discordChannelIdStr = params.shift()!;
+				let msgIdStripped = params.shift()!;
+				let reactionIdStripped = params.shift()!;
 
 				if (reactionIdStripped == null) return Command.error([[ 'Random', 'Invalid: random reaction <channel> <message id> <emoji id>' ]]);
 
-				var channelIdType = server.idType(discordChannelIdStr);
+				let channelIdType = server.idType(discordChannelIdStr);
 				if (channelIdType != null && channelIdType != 'channel') return Command.error([[ 'Random', 'Channel ID is invalid. Doesn\'t exist or not a channel.' ]]);
 
-				var channelIdStripped = server.strpToId(discordChannelIdStr)!;
+				let channelIdStripped = server.strpToId(discordChannelIdStr)!;
 
-				var discordChannel = <Discord.TextChannel>message.guild!.channels.cache.get(channelIdStripped);
+				let discordChannel = <Discord.TextChannel>message.guild!.channels.cache.get(channelIdStripped);
 				if (discordChannel == null || discordChannel.type != 'text') return Command.error([[ 'Random', 'Message ID is invalid. Doesn\'t exist or not a text channel.' ]]);
 
 
@@ -134,7 +134,7 @@ class Random extends Command {
 						return;
 					}
 
-					var messageReaction = reqDiscordMessage.reactions.cache.get(reactionIdStripped);
+					let messageReaction = reqDiscordMessage.reactions.cache.get(reactionIdStripped);
 
 					if (messageReaction == null) {
 						message.channel.send(Command.error([[ 'Random', 'Unable to find reaction (emoji) ID in message.' ]]));
@@ -199,24 +199,24 @@ function randomColor(): string {
 
 function strToNumber(reqStrNumber: string, defaultNumber: number): number {
 	if (reqStrNumber == null || reqStrNumber.length == 0) return defaultNumber;
-	var value = parseInt(reqStrNumber);
+	let value = parseInt(reqStrNumber);
 	return isNaN(value) ? defaultNumber : value;
 }
 
 
 function parseList(lines: string[], channel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel) {
-	var codeblockCount = getCodeblockCount(lines);
-	var lists: string[][] = [];
+	let codeblockCount = getCodeblockCount(lines);
+	let lists: string[][] = [];
 
-	var itemsNotCounted = 0;
+	let itemsNotCounted = 0;
 
 	if (codeblockCount != 0) {
 		// Invalid Code blocks. Not even.
 		if (codeblockCount % 2 != 0) return channel.send(Command.error([[ 'Random - Lines', 'Invalid code blocks. If you\'re not using code blocks please change "``" -> "\\`\\`"' ]]));
 
-		var currentLine: string;
-		var currnetPos = 0;
-		var insideCodeblocks = false;
+		let currentLine: string;
+		let currnetPos = 0;
+		let insideCodeblocks = false;
 
 		while((currentLine = lines[currnetPos++]) != null) {
 			if (currentLine.startsWith('``')) {
@@ -233,11 +233,11 @@ function parseList(lines: string[], channel: Discord.TextChannel | Discord.DMCha
 		lists.push(lines);
 	}
 
-	var compiledLists: [string, string][] = [];
-	var totalItemsFromLists = 0;
+	let compiledLists: [string, string][] = [];
+	let totalItemsFromLists = 0;
 
-	for(var i = 0; i < lists.length; i++) {
-		var list = lists[i];
+	for(let i = 0; i < lists.length; i++) {
+		let list = lists[i];
 
 		totalItemsFromLists += list.length;
 
@@ -259,10 +259,10 @@ function parseList(lines: string[], channel: Discord.TextChannel | Discord.DMCha
 }
 
 function getCodeblockCount(lines: string[]) {
-	var codeblocks = 0;
+	let codeblocks = 0;
 
-	var line: string;
-	var pos = 0;
+	let line: string;
+	let pos = 0;
 
 	while((line = lines[pos++]) != null) {
 		if (line.startsWith('``')) codeblocks++;

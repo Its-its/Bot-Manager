@@ -10,20 +10,20 @@ import { DiscordBot } from '@type-manager';
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMISSIONS.LIST)) return Command.noPermsMessage('Perms');
 
-	var cmdToDo = params.shift();
+	let cmdToDo = params.shift();
 
 	if (cmdToDo == null) return Command.error([['Permissions', 'Invalid Params']]);
 
 	if (cmdToDo == 'command') {
-		var commandName = params.shift();
+		let commandName = params.shift();
 		if (commandName == null) return Command.error([['Permissions', 'Please enter a command name.']]);
 
-		var commandClass = GlobalCommands.get(commandName);
+		let commandClass = GlobalCommands.get(commandName);
 		if (commandClass == null) return Command.error([['Permissions', 'Command doesn\'t exist.']]);
 
 		message.channel.send('**Permissions**\n```' + commandClass.perms.join('\n') + '```');
 	} else {
-		var type: string;
+		let type: string;
 
 		if (cmdToDo == 'group') {
 			type = 'group';
@@ -32,7 +32,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 			if (cmdToDo == null) return Command.error([['Permissions', 'Invalid Group Params']]);
 		} else {
-			var idType = server.idType(cmdToDo);
+			let idType = server.idType(cmdToDo);
 
 			if (idType == null) return Command.error([['Permissions', 'Invalid ID Type']]);
 
@@ -41,7 +41,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 		if (type == null) return Command.error([['Permissions', 'Unknown ID type.']]);
 
-		var permissions: DiscordBot.PermissionsUserOrRoles | DiscordBot.PermissionsGroup;
+		let permissions: DiscordBot.PermissionsUserOrRoles | DiscordBot.PermissionsGroup;
 
 		if (type == 'member') {
 			permissions = server.permissions.users[cmdToDo];

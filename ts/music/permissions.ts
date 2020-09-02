@@ -45,8 +45,8 @@ class PlaylistUserPerms {
 	}
 
 	add(...permissions: PermissionTypes[]) {
-		var total = 0;
-		for (var p = permissions.length - 1; p >= 0; p--) {
+		let total = 0;
+		for (let p = permissions.length - 1; p >= 0; p--) {
 			const perm = resolvePerms(permissions[p]);
 			total |= perm;
 		}
@@ -56,9 +56,9 @@ class PlaylistUserPerms {
 	}
 
 	remove(...permissions: PermissionTypes[]) {
-		var total = 0;
+		let total = 0;
 
-		for (var p = permissions.length - 1; p >= 0; p--) {
+		for (let p = permissions.length - 1; p >= 0; p--) {
 			const perm = resolvePerms(permissions[p]);
 			total |= perm;
 		}
@@ -105,9 +105,9 @@ function fieldHasPerm(bitfield: number, perms: number | number[]): boolean {
 }
 
 function group(...permissions: number[]) {
-	var total = 0;
+	let total = 0;
 
-	for (var p = permissions.length - 1; p >= 0; p--) {
+	for (let p = permissions.length - 1; p >= 0; p--) {
 		const perm = resolvePerms(permissions[p]);
 		total |= perm;
 	}

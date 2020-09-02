@@ -36,16 +36,16 @@ function shardListener() {
 		console.log(`[SHARD ${client.shard!.count}]:`, msg);
 
 		if (msg._event) {
-			var guild_id = msg._guild,
+			let guild_id = msg._guild,
 				channel_id = msg._channel,
 				sender_id = msg._sender,
 				search = msg.search;
 
-			var guild = client.guilds.cache.get(guild_id);
+			let guild = client.guilds.cache.get(guild_id);
 
 			if (guild == null) return;
 
-			var channel = <Discord.TextChannel>guild.channels.cache.get(channel_id);
+			let channel = <Discord.TextChannel>guild.channels.cache.get(channel_id);
 
 			switch(msg._event) {
 				case 'join':
@@ -87,8 +87,8 @@ function shardListener() {
 					}
 					break;
 				case 'queue':
-					var params = msg.params == null ? [] : msg.params;
-					var type = msg.queue_type;
+					let params = msg.params == null ? [] : msg.params;
+					let type = msg.queue_type;
 
 					switch(type) {
 						case 'playlist':
@@ -137,21 +137,21 @@ function shardListener() {
 								Queues.findOne({ server_id: guild_id }, (err, queue: CustomDocs.music.Queue) => {
 									if (queue.items.length == 0) return send(utils.errorMsg([['Music', 'Nothing Queued!']]));
 
-									var page = 1;
-									var maxItems = 5;
-									var maxPages = Math.ceil(queue.items.length/maxItems);
+									let page = 1;
+									let maxItems = 5;
+									let maxPages = Math.ceil(queue.items.length/maxItems);
 
 									if (params != null && params.length != 0) {
-										var parsed = parseInt(params);
+										let parsed = parseInt(params);
 										if (Number.isInteger(parsed)) page = parsed;
 									}
 
 									if (page > maxPages) page = maxPages;
 									if (page < 1) page = 1;
 
-									var pageSlice = (page - 1) * maxItems;
+									let pageSlice = (page - 1) * maxItems;
 
-									var itemsToSearch = queue.items.slice(pageSlice, pageSlice + maxItems).map(i => i.id);
+									let itemsToSearch = queue.items.slice(pageSlice, pageSlice + maxItems).map(i => i.id);
 
 									if (itemsToSearch.length == 0) return send(utils.errorMsg([['Music', 'No more items.']]));
 
@@ -165,7 +165,7 @@ function shardListener() {
 										getMusic(guild_id, music => {
 											if (music == null) return send(utils.errorMsg([['Music', 'Unable to find music.']]));
 
-											var fields: [string, string][] = [
+											let fields: [string, string][] = [
 												[
 													'Music',
 													[
@@ -227,10 +227,10 @@ client.on('channelUpdate', (oldChannel, newChannel: Discord.VoiceChannel) => {
 	// console.log('channelUpdate:', newChannel);
 
 	if (newChannel.type == 'voice' && newChannel.members.has(client.user!.id)) {
-		var member = newChannel.members.get(client.user!.id);
+		let member = newChannel.members.get(client.user!.id);
 
 		if (member != null && (member.voice.selfMute || member.voice.serverMute)) {
-			var connection = client.voice!.connections.get(newChannel.guild.id);
+			let connection = client.voice!.connections.get(newChannel.guild.id);
 			if (connection != null) {
 				if (connection.dispatcher) {
 					connection.dispatcher.once('end', (reason) => console.log('Ended: ' + reason));
@@ -253,13 +253,13 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
 	if (newMember.channel != null && check(newMember.channel)) return;
 
 	function check(channel: Discord.VoiceChannel) {
-		var isBotInside = channel.members.has(client.user!.id);
+		let isBotInside = channel.members.has(client.user!.id);
 
 		if (!isBotInside) return false;
 
-		var members = channel.members.array();
-		for(var i = 0; i < members.length; i++) {
-			var member = members[i];
+		let members = channel.members.array();
+		for(let i = 0; i < members.length; i++) {
+			let member = members[i];
 
 			if (!member.user.bot && !(member.voice.serverDeaf || member.voice.selfDeaf)) return true;
 		}
@@ -276,7 +276,7 @@ client.login(config.bot.discord.token);
 // INTERNAL
 
 function joinVoiceChannel(guildId: string, channelId: string, cb: (errMsg?: string) => any) {
-	var channel = client.channels.cache.get(channelId);
+	let channel = client.channels.cache.get(channelId);
 
 	if (channel != null && channel.type == 'voice') {
 		getMusic(guildId, music => {
@@ -297,7 +297,7 @@ function joinVoiceChannel(guildId: string, channelId: string, cb: (errMsg?: stri
 }
 
 function leaveVoiceChannel(guildId: string, cb: (errMsg?: string) => any) {
-	var connection = client.voice!.connections.get(guildId);
+	let connection = client.voice!.connections.get(guildId);
 
 	if (connection == null) return cb('Not in a voice channel!');
 
@@ -317,7 +317,7 @@ function joinChannel(voiceChannel: Discord.VoiceChannel, cb: (err?: string) => a
 }
 
 function isPlaying(guild_id: string): boolean {
-	var voice = client.voice!.connections.get(guild_id);
+	let voice = client.voice!.connections.get(guild_id);
 	return voice == null ? false : (voice.dispatcher == null ? false : !voice.dispatcher.destroyed)
 }
 
@@ -343,11 +343,11 @@ function playSong(
 	cb?: (err?: string, newSong?: DiscordBot.plugins.PlayedSong, lastSong?: DiscordBot.plugins.PlayedSong) => any,
 	trys = 0) {
 
-	var guild = client.guilds.cache.get(guild_id);
+	let guild = client.guilds.cache.get(guild_id);
 
 	if (guild == null) { if (cb != null) cb('Unknown Guild ID'); console.error('UNKNOWN GUILD ID!!!! - ' + guild_id); return false; }
 
-	var conn = client.voice!.connections.get(guild_id);
+	let conn = client.voice!.connections.get(guild_id);
 
 	if (conn != null) {
 		if (isPlaying(guild_id)) {
@@ -376,7 +376,7 @@ function playSong(
 
 
 		function play(music: Music, song: DiscordBot.plugins.SongGlobal) {
-			// var streamUrl = uidToStreamUrl(song.type, song.id);
+			// let streamUrl = uidToStreamUrl(song.type, song.id);
 
 			// if (streamUrl == null) {
 			// 	console.error('Invalid song type: ' + song.type + ' | ' + song.id;
@@ -386,27 +386,27 @@ function playSong(
 
 			const pass = new PassThrough();
 
-			var req = request.get(`http://${config.ytdl.full}/stream?id=${song.id}`);
+			let req = request.get(`http://${config.ytdl.full}/stream?id=${song.id}`);
 			req.pipe(pass);
 
-			var dispatcher = conn!.play(pass);
+			let dispatcher = conn!.play(pass);
 
 			req.on('response', () => {
 				console.log('Stream Info: ' + Date.now());
 
-				var lastSong = music.playing;
+				let lastSong = music.playing;
 				music.playing = Object.assign(song, { playedAt: Date.now() });
 
 				if (cb != null) cb(undefined, music.playing, lastSong);
 
-				var avatarURL = '';
+				let avatarURL = '';
 
 				if (music.playing.addedBy != null) {
-					var member = client.users.cache.get(music.playing.addedBy);
+					let member = client.users.cache.get(music.playing.addedBy);
 					if (member != null) avatarURL = member.avatarURL() || '';
 				}
 
-				var send = utils.generateFullSong(
+				let send = utils.generateFullSong(
 					'Now Playing', song.id, avatarURL,
 					song.title, song.thumbnail_url, song.length,
 					song.channel_id, new Date(song.published).toISOString());
@@ -460,10 +460,10 @@ function playSong(
 // Core
 
 function findAndPlay(guildId: string, search: string, cb: (errorMessage?: string, song?: DiscordBot.plugins.SongGlobal) => any) {
-	var val = /(?:(?:https?:\/\/)(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11})/g.exec(search);
+	let val = /(?:(?:https?:\/\/)(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11})/g.exec(search);
 
 	if (val != null) {
-		var id = val[1];
+		let id = val[1];
 
 		musicUtils.getSong(id, (errMsg, songs) => {
 			if (errMsg != null) return cb(errMsg);
@@ -515,7 +515,7 @@ function stopPlaying(guildId: string, cb: (errorMessage?: string) => any) {
 }
 
 function stopReason(guild_id: string, reason: 'stopped' | 'next' = 'stopped', cb?: (reason: string) => any): boolean {
-	var voiceConnection = client.voice!.connections.get(guild_id);
+	let voiceConnection = client.voice!.connections.get(guild_id);
 	if (voiceConnection == null) return false;
 	if (voiceConnection.dispatcher == null) return false;
 
@@ -530,7 +530,7 @@ function queueToggleRepeat(guildId: string, cb: (err?: string, value?: boolean) 
 	getMusic(guildId, music => {
 		if (music == null) return cb('Unable to find music');
 
-		var repeat = music.toggleQueueRepeat();
+		let repeat = music.toggleQueueRepeat();
 
 		sendToWebUI({
 			_guild: guildId,
@@ -592,10 +592,10 @@ function queueSong(guildId: string, memberId: string, uriOrSearch: string, cb: (
 	getMusic(guildId, music => {
 		if (music == null) return cb('Unable to find music');
 
-		var val = /(?:(?:https?:\/\/)(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11})/g.exec(uriOrSearch);
+		let val = /(?:(?:https?:\/\/)(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11})/g.exec(uriOrSearch);
 
 		if (val != null) {
-			var id = val[1];
+			let id = val[1];
 
 			musicUtils.getSong(id, (errMsg, songs) => {
 				if (errMsg != null) return cb(errMsg);

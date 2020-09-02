@@ -14,7 +14,7 @@ const PERMS = {
 	CHANNEL: 'channel'
 };
 
-for(var name in PERMS) {
+for(let name in PERMS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
@@ -51,7 +51,7 @@ class Prune extends Command {
 		let first_arg = params.shift()!;
 
 		if (first_arg != 'user' && first_arg != 'channel') {
-			var type = server.idType(first_arg);
+			let type = server.idType(first_arg);
 			if (type != null) {
 				if (type == 'channel') params = ['channel'].concat(params);
 				else if (type == 'member') params = ['user'].concat(params);
@@ -70,9 +70,9 @@ class Prune extends Command {
 			case 'channel':
 				if (!this.hasPerms(message.member!, server, PERMS.CHANNEL)) return Command.noPermsMessage('Prune');
 
-				var channelId = server.strpToId(params.shift());
-				var reason = params.shift();
-				var pruneLimit = 100;
+				let channelId = server.strpToId(params.shift());
+				let reason = params.shift();
+				let pruneLimit = 100;
 
 				if (reason == null) return Command.error([['Prune', 'Invalid Params']]);
 
@@ -85,7 +85,7 @@ class Prune extends Command {
 					if (pruneLimit > 100) pruneLimit = 100;
 				}
 
-				var channelBeingPruned = <Discord.TextChannel>message.guild!.channels.cache.get(channelId);
+				let channelBeingPruned = <Discord.TextChannel>message.guild!.channels.cache.get(channelId);
 
 				if (channelBeingPruned == null) return Command.error([[ 'Prune', 'Channel does not exist!' ]]);
 				if (channelBeingPruned.type != 'text') return Command.error([[ 'Prune', 'Channel must be text only!' ]]);
@@ -114,17 +114,17 @@ function fetchMessages(channel: Discord.TextChannel, limit: number, editMessage:
 	.then((messages) => {
 		messages = messages.filter(m => m.id != editMessage.id);
 
-		var filtered = messages.filter(m => Date.now() - m.createdTimestamp < maxBulkDeleteTime);
+		let filtered = messages.filter(m => Date.now() - m.createdTimestamp < maxBulkDeleteTime);
 
 		// TODO: Instead of replacing, append message?
 		editMessage.edit(Command.info([['Prune', 'Bulk Deleting messages.']]))
 		.then(editMessage => {
 			channel.bulkDelete(filtered)
 			.then(() => {
-				var deleted = filtered.size;
+				let deleted = filtered.size;
 
 				if (deleted != messages.size) {
-					var singles = messages.filter(m => Date.now() - m.createdTimestamp >= maxBulkDeleteTime);
+					let singles = messages.filter(m => Date.now() - m.createdTimestamp >= maxBulkDeleteTime);
 					singleDeletions(singles.array(), editMessage);
 					return;
 				}
@@ -159,12 +159,12 @@ function singleDeletions(messages: Discord.Message[], editMessage: Discord.Messa
 	editMessage.edit(Command.info([['Prune', 'Please wait...\nRemoving commands 1 by 1. Since they\'re older than 14 days they can\'t be bulk deleted.']]))
 	.then(() => doSingles(), e => console.error(e));
 
-	var pos = 0;
+	let pos = 0;
 
 	function doSingles() {
 		if (pos >= messages.length) return editMessage.edit(Command.success([['Prune', 'Deleted messages.']])).catch(e => console.error(e));
 
-		var message = messages[pos++];
+		let message = messages[pos++];
 
 		message.delete()
 		.then(() => setTimeout(() => doSingles(), 500),
@@ -186,7 +186,7 @@ function singleDeletions(messages: Discord.Message[], editMessage: Discord.Messa
 function recreateChannel(sendingChannel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel, channelBeingRecreated: Discord.TextChannel) {
 	send(sendingChannel, Command.success([['Prune', 'Cloning channel']]))
 	.then(m => {
-		var editMessage: Discord.Message;
+		let editMessage: Discord.Message;
 		if (Array.isArray(m)) editMessage = m[0];
 		else editMessage = m;
 		if (editMessage == null) return;
@@ -242,7 +242,7 @@ function recreateChannel(sendingChannel: Discord.TextChannel | Discord.DMChannel
 }
 
 function send(channel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel, str: any, cb?: (err?: Error, message?: Discord.Message | Discord.Message[]) => any) {
-	var msg = channel.send(new Discord.MessageEmbed(str.embed));
+	let msg = channel.send(new Discord.MessageEmbed(str.embed));
 
 	if (cb != null) msg.then(msg => cb(undefined, msg), e => cb(e));
 

@@ -21,7 +21,7 @@ const PERMS = {
 	MUTE_6M: 'max_6month'
 };
 
-for(var name in PERMS) {
+for(let name in PERMS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
@@ -82,21 +82,21 @@ class Mute extends Command {
 			]);
 		}
 
-		var userIdStr = params.shift();
+		let userIdStr = params.shift();
 		if (userIdStr == null) return Command.error([['Mute', 'Invalid Params.']]);
 
-		var userType = server.idType(userIdStr);
+		let userType = server.idType(userIdStr);
 		if (userType != 'member') return Command.error([[ 'Mute', 'Invalid args. Please refer to mute help.' ]]);
 
-		var discUserId = server.strpToId(userIdStr);
+		let discUserId = server.strpToId(userIdStr);
 		if (discUserId == null) return Command.error([['Mute', 'Invalid ID.']]);
 
-		var timeStr = params.shift();
+		let timeStr = params.shift();
 		if (timeStr == null) return Command.error([['Mute', 'Invalid Params.']]);
 
-		var reason = params.join(' ');
+		let reason = params.join(' ');
 
-		var seconds = parseTime(timeStr);
+		let seconds = parseTime(timeStr);
 
 		if (seconds == null) {
 			reason = timeStr + reason;
@@ -182,13 +182,13 @@ class Mute extends Command {
 }
 
 function parseTime(time: string): Nullable<number> {
-	var seconds = 0, lastGrabbed = '';
+	let seconds = 0, lastGrabbed = '';
 
-	for(var i = 0; i < time.length; i++) {
-		var p = time[i];
+	for(let i = 0; i < time.length; i++) {
+		let p = time[i];
 
 		if (p == 'y' || p == 'w' || p == 'd' || p == 'h' || p == 'm' || p == 's') {
-			var parsed = parseInt(lastGrabbed);
+			let parsed = parseInt(lastGrabbed);
 			if (isNaN(parsed)) return null;
 
 			if (p == 'y') {

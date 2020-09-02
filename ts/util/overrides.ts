@@ -4,7 +4,7 @@ function overrideEventListener<T extends EventEmitter>(item: T) {
 	const oldEmitter = item.emit;
 
 	item.emit = function() {
-		var emitArgs = arguments;
+		let emitArgs = arguments;
 
 		console.log('Event: ' + emitArgs[0]);
 

@@ -90,10 +90,10 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 				]);
 
 				page.listen(id_message => {
-					var type = server.idType(id_message);
+					let type = server.idType(id_message);
 					if (type != null && type != 'channel') return false;
 
-					var id = server.strpToId(id_message);
+					let id = server.strpToId(id_message);
 
 					if (id == null) return false;
 
@@ -122,10 +122,10 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 			]);
 
 			selector.listen(id_message => {
-				var type = server.idType(id_message);
+				let type = server.idType(id_message);
 				if (type != null && type != 'channel') return false;
 
-				var id = server.strpToId(id_message);
+				let id = server.strpToId(id_message);
 
 				if (id == null) return false;
 

@@ -11,22 +11,22 @@ class Help extends Command {
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
-		var commandList = (<{[str: string]: Command[]}>Commands.list());
-		var commandCategories: [string, string, number][] = Object.keys(commandList).map(c => [ c, c.toLowerCase(), commandList[c].length ]);
+		let commandList = (<{[str: string]: Command[]}>Commands.list());
+		let commandCategories: [string, string, number][] = Object.keys(commandList).map(c => [ c, c.toLowerCase(), commandList[c].length ]);
 
-		var commandTotal = 0;
+		let commandTotal = 0;
 
 		commandCategories.forEach(c => commandTotal += c[2]);
 
 		if (params.length == 0) {
-			var lines = [
+			let lines = [
 				'Total Commands: ',
 				'_Excluding custom commands._',
 				server.getPrefix() + 'help all'
 			];
 
-			for(var i = 0; i < commandCategories.length; i++) {
-				var cat = commandCategories[i];
+			for(let i = 0; i < commandCategories.length; i++) {
+				let cat = commandCategories[i];
 				if (cat[1] != 'owner') lines.push(server.getPrefix() + 'help ' + cat[1]);
 			}
 
@@ -40,24 +40,24 @@ class Help extends Command {
 			]);
 		}
 
-		var paramHelpName = params.shift()!.toLowerCase();
+		let paramHelpName = params.shift()!.toLowerCase();
 
 		if (paramHelpName == 'all') {
-			var each = [
+			let each = [
 				[
 					'**All Commands**',
 					commandTotal + ' commands.'
 				].join('\n')
 			];
 
-			var length = each[0].length;
+			let length = each[0].length;
 
-			for(var i = 0; i < commandCategories.length; i++) {
-				var categoryInfo = commandCategories[i];
+			for(let i = 0; i < commandCategories.length; i++) {
+				let categoryInfo = commandCategories[i];
 
 				if (categoryInfo[1] == 'owner') continue;
 
-				var commandsInCategory = commandList[categoryInfo[0]];
+				let commandsInCategory = commandList[categoryInfo[0]];
 
 				each.push([
 					`**${categoryInfo[0]}**`,
@@ -88,11 +88,11 @@ class Help extends Command {
 		if (paramHelpName == 'owner') return;
 
 		// List commands in a category
-		for(var i = 0; i < commandCategories.length; i++) {
-			var categoryInfo = commandCategories[i];
+		for(let i = 0; i < commandCategories.length; i++) {
+			let categoryInfo = commandCategories[i];
 
 			if (categoryInfo[1] == paramHelpName) {
-				var commandsInCategory = commandList[categoryInfo[0]];
+				let commandsInCategory = commandList[categoryInfo[0]];
 
 				message.channel.send(`**${categoryInfo[0]}**\n` +
 					Command.table(['Name', 'Perms', 'Description'],

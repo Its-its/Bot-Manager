@@ -21,7 +21,7 @@ const PERMISSIONS = {
 	DISABLE: 'disable'
 };
 
-for(var name in PERMISSIONS) {
+for(let name in PERMISSIONS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMISSIONS[name] = `${PERMISSIONS.MAIN}.${PERMISSIONS[name]}`;
 }
@@ -51,7 +51,7 @@ class Plugin extends Command {
 		}
 
 		switch (params.shift()) {
-			case 'list':
+			case 'list': {
 				if (!this.hasPerms(message.member!, server, PERMISSIONS.LIST)) return Command.noPermsMessage('Plugin');
 
 				return Command.table(['Name', 'Active'], plugins.map((name, i) => {
@@ -60,11 +60,12 @@ class Plugin extends Command {
 						(server.isPluginEnabled(name) ? 'Enabled' : 'Disabled')
 					]
 				}));
+			}
 
-			case 'enable':
+			case 'enable': {
 				if (!this.hasPerms(message.member!, server, PERMISSIONS.ENABLE)) return Command.noPermsMessage('Plugin');
 
-				var pluginName = params.shift();
+				let pluginName = params.shift();
 				if (pluginName == null) return Command.error([['Plugin', 'Invalid Params']]);
 
 				pluginName = pluginName.toLowerCase();
@@ -85,7 +86,7 @@ class Plugin extends Command {
 						[ 'Plugin', 'Enabled All Plugins' ]
 					]));
 				} else {
-					var indexOfPlugin = plugins.indexOf(pluginName);
+					let indexOfPlugin = plugins.indexOf(pluginName);
 
 					if (indexOfPlugin != -1) {
 						// @ts-ignore
@@ -112,11 +113,12 @@ class Plugin extends Command {
 				}
 
 				break;
+			}
 
-			case 'disable':
+			case 'disable': {
 				if (!this.hasPerms(message.member!, server, PERMISSIONS.DISABLE)) return Command.noPermsMessage('Plugin');
 
-				var pluginName = params.shift();
+				let pluginName = params.shift();
 				if (pluginName == null) return Command.error([['Plugin', 'Invalid Params']]);
 
 				if (pluginName == 'all') {
@@ -135,7 +137,7 @@ class Plugin extends Command {
 						[ 'Plugin', 'Disabled All Plugins' ]
 					]));
 				} else {
-					var indexOfPlugin = plugins.indexOf(pluginName);
+					let indexOfPlugin = plugins.indexOf(pluginName);
 
 					if (indexOfPlugin != -1) {
 						// @ts-ignore
@@ -163,19 +165,19 @@ class Plugin extends Command {
 				}
 
 				break;
-
+			}
 			// case 'perms':
 			// 	if (!server.userHasPerm(message.member!, 'commands.plugin.perms')) return;
 
 			// 	if (params.length != 2) return;
-			// 	var plugin = params.shift().toLowerCase();
-			// 	var setTo = params.shift().toLowerCase();
+			// 	let plugin = params.shift().toLowerCase();
+			// 	let setTo = params.shift().toLowerCase();
 
 			// 	if (plugins.indexOf(plugin) == -1) return Command.error([[ 'Plugin', 'Plugin ' + plugin + ' does not exist!' ]]);
 			// 	if (setTo != 'strict' && setTo != 'lenient') return Command.error([[ 'Plugin', 'Set to "strict" or "lenient"' ]]);
 
-			// 	var plug = server.plugins[plugin];
-			// 	var isStrict = (setTo == 'strict');
+			// 	let plug = server.plugins[plugin];
+			// 	let isStrict = (setTo == 'strict');
 
 			// 	if (plug == null) {
 			// 		if (!isStrict) {

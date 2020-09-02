@@ -26,12 +26,12 @@ class Uptime extends Command {
 		// let client = message.client;
 
 		// if (client.shard != null && client.shard.count != 0) {
-		// 	client.shard.broadcastEval('var opts = { id: this.shard.id, uptime: this.uptime }; opts;')
+		// 	client.shard.broadcastEval('let opts = { id: this.shard.id, uptime: this.uptime }; opts;')
 		// 	.then(shards => {
-		// 		var output = [];
+		// 		let output = [];
 
-		// 		for (var i = 0; i < shards.length; i++) {
-		// 			var shard = shards[i];
+		// 		for (let i = 0; i < shards.length; i++) {
+		// 			let shard = shards[i];
 		// 			output.push(`Shard ${shard.id}: Uptime ${Math.floor((client.uptime || 0)/(1000 * 60 * 60 * 24))} Hours`);
 		// 		}
 

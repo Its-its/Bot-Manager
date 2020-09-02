@@ -29,7 +29,7 @@ class Perms extends Command {
 		}
 
 
-		var comm = params.shift();
+		let comm = params.shift();
 
 		switch (comm) {
 			case 'list': return LocalCommands.list.call(params, server, message);

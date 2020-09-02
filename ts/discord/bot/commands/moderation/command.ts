@@ -12,7 +12,7 @@ const PERMS = {
 	REMOVE: 'remove'
 };
 
-for(var name in PERMS) {
+for(let name in PERMS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
@@ -40,25 +40,27 @@ class Comm extends Command {
 			]])
 		}
 
-		var cmdTypeCalled = params.shift()!;
+		let cmdTypeCalled = params.shift()!;
 
 		switch(cmdTypeCalled.toLowerCase()) {
-			case 'list':
+			case 'list': {
 				if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Command');
 
 				message.channel.send(Command.table([ 'PID', 'Alias' ], server.commands.map(c => [c.pid, c.alias.join(', ')])));
 
 				return;
-			case 'create':
+			}
+
+			case 'create': {
 				if (!this.hasPerms(message.member!, server, PERMS.CREATE)) return Command.noPermsMessage('Command');
 
-				var commandName = params.shift();
+				let commandName = params.shift();
 
 				if (commandName == null) return Command.error([['Command', 'Invalid Params.']]);
 
 				if (!/^[a-z0-9_]+$/i.test(commandName)) return Command.info([['Command', 'Command name must only have A-Z 0-9 _ in it.']]);
 
-				var onCalledMessage = params.join(' ');
+				let onCalledMessage = params.join(' ');
 
 				if (onCalledMessage.length == 0) return;
 
@@ -66,27 +68,32 @@ class Comm extends Command {
 					if (resp) server.save(() => message.reply(`Successfully created command "${commandName}"`));
 					else message.reply('Command with that name already exists!');
 				});
+
 				break;
-			case 'remove':
+			}
+
+			case 'remove': {
 				if (!this.hasPerms(message.member!, server, PERMS.REMOVE)) return Command.noPermsMessage('Command');
 
-				var commandName = params.shift();
+				let commandName = params.shift();
 
 				if (commandName == null) return Command.error([['Command', 'Invalid Params.']]);
 
 				if (!/^[a-z0-9_]+$/i.test(commandName)) return Command.info([['Command', 'Command name must only have A-Z 0-9 _ in it.']]);
 
-				var param = params.shift();
+				let param = params.shift();
 
 				if (param == null) return Command.error([['Command', 'Invalid Params.']]);
 
-				var paramId: Optional<number> = parseInt(param);
+				let paramId: Optional<number> = parseInt(param);
 
 				if (!Number.isInteger(paramId)) paramId = undefined;
 
 				server.removeCommand(commandName, paramId);
 				server.save(() => message.reply(`Successfully removed command "${commandName}"`));
+
 				break;
+			}
 		}
 	}
 }

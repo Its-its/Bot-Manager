@@ -65,13 +65,13 @@ client.on('ready', () => {
 	setInterval(() => {
 		logger.info('Statistics');
 
-		var statistics_copy = Object.assign({}, statistics);
+		let statistics_copy = Object.assign({}, statistics);
 
 		// Reset stats since we now have a copy of it and it gets added to the doc.
 		statistics = defaultStats();
 
 
-		var date = new Date();
+		let date = new Date();
 		date.setUTCHours(0);
 		date.setUTCSeconds(0);
 		date.setUTCMinutes(0);
@@ -171,7 +171,7 @@ client.on('guildUpdate', (oldGuild, newGuild) => {
 	guildClient.get(newGuild.id, server => {
 		if (server == null) return;
 
-		var edited = false;
+		let edited = false;
 
 		if (server.region.length != newGuild.region.length || server.region != newGuild.region) {
 			server.region = newGuild.region;
@@ -244,7 +244,7 @@ client.on('guildCreate', guild => {
 				DiscordServers.findOne({ server_id: guild.id }, (err, server) => {
 					if (err != null) logger.error('DiscordServers:', err);
 
-					var newServer = (server == null);
+					let newServer = (server == null);
 
 					// Server exists? Update DB, update and add to redis.
 					if (!newServer) {
@@ -331,7 +331,7 @@ client.on('channelDelete', channel => {
 
 			BlacklistCmd.onChannelDelete(<Discord.GuildChannel>channel, server);
 
-			var needsSaving = false;
+			let needsSaving = false;
 
 			if (server.channelIgnored(channel.id)) {
 				server.removeIgnore('channel', channel.id);
@@ -404,11 +404,11 @@ client.on('guildMemberUpdate', (oldUser, newUser) => {
 				if (server == null) return;
 
 				if (newUser.roles.cache.size < oldUser.roles.cache.size) {
-					var removed = oldUser.roles.cache.filter(role => !newUser.roles.cache.has(role.id));
+					let removed = oldUser.roles.cache.filter(role => !newUser.roles.cache.has(role.id));
 					PunishmentCmd.onGuildMemberRoleRemove(newUser, removed.array(), server);
 					// logger.info(removed);
 				} else {
-					var added = newUser.roles.cache.filter(role => !oldUser.roles.cache.has(role.id));
+					let added = newUser.roles.cache.filter(role => !oldUser.roles.cache.has(role.id));
 					// logger.info(added);
 				}
 			});
@@ -420,9 +420,9 @@ client.on('guildMemberUpdate', (oldUser, newUser) => {
 
 
 function uniqueID(size: number): string {
-	var bloc = [];
+	let bloc = [];
 
-	for(var i = 0; i < size; i++)
+	for(let i = 0; i < size; i++)
 		bloc.push(Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1));
 
 	return bloc.join('');
@@ -497,15 +497,15 @@ setInterval(() => {
 				return;
 			}
 
-			var newFeeds: {
+			let newFeeds: {
 				feed: CustomDocs.discord.DiscordTwitterFeeds<CustomDocs.global.TwitterFeeds>,
 				item: CustomDocs.global.TwitterFeedsItem
 			}[] = [];
 
-			var feedItems: { [name: string]: any } = {};
+			let feedItems: { [name: string]: any } = {};
 
-			for(var i = 0; i < doc.feeds.length; i++) {
-				var feeds = doc.feeds[i];
+			for(let i = 0; i < doc.feeds.length; i++) {
+				let feeds = doc.feeds[i];
 
 				feeds.feed.items.forEach(item => {
 					if (feeds.items.indexOf(item.id) == -1) {
@@ -523,12 +523,12 @@ setInterval(() => {
 			}
 
 			if (newFeeds.length != 0) {
-				var guild = client.guilds.cache.get(doc.guild_id);
+				let guild = client.guilds.cache.get(doc.guild_id);
 
 				if (guild == null) {
 					// Remove
 					DiscordModelTwitter.find({ guild_id: doc.guild_id }, (err, feeds) => {
-						var rssIds: string[] = [];
+						let rssIds: string[] = [];
 
 						feeds.map(f => f.feeds.map(f => f.feed))
 						.forEach(f => rssIds = rssIds.concat(f.map(o => o.toHexString())));
@@ -542,7 +542,7 @@ setInterval(() => {
 					return;
 				}
 
-				var channel = <Discord.TextChannel>guild.channels.cache.get(doc.channel_id);
+				let channel = <Discord.TextChannel>guild.channels.cache.get(doc.channel_id);
 
 				if (channel == null) {
 					// TODO: Disable
@@ -551,7 +551,7 @@ setInterval(() => {
 				}
 
 				newFeeds.reverse().forEach(opts => {
-					var { item, feed } = opts;
+					let { item, feed } = opts;
 					channel.send(util.compileFormat(feed.format == null ? util.DEFAULT_TWITTER_FORMAT : feed.format, {
 						text: item.text,
 						link: item.link
@@ -587,15 +587,15 @@ setInterval(() => {
 				return;
 			}
 
-			var newFeeds: {
+			let newFeeds: {
 				feed: CustomDocs.discord.DiscordRssFeeds<CustomDocs.global.RSSFeeds>,
 				item: CustomDocs.global.RSSFeedsItem
 			}[] = [];
 
-			var feedItems: { [name: string]: any } = {};
+			let feedItems: { [name: string]: any } = {};
 
-			for(var i = 0; i < doc.feeds.length; i++) {
-				var feeds = doc.feeds[i];
+			for(let i = 0; i < doc.feeds.length; i++) {
+				let feeds = doc.feeds[i];
 
 				feeds.feed.items.forEach(item => {
 					if (feeds.items.indexOf(item.id) == -1) {
@@ -613,12 +613,12 @@ setInterval(() => {
 			}
 
 			if (newFeeds.length != 0) {
-				var guild = client.guilds.cache.get(doc.guild_id);
+				let guild = client.guilds.cache.get(doc.guild_id);
 
 				if (guild == null) {
 					// Remove
 					DiscordModelFeed.find({ guild_id: doc.guild_id }, (err, feeds) => {
-						var rssIds: string[] = [];
+						let rssIds: string[] = [];
 
 						feeds.map(f => f.feeds.map(f => f.feed))
 						.forEach(f => rssIds = rssIds.concat(f.map(o => o.toHexString())));
@@ -632,7 +632,7 @@ setInterval(() => {
 					return;
 				}
 
-				var channel = <Discord.TextChannel>guild.channels.cache.get(doc.channel_id);
+				let channel = <Discord.TextChannel>guild.channels.cache.get(doc.channel_id);
 
 				if (channel == null) {
 					// TODO: Disable
@@ -642,7 +642,7 @@ setInterval(() => {
 
 				newFeeds.reverse()
 				.forEach(opts => {
-					var { item, feed } = opts;
+					let { item, feed } = opts;
 					channel.send(util.compileFormat(feed.format == null ? util.DEFAULT_RSS_FORMAT : feed.format, {
 						title: item.title,
 						date: item.date.toString(),
@@ -675,15 +675,15 @@ setInterval(() => {
 		console.log('Calling ' + items.length + ' intervals.');
 
 		async.every(items, (item, cb) => {
-			var guild = client.guilds.cache.get(item.guild_id);
+			let guild = client.guilds.cache.get(item.guild_id);
 
 			if (guild != null) {
-				var channel = <Discord.TextChannel>guild.channels.cache.get(item.channel_id);
+				let channel = <Discord.TextChannel>guild.channels.cache.get(item.channel_id);
 
 				if (channel != null) {
 					// try {
 						// if (item.events.onCall) {
-						// 	var ret = Function(item.events.onCall)
+						// 	let ret = Function(item.events.onCall)
 						// 	.call({
 						// 		message: item.message,
 						// 		nextCall: item.nextCall,

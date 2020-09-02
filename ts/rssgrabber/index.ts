@@ -62,13 +62,13 @@ setInterval(() => {
 				function(err, data: Twit.Twitter.Status[]) {
 					if (err != null) return console.error(err);
 
-					var newItems = utils.twitterStatusesToDB(data);
-					var oldIds = doc.items.map(i => i.id);
+					let newItems = utils.twitterStatusesToDB(data);
+					let oldIds = doc.items.map(i => i.id);
 
-					var hasNew = false;
+					let hasNew = false;
 
-					for(var i = 0; i < newItems.length; i++) {
-						var index = oldIds.indexOf(newItems[i].id);
+					for(let i = 0; i < newItems.length; i++) {
+						let index = oldIds.indexOf(newItems[i].id);
 						// TODO: Ensure correct.
 						if (index == -1) {
 							hasNew = true;
@@ -102,15 +102,15 @@ setInterval(() => {
 			utils.getFeedItems(doc.url, null, (err, items) => {
 				if (err != null || items == null) return console.error(err);
 
-				var newItems = utils.articleItemsToDB(items);
-				var oldIds = doc.items.map(i => i.id);
+				let newItems = utils.articleItemsToDB(items);
+				let oldIds = doc.items.map(i => i.id);
 
 				console.log(doc.url + ' - ' + newItems.length + '/' + items.length);
 
-				var hasNew = false;
+				let hasNew = false;
 
-				for(var i = 0; i < newItems.length; i++) {
-					var index = oldIds.indexOf(newItems[i].id);
+				for(let i = 0; i < newItems.length; i++) {
+					let index = oldIds.indexOf(newItems[i].id);
 					// TODO: Ensure correct.
 					if (index == -1 && newItems[i].date.getTime() >= doc.last_called.getTime() - (1000 * 60 * 60)/*Date.now() * TWO_DAYS*/) {
 						hasNew = true;

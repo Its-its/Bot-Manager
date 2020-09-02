@@ -17,7 +17,7 @@ const PERMISSIONS = {
 	CHANNELS: 'channels'
 };
 
-for(var name in PERMISSIONS) {
+for(let name in PERMISSIONS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMISSIONS[name] = `${PERMISSIONS.MAIN}.${PERMISSIONS[name]}`;
 }

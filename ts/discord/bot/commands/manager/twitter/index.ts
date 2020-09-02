@@ -9,7 +9,7 @@ const PERMS = {
 	MAIN: 'commands.twitter'
 };
 
-for(var name in PERMS) {
+for(let name in PERMS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
@@ -23,7 +23,7 @@ class Twitter extends Command {
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
-		var callType = params.shift();
+		let callType = params.shift();
 
 		if (callType == null || callType.toLowerCase() == 'help') return comm.Help.call(params, server, message);
 

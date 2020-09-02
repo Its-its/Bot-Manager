@@ -7,7 +7,7 @@ import { sendQueue } from '@discord/music/plugins/music';
 import PERMS = require('../perms');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	var paramToDo = (params.shift() || 'list').toLowerCase();
+	let paramToDo = (params.shift() || 'list').toLowerCase();
 
 	if (['list', 'add', 'playlist', 'repeat', 'shuffle', 'clear', 'remove'].indexOf(paramToDo) == -1) return Command.error([['Music', 'Not a valid option: ' + paramToDo]]);
 

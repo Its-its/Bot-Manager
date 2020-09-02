@@ -134,7 +134,7 @@ class Music implements DiscordBot.plugins.Music {
 		}, (err, queue: any) => {
 			if (queue == null) return cb('WHOOPS! I wasn\'t able to find the queue! My fault.');
 
-			for(var i = 0; i < queue.items.length; i++) {
+			for(let i = 0; i < queue.items.length; i++) {
 				if (queue.items[i].id == song.id) return cb('Item already exists in queue.');
 			}
 
@@ -153,7 +153,7 @@ class Music implements DiscordBot.plugins.Music {
 			if (err != null) return cb('An Error Occured trying to query the Database.');
 			if (queue == null) return cb('Queue not found!');
 
-			for(var i = 0; i < queue.items.length; i++) {
+			for(let i = 0; i < queue.items.length; i++) {
 				if (queue.items[i].id == id) {
 					queue.items.splice(i, 1);
 					return queue.save((err: any) => cb(err));
@@ -171,7 +171,7 @@ class Music implements DiscordBot.plugins.Music {
 				return cb();
 			}
 
-			var item = (!this.repeatSong ? queue.items.shift() : queue.items[0]);
+			let item = (!this.repeatSong ? queue.items.shift() : queue.items[0]);
 
 			if (item == null) return cb();
 
@@ -234,7 +234,7 @@ class Music implements DiscordBot.plugins.Music {
 	// }
 
 	public sendMessageFromGuild(guild: Discord.Guild, message: any) {
-		var channel = <Discord.TextChannel>guild.channels.cache.get(this.lastTextChannelId);
+		let channel = <Discord.TextChannel>guild.channels.cache.get(this.lastTextChannelId);
 		if (channel == null) return console.error('Channel is none existent. - ' + this.lastTextChannelId);
 		channel.send(message)
 		.catch(e => console.error(e));
@@ -277,9 +277,9 @@ function getMusic(serverId: string,  cb: (music?: Music) => any) {
 }
 
 function uniqueID(size: number): string {
-	var bloc = [];
+	let bloc = [];
 
-	for(var i = 0; i < size; i++)
+	for(let i = 0; i < size; i++)
 		bloc.push(Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1));
 
 	return bloc.join('');

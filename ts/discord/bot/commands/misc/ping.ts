@@ -10,7 +10,7 @@ const PERMS = {
 	MAIN: 'commands.ping'
 };
 
-for(var name in PERMS) {
+for(let name in PERMS) {
 	// @ts-ignore
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
@@ -31,12 +31,12 @@ class Ping extends Command {
 		// let client = message.client;
 
 		// if (client.shard != null && client.shard.count != 0) {
-		// 	client.shard.broadcastEval('var opts = { id: this.shard.id, guildCount: this.guilds.size, status: this.status }; opts;')
+		// 	client.shard.broadcastEval('let opts = { id: this.shard.id, guildCount: this.guilds.size, status: this.status }; opts;')
 		// 	.then(shards => {
-		// 		var output = [];
+		// 		let output = [];
 
-		// 		for (var i = 0; i < shards.length; i++) {
-		// 			var shard = shards[i];
+		// 		for (let i = 0; i < shards.length; i++) {
+		// 			let shard = shards[i];
 		// 			output.push(`Shard ${shard.id}: Pings ${shard.pings.join(',')}`);
 		// 		}
 

@@ -10,7 +10,7 @@ import PERMS = require('../perms');
 function call(_params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMS.INFO)) return Command.noPermsMessage('Music');
 
-	var items: [string, string][] = [];
+	let items: [string, string][] = [];
 
 	guildClient.getMusic(message.guild!.id, (music) => {
 		if (music == null) return message.channel.send(Command.error([['Music', 'Unable to find Music.']]));

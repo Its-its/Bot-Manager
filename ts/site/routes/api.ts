@@ -101,7 +101,7 @@ type CorrectedArgs = {
 function ensure(opts: EnsureOpts) {
 	const corrected: CorrectedArgs[][] = [];
 
-	for (var key in opts) corrected.push(correctOpts(key, opts[key]));
+	for (let key in opts) corrected.push(correctOpts(key, opts[key]));
 
 	function correctOpts(key: Nullable<string>, item: EnsureArgsTypes | EnsureArgsTypes[]): CorrectedArgs[] {
 		// Type 'CorrectedArgs[][]' is not assignable to type 'CorrectedArgs[]'.
@@ -123,7 +123,7 @@ function ensure(opts: EnsureOpts) {
 				}
 			];
 		} else {
-			var obj = Object.assign({
+			let obj = Object.assign({
 				fieldLocation: 'body',
 				fieldName: key,
 				required: false,
@@ -139,17 +139,17 @@ function ensure(opts: EnsureOpts) {
 	}
 
 	function verifyCorrectValue(item: EnsureItems): { value?: any, err?: any; } {
-		var value = item.value;
+		let value = item.value;
 
 		// Array Object...
 		if (Array.isArray(item.type)) {
-			var errorMsg = verifyCorrectValue(Object.assign({}, item, { type: 'array' }));
+			let errorMsg = verifyCorrectValue(Object.assign({}, item, { type: 'array' }));
 			if (errorMsg.err != null) return errorMsg;
 
-			var fixed = [];
+			let fixed = [];
 
-			for(var i = 0; i < errorMsg.value.length; i++) {
-				var msg = verifyCorrectValue(Object.assign({}, item.type[0], { value: errorMsg.value[i] }));
+			for(let i = 0; i < errorMsg.value.length; i++) {
+				let msg = verifyCorrectValue(Object.assign({}, item.type[0], { value: errorMsg.value[i] }));
 				if (msg.err != null) return msg;
 				fixed.push(msg.value);
 			}
@@ -197,13 +197,13 @@ function ensure(opts: EnsureOpts) {
 	}
 
 	return function(req: express.Request, res: express.Response, next: express.NextFunction) {
-		for(var i = 0; i < corrected.length; i++) {
-			var items = corrected[i];
+		for(let i = 0; i < corrected.length; i++) {
+			let items = corrected[i];
 
-			var subErrorMsg = [];
+			let subErrorMsg = [];
 
-			for(var s = 0; s < items.length; s++) {
-				var item = items[s];
+			for(let s = 0; s < items.length; s++) {
+				let item = items[s];
 
 				item.value = req[item.fieldLocation!][item.fieldName!];
 
@@ -214,7 +214,7 @@ function ensure(opts: EnsureOpts) {
 					continue;
 				}
 
-				var returnMsg = verifyCorrectValue(item);
+				let returnMsg = verifyCorrectValue(item);
 
 				if (returnMsg.err != null) {
 					subErrorMsg.push(returnMsg.err.replace('%s', item.fieldName));
@@ -261,7 +261,7 @@ function refreshToken(refresh_token: string, cb: (err?: any, response?: TokenRes
 			if (err != null) return cb(err);
 
 			try {
-				var parsed = JSON.parse(body);
+				let parsed = JSON.parse(body);
 
 				if (parsed.error != null) cb(parsed.error_description);
 				else cb(undefined, parsed);
@@ -273,7 +273,7 @@ function refreshToken(refresh_token: string, cb: (err?: any, response?: TokenRes
 }
 
 function registerBot(req: express.Request, res: express.Response, next: express.NextFunction) {
-	var botId = (req.params.bid || req.body.bid);
+	let botId = (req.params.bid || req.body.bid);
 
 	if (botId == null) return res.status(500).send({ error: 'Bot doesn\'t exist.' });
 
@@ -295,9 +295,9 @@ function apiBots() {
 
 	bots.post('/status', registerBot, (req, res) => {
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 		// @ts-ignore
-		var user: CustomDocs.web.UsersDocument = req.user;
+		let user: CustomDocs.web.UsersDocument = req.user;
 
 		res.send({
 			data: {
@@ -343,7 +343,7 @@ function apiBots() {
 			// TODO: Disable.
 
 			// @ts-ignore
-			var user: CustomDocs.web.UsersDocument = req.user;
+			let user: CustomDocs.web.UsersDocument = req.user;
 
 			Users.updateOne({ _id: user._id }, { $inc: { 'bots.amount': -1 } })
 			.exec(() => res.send({ res: 'success' }));
@@ -358,15 +358,15 @@ function apiBots() {
 	// Get All Bot Commands
 	bots.get('/:bid/commands', registerBot, (req, res) => {
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 
 		DiscordServers.findOne({ _id: bot.botId })
 		.populate('command_ids')
 		.exec((err, doc: CustomDocs.discord.ServersPopulatedDocument) => {
 			if (err != null) return res.send({ error: err });
 
-			var discordServer: DiscordBot.ServerDocument = JSON.parse(doc.server);
-			var disabledCommands = discordServer.moderation.disabledCustomCommands || [];
+			let discordServer: DiscordBot.ServerDocument = JSON.parse(doc.server);
+			let disabledCommands = discordServer.moderation.disabledCustomCommands || [];
 
 			res.send({
 				data: doc.command_ids.map(c => {
@@ -402,12 +402,12 @@ function apiBots() {
 			$max: 2
 		}
 	}), registerBot, (req, res) => {
-		var { bid, cid } = req.params;
+		let { bid, cid } = req.params;
 
-		var { alias, enabled, params } = req.body;
+		let { alias, enabled, params } = req.body;
 
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 
 		DiscordServers.findOne({ _id: bot.botId })
 		.populate('command_ids')
@@ -415,15 +415,15 @@ function apiBots() {
 			if (err != null) return res.status(500).send({ error: err });
 			if (doc == null) return res.status(500).send({ error: 'Unable to find Discord Server.' });
 
-			var commands = doc.command_ids;
+			let commands = doc.command_ids;
 
 			if (commands.length >= 20) return res.status(500).send({ error: 'Maximum Commands used in bot.' })
 
-			for(var i = 0; i < commands.length; i++) {
-				var cmd = commands[i];
+			for(let i = 0; i < commands.length; i++) {
+				let cmd = commands[i];
 
 				// New Command Alias's
-				for(var a = 0; a < alias.length; a++) {
+				for(let a = 0; a < alias.length; a++) {
 					if (cmd.alias.indexOf(alias[a].toLowerCase()) != -1) {
 						return res.send({ error: 'A Command with one or more of those alias\'s exists!' });
 					}
@@ -516,12 +516,12 @@ function apiBots() {
 			}
 		]
 	}), registerBot, (req, res) => {
-		var { bid, cid } = req.params;
+		let { bid, cid } = req.params;
 
-		var { alias, enabled, params } = req.body;
+		let { alias, enabled, params } = req.body;
 
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 
 		DiscordServers.findOne({ _id: bot.botId }, (err, server) => {
 			if (err != null) {
@@ -549,9 +549,9 @@ function apiBots() {
 
 				if (comm == null) return res.status(500).send({ error: 'Command does not exist!' });
 
-				var discordServer: DiscordBot.ServerDocument = JSON.parse(server.server);
+				let discordServer: DiscordBot.ServerDocument = JSON.parse(server.server);
 
-				var disabledCommands = discordServer.moderation.disabledCustomCommands || [];
+				let disabledCommands = discordServer.moderation.disabledCustomCommands || [];
 
 				if (!enabled && disabledCommands.indexOf(cid) == -1) {
 					getDiscordServer(server.server_id, server => {
@@ -573,7 +573,7 @@ function apiBots() {
 							server.moderation.disabledCustomCommands = [];
 						}
 
-						var indexOf = server.moderation.disabledCustomCommands.indexOf(cid);
+						let indexOf = server.moderation.disabledCustomCommands.indexOf(cid);
 						if (indexOf != -1) server.moderation.disabledCustomCommands.splice(indexOf, 1);
 
 						server.save();
@@ -593,10 +593,10 @@ function apiBots() {
 
 	// Delete Command from Bot
 	bots.delete('/:bid/commands/:cid', registerBot, (req, res) => {
-		var { bid, cid } = req.params;
+		let { bid, cid } = req.params;
 
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 
 		DiscordServers.findOne({ _id: bot.botId }, (err, server) => {
 			if (err != null) {
@@ -623,7 +623,7 @@ function apiBots() {
 						server.moderation.disabledCustomCommands = [];
 					}
 
-					var indexOf = server.moderation.disabledCustomCommands.indexOf(cid);
+					let indexOf = server.moderation.disabledCustomCommands.indexOf(cid);
 					if (indexOf != -1) server.moderation.disabledCustomCommands.splice(indexOf, 1);
 
 					if (comm.alias[0] != null) server.removeCommand(comm.alias[0]);
@@ -631,7 +631,7 @@ function apiBots() {
 					server.save();
 				});
 
-				var index = server.command_ids.indexOf(comm._id);
+				let index = server.command_ids.indexOf(comm._id);
 				if (index != -1) server.command_ids.splice(index, 1);
 
 				server.save(() => {
@@ -649,7 +649,7 @@ function apiBots() {
 	// Get All Bot Phrases
 	bots.get('/:bid/phrases', registerBot, (req, res) => {
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 
 		DiscordServers.findOne({ _id: bot.botId })
 		.populate('phrase_ids')
@@ -694,12 +694,12 @@ function apiBots() {
 			default: true
 		}
 	}), registerBot, (req, res) => {
-		var { bid, cid } = req.params;
+		let { bid, cid } = req.params;
 
-		var { enabled, ignoreCase, phrases, responses } = req.body;
+		let { enabled, ignoreCase, phrases, responses } = req.body;
 
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 
 		DiscordServers.findOne({ _id: bot.botId })
 		.populate('phrase_ids')
@@ -707,15 +707,15 @@ function apiBots() {
 			if (err != null) return res.status(500).send({ error: err });
 			if (doc == null) return res.status(500).send({ error: 'Unable to find Discord Server.' });
 
-			var phrasesPopulated = doc.phrase_ids;
+			let phrasesPopulated = doc.phrase_ids;
 
 			if (phrasesPopulated.length >= 20) return res.status(500).send({ error: 'Maximum Commands used in bot.' })
 
-			for(var i = 0; i < phrasesPopulated.length; i++) {
-				var cmd = phrasesPopulated[i];
+			for(let i = 0; i < phrasesPopulated.length; i++) {
+				let cmd = phrasesPopulated[i];
 
 				// New Command Alias's
-				for(var a = 0; a < phrases.length; a++) {
+				for(let a = 0; a < phrases.length; a++) {
 					if (cmd.phrases.indexOf(phrases[a].toLowerCase()) != -1) {
 						return res.send({ error: 'A Command with one or more of those alias\'s exists!' });
 					}
@@ -778,14 +778,14 @@ function apiBots() {
 	});
 
 	// bots.put('/:bid/phrases/:pid', registerBot, (req, res) => {
-	// 	var { pid } = req.params;
+	// 	let { pid } = req.params;
 	// });
 
 	bots.delete('/:bid/phrases/:pid', registerBot, (req, res) => {
-		var { pid } = req.params;
+		let { pid } = req.params;
 
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 
 		DiscordServers.findOne({ _id: bot.botId }, (err, server) => {
 			if (err != null) {
@@ -805,7 +805,7 @@ function apiBots() {
 
 				if (phr == null) return res.status(500).send({ error: 'Command does not exist!' });
 
-				var index = server.phrase_ids.indexOf(phr._id);
+				let index = server.phrase_ids.indexOf(phr._id);
 				if (index != -1) server.phrase_ids.splice(index, 1);
 
 				server.save(() => {
@@ -824,7 +824,7 @@ function apiBots() {
 	// Get All Bot Ranks
 	bots.get('/:bid/ranks', registerBot, (req, res) => {
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 
 		DiscordServers.findOne({ _id: bot.botId })
 		.exec((err, doc: CustomDocs.discord.ServersDocument) => {
@@ -832,7 +832,7 @@ function apiBots() {
 
 			getDiscordServer(doc.server_id, server => {
 				if (server == null) {
-					var jsonServer: DiscordBot.ServerOptions = JSON.parse(doc.server);
+					let jsonServer: DiscordBot.ServerOptions = JSON.parse(doc.server);
 
 					res.send({
 						data: jsonServer.ranks || []
@@ -852,14 +852,14 @@ function apiBots() {
 	// });
 
 	// bots.put('/:bid/ranks/:name', registerBot, (req, res) => {
-	// 	var { name } = req.params;
+	// 	let { name } = req.params;
 	// });
 
 	bots.delete('/:bid/ranks/:name', ensure({ name: { type: 'string', $min: 1 } }), registerBot, (req, res) => {
-		var { name } = req.params;
+		let { name } = req.params;
 
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 
 		DiscordServers.findOne({ _id: bot.botId })
 		.exec((err, doc: CustomDocs.discord.ServersDocument) => {
@@ -867,11 +867,11 @@ function apiBots() {
 
 			getDiscordServer(doc.server_id, server => {
 				if (server == null) {
-					var jsonServer: DiscordBot.ServerOptions = JSON.parse(doc.server);
+					let jsonServer: DiscordBot.ServerOptions = JSON.parse(doc.server);
 
-					var ranks = jsonServer.ranks || [];
+					let ranks = jsonServer.ranks || [];
 
-					var indexOf = ranks.indexOf(name);
+					let indexOf = ranks.indexOf(name);
 					if (indexOf != -1) ranks.splice(indexOf, 1);
 
 					DiscordServers.updateOne({ _id: bot.botId }, { $set: { server: JSON.stringify(jsonServer) } }).exec();
@@ -898,7 +898,7 @@ function apiBots() {
 	// Get All Bot Roles
 	bots.get('/:bid/roles', registerBot, (req, res) => {
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 
 		DiscordServers.findOne({ _id: bot.botId })
 		.exec((err, doc: CustomDocs.discord.ServersDocument) => {
@@ -906,7 +906,7 @@ function apiBots() {
 
 			getDiscordServer(doc.server_id, server => {
 				if (server == null) {
-					var jsonServer: DiscordBot.ServerOptions = JSON.parse(doc.server);
+					let jsonServer: DiscordBot.ServerOptions = JSON.parse(doc.server);
 
 					res.send({
 						data: jsonServer.roles || []
@@ -923,18 +923,18 @@ function apiBots() {
 	});
 
 	// bots.post('/:bid/roles', registerBot, (req, res) => {
-	// 	var { bid } = req.params;
+	// 	let { bid } = req.params;
 	// });
 
 	// bots.put('/:bid/roles/:rid', registerBot, (req, res) => {
-	// 	var { rid } = req.params;
+	// 	let { rid } = req.params;
 	// });
 
 	bots.delete('/:bid/roles/:pid', registerBot, (req, res) => {
-		var { pid } = req.params;
+		let { pid } = req.params;
 
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 
 		DiscordServers.findOne({ _id: bot.botId })
 		.exec((err, doc: CustomDocs.discord.ServersDocument) => {
@@ -942,12 +942,12 @@ function apiBots() {
 
 			getDiscordServer(doc.server_id, server => {
 				if (server == null) {
-					var jsonServer: DiscordBot.ServerOptions = JSON.parse(doc.server);
+					let jsonServer: DiscordBot.ServerOptions = JSON.parse(doc.server);
 
-					var roles = jsonServer.roles || [];
+					let roles = jsonServer.roles || [];
 
-					for(var i = 0; i < roles.length; i++) {
-						var role = roles[i];
+					for(let i = 0; i < roles.length; i++) {
+						let role = roles[i];
 
 						if (role.id == pid) {
 							roles.splice(i, 1);
@@ -978,19 +978,19 @@ function apiBots() {
 
 	// Get All Bot Moderations
 	// bots.get('/:bid/moderation', registerBot, (req, res) => {
-	// 	var { bid } = req.params;
+	// 	let { bid } = req.params;
 	// });
 
 	// bots.post('/:bid/moderation', registerBot, (req, res) => {
-	// 	var { bid } = req.params;
+	// 	let { bid } = req.params;
 	// });
 
 	// bots.put('/:bid/moderation/:mid', registerBot, (req, res) => {
-	// 	var { mid } = req.params;
+	// 	let { mid } = req.params;
 	// });
 
 	// bots.delete('/:bid/moderation/:mid', registerBot, (req, res) => {
-	// 	var { mid } = req.params;
+	// 	let { mid } = req.params;
 	// });
 
 //#endregion
@@ -1000,19 +1000,19 @@ function apiBots() {
 
 	// Get All Bot Permissions
 	// bots.get('/:bid/permissions', registerBot, (req, res) => {
-	// 	var { bid } = req.params;
+	// 	let { bid } = req.params;
 	// });
 
 	// bots.post('/:bid/permissions', registerBot, (req, res) => {
-	// 	var { bid } = req.params;
+	// 	let { bid } = req.params;
 	// });
 
 	// bots.put('/:bid/permissions/:pid', registerBot, (req, res) => {
-	// 	var { pid } = req.params;
+	// 	let { pid } = req.params;
 	// });
 
 	// bots.delete('/:bid/permissions/:pid', registerBot, (req, res) => {
-	// 	var { pid } = req.params;
+	// 	let { pid } = req.params;
 	// });
 
 //#endregion
@@ -1023,7 +1023,7 @@ function apiBots() {
 	// Get All Bot Intervals
 	bots.get('/:bid/intervals', registerBot, (req, res) => {
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 
 		DiscordServers.findOne({ _id: bot.botId })
 		.populate('interval_ids')
@@ -1047,18 +1047,18 @@ function apiBots() {
 	});
 
 	// bots.post('/:bid/intervals', registerBot, (req, res) => {
-	// 	var { bid } = req.params;
+	// 	let { bid } = req.params;
 	// });
 
 	// bots.put('/:bid/intervals/:iid', registerBot, (req, res) => {
-	// 	var { iid } = req.params;
+	// 	let { iid } = req.params;
 	// });
 
 	bots.delete('/:bid/intervals/:pid', registerBot, (req, res) => {
-		var { pid } = req.params;
+		let { pid } = req.params;
 
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 
 		DiscordServers.findOne({ _id: bot.botId }, (err, server) => {
 			if (err != null) {
@@ -1078,7 +1078,7 @@ function apiBots() {
 
 				if (inter == null) return res.status(500).send({ error: 'Command does not exist!' });
 
-				var index = server.interval_ids.indexOf(inter._id);
+				let index = server.interval_ids.indexOf(inter._id);
 				if (index != -1) server.interval_ids.splice(index, 1);
 
 				server.save(() => {
@@ -1137,9 +1137,9 @@ export = (app: express.Application) => {
 
 	discordRoute.get('/guilds', (req, res) => {
 		// @ts-ignore
-		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		let bot: CustomDocs.web.BotsDocument = req['bot'];
 		// @ts-ignore
-		var user: CustomDocs.web.UsersDocument = req.user;
+		let user: CustomDocs.web.UsersDocument = req.user;
 
 		DiscordMembers.findOne({ user_id: user._id }, (err, member) => {
 			if (err != null) return res.status(500).send({ error: err });
@@ -1180,7 +1180,7 @@ export = (app: express.Application) => {
 								if (resp.statusCode != 200) return res.status(500).send({ error: `Status Code: ${resp.statusCode}` });
 
 								try {
-									var json = JSON.parse(body);
+									let json = JSON.parse(body);
 
 									member.updated_guilds_at = new Date();
 									member.guilds = json;
@@ -1218,7 +1218,7 @@ export = (app: express.Application) => {
 									console.log('Rate limited..');
 
 									try {
-										var json = JSON.parse(body);
+										let json = JSON.parse(body);
 										res.send({ error: json.message });
 									} catch(e) {
 										console.error('Unable to parse (RL):', e);
@@ -1228,7 +1228,7 @@ export = (app: express.Application) => {
 									// success
 
 									try {
-										var json = JSON.parse(body);
+										let json = JSON.parse(body);
 
 										member.updated_guilds_at = new Date();
 										member.guilds = json;
@@ -1274,7 +1274,7 @@ export = (app: express.Application) => {
 											if (resp.statusCode != 200) return res.status(500).send({ error: `Status Code: ${resp.statusCode}` });
 
 											try {
-												var json = JSON.parse(body);
+												let json = JSON.parse(body);
 
 												member.updated_guilds_at = new Date();
 												member.guilds = json;
@@ -1307,7 +1307,7 @@ export = (app: express.Application) => {
 	const dashboard = express.Router();
 
 	dashboard.post('/status', (req, res) => {
-		var botType = req.body.botType;
+		let botType = req.body.botType;
 
 		//
 		if (botType != null) {
@@ -1318,7 +1318,7 @@ export = (app: express.Application) => {
 
 			// if (validBots.indexOf(botType) == -1) return res.send({ error: 'Invalid.' });
 
-			// var botParam = botType + '_bots';
+			// let botParam = botType + '_bots';
 
 			// req['user']
 			// .populate(botParam, (err, resp) => {
@@ -1368,7 +1368,7 @@ export = (app: express.Application) => {
 		console.log('/create pre');
 
 		// @ts-ignore
-		var user: CustomDocs.web.UsersDocument = req['user'];
+		let user: CustomDocs.web.UsersDocument = req['user'];
 
 		if (!user.admin && user.bots.amount >= MAX_BOTS) return res.send({ error: 'Max Bot count reached!' });
 

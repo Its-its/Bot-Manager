@@ -18,7 +18,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 	message.channel.send(utils.infoMsg([['RSS Feed', 'Finding all RSS Feeds in current Guild.']]))
 	.then(m => {
-		var singleMsg: Discord.Message;
+		let singleMsg: Discord.Message;
 		if (Array.isArray(m)) singleMsg = m[0];
 		else singleMsg = m;
 		if (singleMsg == null) return;
@@ -76,7 +76,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 }
 
 function showChannel(server: DiscordServer, guildMember: Discord.GuildMember, page: utils.MessagePage, channelFeed: CustomDocs.discord.DiscordRssPopulated) {
-	var channel = <Discord.TextChannel>page.channel;
+	let channel = <Discord.TextChannel>page.channel;
 
 	// const channelExists = channel.guild.channels.has(channelFeed.channel_id);
 
@@ -146,13 +146,13 @@ function showChannel(server: DiscordServer, guildMember: Discord.GuildMember, pa
 
 
 function moveFeedToDifferentChannel(channelStrId: string, mongoFeedId: any, page: utils.MessagePage, pageMove: utils.MessagePage): boolean {
-	var type = utils.getIdType(channelStrId);
+	let type = utils.getIdType(channelStrId);
 	if (type != null || type != 'channel') return false;
 
-	var id = utils.strpToId(channelStrId);
+	let id = utils.strpToId(channelStrId);
 	if (id == null) return false;
 
-	var channel = (<Discord.TextChannel>page.channel).guild.channels.cache.get(id);
+	let channel = (<Discord.TextChannel>page.channel).guild.channels.cache.get(id);
 	if (channel == null) return false;
 
 	DiscordFeeds.updateOne({ _id: mongoFeedId }, { $set: { channel_id: channel.id } }).exec();
@@ -163,7 +163,7 @@ function moveFeedToDifferentChannel(channelStrId: string, mongoFeedId: any, page
 }
 
 function changeFeedTemplate(newTemplate: string, mongoFeedId: any, feedPos: number) {
-	var setting: string | null;
+	let setting: string | null;
 
 	if (newTemplate.length == 0 || newTemplate == 'default') setting = null;
 	else setting = newTemplate.replace(/\</g, '\\<').replace(/\>/g, '\\>');
@@ -186,7 +186,7 @@ function removeFeedFromChannel(mongoGlobalFeedId: any, mongoDiscordFeedId: any) 
 const DEFAULT_RSS_FORMAT = ':newspaper:  **{title}**\n\n{link}';
 
 function showPageFeed(server: DiscordServer, guildMember: Discord.GuildMember, page: utils.MessagePage, channelFeed: CustomDocs.discord.DiscordRssPopulated, pos: number) {
-	var feed = channelFeed.feeds[pos];
+	let feed = channelFeed.feeds[pos];
 
 	page.setFormat([
 		'**Active**: ​' + channelFeed.active,

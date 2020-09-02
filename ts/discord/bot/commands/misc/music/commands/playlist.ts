@@ -15,7 +15,7 @@ import musicPlugin = require('@discord/music/plugins/music');
 import musicPermissions = require('@base/music/permissions');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	var playlistId = params.shift();
+	let playlistId = params.shift();
 
 	if (playlistId == 'create') {
 		if (!server.userHasPerm(message.member!, PERMS.PLAYLIST_CREATE)) return Command.noPermsMessage('Music');
@@ -63,8 +63,8 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		return;
 	}
 
-	var todo = params.shift() || 'info';
-	var defaultPlaylist = playlistId == null || (playlistId == 'default');
+	let todo = params.shift() || 'info';
+	let defaultPlaylist = playlistId == null || (playlistId == 'default');
 
 	if (playlistId == null) todo = 'info';
 
@@ -105,16 +105,16 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 				if (defaultPlaylist) playlistId = music.currentPlaylist;
 
-				var paramPage = params.shift();
+				let paramPage = params.shift();
 
 				if (paramPage == null || /^[0-9]+$/g.test(paramPage)) {
-					var page = 1;
-					var maxItems = 5;
+					let page = 1;
+					let maxItems = 5;
 
 					if (page < 1) page = 1;
 
 					if (paramPage != null) {
-						var parsed = parseInt(paramPage);
+						let parsed = parseInt(paramPage);
 						if (Number.isInteger(parsed)) page = parsed;
 					}
 
@@ -122,7 +122,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 						if (item == null) return message.channel.send(Command.error([['Playlist', 'Unable to find Playlist']]));
 						if (item.song_count == 0) return message.channel.send(Command.info([['Playlist', 'Nothing in Playlist!']]));
 
-						var maxPages = Math.ceil(item.song_count/5);
+						let maxPages = Math.ceil(item.song_count/5);
 
 						if (page > maxPages) return message.channel.send(Command.info([['Playlist', 'Max pages exceeded!']]));
 
@@ -131,7 +131,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 							songs = Array.isArray(songs) ? songs : [songs];
 
-							var fields = [
+							let fields = [
 								[
 									'Playlist',
 									'Items: ' + item.song_count + '\nPage: ' + page + '/' + maxPages
@@ -190,7 +190,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		case 'title':
 			if (playlistId == null) return message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
 
-			var title = params.join(' ');
+			let title = params.join(' ');
 			if (title.length == 0) return message.channel.send(Command.error([['Playlist', 'Playlist title cannot be nothing.']]));
 
 			musicPlugin.editPlaylist(playlistId, 'title', title.slice(0, 50), errMsg => {
@@ -200,7 +200,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		case 'description':
 			if (playlistId == null) return message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
 
-			var desc = params.join(' ');
+			let desc = params.join(' ');
 
 			musicPlugin.editPlaylist(playlistId, 'description', desc.slice(0, 1000), errMsg => {
 				message.channel.send(Command.info([['Playlist', 'Updated Playlist description.']]));
@@ -209,7 +209,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		case 'thumbnail':
 			if (playlistId == null) return message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
 
-			var thumb = params.join(' ');
+			let thumb = params.join(' ');
 
 			musicPlugin.editPlaylist(playlistId, 'thumb', thumb, errMsg => {
 				message.channel.send(Command.info([['Playlist', 'Updated Playlist thumbnail']]));
@@ -219,9 +219,9 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 }
 
 function uniqueID(size: number): string {
-	var bloc = [];
+	let bloc = [];
 
-	for(var i = 0; i < size; i++)
+	for(let i = 0; i < size; i++)
 		bloc.push(Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1));
 
 	return bloc.join('');
