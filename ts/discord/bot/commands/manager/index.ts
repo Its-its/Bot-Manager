@@ -1,4 +1,4 @@
-import Rank = require('./rank');
+// import Rank = require('./rank');
 import Message = require('./message');
 import Plugin = require('./plugin');
 import Perms = require('./permissions');
@@ -16,7 +16,7 @@ import TwitterFeed = require('./twitter');
 export = [
 	Options,
 	Plugin,
-	Rank,
+	// Rank,
 	Perms,
 	Nick,
 	Prefix,

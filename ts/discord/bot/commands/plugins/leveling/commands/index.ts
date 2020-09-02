@@ -2,12 +2,12 @@ import Add = require('./add');
 import Config = require('./config');
 import Help = require('./help');
 import Leaderboard = require('./leaderboard');
-import Rank = require('./rank');
+// import Rank = require('./rank');
 import Set = require('./set');
 import Remove = require('./remove');
 
 export = {
-	Rank,
+	// Rank,
 	Leaderboard,
 	Help,
 	Config,
