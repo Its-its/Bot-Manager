@@ -174,7 +174,7 @@ class Punishment extends Command {
 					else singleMsg = msg;
 					if (singleMsg == null) return;
 
-					Punishments.find({ server_id: message.guild.id, member_id: userId }, (err, items) => {
+					Punishments.find({ server_id: message.guild.id, member_id: userId! }, (err, items) => {
 						if (err != null) return console.error(err);
 
 						singleMsg.edit(Command.table(
@@ -358,7 +358,7 @@ class Punishment extends Command {
 
 
 setInterval(() => {
-	TempPunishments.find({ expires: { $lte: Date.now() } })
+	TempPunishments.find({ expires: { $lte: new Date() } })
 	// .populate('punishment')
 	.exec((err, items) => {
 		if (err != null) return console.error(err);

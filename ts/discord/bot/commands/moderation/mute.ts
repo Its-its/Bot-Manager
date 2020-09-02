@@ -149,14 +149,14 @@ class Mute extends Command {
 				TempPunishments.updateOne(
 					{
 						server_id: message.guild.id,
-						member_id: discUserId
+						member_id: discUserId!
 					},
 					{
 						$set: {
 							server_id: message.guild.id,
-							member_id: discUserId,
+							member_id: discUserId!,
 							punishment: item._id,
-							expires: Date.now() + (seconds * 1000)
+							expires: new Date(Date.now() + (seconds * 1000))
 						}
 					},
 					{

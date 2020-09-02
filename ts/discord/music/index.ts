@@ -683,7 +683,7 @@ function queuePlaylist(guildId: string, playlistId: string, cb: (err?: any, coun
 					items: playlist.songs.map(i => {
 						return {
 							addedBy: 'playlist',
-							server_id: music.guildId,
+							id: music.guildId,
 							song: i['song']
 						}
 					})

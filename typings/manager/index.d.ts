@@ -109,7 +109,7 @@ declare namespace CustomDocs {
 			nextCall: number;
 
 			events: {
-				onCall: string;
+				onCall?: string;
 			}
 
 			created_at: Date;
@@ -222,7 +222,7 @@ declare namespace CustomDocs {
 		}
 
 		export interface DiscordRssFeeds<F> {
-			format: string;
+			format: string | null;
 			active: boolean;
 			items: string[];
 			feed: F;
@@ -243,8 +243,8 @@ declare namespace CustomDocs {
 		}
 
 		export interface DiscordTwitterFeeds<F> {
-			format: string;
-			active: boolean;
+			format: string | null;
+			active: boolean = true;
 			items: string[];
 			feed: F;
 		}
@@ -373,6 +373,7 @@ declare namespace CustomDocs {
 			items: {
 				addedBy: string;
 				id: string;
+				song: string;
 			}[];
 		}
 	}

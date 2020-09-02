@@ -1,5 +1,6 @@
 import { Document, Types } from 'mongoose';
 import { DiscordBot, CustomDocs, Nullable } from '@type-manager';
+import { ObjectId } from 'bson';
 
 import * as redis from 'redis';
 import * as Discord from 'discord.js';
@@ -234,8 +235,8 @@ class Server extends Changes {
 				},
 				$setOnInsert: {
 					removed: false,
-					created_at: Date.now(),
-					edited_at: Date.now(),
+					created_at: new Date(),
+					edited_at: new Date(),
 				}
 			},
 			{
@@ -400,7 +401,7 @@ class Server extends Changes {
 
 				DiscordServers.updateOne(
 					{ server_id: this.serverId },
-					{ $addToSet: { phrase_ids: [ prod.id ] } });
+					{ $addToSet: { phrase_ids: prod.id } });
 			});
 		});
 	}
@@ -693,7 +694,7 @@ class Server extends Changes {
 
 				DiscordServers.updateOne(
 					{ server_id: this.serverId },
-					{ $addToSet: { command_ids: [ prod.id ] } });
+					{ $addToSet: { command_ids: prod.id } });
 			});
 		});
 	}

@@ -28,7 +28,7 @@ function onChannelDelete(channel: Discord.Channel) {
 		// If channel has RSSFeed deactivate it and set channel_id to null.
 		DiscordModelFeed.findOneAndUpdate(
 			{ guild_id: (<Discord.TextChannel>channel).guild.id, channel_id: channel.id },
-			{ $set: { channel_id: null, active: false, 'feeds.items': [] } },
+			{ $set: { active: false, 'feeds.items': [] }, $unset: { channel_id: 1 } },
 			(err, found) => {
 				if (found != null) {
 					GlobalModelRSSFeed.update({ _id: { $in: found['feeds'] } }, { $inc: { sending_to: -1 } }).exec();

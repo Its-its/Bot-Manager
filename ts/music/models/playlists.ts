@@ -6,7 +6,6 @@ let Schema = mongoose.Schema;
 
 let Playlist = new Schema({
 	creator: Schema.Types.ObjectId,
-	creator_id: String,
 
 	type: Number,
 	visibility: Number,

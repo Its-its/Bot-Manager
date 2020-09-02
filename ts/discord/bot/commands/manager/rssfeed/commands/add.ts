@@ -29,15 +29,15 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				{ guild_id: message.guild.id, channel_id: message.channel.id },
 				{
 					$addToSet: {
-						feeds: [
-							{
-								items: article!.items.map(i => i.id),
-								feed: feedDoc!._id
-							}
-						]
+						feeds: {
+							format: null,
+							active: true,
+							items: article!.items.map(i => i.id),
+							feed: feedDoc!._id
+						}
 					},
 					$setOnInsert: {
-						last_check: Date.now(),
+						last_check: new Date(),
 						pid: generate('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 32),
 						active: true,
 						guild_id: message.guild.id,
@@ -84,12 +84,12 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 							active: true
 						},
 						$addToSet: {
-							feeds: [
-								{
-									items: article!.items.map(i => i.id),
-									feed: feedDoc!._id
-								}
-							]
+							feeds: {
+								format: null,
+								active: true,
+								items: article!.items.map(i => i.id),
+								feed: feedDoc!._id
+							}
 						}
 					},
 					err => {

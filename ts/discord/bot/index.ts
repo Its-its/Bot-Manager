@@ -533,7 +533,7 @@ const CALL_EVERY = 1000 * 60 * 5;
 
 // Twitter Feeds
 setInterval(() => {
-	DiscordModelTwitter.find({ active: true, last_check: { $lte: Date.now() - CALL_EVERY } })
+	DiscordModelTwitter.find({ active: true, last_check: { $lte: new Date(Date.now() - CALL_EVERY) } })
 	.populate('feeds.feed')
 	.exec((err, feedDocs: CustomDocs.discord.DiscordTwitterPopulated[]) => {
 		if (err != null) return console.error(err);
@@ -623,7 +623,7 @@ setInterval(() => {
 
 // RSS Feeds
 setInterval(() => {
-	DiscordModelFeed.find({ active: true, last_check: { $lte: Date.now() - CALL_EVERY } })
+	DiscordModelFeed.find({ active: true, last_check: { $lte: new Date(Date.now() - CALL_EVERY) } })
 	.populate('feeds.feed')
 	.exec((err, feedDocs: CustomDocs.discord.DiscordRssPopulated[]) => {
 		if (err != null) return console.error(err);

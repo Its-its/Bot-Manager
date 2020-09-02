@@ -10,30 +10,30 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		return;
 	}
 
-	var user = params.shift()!;
-	var amount = parseInt(params.shift()!);
-	var type = params.shift()!;
+	let user = params.shift()!;
+	let amount = parseInt(params.shift()!);
+	let type = params.shift()!;
 
 	if (isNaN(amount) ||
 		(type != 'lvl' && type != 'xp') ||
 		(type == 'lvl' && amount > util.MAX_LEVEL)
 	) return message.channel.send('Invalid opts. Use add <id> <amount> <xp/level>');
 
-	var idType = server.idType(user);
+	let idType = server.idType(user);
 
 	if (idType != null && idType != 'member') {
 		message.channel.send('Must he a users ID or @');
 		return;
 	}
 
-	var id = server.strpToId(user);
+	let id = server.strpToId(user);
 
 	if (id == null) {
 		message.channel.send('Invalid id Type');
 		return;
 	}
 
-	var member = message.guild.member(id);
+	let member = message.guild.member(id);
 
 	if (member == null) {
 		message.channel.send('User must be in the Guild.');
@@ -47,8 +47,8 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			return;
 		}
 
-		var level = 1;
-		var xp = 0;
+		let level = 1;
+		let xp = 0;
 
 		if (user != null) {
 			level = user['level'];
@@ -71,7 +71,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 		if (level > util.MAX_LEVEL || xp > util.MAX_EXP) return;
 
-		UserLevel.updateOne({ server_id: message.guild.id, member_id: id }, {
+		UserLevel.updateOne({ server_id: message.guild.id, member_id: id! }, {
 			$set: {
 				level: level,
 				xp: xp

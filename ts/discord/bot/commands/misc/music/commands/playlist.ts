@@ -3,6 +3,9 @@ import DiscordServer = require('@discord/bot/GuildServer');
 
 import Command = require('@discord/bot/command');
 
+import DiscordMembers = require('@discord/models/members');
+
+
 import guildClient = require('@discord/guildClient');
 import utils = require('@discord/utils');
 import PERMS = require('../perms');
@@ -17,37 +20,46 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	if (playlistId == 'create') {
 		if (!server.userHasPerm(message.member, PERMS.PLAYLIST_CREATE)) return Command.noPermsMessage('Music');
 
-		Playlists.count({ creator_id: message.member.id }, (err, count) => {
-			if (count >= 10) return message.channel.send(Command.error([['Playlist', 'Max Playlists reached.']]));
+		DiscordMembers.findOne({ did: message.member.id }, (err, member) => {
+			if (member == null) {
+				message.channel.send(Command.error([['Playlist', 'Unable to find user. Please']]));
+				return;
+			}
 
-			Playlists.create({
-				creator_id: message.member.id,
+			Playlists.count({ creator: member._id }, (err, count) => {
+				if (count >= 10) return message.channel.send(Command.error([['Playlist', 'Max Playlists reached.']]));
 
-				type: 1,
-				visibility: 2,
+				// @ts-ignore
+				Playlists.create({
+					creator: member._id,
 
-				permissions: Object.values(musicPermissions.PLAYLIST_FLAGS).reduce((all, p) => all | p, 0),
+					type: 1,
+					visibility: 2,
 
-				public_id: uniqueID(9),
+					permissions: Object.values(musicPermissions.PLAYLIST_FLAGS).reduce((all, p) => all | p, 0),
 
-				title: 'New Playlist',
-				description: 'New Playlist',
-			})
-			.then(playlist => {
-				message.channel.send(Command.info([[
-					'Playlist',
-					[
-						'Successfully created a new Playlist!',
-						'',
-						'Title: ' + playlist.title,
-						'Description: ' + playlist.description,
-						'',
-						'ID: ' + playlist.public_id
-					].join('\n')
-				]]));
-			}, err => console.error(err))
-			.catch(err => console.error(err));
+					public_id: uniqueID(9),
+
+					title: 'New Playlist',
+					description: 'New Playlist',
+				})
+				.then(playlist => {
+					message.channel.send(Command.info([[
+						'Playlist',
+						[
+							'Successfully created a new Playlist!',
+							'',
+							'Title: ' + playlist.title,
+							'Description: ' + playlist.description,
+							'',
+							'ID: ' + playlist.public_id
+						].join('\n')
+					]]));
+				}, err => console.error(err))
+				.catch(err => console.error(err));
+			});
 		});
+
 		return;
 	}
 

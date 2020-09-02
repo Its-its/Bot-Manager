@@ -49,6 +49,7 @@ class Music implements DiscordBot.plugins.Music {
 		if (save.repeatSong != null) this.repeatSong = save.repeatSong;
 
 		if (this.guildPlaylist == null) {
+			// @ts-ignore
 			MusicPlaylist.create({
 				// user_id: null,
 				type: 0,

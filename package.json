@@ -62,7 +62,6 @@
 		"@types/mongoose": "^5.5.41",
 		"@types/morgan": "^1.7.37",
 		"@types/nanoid": "^2.1.0",
-		"@types/node": "^13.1.6",
 		"@types/passport": "^1.0.2",
 		"@types/redis": "^2.8.14",
 		"@types/request": "^2.48.4",
@@ -70,7 +69,6 @@
 		"@types/socket.io-client": "^1.4.32",
 		"@types/stripe": "^7.13.19",
 		"@types/twit": "2.2.23",
-		"@types/winston": "^2.4.4",
-		"typescript": "^3.7.4"
+		"@types/winston": "^2.4.4"
 	}
 }
