@@ -5,6 +5,7 @@ import Backups = require('../../../models/backup');
 
 import Command = require('../../command');
 import { DiscordBot, Omit } from '@type-manager';
+import utils = require('../../../utils');
 
 const PERMISSIONS = {
 	MAIN: 'commands.backup'
@@ -64,6 +65,107 @@ class Backup extends Command {
 					]
 				]));
 			});
+
+			return;
+		}
+
+		if (params[0] == 'clone') {
+			let chann = message.guild.channels.get(params[1]);
+
+			if (chann != null) {
+				createChannels([parseChannel(chann)], () => {
+					console.log('fin');
+				});
+			} else {
+				console.log('errr');
+			}
+
+			function parseChannel(channel: Discord.GuildChannel): DiscordBot.BackupChannel {
+				var opt: DiscordBot.BackupChannel = {
+					id: channel.id,
+					name: channel.name,
+					// @ts-ignore
+					type: channel.type,
+					perms: channel.permissionOverwrites.map(p => {
+						return {
+							id: p.id,
+							allow: p.allow,
+							deny: p.deny,
+							type: p.type
+						}
+					}).filter(p => p.id != null),
+					position: channel.calculatedPosition
+				}
+
+
+				if (channel.parentID != null) {
+					opt.parent = channel.parentID;
+				}
+
+				if (channel.type == 'category') {
+					opt.children = (<Discord.CategoryChannel>channel).children.map(c => parseChannel(c));
+				}
+
+				return opt;
+			}
+
+			let tempIdToNew: any = {};
+
+			function createChannels(channels: DiscordBot.BackupChannel[] | undefined, fin: () => any) {
+				if (channels == null || channels.length == 0) return fin();
+
+				channels = channels.sort((c1, c2) => c1.position - c2.position);
+
+				create(0);
+
+				function nextWait(pos: number) {
+					setTimeout(() => create(pos), 1000);
+				}
+
+				function create(pos: number) {
+					if (channels!.length == pos) return fin && fin();
+
+					var c = channels![pos];
+
+					message.guild.createChannel(c.name, {
+						type: c.type,
+						permissionOverwrites: c.perms
+					})
+					.then(channel => {
+						console.log(`[Channels]: ${c.id} - ${channel.id}`);
+						tempIdToNew[c.id] = channel.id;
+
+						// c.perms.forEach(p => {
+						// 	if (tempIdToNew[p.id] == null) return console.log('Channel Perms: ', p);
+
+						// 	var obj: { [name: string]: boolean } = {};
+
+						// 	utils.getPermissions(p.allow).toArray().forEach(p => obj[p] = true);
+						// 	utils.getPermissions(p.deny).toArray().forEach(p => obj[p] = false);
+
+						// 	channel.overwritePermissions(tempIdToNew[p.id], obj)
+						// 	.catch(e => {
+						// 		console.error('overwritePerms:', e);
+						// 		console.log(c.name + ' | ' + channel.id + ' - ' + p.type);
+						// 		console.log(p.id + ' - ' + tempIdToNew[p.id]);
+						// 	});
+						// });
+
+						if (c.parent != null && tempIdToNew[c.parent] != null) {
+							channel.setParent(tempIdToNew[c.parent], 'Restore');
+						}
+
+						//TODO: temp save channel name. (ignored channels)
+						createChannels(c.children, () => {
+							nextWait(pos + 1);
+						});
+					})
+					.catch(e => {
+						console.error(e);
+						nextWait(pos + 1);
+					})
+				}
+			}
 
 			return;
 		}
