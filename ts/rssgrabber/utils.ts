@@ -145,8 +145,22 @@ interface RSSFeedFix extends Document {
 }
 
 function getFeedItems(url: string, cookies: any, cb: (err?: Error, items?: FeedParser.Item[]) => any) {
+	var cbCalled = false;
+
+	function callback(err?: Error, items?: FeedParser.Item[]) {
+		if (cbCalled) return;
+		cbCalled = true;
+
+		cb(err, items);
+	}
+
 	const feedparser = new FeedParser({});
-	const req = request.get(url);
+
+	const req = request.get(url, { strictSSL: false });
+
+	req.on('error', err => {
+		callback(err);
+	});
 
 	// if (cookies != null) {
 	// 	var j = request.jar();
@@ -159,15 +173,12 @@ function getFeedItems(url: string, cookies: any, cb: (err?: Error, items?: FeedP
 
 	req.pipe(feedparser);
 
-	var errored = false;
 
 	var feedItems: FeedParser.Item[] = [];
 
 
 	feedparser.on('error', (err: any) => {
-		if (errored) return;
-		errored = true;
-		cb(err);
+		callback(err);
 	});
 
 	feedparser.on('readable', function(this: FeedParser) {
@@ -178,9 +189,7 @@ function getFeedItems(url: string, cookies: any, cb: (err?: Error, items?: FeedP
 	});
 
 	feedparser.on('end', () => {
-		if (errored) return;
-
-		cb(undefined, feedItems);
+		callback(undefined, feedItems);
 	});
 }
 

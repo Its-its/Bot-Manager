@@ -37,7 +37,7 @@ const twitter = new Twit({
 	consumer_secret:      'elh1y4iZoqUutXKA86HvfB1yX6xj6vqdAC8c9HBU6ryNxLrmVY',
 	access_token:         '358512140-4r97ewMT0IUOETldmcsEBS3ew0vrPbhKbOBBqkGt',
 	access_token_secret:  'sEk54lu8YyNtxz8IzI3lBLUXl2P4XeTQNig2JMoCOvNxm',
-	timeout_ms:           60*1000,
+	timeout_ms:           60 * 1000,
 	strictSSL:            true
 });
 
@@ -97,11 +97,15 @@ setInterval(() => {
 
 
 		async.everyLimit(feedDocs, 10, (doc, cbEvery) => {
+			console.log('Getting Items: ' + doc.url);
+
 			utils.getFeedItems(doc.url, null, (err, items) => {
 				if (err != null || items == null) return console.error(err);
 
 				var newItems = utils.articleItemsToDB(items);
 				var oldIds = doc.items.map(i => i.id);
+
+				console.log(doc.url + ' - ' + newItems.length + '/' + items.length);
 
 				var hasNew = false;
 
