@@ -65,7 +65,7 @@ function errorHandler(error: any) {
 
 export = (app: express.Application) => {
 	app.post('/stripe/webhook', (req, res) => {
-		var stripeResponse: Stripe.events.IEvent = req.body;
+		// var stripeResponse: Stripe.events.IEvent = req.body;
 		console.log(req.body);
 
 		res.sendStatus(200);
