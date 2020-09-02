@@ -112,14 +112,15 @@ client.on('ready', () => {
 	logger.info(' - Client ID:' + client.user.id);
 	logger.info(' - Found ' + client.guilds.size + ' Guild(s).');
 
-	// client.guilds.forEach(g => logger.info(' - - ' + g.id +  ' | ' + g.region + ' | ' + g.name));
+	client.guilds.forEach(g => logger.info(' - - ' + g.id +  ' | ' + g.region + ' | ' + g.name));
+
 	client.user.setActivity('the spacetime continuum', { type: 'LISTENING' });
 
 
 	setInterval(() => {
 		logger.info('Statistics');
 
-		var statistics_copy = statistics;
+		var statistics_copy = Object.assign({}, statistics);
 
 		// Reset stats since we now have a copy of it and it gets added to the doc.
 		statistics = defaultStats();

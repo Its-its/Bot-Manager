@@ -69,7 +69,7 @@ declare namespace CustomDocs {
 
 			text: string;
 			link: string;
-		};
+		}
 
 		export interface RSSFeeds extends Document {
 			url: string;
@@ -93,7 +93,7 @@ declare namespace CustomDocs {
 			author: string;
 			generator: string;
 			categories: string[];
-		};
+		}
 
 		export interface Intervals extends Document {
 			pid: string;
@@ -566,7 +566,9 @@ declare namespace DiscordBot {
 
 		parent?: string;
 		children?: CompiledChannel[];
-	};
+	}
+
+	type CompiledChannel = any;
 
 
 	//
@@ -887,9 +889,24 @@ declare namespace DiscordBot {
 		[name: string]: PluginItem;
 	}
 
-	interface PluginLogs extends PluginItem {
+	interface OldPluginLogs extends PluginItem {
 		textChannelId?: string;
 		filter?: string[];
+	}
+
+	interface PluginLogs extends PluginItem {
+		channels: PluginLogsChannel[];
+	}
+
+	interface PluginLogsChannel {
+		id: string;
+		priority?: number;
+
+		// Listening to channels
+		filterChannels?: string[];
+
+		// 0 Add, 1 Rem, 2 Add/Rem
+		filterMembersAddRemove?: number;
 	}
 
 	interface PluginItem {

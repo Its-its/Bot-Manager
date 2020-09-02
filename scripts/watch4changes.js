@@ -28,20 +28,31 @@ function runBuild(event) {
 		shouldBuildAgain = false;
 		isBuilding = true;
 
-		var proc = child.exec(
-			'npm run build:full',
+		let proc_1 = child.exec(
+			'tsc -p tsconfig.json',
 			{ cwd: path.join(__dirname, '..') },
 			(err, stdout, stderr) => {
-				console.log('Build Completed.. Waiting for more changes..');
+				console.log('--- TYPESCRIPT FINISHED COMPILING ---');
 
-				isBuilding = false;
-				if (shouldBuildAgain) runTimeout();
-				else buildTimeout = null;
+				let proc_2 = child.exec(
+					'node node_modules/@ef-carbon/tspm/dist/bin/tspm',
+					{ cwd: path.join(__dirname, '..') },
+					(err, stdout, stderr) => {
+						console.log('Build Completed.. Waiting for more changes..');
+
+						isBuilding = false;
+						if (shouldBuildAgain) runTimeout();
+						else buildTimeout = null;
+					}
+				);
+
+				proc_2.stdout.on('data', (data) => console.log(data));
+				proc_2.stderr.on('data', (data) => console.log(data));
 			}
 		);
 
-		proc.stdout.on('data', (data) => console.log(data));
-		proc.stderr.on('data', (data) => console.log(data));
+		proc_1.stdout.on('data', (data) => console.log(data));
+		proc_1.stderr.on('data', (data) => console.log(data));
 	} else {
 		shouldBuildAgain = true;
 	}
