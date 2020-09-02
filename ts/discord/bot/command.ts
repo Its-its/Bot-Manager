@@ -73,10 +73,10 @@ class Command {
 	public onChannelDelete(channel: Discord.GuildChannel, server?: Server) { return false; }
 
 	// Users
-	public onGuildMemberAdd(member: Discord.GuildMember, server?: Server) { return false; }
-	public onGuildMemberRemove(member: Discord.GuildMember, server?: Server) { return false; }
-	public onGuildMemberRoleAdd(member: Discord.GuildMember, roles: Discord.Role[], server?: Server) { return false; }
-	public onGuildMemberRoleRemove(member: Discord.GuildMember, roles: Discord.Role[], server?: Server) { return false; }
+	public onGuildMemberAdd(member: Discord.GuildMember | Discord.PartialGuildMember, server?: Server) { return false; }
+	public onGuildMemberRemove(member: Discord.GuildMember | Discord.PartialGuildMember, server?: Server) { return false; }
+	public onGuildMemberRoleAdd(member: Discord.GuildMember | Discord.PartialGuildMember, roles: Discord.Role[], server?: Server) { return false; }
+	public onGuildMemberRoleRemove(member: Discord.GuildMember | Discord.PartialGuildMember, roles: Discord.Role[], server?: Server) { return false; }
 
 	// Roles
 	public onRoleDelete(role: Discord.Role, server?: Server) { return false; }

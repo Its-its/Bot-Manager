@@ -80,7 +80,7 @@ class Logs extends Command {
 					channelId = stripped;
 				}
 
-				if (!message.guild.channels.has(channelId)) return Command.error([['Logs', 'ID is not a channel.']]);
+				if (!message.guild!.channels.cache.has(channelId)) return Command.error([['Logs', 'ID is not a channel.']]);
 
 				let log_channel = server.plugins.logs!.channels.find(c => c.id == channelId);
 
@@ -118,7 +118,7 @@ class Logs extends Command {
 			}
 
 			case 'output': {
-				if (!this.hasPerms(message.member, server, PERMS.CHANNEL)) return Command.noPermsMessage('Logs');
+				if (!this.hasPerms(message.member!, server, PERMS.CHANNEL)) return Command.noPermsMessage('Logs');
 
 				let channelId = params.shift();
 
@@ -129,7 +129,7 @@ class Logs extends Command {
 					channelId = stripped;
 				}
 
-				if (!message.guild.channels.has(channelId)) return Command.error([['Logs', 'ID is not a channel.']]);
+				if (!message.guild!.channels.cache.has(channelId)) return Command.error([['Logs', 'ID is not a channel.']]);
 
 				let index = server.plugins.logs!.channels.findIndex(c => c.id == channelId);
 				if (index != -1) {
@@ -146,7 +146,7 @@ class Logs extends Command {
 							[ 'Logs', 'I am now listening for events and outputting them to this channel. :)' ]
 						]));
 					} else {
-						let channel = <Discord.TextChannel>message.guild.channels.get(channelId);
+						let channel = <Discord.TextChannel>message.guild!.channels.cache.get(channelId);
 
 						if (channel == null) return Command.error([[ 'Logs', 'Channel with that ID does not exist!' ]]);
 						if (channel.type != 'text')  return Command.error([[ 'Logs', 'Channel is not a text channel!' ]]);
@@ -166,7 +166,7 @@ class Logs extends Command {
 			}
 
 			case 'filter': {
-				if (!this.hasPerms(message.member, server, PERMS.MAIN)) return Command.noPermsMessage('Logs');
+				if (!this.hasPerms(message.member!, server, PERMS.MAIN)) return Command.noPermsMessage('Logs');
 
 				switch (params.shift()) {
 					case 'list': {
@@ -191,7 +191,7 @@ class Logs extends Command {
 							log_channel_id = stripped;
 						}
 
-						if (!message.guild.channels.has(log_channel_id)) return Command.error([['Logs', 'ID is not a channel.']]);
+						if (!message.guild!.channels.cache.has(log_channel_id)) return Command.error([['Logs', 'ID is not a channel.']]);
 
 						let log_channel = server.plugins.logs!.channels.find(c => c.id == log_channel_id);
 
@@ -213,7 +213,7 @@ class Logs extends Command {
 								filter_channel_id = stripped;
 							}
 
-							if (!message.guild.channels.has(filter_channel_id)) {
+							if (!message.guild!.channels.cache.has(filter_channel_id)) {
 								return Command.error([['Logs', 'Filtering Channel ID is not a channel.']]);
 							}
 

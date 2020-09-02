@@ -27,11 +27,11 @@ class Nick extends Command {
 			]);
 		}
 
-		if (!this.hasPerms(message.member, server, PERMISSIONS.MAIN)) return Command.noPermsMessage('Nick');
+		if (!this.hasPerms(message.member!, server, PERMISSIONS.MAIN)) return Command.noPermsMessage('Nick');
 
 		var name = params.join(' ');
 
-		message.guild.me.setNickname(name, 'Requested by ' + message.member.user.tag)
+		message.guild!.me!.setNickname(name, 'Requested by ' + message.member!.user.tag)
 		.then(() => {
 			message.channel.send(Command.success([[ 'Nick', 'Sucessfully changed nickname.' ]]));
 		}, e => console.error(e));

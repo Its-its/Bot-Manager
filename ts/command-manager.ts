@@ -233,7 +233,7 @@ export = {
 
 // interface ParseMessageEcho extends ParseMessageDef<"echo"> {
 // 	message: string;
-// 	embed?: Discord.RichEmbedOptions;
+// 	embed?: Discord.MessageEmbedOptions;
 // }
 
 // interface ParseMessageRemove extends ParseMessageDef<"remove"> {

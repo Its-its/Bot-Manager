@@ -43,7 +43,7 @@ class Health extends Command {
 			.catch(e => console.error(e));
 		} else {
 			message.channel.send([
-				`Shard ${client.shard.id}: ${statuses[client.status]}, serving ${client.guilds.size} guilds`
+				`Shard ${client.shard.ids.join(',')}: serving ${client.guilds.cache.size} guilds`
 			], { code: 'http' });
 		}
 	}

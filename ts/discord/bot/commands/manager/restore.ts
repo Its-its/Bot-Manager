@@ -25,7 +25,7 @@ for(var name in PERMS) {
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
-// if (!this.hasPerms(message.member, server, PERMS.MAIN)) return Command.noPermsMessage('');
+// if (!this.hasPerms(message.member!, server, PERMS.MAIN)) return Command.noPermsMessage('');
 
 interface Backup {
 	_id?: string;
@@ -190,7 +190,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 	var tempIdToNew: { [str: string]: string } = {};
 
-	const guild = message.guild;
+	const guild = message.guild!;
 
 	var startTime = Date.now();
 
@@ -224,7 +224,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 						var or = items.roles![pos];
 
 						if (or.name == '@everyone' && or.position == 0) {
-							var roles = guild.roles.array();
+							var roles = guild.roles.cache.array();
 							for(var i = 0; i < roles.length; i++) {
 								var role = roles[i];
 								if (role.position == 0) {
@@ -245,13 +245,16 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 								}
 							}
 						} else {
-							guild.createRole({
-								name: or.name,
-								color: or.color,
-								hoist: or.hoist,
-								// position: or.position, // No need b/c it appends roles and I sort it from 0+
-								permissions: or.permissions,//<any>utils.getPermissions().toArray(),
-								mentionable: or.mentionable
+							guild.roles.create({
+								data: {
+									name: or.name,
+									color: or.color,
+									hoist: or.hoist,
+									// position: or.position, // No need b/c it appends roles and I sort it from 0+
+									permissions: or.permissions,//<any>utils.getPermissions().toArray(),
+									mentionable: or.mentionable
+								},
+								reason: 'Restore'
 							})
 							.then(r => {
 								console.log(`[Roles]: ${or.id} - ${r.id} - ${r.name}`);
@@ -296,7 +299,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 						var c = channels![pos];
 
-						guild.createChannel(c.name, {
+						guild.channels.create(c.name, {
 							type: c.type,
 							permissionOverwrites: c.perms
 						})
@@ -305,7 +308,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 							tempIdToNew[c.id] = channel.id;
 
 							if (c.parent != null && tempIdToNew[c.parent] != null) {
-								channel.setParent(tempIdToNew[c.parent], 'Restore');
+								channel.setParent(tempIdToNew[c.parent], { reason: 'Restore' });
 							}
 
 							//TODO: temp save channel name. (ignored channels)
@@ -409,7 +412,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 						var b = items.bans![pos];
 
-						guild.ban(b/*, { days: null, reason: null }*/)
+						guild.members.ban(b/*, { days: null, reason: null }*/)
 						.then(b => nextWait(pos + 1))
 						.catch(e => {
 							console.error(e);
@@ -430,7 +433,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 						var p = items.phrases![pos];
 
-						server.createPhrase(message.member, p.phrases, phrase => {
+						server.createPhrase(message.member!, p.phrases, phrase => {
 							server.setPhraseIgnoreCase(phrase.pid, p.ignoreCase);
 							server.setPhraseResponse(phrase.pid, p.responses);
 
@@ -452,7 +455,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 						var c = items.commands![pos];
 
-						server.createCommand(guild.owner, c.alias, c.params, () => nextCommand(pos + 1));
+						server.createCommand(guild.owner!, c.alias, c.params, () => nextCommand(pos + 1));
 					}
 				} else next();
 			},
@@ -486,7 +489,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 					for(var id in perms!.groups) {
 						var group = perms!.groups[id];
-						var roleClazz = guild.roles.get(tempIdToNew[id]);
+						var roleClazz = guild.roles.cache.get(tempIdToNew[id]);
 
 						if (roleClazz != null) {
 							group.perms.forEach(p => server.addPermTo('groups', roleClazz!.id, p));
@@ -509,7 +512,7 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 					for(var id in perms.users) {
 						var user = perms.users[id];
 						// Only add if member is in guild.
-						if (guild.members.has(id)) {
+						if (guild.members.cache.has(id)) {
 							user.perms.forEach(p => server.addPermTo('users', id, p));
 							user.groups.forEach(p => server.addGroupTo('users', id, p));
 						}

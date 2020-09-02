@@ -44,7 +44,7 @@ class Random extends Command {
 
 		switch (item) {
 			case 'color':
-				if (!this.hasPerms(message.member, server, PERMS.COLOR)) return Command.noPermsMessage('Random');
+				if (!this.hasPerms(message.member!, server, PERMS.COLOR)) return Command.noPermsMessage('Random');
 
 				var newColor = randomColor();
 
@@ -56,7 +56,7 @@ class Random extends Command {
 				]);
 
 			case 'number':
-				if (!this.hasPerms(message.member, server, PERMS.NUMBER)) return Command.noPermsMessage('Random');
+				if (!this.hasPerms(message.member!, server, PERMS.NUMBER)) return Command.noPermsMessage('Random');
 
 				// Ensure params are correct if only calling a max amount.
 				if (params.length == 1) {
@@ -81,7 +81,7 @@ class Random extends Command {
 				]);
 
 			case 'list':
-				if (!this.hasPerms(message.member, server, PERMS.LIST)) return Command.noPermsMessage('Random');
+				if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Random');
 
 				if (params.length != 0) {
 					parseList(params, message.channel);
@@ -110,7 +110,7 @@ class Random extends Command {
 				return;
 
 			case 'reaction':
-				if (!this.hasPerms(message.member, server, PERMS.REACTION)) return Command.noPermsMessage('Random');
+				if (!this.hasPerms(message.member!, server, PERMS.REACTION)) return Command.noPermsMessage('Random');
 
 				var discordChannelIdStr = params.shift()!;
 				var msgIdStripped = params.shift()!;
@@ -123,32 +123,33 @@ class Random extends Command {
 
 				var channelIdStripped = server.strpToId(discordChannelIdStr)!;
 
-				var discordChannel = <Discord.TextChannel>message.guild.channels.get(channelIdStripped);
+				var discordChannel = <Discord.TextChannel>message.guild!.channels.cache.get(channelIdStripped);
 				if (discordChannel == null || discordChannel.type != 'text') return Command.error([[ 'Random', 'Message ID is invalid. Doesn\'t exist or not a text channel.' ]]);
 
 
-				discordChannel.fetchMessage(msgIdStripped)
+				discordChannel.messages.fetch(msgIdStripped)
 				.then((reqDiscordMessage) => {
 					if (reqDiscordMessage == null) {
 						message.channel.send(Command.error([[ 'Random', 'Message not found! Invalid Message ID or not in channel.' ]]));
 						return;
 					}
 
-					var messageReaction = reqDiscordMessage.reactions.get(reactionIdStripped);
+					var messageReaction = reqDiscordMessage.reactions.cache.get(reactionIdStripped);
 
 					if (messageReaction == null) {
 						message.channel.send(Command.error([[ 'Random', 'Unable to find reaction (emoji) ID in message.' ]]));
 						return;
 					}
 
-					if (messageReaction.count == 0) {
+					if (messageReaction.count == null || messageReaction.count == 0) {
 						message.channel.send(Command.error([[ 'Random', 'There are no reactions affiliated with this message.' ]]));
 						return;
 					}
 
-					messageReaction.fetchUsers(1, { after: random(0, messageReaction.count - 1) })
-					.then(userCollection => {
-						var randomUserId = userCollection.firstKey();
+					if (messageReaction.count == messageReaction.users.cache.size) {
+						// Use cache if we already have it filled.
+
+						let randomUserId = messageReaction.users.cache.random();
 
 						if (randomUserId != null) {
 							message.channel.send(Command.success([
@@ -160,8 +161,26 @@ class Random extends Command {
 						} else {
 							message.channel.send(Command.error([[ 'Random', 'Unable to grab member.' ]]));
 						}
-					})
-					.catch(e => console.error(e));
+					} else {
+						// Fetch all the users if cache wasn't filled.
+
+						messageReaction.users.fetch()
+						.then(userCollection => {
+							let randomUserId = userCollection.random();
+
+							if (randomUserId != null) {
+								message.channel.send(Command.success([
+									[
+										'Random',
+										'Randomly picked <@' + randomUserId + '>'
+									]
+								]));
+							} else {
+								message.channel.send(Command.error([[ 'Random', 'Unable to grab member.' ]]));
+							}
+						})
+						.catch(e => console.error(e));
+					}
 				})
 				.catch((e: any) => console.error(e));
 
@@ -185,7 +204,7 @@ function strToNumber(reqStrNumber: string, defaultNumber: number): number {
 }
 
 
-function parseList(lines: string[], channel: Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel) {
+function parseList(lines: string[], channel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel) {
 	var codeblockCount = getCodeblockCount(lines);
 	var lists: string[][] = [];
 

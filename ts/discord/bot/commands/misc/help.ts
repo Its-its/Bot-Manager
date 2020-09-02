@@ -65,7 +65,7 @@ class Help extends Command {
 						commandsInCategory.map(c =>
 							[
 								c.commandName[0],
-								c.hasPermsCount(message.member, server, c.perms) + '/' + c.perms.length,
+								c.hasPermsCount(message.member!, server, c.perms) + '/' + c.perms.length,
 								c.description
 							]
 						)
@@ -99,7 +99,7 @@ class Help extends Command {
 						commandsInCategory.map(c =>
 							[
 								c.commandName[0],
-								c.hasPermsCount(message.member, server, c.perms) + '/' + c.perms.length,
+								c.hasPermsCount(message.member!, server, c.perms) + '/' + c.perms.length,
 								c.description
 							]
 						)

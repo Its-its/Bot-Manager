@@ -21,15 +21,15 @@ function onMessage(message: Discord.Message, server: Server): boolean {
 	if (!server.isPluginEnabled('leveling')) return false;
 
 	UserLevel.findOneAndUpdate({
-		server_id: message.guild.id,
-		member_id: message.member.id
+		server_id: message.guild!.id,
+		member_id: message.member!.id
 	}, {
 		$inc: {
 			xp: util.XP_FOR_MESSAGE.value()
 		},
 		$setOnInsert: {
-			server_id: message.guild.id,
-			member_id: message.member.id,
+			server_id: message.guild!.id,
+			member_id: message.member!.id,
 			level: 0
 		}
 	}, { upsert: true }, (err, item) => {
@@ -43,8 +43,8 @@ function onMessage(message: Discord.Message, server: Server): boolean {
 		var newLevel = util.expToLevels(item.xp);
 
 		if (item.level < newLevel) {
-			UserLevel.updateOne({ server_id: message.guild.id, member_id: message.member.id }, { $set: { level: newLevel } }).exec();
-			announceNewLevel(message.member, newLevel, server);
+			UserLevel.updateOne({ server_id: message.guild!.id, member_id: message.member!.id }, { $set: { level: newLevel } }).exec();
+			announceNewLevel(message.member!, newLevel, server);
 		}
 	});
 
@@ -83,7 +83,7 @@ function roleRemove(role: Discord.Role, server: Server) {
 						var member = role.guild.member(item['member_id']);
 						if (member == null) return callback();
 
-						member.addRole(prevRole.id)
+						member.roles.add(prevRole.id)
 						.then(() => callback())
 						.catch(() => callback());
 					}, () => {
@@ -98,44 +98,44 @@ function roleRemove(role: Discord.Role, server: Server) {
 	}
 }
 
-function memberLeave(member: Discord.GuildMember) {
+function memberLeave(member: Discord.GuildMember | Discord.PartialGuildMember) {
 	UserLevel.remove({ server_id: member.guild.id, member_id: member.id }).exec();
 	// Remove from redis
 }
 
-function onReactionAdd(user: Discord.User, reaction: Discord.MessageReaction, server: Server) {
+function onReactionAdd(user: Discord.User | Discord.PartialUser, reaction: Discord.MessageReaction, server: Server) {
 	if (!server.isPluginEnabled('leveling')) return;
 
 	if (!reaction.me) {
 		if (!user.bot) {
-			// redisXP.zincrby(reaction.message.guild.id, -util.XP_FOR_REACTION_GIVE.value(), user.id);
+			// redisXP.zincrby(reaction.message.guild!.id, -util.XP_FOR_REACTION_GIVE.value(), user.id);
 			UserLevel.updateOne({
-				server_id: reaction.message.guild.id,
+				server_id: reaction.message.guild!.id,
 				member_id: user.id
 			}, {
 				$inc: {
 					xp: util.XP_FOR_REACTION_GIVE.value()
 				},
 				$setOnInsert: {
-					server_id: reaction.message.guild.id,
+					server_id: reaction.message.guild!.id,
 					member_id: user.id,
 					level: 0
 				}
 			}, { upsert: true }).exec();
 		}
 
-		if (!reaction.message.member.user.bot) {
-			// redisXP.zincrby(reaction.message.guild.id, -util.XP_FOR_REACTION_RECEIVE.value(), reaction.message.member.id);
+		if (!reaction.message.member!.user.bot) {
+			// redisXP.zincrby(reaction.message.guild!.id, -util.XP_FOR_REACTION_RECEIVE.value(), reaction.message.member!.id);
 			UserLevel.updateOne({
-				server_id: reaction.message.guild.id,
-				member_id: reaction.message.member.id
+				server_id: reaction.message.guild!.id,
+				member_id: reaction.message.member!.id
 			}, {
 				$inc: {
 					xp: util.XP_FOR_REACTION_RECEIVE.value()
 				},
 				$setOnInsert: {
-					server_id: reaction.message.guild.id,
-					member_id: reaction.message.member.id,
+					server_id: reaction.message.guild!.id,
+					member_id: reaction.message.member!.id,
 					level: 0
 				}
 			}, { upsert: true }).exec();
@@ -143,39 +143,39 @@ function onReactionAdd(user: Discord.User, reaction: Discord.MessageReaction, se
 	}
 }
 
-function onReactionRemove(user: Discord.User, reaction: Discord.MessageReaction, server: Server) {
+function onReactionRemove(user: Discord.User | Discord.PartialUser, reaction: Discord.MessageReaction, server: Server) {
 	if (!server.isPluginEnabled('leveling')) return;
 
 	if (!reaction.me) {
 		if (!user.bot) {
-			// redisXP.zincrby(reaction.message.guild.id, -util.XP_FOR_REACTION_GIVE.value(), user.id);
+			// redisXP.zincrby(reaction.message.guild!.id, -util.XP_FOR_REACTION_GIVE.value(), user.id);
 			UserLevel.updateOne({
-				server_id: reaction.message.guild.id,
+				server_id: reaction.message.guild!.id,
 				member_id: user.id
 			}, {
 				$inc: {
 					xp: -util.XP_FOR_REACTION_GIVE.value()
 				},
 				$setOnInsert: {
-					server_id: reaction.message.guild.id,
+					server_id: reaction.message.guild!.id,
 					member_id: user.id,
 					level: 0
 				}
 			}, { upsert: true }).exec();
 		}
 
-		if (!reaction.message.member.user.bot) {
-			// redisXP.zincrby(reaction.message.guild.id, -util.XP_FOR_REACTION_RECEIVE.value(), reaction.message.member.id);
+		if (!reaction.message.member!.user.bot) {
+			// redisXP.zincrby(reaction.message.guild!.id, -util.XP_FOR_REACTION_RECEIVE.value(), reaction.message.member!.id);
 			UserLevel.updateOne({
-				server_id: reaction.message.guild.id,
-				member_id: reaction.message.member.id
+				server_id: reaction.message.guild!.id,
+				member_id: reaction.message.member!.id
 			}, {
 				$inc: {
 					xp: -util.XP_FOR_REACTION_RECEIVE.value()
 				},
 				$setOnInsert: {
-					server_id: reaction.message.guild.id,
-					member_id: reaction.message.member.id,
+					server_id: reaction.message.guild!.id,
+					member_id: reaction.message.member!.id,
 					level: 0
 				}
 			}, { upsert: true }).exec();

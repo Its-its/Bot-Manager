@@ -51,9 +51,9 @@ class Warn extends Command {
 		var reason = params.join(' ');
 
 		new Punishments({
-			server_id: message.guild.id,
+			server_id: message.guild!.id,
 			member_id: userId,
-			creator_id: message.member.id,
+			creator_id: message.member!.id,
 
 			pid: generate('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 6),
 

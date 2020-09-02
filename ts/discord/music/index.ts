@@ -33,7 +33,7 @@ function shardListener() {
 	process.on('message', msg => {
 		if (msg._eval || msg._sEval) return; // Discord shard eval starts with _eval/_sEval
 
-		console.log(`[SHARD ${client.shard.id}]:`, msg);
+		console.log(`[SHARD ${client.shard!.count}]:`, msg);
 
 		if (msg._event) {
 			var guild_id = msg._guild,
@@ -41,11 +41,11 @@ function shardListener() {
 				sender_id = msg._sender,
 				search = msg.search;
 
-			var guild = client.guilds.get(guild_id);
+			var guild = client.guilds.cache.get(guild_id);
 
 			if (guild == null) return;
 
-			var channel = <Discord.TextChannel>guild.channels.get(channel_id);
+			var channel = <Discord.TextChannel>guild.channels.cache.get(channel_id);
 
 			switch(msg._event) {
 				case 'join':
@@ -198,61 +198,21 @@ function shardListener() {
 			}
 
 			function send(str: { embed: any; }) {
-				return channel.send(new Discord.RichEmbed(str.embed));
+				return channel.send(new Discord.MessageEmbed(str.embed));
 			}
 		}
 	});
 }
 
 function sendToWebUI(opts: { [a: string]: any }) {
-	client.shard.send(Object.assign({ from: 'music', to: 'web-music' }, opts));
+	client.shard!.send(Object.assign({ from: 'music', to: 'web-music' }, opts));
 }
 
 
-
-client.options.disabledEvents = [
-	// 'READY',
-	// 'RESUMED',
-	// 'GUILD_SYNC',
-	// 'GUILD_CREATE',
-	// 'VOICE_SERVER_UPDATE',
-	// 'VOICE_STATE_UPDATE',
-	// 'CHANNEL_CREATE',
-	// 'CHANNEL_DELETE',
-	// 'CHANNEL_UPDATE',
-	// 'MESSAGE_CREATE',
-	'GUILD_DELETE',
-	'GUILD_UPDATE',
-	'GUILD_MEMBER_ADD',
-	'GUILD_MEMBER_REMOVE',
-	'GUILD_MEMBER_UPDATE',
-	'GUILD_MEMBERS_CHUNK',
-	'GUILD_ROLE_CREATE',
-	'GUILD_ROLE_DELETE',
-	'GUILD_ROLE_UPDATE',
-	'GUILD_BAN_ADD',
-	'GUILD_BAN_REMOVE',
-	'CHANNEL_PINS_UPDATE',
-	'MESSAGE_DELETE',
-	'MESSAGE_UPDATE',
-	'MESSAGE_DELETE_BULK',
-	'MESSAGE_REACTION_ADD',
-	'MESSAGE_REACTION_REMOVE',
-	'MESSAGE_REACTION_REMOVE_ALL',
-	'USER_UPDATE',
-	'USER_NOTE_UPDATE',
-	'USER_SETTINGS_UPDATE',
-	'USER_GUILD_SETTINGS_UPDATE',
-	'PRESENCE_UPDATE',
-	'TYPING_START',
-	'RELATIONSHIP_ADD',
-	'RELATIONSHIP_REMOVE'
-];
-
 client.on('ready', () => {
-	console.log(' - Client ID:' + client.user.id);
-	console.log(' - Found ' + client.guilds.size + ' Guild(s).');
-	client.shard.send('ready');
+	console.log(' - Client ID:' + client.user!.id);
+	console.log(' - Found ' + client.guilds.cache.size + ' Guild(s).');
+	client.shard!.send('ready');
 });
 
 client.on('error', e => console.error(e));
@@ -262,14 +222,15 @@ client.on('channelDelete', (channel) => {
 	// console.log('channelDelete:', channel);
 });
 
+// @ts-ignore
 client.on('channelUpdate', (oldChannel, newChannel: Discord.VoiceChannel) => {
 	// console.log('channelUpdate:', newChannel);
 
-	if (newChannel.type == 'voice' && newChannel.members.has(client.user.id)) {
-		var member = newChannel.members.get(client.user.id);
+	if (newChannel.type == 'voice' && newChannel.members.has(client.user!.id)) {
+		var member = newChannel.members.get(client.user!.id);
 
-		if (member != null && (member.selfMute || member.serverMute)) {
-			var connection = client.voiceConnections.get(newChannel.guild.id);
+		if (member != null && (member.voice.selfMute || member.voice.serverMute)) {
+			var connection = client.voice!.connections.get(newChannel.guild.id);
 			if (connection != null) {
 				if (connection.dispatcher) {
 					connection.dispatcher.once('end', (reason) => console.log('Ended: ' + reason));
@@ -283,16 +244,16 @@ client.on('channelUpdate', (oldChannel, newChannel: Discord.VoiceChannel) => {
 
 
 client.on('voiceStateUpdate', (oldMember, newMember) => {
-	if (newMember.user.bot) return;
+	if (newMember.member!.user.bot) return;
 
 	// console.log('voiceStateUpdate:', newMember);
 
-	if (oldMember.voiceChannel != null && check(oldMember.voiceChannel)) return;
-	if (oldMember.voiceChannel != null && newMember.voiceChannel != null && oldMember.voiceChannel.id == newMember.voiceChannel.id) return;
-	if (newMember.voiceChannel != null && check(newMember.voiceChannel)) return;
+	if (oldMember.channel != null && check(oldMember.channel)) return;
+	if (oldMember.channel != null && newMember.channel != null && oldMember.channel.id == newMember.channel.id) return;
+	if (newMember.channel != null && check(newMember.channel)) return;
 
 	function check(channel: Discord.VoiceChannel) {
-		var isBotInside = channel.members.has(client.user.id);
+		var isBotInside = channel.members.has(client.user!.id);
 
 		if (!isBotInside) return false;
 
@@ -300,7 +261,7 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
 		for(var i = 0; i < members.length; i++) {
 			var member = members[i];
 
-			if (!member.user.bot && !(member.serverDeaf || member.selfDeaf)) return true;
+			if (!member.user.bot && !(member.voice.serverDeaf || member.voice.selfDeaf)) return true;
 		}
 
 		leaveVoiceChannel(channel.guild.id, (err) => {
@@ -315,7 +276,7 @@ client.login(config.bot.discord.token);
 // INTERNAL
 
 function joinVoiceChannel(guildId: string, channelId: string, cb: (errMsg?: string) => any) {
-	var channel = client.channels.get(channelId);
+	var channel = client.channels.cache.get(channelId);
 
 	if (channel != null && channel.type == 'voice') {
 		getMusic(guildId, music => {
@@ -336,7 +297,7 @@ function joinVoiceChannel(guildId: string, channelId: string, cb: (errMsg?: stri
 }
 
 function leaveVoiceChannel(guildId: string, cb: (errMsg?: string) => any) {
-	var connection = client.voiceConnections.get(guildId);
+	var connection = client.voice!.connections.get(guildId);
 
 	if (connection == null) return cb('Not in a voice channel!');
 
@@ -356,7 +317,7 @@ function joinChannel(voiceChannel: Discord.VoiceChannel, cb: (err?: string) => a
 }
 
 function isPlaying(guild_id: string): boolean {
-	var voice = client.voiceConnections.get(guild_id);
+	var voice = client.voice!.connections.get(guild_id);
 	return voice == null ? false : (voice.dispatcher == null ? false : !voice.dispatcher.destroyed)
 }
 
@@ -382,11 +343,11 @@ function playSong(
 	cb?: (err?: string, newSong?: DiscordBot.plugins.PlayedSong, lastSong?: DiscordBot.plugins.PlayedSong) => any,
 	trys = 0) {
 
-	var guild = client.guilds.get(guild_id);
+	var guild = client.guilds.cache.get(guild_id);
 
 	if (guild == null) { if (cb != null) cb('Unknown Guild ID'); console.error('UNKNOWN GUILD ID!!!! - ' + guild_id); return false; }
 
-	var conn = client.voiceConnections.get(guild_id);
+	var conn = client.voice!.connections.get(guild_id);
 
 	if (conn != null) {
 		if (isPlaying(guild_id)) {
@@ -428,7 +389,7 @@ function playSong(
 			var req = request.get(`http://${config.ytdl.full}/stream?id=${song.id}`);
 			req.pipe(pass);
 
-			var dispatcher = conn!.playStream(pass);
+			var dispatcher = conn!.play(pass);
 
 			req.on('response', () => {
 				console.log('Stream Info: ' + Date.now());
@@ -441,8 +402,8 @@ function playSong(
 				var avatarURL = '';
 
 				if (music.playing.addedBy != null) {
-					var member = client.users.get(music.playing.addedBy);
-					if (member != null) avatarURL = member.avatarURL;
+					var member = client.users.cache.get(music.playing.addedBy);
+					if (member != null) avatarURL = member.avatarURL() || '';
 				}
 
 				var send = utils.generateFullSong(
@@ -554,7 +515,7 @@ function stopPlaying(guildId: string, cb: (errorMessage?: string) => any) {
 }
 
 function stopReason(guild_id: string, reason: 'stopped' | 'next' = 'stopped', cb?: (reason: string) => any): boolean {
-	var voiceConnection = client.voiceConnections.get(guild_id);
+	var voiceConnection = client.voice!.connections.get(guild_id);
 	if (voiceConnection == null) return false;
 	if (voiceConnection.dispatcher == null) return false;
 

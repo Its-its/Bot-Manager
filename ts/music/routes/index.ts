@@ -94,7 +94,8 @@ globalRoute.post('/playlist/create', (req, res) => {
 	if (!req.isAuthenticated()) return res.send({ error: 'Not Authenticated!' });
 
 	new Playlists({
-		creator: req['user'].id,
+		// @ts-ignore
+		creator: req.user.id,
 
 		type: 1,
 		visibility: 2,
@@ -138,7 +139,8 @@ globalRoute.post('/playlist/create', (req, res) => {
 globalRoute.post('/playlist/list', (req, res) => {
 	if (!req.isAuthenticated()) return res.send({ error: 'Not Authenticated!' });
 
-	Playlists.find({ creator: req['user'].id }, (err, playlists) => {
+	// @ts-ignore
+	Playlists.find({ creator: req.user.id }, (err, playlists) => {
 		if (err != null) {
 			console.error(err);
 			return res.send({ error: 'An error occured please retry in a couple seconds.' });

@@ -18,7 +18,7 @@ function call(_params: string[], _server: DiscordServer, message: Discord.Messag
 		else singleMsg = m;
 		if (singleMsg == null) return;
 
-		const guild = singleMsg.guild;
+		let guild = singleMsg.guild!;
 
 		DiscordTwitter.find({ guild_id: guild.id })
 		.exec((err, feeds) => {
@@ -32,7 +32,7 @@ function call(_params: string[], _server: DiscordServer, message: Discord.Messag
 				return;
 			}
 
-			const selector = utils.createPageSelector(message.member.id, message.channel)!;
+			let selector = utils.createPageSelector(message.member!.id, message.channel)!;
 			selector.setEditing(singleMsg);
 
 			selector.setFormat([
@@ -78,7 +78,7 @@ function showChannel(page: utils.MessagePage, channelFeed: CustomDocs.discord.Di
 	// TODO
 	// const isSameGuild = (channel.guild.id == channelFeed.guild_id);
 
-	const channelExists = channel.guild.channels.has(channelFeed.channel_id);
+	const channelExists = channel.guild.channels.cache.has(channelFeed.channel_id);
 
 	page.setFormat([
 		'**Active:** ' + (channelFeed.active ? 'Yes' : 'No'),
@@ -114,7 +114,7 @@ function showChannel(page: utils.MessagePage, channelFeed: CustomDocs.discord.Di
 			var id = utils.strpToId(message);
 			if (id == null) return false;
 
-			var channel = (<Discord.TextChannel>page.channel).guild.channels.get(id);
+			var channel = (<Discord.TextChannel>page.channel).guild.channels.cache.get(id);
 			if (channel == null) return false;
 
 			DiscordTwitter.updateOne({ _id: channelFeed._id }, { $set: { channel_id: channel.id } }).exec();

@@ -13,7 +13,7 @@ import intervalUtils = require('../../../../../../rssgrabber/utils');
 import PERMISSIONS = require('../perms');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	if (!server.userHasPerm(message.member, PERMISSIONS.ADD)) return utils.noPermsMessage('RSS Feed');
+	if (!server.userHasPerm(message.member!, PERMISSIONS.ADD)) return utils.noPermsMessage('RSS Feed');
 
 	var url = params.join(' ');
 
@@ -26,7 +26,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 		if (isNew) {
 			DiscordRSSFeeds.updateOne(
-				{ guild_id: message.guild.id, channel_id: message.channel.id },
+				{ guild_id: message.guild!.id, channel_id: message.channel.id },
 				{
 					$addToSet: {
 						feeds: {
@@ -40,7 +40,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 						last_check: new Date(),
 						pid: generate('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 32),
 						active: true,
-						guild_id: message.guild.id,
+						guild_id: message.guild!.id,
 						channel_id: message.channel.id
 					}
 				},
@@ -56,7 +56,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				}
 			);
 		} else {
-			DiscordRSSFeeds.find({ guild_id: message.guild.id }, (err, dFeeds) => {
+			DiscordRSSFeeds.find({ guild_id: message.guild!.id }, (err, dFeeds) => {
 				if (err != null) {
 					message.channel.send(utils.errorMsg([['RSS Feed', err]]));
 					console.error(err);
@@ -78,7 +78,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 				GlobalRSSFeeds.updateOne({ _id: feedDoc!._id }, { $inc: { sending_to: 1 } }).exec();
 				DiscordRSSFeeds.updateOne(
-					{ guild_id: message.guild.id, channel_id: message.channel.id },
+					{ guild_id: message.guild!.id, channel_id: message.channel.id },
 					{
 						$set: {
 							active: true

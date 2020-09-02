@@ -17,6 +17,8 @@ fs.watch(path.join(__dirname, '../ts'), { recursive: true  }, (event, filename) 
 
 
 function runTimeout(event) {
+	if (isBuilding) return;
+
 	if (buildTimeout != null) clearTimeout(buildTimeout);
 	buildTimeout = setTimeout(() => runBuild(event), WAIT_TIME);
 }

@@ -45,7 +45,7 @@ class PrefixCommand extends Command {
 
 		switch(type) {
 			case 'reset':
-				if (!this.hasPerms(message.member, server, PERMS.RESET)) return Command.noPermsMessage('Prefix');
+				if (!this.hasPerms(message.member!, server, PERMS.RESET)) return Command.noPermsMessage('Prefix');
 
 				server.commandPrefix = '!';
 				server.save();
@@ -55,7 +55,7 @@ class PrefixCommand extends Command {
 					'Bot command prefix reset to "!"'
 				]]);
 			case 'set':
-				if (!this.hasPerms(message.member, server, PERMS.SET)) return Command.noPermsMessage('Prefix');
+				if (!this.hasPerms(message.member!, server, PERMS.SET)) return Command.noPermsMessage('Prefix');
 
 				var prefix = params.shift();
 

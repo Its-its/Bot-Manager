@@ -27,11 +27,11 @@ function onReactAdd(reaction: Discord.MessageReaction, user: Discord.User, serve
 				if (listening.emoji_id == reaction.emoji.id) {
 					switch(listening.event.type) {
 						case 'role':
-							var member = reaction.message.guild.members.get(user.id);
+							var member = reaction.message.guild!.members.cache.get(user.id);
 
 							if (member == null) return;
 
-							doGroup(listening.event, reaction.message.guild, member);
+							doGroup(listening.event, reaction.message.guild!, member);
 							break;
 						// case 'message': break;
 						// case 'dm': break;
@@ -93,12 +93,12 @@ function doGroup(event: DiscordBot.DoGroupEvent, guild: Discord.Guild, member: D
 
 	switch(event.do) {
 		case 'add':
-			member.addRole(event.role_id)
+			member.roles.add(event.role_id)
 			.catch((e: any) => console.error(e));
 			break;
 		case 'remove':
-		member.removeRole(event.role_id)
-		.catch((e: any) => console.error(e));
+			member.roles.remove(event.role_id)
+			.catch((e: any) => console.error(e));
 			break;
 	}
 }
@@ -106,7 +106,7 @@ function doGroup(event: DiscordBot.DoGroupEvent, guild: Discord.Guild, member: D
 function doMessage(event: DiscordBot.DoMessageEvent, member: Discord.GuildMember) {
 	if (event.channel_id == null) return;
 
-	var channel = <Discord.TextChannel>member.guild.channels.get(event.channel_id);
+	var channel = <Discord.TextChannel>member.guild.channels.cache.get(event.channel_id);
 
 	if (channel != null) {
 		channel.send(event.message)
@@ -119,8 +119,13 @@ function doMessage(event: DiscordBot.DoMessageEvent, member: Discord.GuildMember
 }
 
 function doDirectMessage(event: DiscordBot.DoDirectMessageEvent, member: Discord.GuildMember) {
-	member.sendMessage(event.message)
+	member.createDM()
+	.then(channel => {
+		channel.send(event.message)
+		.catch(e => console.error(e));
+	})
 	.catch(e => console.error(e));
+
 
 	return true;
 }

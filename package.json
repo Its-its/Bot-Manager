@@ -5,12 +5,12 @@
 		"build:full": "tsc -p tsconfig.json ; node node_modules/@ef-carbon/tspm/dist/bin/tspm",
 		"build:watch": "node scripts/watch4changes.js",
 		"postbuild": "node node_modules/@ef-carbon/tspm/dist/bin/tspm",
-		"discord_bot": "nodemon src/discord --delay 3 -- --client bot",
-		"discord_games": "nodemon src/discord --delay 3 -- --client games",
-		"discord_master": "nodemon src/discord/master --delay 3",
-		"discord_music": "nodemon src/discord --delay 3 -- --client music",
-		"website": "nodemon -w src src/site --delay 3",
-		"grabber": "nodemon src/rssgrabber --delay 3"
+		"discord_bot": "nodemon src/discord --delay 3 --watch src -- --client bot",
+		"discord_games": "nodemon src/discord --delay 3 --watch src -- --client games",
+		"discord_master": "nodemon src/discord/master --delay 3 --watch src",
+		"discord_music": "nodemon src/discord --delay 3 --watch src -- --client music",
+		"website": "nodemon src/site --delay 3 --watch src",
+		"grabber": "nodemon src/rssgrabber --delay 3 --watch src"
 	},
 	"dependencies": {
 		"async": "^3.1.0",
@@ -18,7 +18,7 @@
 		"cheerio": "^1.0.0-rc.3",
 		"connect-mongo": "^3.2.0",
 		"cookie-parser": "^1.4.4",
-		"discord.js": "^11.5.1",
+		"discord.js": "^12.3.1",
 		"ejs": "^3.0.1",
 		"express": "^4.17.1",
 		"express-rate-limit": "^3.4.0",
@@ -69,6 +69,7 @@
 		"@types/socket.io-client": "^1.4.32",
 		"@types/stripe": "^7.13.19",
 		"@types/twit": "2.2.23",
-		"@types/winston": "^2.4.4"
+		"@types/winston": "^2.4.4",
+		"typescript": "4.0.2"
 	}
 }

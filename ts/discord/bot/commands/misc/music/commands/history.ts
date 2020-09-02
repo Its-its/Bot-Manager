@@ -13,13 +13,13 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	var paramToDo = params.shift();
 
 	if (paramToDo == 'clear') {
-		if (!server.userHasPerm(message.member, PERMS.HISTORY_CLEAR)) return Command.noPermsMessage('Music');
+		if (!server.userHasPerm(message.member!, PERMS.HISTORY_CLEAR)) return Command.noPermsMessage('Music');
 
-		MusicHistory.updateOne({ server_id: message.guild.id }, { $set: { songs: [], song_count: 0 } }).exec(() => {
+		MusicHistory.updateOne({ server_id: message.guild!.id }, { $set: { songs: [], song_count: 0 } }).exec(() => {
 			message.channel.send(Command.info([['Music!', 'Cleared history.']]));
 		});
 	} else {
-		if (!server.userHasPerm(message.member, PERMS.HISTORY_LIST)) return Command.noPermsMessage('Music');
+		if (!server.userHasPerm(message.member!, PERMS.HISTORY_LIST)) return Command.noPermsMessage('Music');
 
 		var page = 1;
 		var maxItems = 5;
@@ -31,7 +31,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 		if (page < 1) page = 1;
 
-		MusicHistory.findOne({ server_id: message.guild.id }, { songs: { $slice: [(page - 1) * maxItems, maxItems] } }, (err, item) => {
+		MusicHistory.findOne({ server_id: message.guild!.id }, { songs: { $slice: [(page - 1) * maxItems, maxItems] } }, (err, item) => {
 			if (err != null) {
 				console.error(err);
 				message.channel.send(Command.error([['Music', 'Nothing in History!']]));

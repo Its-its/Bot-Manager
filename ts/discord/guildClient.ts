@@ -38,7 +38,7 @@ function getOrCreate(guild: Guild, cb: (client: DiscordServer) => any) {
 		server = new DiscordServer(guild.id, {
 			region: guild.region,
 			name: guild.name,
-			iconURL: guild.iconURL,
+			iconURL: guild.iconURL() || '',
 			createdAt: guild.createdTimestamp,
 			memberCount: guild.memberCount,
 			ownerID: guild.ownerID

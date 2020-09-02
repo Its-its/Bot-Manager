@@ -1135,7 +1135,7 @@ class Server extends Changes {
 	// Full Perm, used to detect "commands.bypasstoggle"
 	public memberHasExactPerm(member: Discord.GuildMember, perm: string): boolean {
 		if (member == null) return false;
-		return this.userHasExactPerm(member.id, perm) || this.anyRoleHasExactPerm(member.roles.keyArray(), perm);
+		return this.userHasExactPerm(member.id, perm) || this.anyRoleHasExactPerm(member.roles.cache.keyArray(), perm);
 	}
 
 	public rolesHaveAnyChildPerm(roleIds: string[], perms: string[]) {
@@ -1246,7 +1246,7 @@ class Server extends Changes {
 
 		if (this.userHasParentPerm(user.id, perm)) return true;
 
-		if (this.anyRoleHasBasePerm(user.roles.keyArray(), perm)) return true;
+		if (this.anyRoleHasBasePerm(user.roles.cache.keyArray(), perm)) return true;
 
 		return false;
 	}

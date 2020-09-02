@@ -44,13 +44,13 @@ class Comm extends Command {
 
 		switch(cmdTypeCalled.toLowerCase()) {
 			case 'list':
-				if (!this.hasPerms(message.member, server, PERMS.LIST)) return Command.noPermsMessage('Command');
+				if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Command');
 
 				message.channel.send(Command.table([ 'PID', 'Alias' ], server.commands.map(c => [c.pid, c.alias.join(', ')])));
 
 				return;
 			case 'create':
-				if (!this.hasPerms(message.member, server, PERMS.CREATE)) return Command.noPermsMessage('Command');
+				if (!this.hasPerms(message.member!, server, PERMS.CREATE)) return Command.noPermsMessage('Command');
 
 				var commandName = params.shift();
 
@@ -62,13 +62,13 @@ class Comm extends Command {
 
 				if (onCalledMessage.length == 0) return;
 
-				server.createCommand(message.member, commandName, { type: 'echo', message: onCalledMessage }, (resp) => {
+				server.createCommand(message.member!, commandName, { type: 'echo', message: onCalledMessage }, (resp) => {
 					if (resp) server.save(() => message.reply(`Successfully created command "${commandName}"`));
 					else message.reply('Command with that name already exists!');
 				});
 				break;
 			case 'remove':
-				if (!this.hasPerms(message.member, server, PERMS.REMOVE)) return Command.noPermsMessage('Command');
+				if (!this.hasPerms(message.member!, server, PERMS.REMOVE)) return Command.noPermsMessage('Command');
 
 				var commandName = params.shift();
 

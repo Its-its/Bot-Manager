@@ -52,7 +52,7 @@ class Blacklist extends Command {
 		}
 
 		if (cmdToCall == 'list') {
-			if (!this.hasPerms(message.member, server, PERMS.LIST)) return Command.noPermsMessage('Blacklist');
+			if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Blacklist');
 
 			var discChannelIdStr = params.shift();
 
@@ -85,7 +85,7 @@ class Blacklist extends Command {
 				]);
 			}
 		} else if (cmdToCall == 'remove') {
-			if (!this.hasPerms(message.member, server, PERMS.CLEAR)) return Command.noPermsMessage('Blacklist');
+			if (!this.hasPerms(message.member!, server, PERMS.CLEAR)) return Command.noPermsMessage('Blacklist');
 
 			var discChannelIdStr = params.shift();
 			var fullCommand = params.join(' ');
@@ -139,14 +139,14 @@ class Blacklist extends Command {
 				]
 			]);
 		} else if (cmdToCall == 'add') {
-			if (!this.hasPerms(message.member, server, PERMS.ADD)) return Command.noPermsMessage('Blacklist');
+			if (!this.hasPerms(message.member!, server, PERMS.ADD)) return Command.noPermsMessage('Blacklist');
 
 			var channelIdStripped = server.strpToId(params.shift());
 
 			if (channelIdStripped == null) return Command.error([['Channel', 'Invalid Channel ID']]);
 
 			if (channelIdStripped != 'global') {
-				var discordChannel = message.guild.channels.get(channelIdStripped);
+				var discordChannel = message.guild!.channels.cache.get(channelIdStripped);
 
 				if (discordChannel == null || discordChannel.type != 'text') {
 					return Command.error([
@@ -173,7 +173,7 @@ class Blacklist extends Command {
 
 			return Command.success([[ 'Blacklist', 'Successfully blacklisted "' + fullCommand + '"' ]]);
 		} else if (cmdToCall == 'action') {
-			if (!this.hasPerms(message.member, server, PERMS.ACTION)) return Command.noPermsMessage('Blacklist');
+			if (!this.hasPerms(message.member!, server, PERMS.ACTION)) return Command.noPermsMessage('Blacklist');
 
 			var channelIdStripped = server.strpToId(params.shift());
 			var punishmentType = params.shift();
@@ -218,7 +218,7 @@ class Blacklist extends Command {
 	}
 
 	public onMessage(message: Discord.Message, server: DiscordServer) {
-		if (!server.userHasPerm(message.member, PERMS.IGNORE)) return false;
+		if (!server.userHasPerm(message.member!, PERMS.IGNORE)) return false;
 
 
 		var opts1 = dealWithBlacklists(server, 'global', message.content);

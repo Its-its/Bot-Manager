@@ -67,12 +67,12 @@ function parseMessage(message: string, server: Server, defaultMessage: Discord.M
 		var command = defaultCommands[i];
 
 		if (command.is(messageCommand)) {
-			if (command.ownerOnly && defaultMessage.member.id != OWNER_ID) return;
+			if (command.ownerOnly && defaultMessage.member!.id != OWNER_ID) return;
 
-			if (!defaultMessage.member.hasPermission('ADMINISTRATOR')) {
+			if (!defaultMessage.member!.hasPermission('ADMINISTRATOR')) {
 
 				if (command.perms.length != 0 &&
-					!(server.userHasAnyChildPerm(defaultMessage.member.id, command.perms) || server.rolesHaveAnyChildPerm(defaultMessage.member.roles.keyArray(), command.perms))
+					!(server.userHasAnyChildPerm(defaultMessage.member!.id, command.perms) || server.rolesHaveAnyChildPerm(defaultMessage.member!.roles.cache.keyArray(), command.perms))
 				) return;
 			}
 

@@ -22,7 +22,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 		if (isNew) {
 			DiscordTwitter.updateOne(
-				{ guild_id: message.guild.id, channel_id: message.channel.id },
+				{ guild_id: message.guild!.id, channel_id: message.channel.id },
 				{
 					$addToSet: {
 						feeds: {
@@ -36,7 +36,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 						last_check: new Date(),
 						pid: generate('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 32),
 						active: true,
-						guild_id: message.guild.id,
+						guild_id: message.guild!.id,
 						channel_id: message.channel.id
 					}
 				},
@@ -52,7 +52,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				}
 			);
 		} else {
-			DiscordTwitter.find({ guild_id: message.guild.id }, (err, dFeeds) => {
+			DiscordTwitter.find({ guild_id: message.guild!.id }, (err, dFeeds) => {
 				if (err != null) {
 					message.channel.send(utils.errorMsg([['Twitter', err]]));
 					console.error(err);
@@ -73,7 +73,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 				GlobalTwitterFeeds.updateOne({ _id: feedDoc!._id }, { $inc: { sending_to: 1 } }).exec();
 				DiscordTwitter.updateOne(
-					{ guild_id: message.guild.id, channel_id: message.channel.id },
+					{ guild_id: message.guild!.id, channel_id: message.channel.id },
 					{
 						$set: {
 							active: true

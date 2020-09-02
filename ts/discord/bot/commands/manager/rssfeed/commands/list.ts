@@ -14,7 +14,7 @@ import { CustomDocs } from '@type-manager';
 
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	if (!server.userHasPerm(message.member, PERMISSIONS.LIST)) return utils.noPermsMessage('RSS Feed');
+	if (!server.userHasPerm(message.member!, PERMISSIONS.LIST)) return utils.noPermsMessage('RSS Feed');
 
 	message.channel.send(utils.infoMsg([['RSS Feed', 'Finding all RSS Feeds in current Guild.']]))
 	.then(m => {
@@ -23,7 +23,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		else singleMsg = m;
 		if (singleMsg == null) return;
 
-		const guild = singleMsg.guild;
+		let guild = singleMsg.guild!;
 
 		DiscordFeeds.find({ guild_id: guild.id })
 		.exec((err, feeds) => {
@@ -37,7 +37,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				return;
 			}
 
-			const selector = utils.createPageSelector(message.member.id, message.channel)!;
+			let selector = utils.createPageSelector(message.member!.id, message.channel)!;
 			selector.setEditing(singleMsg);
 
 			selector.setFormat([
@@ -65,7 +65,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 							return;
 						}
 
-						showChannel(server, message.member, page, feed);
+						showChannel(server, message.member!, page, feed);
 					});
 				});
 			});
@@ -152,7 +152,7 @@ function moveFeedToDifferentChannel(channelStrId: string, mongoFeedId: any, page
 	var id = utils.strpToId(channelStrId);
 	if (id == null) return false;
 
-	var channel = (<Discord.TextChannel>page.channel).guild.channels.get(id);
+	var channel = (<Discord.TextChannel>page.channel).guild.channels.cache.get(id);
 	if (channel == null) return false;
 
 	DiscordFeeds.updateOne({ _id: mongoFeedId }, { $set: { channel_id: channel.id } }).exec();

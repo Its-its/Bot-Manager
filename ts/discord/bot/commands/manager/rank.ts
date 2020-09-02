@@ -40,7 +40,7 @@ class Rank extends Command {
 			]);
 		}
 
-		var guildNember = message.member;
+		var guildNember = message.member!;
 		var roleId: Nullable<string>;
 
 		var parameterBeingCalled = params.shift();
@@ -53,7 +53,7 @@ class Rank extends Command {
 				if (ranks.length == 0) return Command.info([[ 'Public Ranks:', 'No Ranks Public' ]]);
 
 				var roles = ranks.map(b => {
-					var role = message.guild.roles.get(b);
+					var role = message.guild!.roles.cache.get(b);
 					if (role == null) return null;
 					return [role.name, role.members.size + ' members'];
 				}).filter(f => f != null);
@@ -66,9 +66,9 @@ class Rank extends Command {
 				if (valueOfParameter == null) return Command.error([['ERROR!', 'Please specify the role!']]);
 				if ((roleId = getRoleId(valueOfParameter)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
 				if (!server.isRank(roleId)) return Command.error([['ERROR!', 'That is not a public rank!']]);
-				if (guildNember.roles.has(valueOfParameter)) return Command.error([['ERROR!', 'You already have the role!']]);
+				if (guildNember.roles.cache.has(valueOfParameter)) return Command.error([['ERROR!', 'You already have the role!']]);
 
-				guildNember.addRole(roleId, 'Public Rank - User requested.')
+				guildNember.roles.add(roleId, 'Public Rank - User requested.')
 				.then(s => {}, reason => { console.error(' - ' + reason); })
 				.catch(reason => console.error(reason));
 
@@ -80,9 +80,9 @@ class Rank extends Command {
 				if (valueOfParameter == null) return Command.error([['ERROR!', 'Please specify the role!']]);
 				if ((roleId = getRoleId(valueOfParameter)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
 				if (!server.isRank(roleId)) return Command.error([['ERROR!', 'That is not a public rank!']]);
-				if (!guildNember.roles.has(valueOfParameter)) return Command.error([['ERROR!', 'You already have the role!']]);
+				if (!guildNember.roles.cache.has(valueOfParameter)) return Command.error([['ERROR!', 'You already have the role!']]);
 
-				guildNember.removeRole(roleId, 'Public Rank - User requested.')
+				guildNember.roles.remove(roleId, 'Public Rank - User requested.')
 				.then(s => {}, reason => { console.error(' - ' + reason); })
 				.catch(reason => console.error(reason));
 
@@ -117,7 +117,7 @@ class Rank extends Command {
 		function getRoleId(name: string): Nullable<string> {
 			name = name.toLowerCase();
 
-			var roles = message.guild.roles.array();
+			var roles = message.guild!.roles.cache.array();
 			for(var i = 0; i < roles.length; i++) {
 				var role = roles[i];
 				if (role.name.toLowerCase() == name)

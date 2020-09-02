@@ -18,9 +18,9 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	var playlistId = params.shift();
 
 	if (playlistId == 'create') {
-		if (!server.userHasPerm(message.member, PERMS.PLAYLIST_CREATE)) return Command.noPermsMessage('Music');
+		if (!server.userHasPerm(message.member!, PERMS.PLAYLIST_CREATE)) return Command.noPermsMessage('Music');
 
-		DiscordMembers.findOne({ did: message.member.id }, (err, member) => {
+		DiscordMembers.findOne({ did: message.member!.id }, (err, member) => {
 			if (member == null) {
 				message.channel.send(Command.error([['Playlist', 'Unable to find user. Please']]));
 				return;
@@ -71,11 +71,11 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	if (['info', 'list', 'delete', 'add', 'remove', 'clear', 'title', 'description', 'thumbnail'].indexOf(todo) == -1) return Command.error([['Music', 'Unknown Usage: ' + todo]]);
 
 	// @ts-ignore
-	if (!server.userHasPerm(message.member, PERMS['PLAYLIST_' + todo.toUpperCase()])) return Command.noPermsMessage('Music');
+	if (!server.userHasPerm(message.member!, PERMS['PLAYLIST_' + todo.toUpperCase()])) return Command.noPermsMessage('Music');
 
 	switch (todo) {
 		case 'info':
-			guildClient.getMusic(message.guild.id, (music) => {
+			guildClient.getMusic(message.guild!.id, (music) => {
 				if (music == null) return message.channel.send(Command.error([['Playlist', 'Unbale to find Music']]));
 
 				if (defaultPlaylist) playlistId = music.currentPlaylist;
@@ -100,7 +100,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			});
 			break;
 		case 'list':
-			guildClient.getMusic(message.guild.id, (music) => {
+			guildClient.getMusic(message.guild!.id, (music) => {
 				if (music == null) return message.channel.send(Command.error([['Playlist', 'Unable to find Music']]));
 
 				if (defaultPlaylist) playlistId = music.currentPlaylist;
@@ -165,7 +165,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			if (playlistId == null) return message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
 			if (params.length == 0) return message.channel.send(Command.error([['Playlist', 'Invalid Params']]));
 
-			musicPlugin.addToPlaylist(message.guild.id, message.member.id, playlistId, params.shift()!, (err, info) => {
+			musicPlugin.addToPlaylist(message.guild!.id, message.member!.id, playlistId, params.shift()!, (err, info) => {
 				if (err != null) return message.channel.send(Command.error([['Playlist', err]]));
 				message.channel.send(Command.error([['Playlist', 'Added song to playlist.']]));
 			});
@@ -174,8 +174,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			if (playlistId == null) return message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
 			if (params.length == 0) return message.channel.send(Command.error([['Playlist', 'Invalid Params']]));
 
-
-			musicPlugin.removeFromPlaylist(message.guild.id, message.member.id, playlistId, params.shift()!, (err, info) => {
+			musicPlugin.removeFromPlaylist(message.guild!.id, message.member!.id, playlistId, params.shift()!, (err, info) => {
 				if (err != null) return message.channel.send(Command.error([['Playlist', err]]));
 				message.channel.send(Command.error([['Playlist', 'Removed song from playlist.']]));
 			});
@@ -183,7 +182,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		case 'clear':
 			if (playlistId == null) return message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
 
-			musicPlugin.clearPlaylist(message.guild.id, message.member.id, playlistId, (err, playlist) => {
+			musicPlugin.clearPlaylist(message.guild!.id, message.member!.id, playlistId, (err, playlist) => {
 				if (err != null) return message.channel.send(Command.error([['Playlist', err]]));
 				message.channel.send(Command.error([['Playlist', 'Removed song from playlist.']]));
 			});

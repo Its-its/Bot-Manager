@@ -42,60 +42,6 @@ mongoose.connect(config.database, { useNewUrlParser: true });
 
 import client = require('../client');
 
-client.options.disabledEvents = [
-	'TYPING_START'
-];
-
-
-
-// const DISCORD_EVENTS = [
-// 	'channelCreate',
-// 	'channelDelete',
-// 	'channelPinsUpdate',
-// 	'channelUpdate',
-// 	'clientUserGuildSettingsUpdate',
-// 	'clientUserSettingsUpdate',
-// 	'debug',
-// 	'disconnect',
-// 	'emojiCreate',
-// 	'emojiDelete',
-// 	'emojiUpdate',
-// 	'error',
-// 	'guildBanAdd',
-// 	'guildBanRemove',
-// 	'guildCreate',
-// 	'guildDelete',
-// 	'guildMemberAdd',
-// 	'guildMemberAvailable',
-// 	'guildMemberRemove',
-// 	'guildMembersChunk',
-// 	'guildMemberSpeaking',
-// 	'guildMemberUpdate',
-// 	'guildUnavailable',
-// 	'guildUpdate',
-// 	'message',
-// 	'messageDelete',
-// 	'messageDeleteBulk',
-// 	'messageReactionAdd',
-// 	'messageReactionRemove',
-// 	'messageReactionRemoveAll',
-// 	'messageUpdate',
-// 	'presenceUpdate',
-// 	'rateLimit',
-// 	'ready',
-// 	'reconnecting',
-// 	'resume',
-// 	'roleCreate',
-// 	'roleDelete',
-// 	'roleUpdate',
-// 	'typingStart',
-// 	'typingStop',
-// 	'userNoteUpdate',
-// 	'userUpdate',
-// 	'voiceStateUpdate',
-// 	'warn'
-// ];
-
 
 let statistics = defaultStats();
 
@@ -109,13 +55,12 @@ function defaultStats() {
 
 
 client.on('ready', () => {
-	logger.info(' - Client ID:' + client.user.id);
-	logger.info(' - Found ' + client.guilds.size + ' Guild(s).');
+	logger.info(' - Client ID:' + client.user!.id);
+	logger.info(' - Found ' + client.guilds.cache.size + ' Guild(s).');
 
-	client.guilds.forEach(g => logger.info(' - - ' + g.id +  ' | ' + g.region + ' | ' + g.name));
+	client.guilds.cache.forEach(g => logger.info(' - - ' + g.id +  ' | ' + g.region + ' | ' + g.name));
 
-	client.user.setActivity('the spacetime continuum', { type: 'LISTENING' });
-
+	client.user!.setActivity('my surroundings...', { type: 'WATCHING' });
 
 	setInterval(() => {
 		logger.info('Statistics');
@@ -153,7 +98,7 @@ function shardListener() {
 	process.on('message', msg => {
 		if (msg._eval || msg._sEval) return; // Discord shard eval starts with _eval/_sEval
 
-		logger.info(`[SHARD ${client.shard.id}]:`, msg);
+		logger.info(`[SHARD ${client.shard!.count}]:`, msg);
 	});
 }
 
@@ -184,19 +129,22 @@ client.on('message', msg => {
 	// Possible b/c of webhooks ??
 	if (msg.member == null) return;
 
+	// TODO: Temp. Only allow the bot to respond in guilds.
+	if (msg.guild == null) return;
+
 	// Bot?
 	if (msg.member.user == null || msg.member.user.bot) return;
 
 	try {
-		guildClient.get(msg.guild.id, server => {
+		guildClient.get(msg.guild!.id, server => {
 			if (server == null) {
-				server = new Server(msg.guild.id, {
-					region: msg.guild.region,
-					name: msg.guild.name,
-					iconURL: msg.guild.iconURL,
-					createdAt: msg.guild.createdTimestamp,
-					memberCount: msg.guild.memberCount,
-					ownerID: msg.guild.ownerID
+				server = new Server(msg.guild!.id, {
+					region: msg.guild!.region,
+					name: msg.guild!.name,
+					iconURL: msg.guild!.iconURL() || '',
+					createdAt: msg.guild!.createdTimestamp,
+					memberCount: msg.guild!.memberCount,
+					ownerID: msg.guild!.ownerID
 				});
 
 				server.save();
@@ -204,7 +152,7 @@ client.on('message', msg => {
 
 			if (server.channelIgnored(msg.channel.id)) return;
 
-			if (commandPlugin.onDidCallCommand(client.user.id, msg, server)) {
+			if (commandPlugin.onDidCallCommand(client.user!.id, msg, server)) {
 				statistics.guild_bot_command_count++;
 			} else {
 				statistics.guild_user_chat_count++;
@@ -235,8 +183,9 @@ client.on('guildUpdate', (oldGuild, newGuild) => {
 			edited = true;
 		}
 
-		if (server.iconURL != newGuild.iconURL) {
-			server.iconURL = newGuild.iconURL;
+		let icon_url = newGuild.iconURL();
+		if (icon_url != null && server.iconURL != icon_url) {
+			server.iconURL = icon_url;
 			edited = true;
 		}
 
@@ -260,7 +209,7 @@ client.on('guildUpdate', (oldGuild, newGuild) => {
 });
 
 client.on('guildDelete', (guild) => {
-	client.shard.send('update');
+	client.shard!.send('update');
 
 	logger.info('Left Server: ' + guild.name);
 
@@ -275,7 +224,7 @@ client.on('guildDelete', (guild) => {
 
 // Server joined
 client.on('guildCreate', guild => {
-	client.shard.send('update');
+	client.shard!.send('update');
 
 	logger.info('Joined Server: ' + guild.name);
 
@@ -334,7 +283,7 @@ client.on('guildCreate', guild => {
 										new Server(guild.id, {
 											region: guild.region,
 											name: guild.name,
-											iconURL: guild.iconURL,
+											iconURL: guild.iconURL() || '',
 											createdAt: guild.createdTimestamp,
 											memberCount: guild.memberCount,
 											ownerID: guild.ownerID
@@ -357,7 +306,7 @@ client.on('guildCreate', guild => {
 								new Server(guild.id, {
 									region: guild.region,
 									name: guild.name,
-									iconURL: guild.iconURL,
+									iconURL: guild.iconURL() || '',
 									createdAt: guild.createdTimestamp,
 									memberCount: guild.memberCount,
 									ownerID: guild.ownerID
@@ -418,7 +367,7 @@ client.on('messageUpdate', (oldMessage, newMessage) => {
 
 client.on('messageReactionAdd', (reaction, user) => {
 	try {
-		guildClient.get(reaction.message.guild.id, server => {
+		guildClient.get(reaction.message.guild!.id, server => {
 			if (server == null) return;
 			levelsPlugin.onReactionAdd(user, reaction, server);
 		});
@@ -429,7 +378,7 @@ client.on('messageReactionAdd', (reaction, user) => {
 
 client.on('messageReactionRemove', (reaction, user) => {
 	try {
-		guildClient.get(reaction.message.guild.id, server => {
+		guildClient.get(reaction.message.guild!.id, server => {
 			if (server == null) return;
 			levelsPlugin.onReactionRemove(user, reaction, server);
 		});
@@ -449,17 +398,17 @@ client.on('guildMemberRemove', guildMember => {
 });
 
 client.on('guildMemberUpdate', (oldUser, newUser) => {
-	if (oldUser.roles.size != newUser.roles.size) {
+	if (oldUser.roles.cache.size != newUser.roles.cache.size) {
 		try {
 			guildClient.get(oldUser.guild.id, server => {
 				if (server == null) return;
 
-				if (newUser.roles.size < oldUser.roles.size) {
-					var removed = oldUser.roles.filterArray(role => !newUser.roles.has(role.id));
-					PunishmentCmd.onGuildMemberRoleRemove(newUser, removed, server);
+				if (newUser.roles.cache.size < oldUser.roles.cache.size) {
+					var removed = oldUser.roles.cache.filter(role => !newUser.roles.cache.has(role.id));
+					PunishmentCmd.onGuildMemberRoleRemove(newUser, removed.array(), server);
 					// logger.info(removed);
 				} else {
-					var added = newUser.roles.filterArray(role => !oldUser.roles.has(role.id));
+					var added = newUser.roles.cache.filter(role => !oldUser.roles.cache.has(role.id));
 					// logger.info(added);
 				}
 			});
@@ -574,7 +523,7 @@ setInterval(() => {
 			}
 
 			if (newFeeds.length != 0) {
-				var guild = client.guilds.get(doc.guild_id);
+				var guild = client.guilds.cache.get(doc.guild_id);
 
 				if (guild == null) {
 					// Remove
@@ -593,7 +542,7 @@ setInterval(() => {
 					return;
 				}
 
-				var channel = <Discord.TextChannel>guild.channels.get(doc.channel_id);
+				var channel = <Discord.TextChannel>guild.channels.cache.get(doc.channel_id);
 
 				if (channel == null) {
 					// TODO: Disable
@@ -664,7 +613,7 @@ setInterval(() => {
 			}
 
 			if (newFeeds.length != 0) {
-				var guild = client.guilds.get(doc.guild_id);
+				var guild = client.guilds.cache.get(doc.guild_id);
 
 				if (guild == null) {
 					// Remove
@@ -683,7 +632,7 @@ setInterval(() => {
 					return;
 				}
 
-				var channel = <Discord.TextChannel>guild.channels.get(doc.channel_id);
+				var channel = <Discord.TextChannel>guild.channels.cache.get(doc.channel_id);
 
 				if (channel == null) {
 					// TODO: Disable
@@ -726,10 +675,10 @@ setInterval(() => {
 		console.log('Calling ' + items.length + ' intervals.');
 
 		async.every(items, (item, cb) => {
-			var guild = client.guilds.get(item.guild_id);
+			var guild = client.guilds.cache.get(item.guild_id);
 
 			if (guild != null) {
-				var channel = <Discord.TextChannel>guild.channels.get(item.channel_id);
+				var channel = <Discord.TextChannel>guild.channels.cache.get(item.channel_id);
 
 				if (channel != null) {
 					// try {

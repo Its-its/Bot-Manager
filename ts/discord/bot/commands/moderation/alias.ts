@@ -41,7 +41,7 @@ class Alias extends Command {
 
 		switch(params.shift()!.toLowerCase()) {
 			case 'list':
-				if (!this.hasPerms(message.member, server, PERMISSIONS.LIST)) return Command.noPermsMessage('Alias');
+				if (!this.hasPerms(message.member!, server, PERMISSIONS.LIST)) return Command.noPermsMessage('Alias');
 
 				if (server.alias.length == 0) {
 					return Command.info([
@@ -56,7 +56,7 @@ class Alias extends Command {
 					return;
 				}
 			case 'add':
-				if (!this.hasPerms(message.member, server, PERMISSIONS.ADD)) return Command.noPermsMessage('Alias');
+				if (!this.hasPerms(message.member!, server, PERMISSIONS.ADD)) return Command.noPermsMessage('Alias');
 
 				var alias = params.shift();
 				var command = params.join(' ');
@@ -69,7 +69,7 @@ class Alias extends Command {
 
 				return Command.success([['Alias', 'Added new alias.']]);
 			case 'remove':
-				if (!this.hasPerms(message.member, server, PERMISSIONS.REMOVE)) return Command.noPermsMessage('Alias');
+				if (!this.hasPerms(message.member!, server, PERMISSIONS.REMOVE)) return Command.noPermsMessage('Alias');
 
 				var name = params.shift();
 

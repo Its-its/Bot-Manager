@@ -52,14 +52,14 @@ class Message extends Command {
 		var sRoleId = server.strpToId(roleId);
 		if (sRoleId == null) return Command.error([['Message', 'Invalid ID']]);
 
-		const discordGuildRole = message.guild.roles.get(sRoleId);
+		const discordGuildRole = message.guild!.roles.cache.get(sRoleId);
 		if (discordGuildRole == null) return Command.error([['Error', 'Not a valid Server Role.']]);
 
 		const membersInRole = discordGuildRole.members.array();
 
 		// if (!isGroupDM) {
 			message.channel.send(Command.info([['Success', `Sending a DM to ${membersInRole.length} players in the role ${discordGuildRole.name}. This may take a minute.`]]));
-			messageToSend += `\n\n_Sent from "${message.guild.name}" by <@${message.member.id}> to everyone in the role @${discordGuildRole.name} (with ${membersInRole.length} members)_`;
+			messageToSend += `\n\n_Sent from "${message.guild!.name}" by <@${message.member!.id}> to everyone in the role @${discordGuildRole.name} (with ${membersInRole.length} members)_`;
 		// } else {
 		// 	message.channel.send(Command.info([['Success', `Creating a group DM with ${members.length} players in the role ${server_role.name}. This may take a minute.`]]));
 		// }
@@ -69,9 +69,11 @@ class Message extends Command {
 				if (pos == membersInRole.length) return message.channel.send(Command.success([['Success', `Sent a DM to ${membersInRole.length} players in the role ${discordGuildRole!.name}`]]));
 				var member = membersInRole[pos];
 
-				member.sendMessage(messageToSend)
-				.then(() => {
-					setTimeout(() => nextMessage(pos + 1), 500);
+				member.createDM()
+				.then(channel => {
+					channel.send(messageToSend)
+					.then(() => setTimeout(() => nextMessage(pos + 1), 500))
+					.catch(e => console.error(e));
 				})
 				.catch(e => console.error(e));
 			}

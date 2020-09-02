@@ -234,7 +234,7 @@ class Music implements DiscordBot.plugins.Music {
 	// }
 
 	public sendMessageFromGuild(guild: Discord.Guild, message: any) {
-		var channel = <Discord.TextChannel>guild.channels.get(this.lastTextChannelId);
+		var channel = <Discord.TextChannel>guild.channels.cache.get(this.lastTextChannelId);
 		if (channel == null) return console.error('Channel is none existent. - ' + this.lastTextChannelId);
 		channel.send(message)
 		.catch(e => console.error(e));

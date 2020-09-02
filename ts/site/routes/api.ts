@@ -296,6 +296,7 @@ function apiBots() {
 	bots.post('/status', registerBot, (req, res) => {
 		// @ts-ignore
 		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		// @ts-ignore
 		var user: CustomDocs.web.UsersDocument = req.user;
 
 		res.send({
@@ -341,7 +342,8 @@ function apiBots() {
 
 			// TODO: Disable.
 
-			var user = req['user'];
+			// @ts-ignore
+			var user: CustomDocs.web.UsersDocument = req.user;
 
 			Users.updateOne({ _id: user._id }, { $inc: { 'bots.amount': -1 } })
 			.exec(() => res.send({ res: 'success' }));
@@ -536,7 +538,7 @@ function apiBots() {
 					$set: {
 						alias: alias,
 						params: params,
-						edited_at: Date.now()
+						edited_at: new Date()
 					}
 				}, (err, comm) => {
 				if (err != null) {
@@ -1136,6 +1138,7 @@ export = (app: express.Application) => {
 	discordRoute.get('/guilds', (req, res) => {
 		// @ts-ignore
 		var bot: CustomDocs.web.BotsDocument = req['bot'];
+		// @ts-ignore
 		var user: CustomDocs.web.UsersDocument = req.user;
 
 		DiscordMembers.findOne({ user_id: user._id }, (err, member) => {
@@ -1344,7 +1347,8 @@ export = (app: express.Application) => {
 
 		console.log('/status populate lis');
 		// Main Dashboard
-		req['user'].populate('bot_listeners', (err: any, resp: CustomDocs.web.UsersDocument) => {
+
+		(<CustomDocs.web.UsersDocument>req.user).populate('bot_listeners', (err: any, resp: CustomDocs.web.UsersDocument) => {
 			res.send({
 				error: err,
 				data: resp.bot_listeners!.map(b => {
@@ -1362,7 +1366,9 @@ export = (app: express.Application) => {
 
 	dashboard.post('/create', (req, res) => {
 		console.log('/create pre');
-		var user = req['user'];
+
+		// @ts-ignore
+		var user: CustomDocs.web.UsersDocument = req['user'];
 
 		if (!user.admin && user.bots.amount >= MAX_BOTS) return res.send({ error: 'Max Bot count reached!' });
 

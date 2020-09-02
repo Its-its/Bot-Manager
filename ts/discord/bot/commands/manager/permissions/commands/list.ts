@@ -8,7 +8,7 @@ import PERMISSIONS = require('../perms');
 import { DiscordBot } from '@type-manager';
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	if (!server.userHasPerm(message.member, PERMISSIONS.LIST)) return Command.noPermsMessage('Perms');
+	if (!server.userHasPerm(message.member!, PERMISSIONS.LIST)) return Command.noPermsMessage('Perms');
 
 	var cmdToDo = params.shift();
 

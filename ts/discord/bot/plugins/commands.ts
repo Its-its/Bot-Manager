@@ -15,13 +15,13 @@ function isEnabled(server: Server): boolean {
 function onDidCallCommand(bot_id: string, message: Discord.Message, server: Server): boolean {
 	if (message.author.bot) return false;
 
-	if (server.memberIgnored(message.member.id)) return false;
+	if (server.memberIgnored(message.member!.id)) return false;
 
 	if (CommandManager.isCallingCommand(server.getPrefix(), bot_id, message.content)) {
-		if (!limits.canCallCommand(message.guild.id)) return true;
+		if (!limits.canCallCommand(message.guild!.id)) return true;
 
 		if (message.content.trim() == `<@${bot_id}>` || message.content.trim() == `<@!${bot_id}>`) {
-			message.channel.send(new Discord.RichEmbed({
+			message.channel.send(new Discord.MessageEmbed({
 				description: 'You can use @bot_name instead of the command prefix if desired.',
 				fields: [
 					{
@@ -63,7 +63,7 @@ function onDidCallCommand(bot_id: string, message: Discord.Message, server: Serv
 
 
 		// Not enabled? Not "plugin" or "perms"? Doesn't have bypasstoggle perm? return
-		if (!isEnabled(server) && commName != 'plugin' && commName != 'perms' && !server.memberHasExactPerm(message.member, 'commands.bypasstoggle')) {
+		if (!isEnabled(server) && commName != 'plugin' && commName != 'perms' && !server.memberHasExactPerm(message.member!, 'commands.bypasstoggle')) {
 			return true;
 		}
 
@@ -97,7 +97,7 @@ function parseOptions(message: Discord.Message, server: Server, value: DiscordBo
 				if (value.reply) {
 					message.reply(value.message);
 				} else {
-					message.channel.send(value.message, value.embed ? new Discord.RichEmbed(value.embed) : undefined);
+					message.channel.send(value.message, value.embed ? new Discord.MessageEmbed(value.embed) : undefined);
 				}
 
 				return;

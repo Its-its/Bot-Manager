@@ -8,7 +8,7 @@ const PERMS = {
 	MAIN: 'commands.raw'
 };
 
-// if (!this.hasPerms(message.member, server, PERMS.MAIN)) return Command.noPermsMessage('');
+// if (!this.hasPerms(message.member!, server, PERMS.MAIN)) return Command.noPermsMessage('');
 
 class Raw extends Command {
 	constructor() {

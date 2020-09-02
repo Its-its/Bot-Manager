@@ -323,8 +323,8 @@ class Permissions {
 	static DEFAULT = 104324097;
 }
 
-
-function getPermissions(p: number | Permissions | Array<string> | string) {
+// TODO: Remove. Use Discords instead.
+function getPermissions(p: PermissionTypes) {
 	return new Permissions(p);
 }
 
@@ -334,7 +334,7 @@ function getPermissions(p: number | Permissions | Array<string> | string) {
 
 
 
-type GChannel = Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel;
+type GChannel = Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel;
 
 function createPageSelector(responder: string, channel: GChannel, cb?: (value: MessagePage) => any) {
 	if (cb == null) return new MessagePage({ author_id: responder, channel: channel });
@@ -418,10 +418,7 @@ class MessagePage {
 		if (this.initiated) return;
 		this.initiated = true;
 
-		var channel: Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel;
-
-		if (this.editingMessage != null) channel = this.editingMessage.channel;
-		else channel = this.channel;
+		let channel: GChannel = this.editingMessage != null ? this.editingMessage.channel : this.channel;
 
 		this.collector = channel.createMessageCollector(m => m.author.id == this.author_id, { time: this.timeoutMS });
 		this.collector.on('collect', (collectedMsg) => this.onCollect(collectedMsg));
@@ -429,7 +426,7 @@ class MessagePage {
 	}
 
 	public onCollect(userMessage: Discord.Message) {
-		var input = userMessage.cleanContent.toLowerCase().trim();
+		let input = userMessage.cleanContent.toLowerCase().trim();
 
 		if (this.removeReply) {
 			userMessage.delete()
@@ -441,10 +438,7 @@ class MessagePage {
 		// Stops current one, creates new one to refresh the time.
 		if (this.collector != null) this.collector.stop('invalid-input');
 
-		var channel: Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel;
-
-		if (this.editingMessage != null) channel = this.editingMessage.channel;
-		else channel = this.channel;
+		let channel = this.editingMessage != null ? this.editingMessage.channel : this.channel;
 
 		this.collector = channel.createMessageCollector(m => m.author.id == this.author_id, { time: this.timeoutMS });
 		this.collector.on('collect', (collectedMsg) => this.onCollect(collectedMsg));
@@ -452,7 +446,7 @@ class MessagePage {
 
 		if (this.editingMessage != null) {
 			this.editingMessage.channel.send(Command.error([[ 'Input Error', `"${input}" is not a valid selection input.` ]]))
-			.then(m => (Array.isArray(m) ? m[0]: m).delete(2000).catch(e => console.error('del-2000:', e)))
+			.then(m => m.delete({ timeout: 2000, reason: 'Invalid Selection Input.' }).catch(e => console.error('del-2000:', e)))
 			.catch((e: any) => console.error('collect:', e));
 		}
 	}
@@ -470,7 +464,7 @@ class MessagePage {
 			this.edit(Command.error([['Pages', 'Exiting...']]), () => {
 				if (this.editingMessage == null) return;
 
-				this.editingMessage.delete(3000)
+				this.editingMessage.delete({ timeout: 3000, reason: 'Exiting Page.' })
 				.catch(e => console.error('exit:', e));
 
 				this.editingMessage = undefined;
@@ -587,7 +581,7 @@ class MessagePage {
 
 		this.editingMessage.edit(contents)
 		.then((msg: Discord.Message) => {
-			msg.delete(deletion)
+			msg.delete({ timeout: deletion, reason: 'Temporary message.' })
 			.then(() => cb && cb())
 			.catch(e => console.error('temp1:', e));
 		})

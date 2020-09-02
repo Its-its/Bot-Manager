@@ -15,7 +15,7 @@ import GlobalCommands = require('../../../index');
 import PERMISSIONS = require('../perms');
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	if (!server.userHasPerm(message.member, PERMISSIONS.ROLE)) return Command.noPermsMessage('Perms');
+	if (!server.userHasPerm(message.member!, PERMISSIONS.ROLE)) return Command.noPermsMessage('Perms');
 
 	var roleFull = params.shift();
 	var cmdToDo = params.shift();
@@ -30,14 +30,15 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	if (roleId == null) return Command.error([['Permissions', 'Invalid Role.']]);
 
 	if (roleId == '@everyone') {
-		var first = message.guild.roles.first();
+		// TODO: Better way.
+		var first = message.guild!.roles.cache.first()!;
 		roleId = first.id;
 	}
 
 	if (cmdToDo == null) {
-		if (!server.userHasPerm(message.member, PERMISSIONS.ROLE_LIST)) return Command.noPermsMessage('Perms');
+		if (!server.userHasPerm(message.member!, PERMISSIONS.ROLE_LIST)) return Command.noPermsMessage('Perms');
 
-		var permission = server.getPermsFrom('roles', roleId);
+		var permission = server.getPermsFrom('roles', roleId!);
 		if (permission == null) permission = { perms: [], groups: [] };
 
 		return Command.info([
@@ -50,11 +51,11 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			]
 		]);
 	} else if (cmdToDo == 'add') {
-		if (!server.userHasPerm(message.member, PERMISSIONS.ROLE_ADD)) return Command.noPermsMessage('Perms');
+		if (!server.userHasPerm(message.member!, PERMISSIONS.ROLE_ADD)) return Command.noPermsMessage('Perms');
 
 		if (GlobalCommands.validPerms.indexOf(commandPermOrDo!) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
 
-		var added = server.addPermTo('roles', roleId, commandPermOrDo!);
+		var added = server.addPermTo('roles', roleId!, commandPermOrDo!);
 
 		if (added) {
 			message.channel.send(Command.error([['Permissions', 'Added ' + commandPermOrDo + ' to ' + roleFull]]));
@@ -62,11 +63,11 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			message.channel.send(Command.error([['Permissions', 'Failed']]));
 		}
 	} else if (cmdToDo == 'remove') {
-		if (!server.userHasPerm(message.member, PERMISSIONS.ROLE_REMOVE)) return Command.noPermsMessage('Perms');
+		if (!server.userHasPerm(message.member!, PERMISSIONS.ROLE_REMOVE)) return Command.noPermsMessage('Perms');
 
 		if (GlobalCommands.validPerms.indexOf(commandPermOrDo!) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
 
-		var added = server.removePermFrom('roles', roleId, commandPermOrDo!);
+		var added = server.removePermFrom('roles', roleId!, commandPermOrDo!);
 
 		if (added) {
 			message.channel.send(Command.error([['Permissions', 'Removed ' + commandPermOrDo + ' from ' + roleFull]]));
@@ -78,7 +79,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		if (commandPermOrDo == null || groupName == null) return Command.error([['Permissions', 'Invalid Params']]);
 
 		if (commandPermOrDo == 'add') {
-			var added = server.addGroupTo('roles', roleId, groupName.toLowerCase());
+			var added = server.addGroupTo('roles', roleId!, groupName.toLowerCase());
 
 			if (added) {
 				message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + roleFull]]));
@@ -86,7 +87,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				message.channel.send(Command.error([['Permissions', 'Invalid Group name']]));
 			}
 		} else if (commandPermOrDo == 'remove') {
-			var added = server.removeGroupFrom('roles', roleId, groupName.toLowerCase());
+			var added = server.removeGroupFrom('roles', roleId!, groupName.toLowerCase());
 
 			if (added) {
 				message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + roleFull]]));

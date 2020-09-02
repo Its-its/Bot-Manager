@@ -107,30 +107,31 @@ class Mute extends Command {
 
 
 		if (seconds == null) {
-			if (!this.hasPerms(message.member, server, PERMS.PERMANENT)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for indefinitely.' ]])
+			if (!this.hasPerms(message.member!, server, PERMS.PERMANENT)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for indefinitely.' ]])
 		} else if (seconds > MAX_MUTE_6M) {
-			if (!this.hasPerms(message.member, server, PERMS.MUTE_6M)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 6 Months (26 weeks)' ]]);
+			if (!this.hasPerms(message.member!, server, PERMS.MUTE_6M)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 6 Months (26 weeks)' ]]);
 		} else if (seconds > MAX_MUTE_1M) {
-			if (!this.hasPerms(message.member, server, PERMS.MUTE_1M)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 1 Month (4 weeks 2 days)' ]]);
+			if (!this.hasPerms(message.member!, server, PERMS.MUTE_1M)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 1 Month (4 weeks 2 days)' ]]);
 		} else if (seconds > MAX_MUTE_1W) {
-			if (!this.hasPerms(message.member, server, PERMS.MUTE_1W)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 1 Week' ]]);
+			if (!this.hasPerms(message.member!, server, PERMS.MUTE_1W)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 1 Week' ]]);
 		} else if (seconds > MAX_MUTE_1D) {
-			if (!this.hasPerms(message.member, server, PERMS.MUTE_1D)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 1 Day' ]]);
+			if (!this.hasPerms(message.member!, server, PERMS.MUTE_1D)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 1 Day' ]]);
 		} else if (seconds > MAX_MUTE_1H) {
-			if (!this.hasPerms(message.member, server, PERMS.MUTE_1H)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 1 Hour.' ]]);
+			if (!this.hasPerms(message.member!, server, PERMS.MUTE_1H)) return Command.error([[ 'Mute', 'You don\'t have the permissions for punishing someone for longer than 1 Hour.' ]]);
 		}
 
 
+		let user = message.guild!.member(discUserId);
+		if (user == null) return Command.error([['Mute', 'Invalid User.']]);
 
-		message.guild.member(discUserId)
-		.addRole(server.punishments.punished_role_id, 'Punished [Mute]');
+		user.roles.add(server.punishments.punished_role_id, 'Punished [Mute]');
 
 		// TODO: Check to see if user currently is being punished. (temp or perm)
 
 		new Punishments({
-			server_id: message.guild.id,
+			server_id: message.guild!.id,
 			member_id: discUserId,
-			creator_id: message.member.id,
+			creator_id: message.member!.id,
 
 			pid: generate('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 6),
 
@@ -148,12 +149,12 @@ class Mute extends Command {
 				// TODO: Check to see if punishment uses same role (if currently punished)
 				TempPunishments.updateOne(
 					{
-						server_id: message.guild.id,
+						server_id: message.guild!.id,
 						member_id: discUserId!
 					},
 					{
 						$set: {
-							server_id: message.guild.id,
+							server_id: message.guild!.id,
 							member_id: discUserId!,
 							punishment: item._id,
 							expires: new Date(Date.now() + (seconds * 1000))

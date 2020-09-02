@@ -53,7 +53,7 @@ class Phrase extends Command {
 		var cmdCallOrPhraseId = params.shift()!;
 		switch (cmdCallOrPhraseId) {
 			case 'list':
-				if (!this.hasPerms(message.member, server, PERMS.LIST)) return Command.noPermsMessage('Phrase');
+				if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Phrase');
 
 				var args = [
 					'**Phrase List**',
@@ -68,7 +68,7 @@ class Phrase extends Command {
 				break;
 
 			case 'create':
-				if (!this.hasPerms(message.member, server, PERMS.CREATE)) return Command.noPermsMessage('Phrase');
+				if (!this.hasPerms(message.member!, server, PERMS.CREATE)) return Command.noPermsMessage('Phrase');
 
 				if (params.length < 2) return;
 
@@ -78,7 +78,7 @@ class Phrase extends Command {
 
 				if (!/^[a-z0-9]+$/i.test(phraseName)) return Command.info([['Phrase', 'Phrase name must only have A-Z 0-9 in it.']]);
 
-				server.createPhrase(message.member, phraseName.split(','), (phrase) => {
+				server.createPhrase(message.member!, phraseName.split(','), (phrase) => {
 					if (phrase == null) return;
 
 					var resp = params.join(' ');
@@ -89,7 +89,7 @@ class Phrase extends Command {
 				break;
 
 			case 'ignorecase':
-				if (!this.hasPerms(message.member, server, PERMS.IGNORECASE)) return Command.noPermsMessage('Phrase');
+				if (!this.hasPerms(message.member!, server, PERMS.IGNORECASE)) return Command.noPermsMessage('Phrase');
 
 				if (params.length < 2) return Command.error([['Phrase', 'Invalid Params']]);
 
@@ -108,19 +108,19 @@ class Phrase extends Command {
 
 				if (dodis == 'add') {
 					if (name == 'phrase') {
-						if (!this.hasPerms(message.member, server, PERMS.ADD_PHRASE)) return Command.noPermsMessage('Phrase');
+						if (!this.hasPerms(message.member!, server, PERMS.ADD_PHRASE)) return Command.noPermsMessage('Phrase');
 
 						server.addPhrase(cmdCallOrPhraseId, params.join(' ').split(','));
 						server.save(() => message.channel.send(Command.info([['Phrase', 'Added Phrase']])));
 					} else if (name == 'response') {
-						if (!this.hasPerms(message.member, server, PERMS.ADD_RESPONSE)) return Command.noPermsMessage('Phrase');
+						if (!this.hasPerms(message.member!, server, PERMS.ADD_RESPONSE)) return Command.noPermsMessage('Phrase');
 
 						server.setPhraseResponse(cmdCallOrPhraseId, params.join(' ').split(',').map(i => { return { type: 'echo', message: i } }));
 						server.save(() => message.channel.send(Command.info([['Phrase', 'Changed Phrase Response.']])));
 					}
 				} else if (dodis == 'remove') {
 					if (name == 'phrase') {
-						if (!this.hasPerms(message.member, server, PERMS.REMOVE_PHRASE)) return Command.noPermsMessage('Phrase');
+						if (!this.hasPerms(message.member!, server, PERMS.REMOVE_PHRASE)) return Command.noPermsMessage('Phrase');
 
 						var phrases = undefined;
 						if (params.length != 0) phrases = params.join(' ').split(',');
@@ -128,7 +128,7 @@ class Phrase extends Command {
 						server.removePhrase(cmdCallOrPhraseId, phrases);
 						server.save(() => message.channel.send(Command.info([['Phrase', 'Successfully Removed Phrase']])));
 					} else if (name == 'response') {
-						if (!this.hasPerms(message.member, server, PERMS.REMOVE_RESPONSE)) return Command.noPermsMessage('Phrase');
+						if (!this.hasPerms(message.member!, server, PERMS.REMOVE_RESPONSE)) return Command.noPermsMessage('Phrase');
 						return Command.info([['Phrase', 'Not implemented yet. :/']])
 					}
 				}

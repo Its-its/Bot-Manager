@@ -19,7 +19,7 @@ type SongGlobal = DiscordBot.plugins.SongGlobal;
 
 // Bot Shard -> Music Shard
 function sendReq(url: string, opts: { [a: string]: any }) {
-	client.shard.send(Object.assign({ from: 'bot', to: 'music', _event: url }, opts));
+	client.shard!.send(Object.assign({ from: 'bot', to: 'music', _event: url }, opts));
 }
 
 function sendQueue(queueType: string, guild_id: string, member_id: string, channel_id: string, params: string[]) {

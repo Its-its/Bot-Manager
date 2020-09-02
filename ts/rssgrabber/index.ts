@@ -45,7 +45,7 @@ const callAgain = 1000 * 60 * 10;
 
 // Twitter
 setInterval(() => {
-	TwitterFeed.find({ sending_to: { $gt: 0 }, last_called: { $lte: Date.now() - callAgain } }, (err, feedDocs) => {
+	TwitterFeed.find({ sending_to: { $gt: 0 }, last_called: { $lte: new Date(Date.now() - callAgain) } }, (err, feedDocs) => {
 		if (err != null) return console.error(err);
 		if (feedDocs.length == 0) return console.log('None.');
 
@@ -91,7 +91,7 @@ setInterval(() => {
 
 // RSS
 setInterval(() => {
-	RSSFeed.find({ sending_to: { $gt: 0 }, last_called: { $lte: Date.now() - callAgain } }, (err, feedDocs) => {
+	RSSFeed.find({ sending_to: { $gt: 0 }, last_called: { $lte: new Date(Date.now() - callAgain) } }, (err, feedDocs) => {
 		if (err != null) return console.error(err);
 		if (feedDocs.length == 0) return console.log('None.');
 

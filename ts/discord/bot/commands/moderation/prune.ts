@@ -19,7 +19,7 @@ for(var name in PERMS) {
 	if (name != 'MAIN') PERMS[name] = `${PERMS.MAIN}.${PERMS[name]}`;
 }
 
-// if (!this.hasPerms(message.member, server, PERMS.MAIN)) return Command.noPermsMessage('Prune');
+// if (!this.hasPerms(message.member!, server, PERMS.MAIN)) return Command.noPermsMessage('Prune');
 
 class Prune extends Command {
 	constructor() {
@@ -30,7 +30,7 @@ class Prune extends Command {
 	}
 
 	public call(params: string[], server: DiscordServer, message: Discord.Message) {
-		if (!message.member.hasPermission([ 'MANAGE_MESSAGES' ])) {
+		if (!message.member!.hasPermission([ 'MANAGE_MESSAGES' ])) {
 			return Command.error([['Prune', 'Missing Manage Messages Perms!']]);
 		}
 
@@ -65,10 +65,10 @@ class Prune extends Command {
 
 		switch (first_arg) {
 			case 'user': // TODO:
-				if (!this.hasPerms(message.member, server, PERMS.USER)) return Command.noPermsMessage('Prune');
+				if (!this.hasPerms(message.member!, server, PERMS.USER)) return Command.noPermsMessage('Prune');
 				return Command.error([['Prune', 'Not implemented yet.']]);
 			case 'channel':
-				if (!this.hasPerms(message.member, server, PERMS.CHANNEL)) return Command.noPermsMessage('Prune');
+				if (!this.hasPerms(message.member!, server, PERMS.CHANNEL)) return Command.noPermsMessage('Prune');
 
 				var channelId = server.strpToId(params.shift());
 				var reason = params.shift();
@@ -85,13 +85,13 @@ class Prune extends Command {
 					if (pruneLimit > 100) pruneLimit = 100;
 				}
 
-				var channelBeingPruned = <Discord.TextChannel>message.guild.channels.get(channelId);
+				var channelBeingPruned = <Discord.TextChannel>message.guild!.channels.cache.get(channelId);
 
 				if (channelBeingPruned == null) return Command.error([[ 'Prune', 'Channel does not exist!' ]]);
 				if (channelBeingPruned.type != 'text') return Command.error([[ 'Prune', 'Channel must be text only!' ]]);
 
 				if (reason == 'all') {
-					if (!message.member.hasPermission([ 'MANAGE_CHANNELS' ])) {
+					if (!message.member!.hasPermission([ 'MANAGE_CHANNELS' ])) {
 						return send(message.channel, Command.error([['Prune', 'Missing Manage Channels Perms!']])).catch(e => console.error(e));
 					}
 					return recreateChannel(message.channel, channelBeingPruned);
@@ -110,7 +110,7 @@ class Prune extends Command {
 }
 
 function fetchMessages(channel: Discord.TextChannel, limit: number, editMessage: Discord.Message) {
-	channel.fetchMessages({ limit: limit })
+	channel.messages.fetch({ limit: limit })
 	.then((messages) => {
 		messages = messages.filter(m => m.id != editMessage.id);
 
@@ -183,7 +183,7 @@ function singleDeletions(messages: Discord.Message[], editMessage: Discord.Messa
 	}
 }
 
-function recreateChannel(sendingChannel: Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel, channelBeingRecreated: Discord.TextChannel) {
+function recreateChannel(sendingChannel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel, channelBeingRecreated: Discord.TextChannel) {
 	send(sendingChannel, Command.success([['Prune', 'Cloning channel']]))
 	.then(m => {
 		var editMessage: Discord.Message;
@@ -193,7 +193,10 @@ function recreateChannel(sendingChannel: Discord.TextChannel | Discord.DMChannel
 
 		console.log('Clone');
 
-		channelBeingRecreated.clone(channelBeingRecreated.name, false, true, '[PRUNE] Recreating channel.')
+		channelBeingRecreated.clone({
+			name: channelBeingRecreated.name,
+			reason: '[PRUNE] Recreating channel.'
+		})
 		.then(newChannel => {
 			console.log('Pos');
 			editMessage.edit(Command.success([['Prune', 'Setting Channel Position']]))
@@ -201,16 +204,16 @@ function recreateChannel(sendingChannel: Discord.TextChannel | Discord.DMChannel
 
 			console.log('Parent');
 
-			newChannel.setParent(channelBeingRecreated.parent, '[PRUNE] Recreating channel.')
+			newChannel.setParent(
+				channelBeingRecreated.parent!,
+				{
+					reason: '[PRUNE] Recreating channel.'
+				}
+			)
 			.then(() => {
 				channelBeingRecreated.permissionOverwrites
 				.forEach(perm => {
-					var obj: { [name: string]: boolean } = {};
-
-					utils.getPermissions(perm.allow).toArray().forEach(p => obj[p] = true);
-					utils.getPermissions(perm.deny).toArray().forEach(p => obj[p] = false);
-
-					newChannel.overwritePermissions(perm.id, obj, '[PRUNE] Recreating channel')
+					newChannel.overwritePermissions([perm], '[PRUNE] Recreating channel')
 					.catch(e => error(editMessage, e, '6'));
 				});
 
@@ -238,8 +241,8 @@ function recreateChannel(sendingChannel: Discord.TextChannel | Discord.DMChannel
 	}
 }
 
-function send(channel: Discord.TextChannel | Discord.DMChannel | Discord.GroupDMChannel, str: any, cb?: (err?: Error, message?: Discord.Message | Discord.Message[]) => any) {
-	var msg = channel.send(new Discord.RichEmbed(str.embed));
+function send(channel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel, str: any, cb?: (err?: Error, message?: Discord.Message | Discord.Message[]) => any) {
+	var msg = channel.send(new Discord.MessageEmbed(str.embed));
 
 	if (cb != null) msg.then(msg => cb(undefined, msg), e => cb(e));
 

@@ -16,7 +16,7 @@ import PERMISSIONS = require('../perms');
 
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	if (!server.userHasPerm(message.member, PERMISSIONS.USER)) return Command.noPermsMessage('Permissions');
+	if (!server.userHasPerm(message.member!, PERMISSIONS.USER)) return Command.noPermsMessage('Permissions');
 
 	var userIdFull = params.shift();
 	var calledCmd = params.shift();
@@ -25,7 +25,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	if (userIdFull == null) return Command.error([['Permissions', 'Invalid Params']]);
 
 	if (calledCmd == null) {
-		if (!server.userHasPerm(message.member, PERMISSIONS.USER_LIST)) return Command.noPermsMessage('Permissions');
+		if (!server.userHasPerm(message.member!, PERMISSIONS.USER_LIST)) return Command.noPermsMessage('Permissions');
 
 		var permission = server.getPermsFrom('users', userIdFull);
 		if (permission == null) permission = { perms: [], groups: [] };
@@ -36,7 +36,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 		if (stripped == null) return Command.error([['Permissions', 'Invalid ID']]);
 
-		var guildMember = message.guild.members.get(stripped);
+		var guildMember = message.guild!.members.cache.get(stripped);
 		if (guildMember == null) return Command.error([['Permissions', 'Unable to find Guild Member.']]);
 
 		return Command.info([
@@ -64,7 +64,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 
 	if (calledCmd == 'add') {
-		if (!server.userHasPerm(message.member, PERMISSIONS.USER_ADD)) return Command.noPermsMessage('Permissions');
+		if (!server.userHasPerm(message.member!, PERMISSIONS.USER_ADD)) return Command.noPermsMessage('Permissions');
 
 		if (GlobalCommands.validPerms.indexOf(permissionOrCalledCmd) == -1) return Command.error([['Permissions', 'That perm doesn\'t exist!']]);
 
@@ -80,7 +80,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			message.channel.send(Command.error([['Permissions', 'Failed']]));
 		}
 	} else if (calledCmd == 'remove') {
-		if (!server.userHasPerm(message.member, PERMISSIONS.USER_REMOVE)) return Command.noPermsMessage('Permissions');
+		if (!server.userHasPerm(message.member!, PERMISSIONS.USER_REMOVE)) return Command.noPermsMessage('Permissions');
 
 		if (GlobalCommands.validPerms.indexOf(permissionOrCalledCmd) == -1) return Command.error([['Permissions', 'That perm doesn\'t exist!']]);
 
@@ -96,7 +96,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		if (permissionOrCalledCmd == null || groupName == null) return Command.error([['Permissions', 'Invalid Parameters']]);
 
 		if (permissionOrCalledCmd == 'add') {
-			if (!server.userHasPerm(message.member, PERMISSIONS.GROUP_ADD)) return Command.noPermsMessage('Permissions');
+			if (!server.userHasPerm(message.member!, PERMISSIONS.GROUP_ADD)) return Command.noPermsMessage('Permissions');
 
 			var wasPermAdded = server.addGroupTo('users', userIdFull, groupName.toLowerCase());
 
@@ -106,7 +106,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 				message.channel.send(Command.error([['Permissions', 'Invalid Group name']]));
 			}
 		} else if (permissionOrCalledCmd == 'remove') {
-			if (!server.userHasPerm(message.member, PERMISSIONS.GROUP_REMOVE)) return Command.noPermsMessage('Permissions');
+			if (!server.userHasPerm(message.member!, PERMISSIONS.GROUP_REMOVE)) return Command.noPermsMessage('Permissions');
 
 			var wasPermAdded = server.removeGroupFrom('users', userIdFull, groupName.toLowerCase());
 

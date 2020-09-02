@@ -46,12 +46,12 @@ class Info extends Command {
 
 		switch(idType) {
 			case 'member':
-				if (!this.hasPerms(message.member, server, PERMS.MEMBER)) return Command.noPermsMessage('Info');
+				if (!this.hasPerms(message.member!, server, PERMS.MEMBER)) return Command.noPermsMessage('Info');
 
-				var guildMember = message.guild.members.get(strippedDiscordId);
+				var guildMember = message.guild!.members.cache.get(strippedDiscordId);
 				if (guildMember == null) return Command.error([[ 'Info', 'Member not in Guild!' ]]);
 
-				var roles = guildMember.roles.array()
+				var roles = guildMember.roles.cache.array()
 				.filter(r => r.name != '@everyone')
 				.map(r => r.name)
 				.join(', ');
@@ -86,13 +86,13 @@ class Info extends Command {
 								inline: true
 							},
 							{
-								name: 'Game',
-								value: guildMember.presence.game == null ? 'None' : guildMember.presence.game.name,
+								name: 'Activities',
+								value: guildMember.presence.activities.map(a => a.name).join('\n'),
 								inline: true
 							},
 							{
 								name: 'Joined',
-								value: guildMember.joinedAt.toDateString(),
+								value: guildMember.joinedAt!.toDateString(),
 								inline: true
 							},
 							{

@@ -17,7 +17,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 }
 
 function showEditPage(compiled: DiscordBot.ListenEvents, senderMessage: Discord.Message, server: DiscordServer) {
-	if (!server.userHasPerm(senderMessage.member,PERMS.EDIT)) return utils.noPermsMessage('Events');
+	if (!server.userHasPerm(senderMessage.member!,PERMS.EDIT)) return utils.noPermsMessage('Events');
 
 	const selector = utils.createPageSelector(senderMessage.author.id, senderMessage.channel)!;
 
@@ -99,7 +99,7 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 
 					id = id.trim();
 
-					if ((<Discord.TextChannel>selector.channel).guild.roles.get(id) == null) return false;
+					if ((<Discord.TextChannel>selector.channel).guild.roles.cache.get(id) == null) return false;
 
 					(<DiscordBot.DoGroupEvent>compiled.event).role_id = id;
 
@@ -131,7 +131,7 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 
 				id = id.trim();
 
-				if ((<Discord.TextChannel>selector.channel).guild.channels.get(id) == null) return false;
+				if ((<Discord.TextChannel>selector.channel).guild.channels.cache.get(id) == null) return false;
 
 				(<DiscordBot.DoMessageEvent>compiled.event).channel_id = id;
 

@@ -38,7 +38,7 @@ class Leveling extends Command {
 		// @ts-ignore
 		if (callType != null && PERMS[callType.toUpperCase()] != null) {
 			// @ts-ignore
-			if (!this.hasPerms(message.member, server, PERMS[callType.toUpperCase()])) return Command.noPermsMessage('Leveling');
+			if (!this.hasPerms(message.member!, server, PERMS[callType.toUpperCase()])) return Command.noPermsMessage('Leveling');
 		}
 
 		switch(callType == null ? null : callType.toLowerCase()) {

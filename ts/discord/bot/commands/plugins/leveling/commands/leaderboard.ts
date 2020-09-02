@@ -16,7 +16,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	if (isNaN(page)) page = 1;
 	if (page > 10) page = 10;
 
-	UserLevel.find({ server_id: message.guild.id })
+	UserLevel.find({ server_id: message.guild!.id })
 	.limit(LIMIT_PER_PAGE)
 	.skip((page - 1) * LIMIT_PER_PAGE)
 	.sort({ xp: -1 })
@@ -28,7 +28,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		}
 
 		message.channel.send(users.map((u, i) => {
-			let member = message.guild.member(u['member_id']);
+			let member = message.guild!.member(u['member_id']);
 			let member_string = (member == null ? `<@${u['member_id']}>` : `${member.user.username}${member.user.discriminator}`);
 			return `${((page - 1) * LIMIT_PER_PAGE) + i}. ${member_string} - LVL: ${u['level']}, Total XP: ${u['xp']}`;
 		}).join('\n'));

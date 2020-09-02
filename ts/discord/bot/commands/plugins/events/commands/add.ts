@@ -15,7 +15,7 @@ const TYPES = [
 ];
 
 function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	if (!server.userHasPerm(message.member, PERMS.ADD)) return utils.noPermsMessage('Events');
+	if (!server.userHasPerm(message.member!, PERMS.ADD)) return utils.noPermsMessage('Events');
 
 	var eventType = params.shift();
 	if (eventType == null) return message.channel.send('Invalid args');
@@ -33,7 +33,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		var emoji = params.shift();
 
 		if (id == null || emoji == null) return message.channel.send('Invalid args for react_add');
-		if (!message.guild.emojis.has(emoji)) return;
+		if (!message.guild!.emojis.cache.has(emoji)) return;
 		// TODO: Figure out a way to check and see if the message exists.
 
 		compiled['message_id'] = id;

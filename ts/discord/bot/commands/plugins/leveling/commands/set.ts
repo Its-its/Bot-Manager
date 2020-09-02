@@ -33,14 +33,14 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		return;
 	}
 
-	let member = message.guild.member(id);
+	let member = message.guild!.member(id);
 
 	if (member == null) {
 		message.channel.send('User must be in the Guild.');
 		return;
 	}
 
-	UserLevel.findOne({ server_id: message.guild.id, member_id: id }, (err, user) => {
+	UserLevel.findOne({ server_id: message.guild!.id, member_id: id }, (err, user) => {
 		if (err != null) {
 			console.error(err);
 			message.channel.send('An error occured while trying to query DB. Please try again in a few minutes.');
@@ -73,14 +73,14 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 		if (level > util.MAX_LEVEL || xp > util.MAX_EXP) return;
 
-		UserLevel.updateOne({ server_id: message.guild.id, member_id: id! }, {
+		UserLevel.updateOne({ server_id: message.guild!.id, member_id: id! }, {
 			$set: {
 				level: level,
 				xp: xp
 			},
 			$setOnInsert: {
-				server_id: message.guild.id,
-				member_id: message.member.id
+				server_id: message.guild!.id,
+				member_id: message.member!.id
 			}
 		}, { upsert: true }).exec(() => {
 			message.channel.send([

@@ -20,6 +20,8 @@ const items = [
 	'ignored', 'disabled'
 ];
 
+// TODO: DO NOT USE ANY TYPE OF CACHE IN HERE.
+
 class Backup extends Command {
 	constructor() {
 		super('backup');
@@ -70,7 +72,7 @@ class Backup extends Command {
 		}
 
 		if (params[0] == 'clone') {
-			let chann = message.guild.channels.get(params[1]);
+			let chann = message.guild!.channels.cache.get(params[1]);
 
 			if (chann != null) {
 				createChannels([parseChannel(chann)], () => {
@@ -127,7 +129,7 @@ class Backup extends Command {
 
 					var c = channels![pos];
 
-					message.guild.createChannel(c.name, {
+					message.guild!.channels.create(c.name, {
 						type: c.type,
 						permissionOverwrites: c.perms
 					})
@@ -152,7 +154,7 @@ class Backup extends Command {
 						// });
 
 						if (c.parent != null && tempIdToNew[c.parent] != null) {
-							channel.setParent(tempIdToNew[c.parent], 'Restore');
+							channel.setParent(tempIdToNew[c.parent], { reason: 'Restore' });
 						}
 
 						//TODO: temp save channel name. (ignored channels)
@@ -244,7 +246,7 @@ class Backup extends Command {
 
 			var compiled: Compiled = {};
 
-			const guild = message.guild;
+			let guild = message.guild!;
 
 
 			if (!isBackingUp('roles')) {
@@ -274,7 +276,7 @@ class Backup extends Command {
 					function(next) {
 						// Required for: perms.roles, ranks
 						if (isBackingUp('roles')) {
-							compiled['roles'] = guild.roles.filter(r => !r.managed).map(r => {
+							compiled['roles'] = guild.roles.cache.filter(r => !r.managed).map(r => {
 
 								return {
 									id: r.id,
@@ -284,7 +286,7 @@ class Backup extends Command {
 									color: r.color,
 									hoist: r.hoist,
 									mentionable: r.mentionable,
-									permissions: r.permissions,
+									permissions: r.permissions.bitfield,
 									editable: r.editable
 								};
 							});
@@ -293,7 +295,7 @@ class Backup extends Command {
 						// Required for: overview.afk_channel, overview.new_member_channel
 						// TODO: Proper order.
 						if (isBackingUp('channels')) {
-							compiled['channels'] = guild.channels.filter(c => c.parent == null).map(c => parseChannel(c));
+							compiled['channels'] = guild.channels.cache.filter(c => c.parent == null).map(c => parseChannel(c));
 
 							function parseChannel(channel: Discord.GuildChannel): DiscordBot.BackupChannel {
 
@@ -328,31 +330,31 @@ class Backup extends Command {
 
 						if (isBackingUp('overview')) {
 							compiled['overview']! = {
-								server_image: guild.icon,
+								server_image: guild.icon + '',
 								server_name: guild.name,
 								server_region: guild.region,
 								afk_channel: guild.afkChannelID == null ? undefined : guild.afkChannelID,
 								afk_timeout: guild.afkTimeout,
 								new_member_channel: guild.systemChannelID == null ? undefined : guild.systemChannelID,
-								notification_settings: guild.messageNotifications
+								notification_settings: guild.defaultMessageNotifications
 							};
 						}
 
 						if (isBackingUp('moderation')) {
 							compiled['moderation'] = {
-								verification: guild.verificationLevel,
-								content_filter: guild.explicitContentFilter
+								verification: verificationLvlToNumber(guild.verificationLevel),
+								content_filter: contentFilterToNumber(guild.explicitContentFilter)
 							};
 						}
 
 						if (isBackingUp('emojis')) {
-							compiled['emojis'] = guild.emojis.filter(r => !r.managed).map(e => {
+							compiled['emojis'] = guild.emojis.cache.filter(r => !r.managed).map(e => {
 								return {
 									name: e.name,
 									animated: e.animated,
 									requiresColons: e.requiresColons,
 									image: e.url,
-									roles: e.roles.map(r => r.id)
+									roles: e.roles.cache.map(r => r.id)
 								};
 							});
 						}
@@ -468,6 +470,24 @@ function asdf(items: ((cb: () => any) => any)[], finish: () => any) {
 	function next() {
 		if (pos >= items.length) return finish();
 		items[pos++](() => next());
+	}
+}
+
+function contentFilterToNumber(level: Discord.ExplicitContentFilterLevel): number {
+	switch (level) {
+		case 'DISABLED': return 0;
+		case 'MEMBERS_WITHOUT_ROLES': return 1;
+		case 'ALL_MEMBERS': return 2;
+	}
+}
+
+function verificationLvlToNumber(level: Discord.VerificationLevel): number {
+	switch (level) {
+		case 'NONE': return 0;
+		case 'LOW': return 1;
+		case 'MEDIUM': return 2;
+		case 'HIGH': return 3;
+		case 'VERY_HIGH': return 4;
 	}
 }
 

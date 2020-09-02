@@ -559,9 +559,9 @@ declare namespace DiscordBot {
 		type: 'category' | 'text' | 'voice';
 		perms: {
 			id: string;
-			allow: number;
-			deny: number;
-			type: string;
+			allow: Discord.PermissionResolvable;
+			deny: Discord.PermissionResolvable;
+			type: Discord.OverwriteType;
 		}[];
 		position: number;
 

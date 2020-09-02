@@ -27,7 +27,7 @@ export = (app: express.Application) => {
 			if (item != null) return res.send({ error: 'There is already a pending invite. Please wait 5 minutes and try again.' });
 
 			var validate = new Validation({
-				user_id: req['user'].id,
+				user_id: (<any>req.user).id,
 				bot_id: botId,
 				listener_id: guildId,
 				date_created: Date.now()
