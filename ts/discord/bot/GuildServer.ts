@@ -158,7 +158,29 @@ class Server extends Changes {
 		this.roles = def([], options.roles)!;
 		this.commands = def([], options.commands)!;
 		this.phrases = def([], options.phrases)!;
+
+		// Update from old plugins
 		this.plugins = def({}, options.plugins);
+		if (this.plugins.logs != null) {
+			if (this.plugins.logs.channels == null) {
+				this.plugins.logs.channels = [];
+			}
+
+			// @ts-ignore
+			if (this.plugins.logs.textChannelId != null || this.plugins.logs.filter != null) {
+				this.plugins.logs.channels = [];
+				this.plugins.logs.channels.push({
+					// @ts-ignore
+					textChannelId: this.plugins.logs.textChannelId,
+				});
+
+				// @ts-ignore
+				delete this.plugins.logs['textChannelId'];
+				// @ts-ignore
+				delete this.plugins.logs['filter'];
+			}
+		}
+
 		this.channels = def({}, options.channels)!;
 		this.punishments = def({}, options.punishments)!;
 
