@@ -190,12 +190,15 @@ function getSong(uri: string | string[], cb: (errorMessage?: string, song?: Song
 		if (data.error) return cb(data.error);
 
 		var songs = data.songs.map(s => {
-			s.type = 'youtube';
-			delete s['description'];
-			delete s['download_count'];
-			delete s['stream_count'];
+			let clone: any = Object.assign({}, s);
 
-			return s;
+			clone.type = 'youtube';
+
+			delete clone['description'];
+			delete clone['download_count'];
+			delete clone['stream_count'];
+
+			return clone;
 		});
 
 		cb(undefined, songs);

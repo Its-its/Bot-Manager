@@ -412,7 +412,7 @@ class Backup extends Command {
 						}
 
 						if (isBackingUp('perms')) {
-							var perms = compiled['perms'] = server.permissions;
+							var perms: Partial<DiscordBot.Permissions> = compiled['perms'] = server.permissions;
 
 							if (!isBackingUp('roles')) delete perms['roles'];
 						}
