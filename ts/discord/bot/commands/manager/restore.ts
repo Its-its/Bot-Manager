@@ -296,26 +296,13 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 
 						var c = channels![pos];
 
-						guild.createChannel(c.name, c.type)
+						guild.createChannel(c.name, {
+							type: c.type,
+							permissionOverwrites: c.perms
+						})
 						.then(channel => {
 							console.log(`[Channels]: ${c.id} - ${channel.id}`);
 							tempIdToNew[c.id] = channel.id;
-
-							c.perms.forEach(p => {
-								if (tempIdToNew[p.id] == null) return console.log('Channel Perms: ' + p);
-
-								var obj: { [name: string]: boolean } = {};
-
-								utils.getPermissions(p.allow).toArray().forEach(p => obj[p] = true);
-								utils.getPermissions(p.deny).toArray().forEach(p => obj[p] = false);
-
-								channel.overwritePermissions(tempIdToNew[p.id], obj)
-								.catch(e => {
-									console.error('overwritePerms:', e);
-									console.log(c.name + ' | ' + channel.id + ' - ' + p.type);
-									console.log(p.id + ' - ' + tempIdToNew[p.id]);
-								});
-							});
 
 							if (c.parent != null && tempIdToNew[c.parent] != null) {
 								channel.setParent(tempIdToNew[c.parent], 'Restore');
