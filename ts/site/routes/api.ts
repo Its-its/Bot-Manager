@@ -964,7 +964,7 @@ function apiBots() {
 
 				server.removeRole(pid);
 
-				server.save();
+				server.save().catch(console.error);
 
 				res.send({ data: true });
 			});

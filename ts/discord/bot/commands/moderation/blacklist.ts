@@ -133,7 +133,7 @@ class Blacklist extends Command {
 					}
 				}
 
-				server.save();
+				await server.save();
 
 				return Command.info([
 					[
@@ -174,7 +174,7 @@ class Blacklist extends Command {
 					]);
 				}
 
-				server.save();
+				await server.save();
 
 				return Command.success([[ 'Blacklist', 'Successfully blacklisted "' + fullCommand + '"' ]]);
 			}
@@ -213,7 +213,7 @@ class Blacklist extends Command {
 
 				server.blacklistPunishment(channelIdStripped, action);
 
-				server.save();
+				await server.save();
 
 				return Command.info([
 					[
@@ -246,7 +246,7 @@ class Blacklist extends Command {
 	public onChannelDelete(channel: Discord.GuildChannel, server: DiscordServer) {
 		if (server.moderation.blacklisted[channel.id] != null) {
 			delete server.moderation.blacklisted[channel.id];
-			server.save();
+			server.save().catch(console.error);
 		}
 
 		return false;

@@ -291,7 +291,8 @@ class Punishment extends Command {
 							});
 
 							server.punishments.punished_role_id = role.id;
-							server.save();
+
+							await server.save();
 
 							let channels = message.guild!.channels.cache.array();
 
@@ -317,7 +318,8 @@ class Punishment extends Command {
 							}
 
 							server.punishments.punished_role_id = roleId;
-							server.save();
+
+							await server.save();
 
 							return Command.success([['Punishment', 'Changed Punishment Role']]);
 						}
@@ -360,7 +362,7 @@ class Punishment extends Command {
 			if (role.id == server.punishments.punished_role_id) {
 				TempPunishments.remove({ server_id: role.guild.id }).exec();
 				server.punishments.punished_role_id = undefined;
-				server.save();
+				server.save().catch(console.error);
 				return true;
 			}
 		}

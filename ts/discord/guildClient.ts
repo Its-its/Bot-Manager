@@ -44,9 +44,11 @@ function getOrCreate(guild: Guild, cb: (client: DiscordServer) => any) {
 			ownerID: guild.ownerID
 		});
 
-		server.save(() => {
+		server.save()
+		.then(() => {
 			cb(server!);
-		});
+		})
+		.catch(console.error);
 	});
 }
 

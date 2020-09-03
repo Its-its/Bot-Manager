@@ -225,9 +225,8 @@ class Server extends Changes {
 		getServer(this.serverId, server => cb(server));
 	}
 
-	public save(cb?: redis.Callback<'OK'>) {
-		redisGuildsClient.set(this.serverId, this.toString(), cb);
-		DiscordServers.findOneAndUpdate(
+	public async save(): Promise<'OK'> {
+		await DiscordServers.findOneAndUpdate(
 			{ server_id: this.serverId },
 			{
 				$set: {
@@ -242,9 +241,18 @@ class Server extends Changes {
 			{
 				runValidators: false,
 				upsert: true,
-			},
-			(err) => { if (err) console.error(err); }
+			}
 		);
+
+		return new Promise((resolve, reject) => {
+			redisGuildsClient.set(this.serverId, this.toString(), (err, resp) => {
+				if (err) {
+					return reject(err);
+				} else {
+					return resolve(resp);
+				}
+			});
+		})
 	}
 
 	public isPluginEnabled(name: DiscordBot.PLUGIN_NAMES | string) {
@@ -369,10 +377,12 @@ class Server extends Changes {
 
 //#region Phrases
 
-	public createPhrase(member: Discord.GuildMember, phraseText: string[], cb: (phrase: DiscordBot.Phrase) => any) {
+	public async createPhrase(member: Discord.GuildMember, phraseText: string[]): Promise<DiscordBot.Phrase> {
 		phraseText.slice(0, SERVER.MAX_PHRASE_TEXT);
 
-		if (this.findPhrase(phraseText) != null) return null;
+		if (this.findPhrase(phraseText) != null) {
+			return Promise.reject('Phrase already exists.');
+		}
 
 		let phrase = {
 			_id: undefined,
@@ -384,26 +394,28 @@ class Server extends Changes {
 			ignoreCase: true
 		};
 
-		getOrCreateUser(member, (err, doc) => {
-			new Phrases({
-				user_id: doc.id,
-				uid: phrase.pid,
-				sid: phrase.sid,
-				phrases: phrase.phrases,
-				responses: phrase.responses
-			})
-			.save((err, prod) => {
-				phrase._id = prod.id;
+		let doc = await getOrCreateUser(member);
 
-				this.phrases.push(phrase);
-
-				cb(phrase);
-
-				DiscordServers.updateOne(
-					{ server_id: this.serverId },
-					{ $addToSet: { phrase_ids: prod.id } });
-			});
+		let model = new Phrases({
+			user_id: doc.id,
+			uid: phrase.pid,
+			sid: phrase.sid,
+			phrases: phrase.phrases,
+			responses: phrase.responses
 		});
+
+		let prod = await model.save();
+
+		phrase._id = prod.id;
+
+		this.phrases.push(phrase);
+
+		await DiscordServers.updateOne(
+			{ server_id: this.serverId },
+			{ $addToSet: { phrase_ids: prod.id } }
+		).exec();
+
+		return Promise.resolve(phrase);
 	}
 
 	public removePhrase(id: number | string, phrases?: string[]): Nullable<DiscordBot.Phrase> {
@@ -653,18 +665,20 @@ class Server extends Changes {
 //#endregion
 
 //#region Commands
-	public createCommand(
+	public async createCommand(
 		member: Discord.GuildMember,
 		commandNames: string | string[],
 		resp: DiscordBot.PhraseResponses | DiscordBot.CommandParam[],
-		cb: (resp: boolean) => any)
-	{
+	): Promise<boolean> {
 		if (!Array.isArray(commandNames)) commandNames = [commandNames.toLowerCase()];
 		else commandNames = commandNames.map(c => c.toLowerCase());
 
 		for(let i = 0; i < commandNames.length; i++) {
 			let name = commandNames[i];
-			if (this.commandIndex(name) != -1 || this.aliasIndex(name) != -1 || Commands.is(name)) return cb(false);
+
+			if (this.commandIndex(name) != -1 || this.aliasIndex(name) != -1 || Commands.is(name)) {
+				return Promise.resolve(false);
+			}
 		}
 
 		let comm: DiscordBot.Command = {
@@ -679,24 +693,26 @@ class Server extends Changes {
 			]
 		};
 
-		getOrCreateUser(member, (err, doc) => {
-			new Command({
-				user_id: doc.id,
-				uid: comm.pid,
-				alias: comm.alias,
-				params: comm.params
-			})
-			.save((err, prod) => {
-				comm._id = prod.id;
-				this.commands.push(comm);
+		let doc = await getOrCreateUser(member);
 
-				cb(true);
-
-				DiscordServers.updateOne(
-					{ server_id: this.serverId },
-					{ $addToSet: { command_ids: prod.id } });
-			});
+		let model = new Command({
+			user_id: doc.id,
+			uid: comm.pid,
+			alias: comm.alias,
+			params: comm.params
 		});
+
+		let prod = await model.save();
+
+		comm._id = prod.id;
+		this.commands.push(comm);
+
+		await DiscordServers.updateOne(
+			{ server_id: this.serverId },
+			{ $addToSet: { command_ids: prod.id } }
+		).exec();
+
+		return Promise.resolve(true);
 	}
 
 	public removeCommand(commandName: string, paramId?: number): boolean {
@@ -1319,26 +1335,26 @@ function def<D, I>(def: D, ...opts: I[]): D | I {
 	return def;
 }
 
-function getOrCreateUser(member: Discord.GuildMember, cb: (err: any, doc: Document) => any) {
-	DiscordMembers.findOne({
-		'did': member.id
-	}, (err, exists) => {
-		if (exists == null) {
-			new DiscordMembers({
-				did: member.id,
-				name: member.user.username,
-				discriminator: member.user.discriminator,
-				avatar: member.user.avatarURL,
-				created_at: member.user.createdAt,
-				connections: [],
-				guilds: []
-			}).save((err, ret) => {
-				cb(err, ret);
-			});
-		} else {
-			cb(err, exists);
-		}
-	});
+async function getOrCreateUser(member: Discord.GuildMember) {
+	let exists = await DiscordMembers.findOne({ 'did': member.id });
+
+	if (exists == null) {
+		let model = new DiscordMembers({
+			did: member.id,
+			name: member.user.username,
+			discriminator: member.user.discriminator,
+			avatar: member.user.avatarURL,
+			created_at: member.user.createdAt,
+			connections: [],
+			guilds: []
+		});
+
+		let up = await model.save();
+
+		return Promise.resolve(up);
+	} else {
+		return Promise.resolve(exists);
+	}
 }
 
 function getServer(serverId: string,  cb: (music?: Server) => any) {

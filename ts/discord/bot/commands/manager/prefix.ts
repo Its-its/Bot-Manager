@@ -44,24 +44,29 @@ class PrefixCommand extends Command {
 		let type = params.shift();
 
 		switch(type) {
-			case 'reset':
+			case 'reset': {
 				if (!this.hasPerms(message.member!, server, PERMS.RESET)) return Command.noPermsMessage('Prefix');
 
 				server.commandPrefix = '!';
-				server.save();
+
+				await server.save();
 
 				return Command.success([[
 					'Prefix',
 					'Bot command prefix reset to "!"'
 				]]);
-			case 'set':
+			}
+
+			case 'set': {
 				if (!this.hasPerms(message.member!, server, PERMS.SET)) return Command.noPermsMessage('Prefix');
 
 				let prefix = params.shift();
 
 				if (prefix != null && new RegExp('[~\\!@#$%^&\*\-=+:;<>,.?]{1,4}', 'i').test(prefix)) {
 					server.commandPrefix = prefix;
-					server.save();
+
+					await server.save();
+
 					return Command.success([[
 						'Prefix',
 						'Bot command prefix now set to "' + prefix + '"'
@@ -76,6 +81,7 @@ class PrefixCommand extends Command {
 						].join('\n')
 					]]);
 				}
+			}
 		}
 	}
 }

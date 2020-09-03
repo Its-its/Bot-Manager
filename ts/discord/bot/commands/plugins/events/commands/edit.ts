@@ -106,7 +106,7 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 					server.regrab(copy => {
 						if (copy == null) return;
 						copy.addOrEditEvent(compiled);
-						copy.save();
+						copy.save().catch(console.error);
 					});
 
 					return true;
@@ -151,7 +151,7 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 						if (copy == null) return;
 
 						copy.addOrEditEvent(compiled);
-						copy.save();
+						copy.save().catch(console.error);
 					});
 
 					return true;
@@ -177,7 +177,7 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 					if (copy == null) return;
 
 					copy.addOrEditEvent(compiled);
-					copy.save();
+					copy.save().catch(console.error);
 				});
 				return true;
 			});

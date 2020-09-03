@@ -78,7 +78,7 @@ class Interval extends Command {
 				if (message.channel.type != 'text') return Command.error([[ 'Interval', 'Channel is not a text channel.' ]]);
 
 				let pos = server.addInterval(minutes, message.guild!.id, message.channel.id);
-				server.save();
+				await server.save();
 
 				return Command.info([
 					[ 'Interval', 'Interval with ID ' + pos + ' created.\nMinutes set to ' + minutes ]
@@ -95,7 +95,7 @@ class Interval extends Command {
 						if (!this.hasPerms(message.member!, server, PERMS.REMOVE)) return Command.noPermsMessage('Interval');
 
 						server.removeInterval(intervalId);
-						server.save();
+						await server.save();
 
 						return Command.info([
 							[ 'Interval', 'Interval with ID ' + intervalId + ' removed.' ]
@@ -106,7 +106,7 @@ class Interval extends Command {
 						if (!this.hasPerms(message.member!, server, PERMS.TOGGLE)) return Command.noPermsMessage('Interval');
 
 						let togglePos = server.toggleInterval(intervalId);
-						server.save();
+						await server.save();
 
 						return Command.info([
 							[ 'Interval', 'Interval with ID ' + intervalId + ' is now ' + (togglePos ? 'Active' : 'Disabled') ]
@@ -123,7 +123,7 @@ class Interval extends Command {
 								let seconds = parseInt(params[3]);
 								if (isNaN(seconds)) return Command.error([[ 'Interval', 'Invalid Seconds.' ]]);
 								server.setIntervalTime(intervalId, seconds);
-								server.save();
+								await server.save();
 
 								return Command.info([
 									[ 'Interval', 'Interval ' + intervalId + ' time update to ' + seconds + ' seconds.' ]
@@ -135,7 +135,7 @@ class Interval extends Command {
 
 								let text = params.slice(3).join(' ');
 								server.setIntervalMessage(intervalId, text);
-								server.save();
+								await server.save();
 
 								return Command.info([[ 'Interval', 'Interval ' + intervalId + ' updated.' ]]);
 							}
@@ -145,7 +145,7 @@ class Interval extends Command {
 
 								let text = params.slice(3).join(' ');
 								server.setIntervalName(intervalId, text);
-								server.save();
+								await server.save();
 
 								return Command.info([[ 'Interval', 'Interval ' + intervalId + ' updated.' ]]);
 							}

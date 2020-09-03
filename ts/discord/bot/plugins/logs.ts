@@ -50,7 +50,7 @@ function messageDelete(message: Discord.Message | Discord.PartialMessage) {
 				} else {
 					let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
 					server.plugins.logs!.channels.splice(index_of, 1);
-					server.save();
+					server.save().catch(console.error);
 				}
 			}
 
@@ -99,7 +99,7 @@ function messageDeleteBulk(messageCollection: Discord.Collection<string, Discord
 					} else {
 						let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
 						server.plugins.logs!.channels.splice(index_of, 1);
-						server.save();
+						server.save().catch(console.error);
 					}
 				}
 
@@ -145,7 +145,7 @@ function messageUpdate(oldMessage: Discord.Message | Discord.PartialMessage, new
 			} else {
 				let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
 				server.plugins.logs!.channels.splice(index_of, 1);
-				server.save();
+				server.save().catch(console.error);
 			}
 		}
 	})
@@ -176,7 +176,7 @@ function guildMemberAdd(guildMember: Discord.GuildMember) {
 			} else {
 				let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
 				server.plugins.logs!.channels.splice(index_of, 1);
-				server.save();
+				server.save().catch(console.error);
 			}
 		}
 	})
@@ -207,7 +207,7 @@ function guildMemberRemove(guildMember: Discord.GuildMember) {
 			} else {
 				let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
 				server.plugins.logs!.channels.splice(index_of, 1);
-				server.save();
+				server.save().catch(console.error);
 			}
 		}
 	})

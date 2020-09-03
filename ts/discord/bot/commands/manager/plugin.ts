@@ -201,7 +201,7 @@ class Plugin extends Command {
 			default: return Promise.resolve();
 		}
 
-		server.save();
+		await server.save();
 
 		return Promise.resolve();
 	}

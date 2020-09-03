@@ -108,7 +108,7 @@ class Rank extends Command {
 				break;
 		}
 
-		server.save();
+		await server.save();
 
 		function getRoleId(name: string): Nullable<string> {
 			name = name.toLowerCase();

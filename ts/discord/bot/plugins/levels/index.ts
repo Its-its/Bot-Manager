@@ -92,7 +92,7 @@ function roleRemove(role: Discord.Role, server: Server) {
 				});
 			}
 
-			server.save();
+			server.save().catch(console.error);
 			break;
 		}
 	}

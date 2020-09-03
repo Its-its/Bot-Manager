@@ -75,14 +75,15 @@ class Phrase extends Command {
 
 				if (!/^[a-z0-9]+$/i.test(phraseName)) return Command.info([['Phrase', 'Phrase name must only have A-Z 0-9 in it.']]);
 
-				server.createPhrase(message.member!, phraseName.split(','), (phrase) => {
-					if (phrase == null) return;
+				let phrase = await server.createPhrase(message.member!, phraseName.split(','));
 
-					let resp = params.join(' ');
+				let resp = params.join(' ');
 
-					phrase.responses = [ { type: 'echo', message: resp } ];
-					server.save(() => message.channel.send(Command.info([['Phrase', 'Created Phrase Successfully.']])));
-				});
+				phrase.responses = [ { type: 'echo', message: resp } ];
+
+				await server.save();
+				await message.channel.send(Command.info([['Phrase', 'Created Phrase Successfully.']]));
+
 				break;
 
 			case 'ignorecase':
@@ -94,7 +95,10 @@ class Phrase extends Command {
 				if (isNaN(id)) return;
 
 				server.setPhraseIgnoreCase(id, params.shift() == 'true');
-				server.save(() => message.channel.send(Command.info([['Phrase', 'Changed Phrase Ignore Case.']])));
+
+				await server.save();
+				await message.channel.send(Command.info([['Phrase', 'Changed Phrase Ignore Case.']]));
+
 				break;
 
 			default:
@@ -108,12 +112,14 @@ class Phrase extends Command {
 						if (!this.hasPerms(message.member!, server, PERMS.ADD_PHRASE)) return Command.noPermsMessage('Phrase');
 
 						server.addPhrase(cmdCallOrPhraseId, params.join(' ').split(','));
-						server.save(() => message.channel.send(Command.info([['Phrase', 'Added Phrase']])));
+						await server.save();
+						await message.channel.send(Command.info([['Phrase', 'Added Phrase']]))
 					} else if (name == 'response') {
 						if (!this.hasPerms(message.member!, server, PERMS.ADD_RESPONSE)) return Command.noPermsMessage('Phrase');
 
 						server.setPhraseResponse(cmdCallOrPhraseId, params.join(' ').split(',').map(i => { return { type: 'echo', message: i } }));
-						server.save(() => message.channel.send(Command.info([['Phrase', 'Changed Phrase Response.']])));
+						await server.save();
+						await message.channel.send(Command.info([['Phrase', 'Changed Phrase Response.']]))
 					}
 				} else if (dodis == 'remove') {
 					if (name == 'phrase') {
@@ -123,7 +129,8 @@ class Phrase extends Command {
 						if (params.length != 0) phrases = params.join(' ').split(',');
 
 						server.removePhrase(cmdCallOrPhraseId, phrases);
-						server.save(() => message.channel.send(Command.info([['Phrase', 'Successfully Removed Phrase']])));
+						await server.save();
+						await message.channel.send(Command.info([['Phrase', 'Successfully Removed Phrase']]))
 					} else if (name == 'response') {
 						if (!this.hasPerms(message.member!, server, PERMS.REMOVE_RESPONSE)) return Command.noPermsMessage('Phrase');
 						return Command.info([['Phrase', 'Not implemented yet. :/']])

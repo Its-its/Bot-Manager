@@ -147,7 +147,7 @@ client.on('message', msg => {
 					ownerID: msg.guild!.ownerID
 				});
 
-				server.save();
+				server.save().catch(console.error);
 			}
 
 			if (server.channelIgnored(msg.channel.id)) return;
@@ -212,7 +212,7 @@ client.on('guildUpdate', (oldGuild, newGuild) => {
 			edited = true;
 		}
 
-		if (edited) server.save();
+		if (edited) server.save().catch(console.error);
 	});
 });
 
@@ -295,7 +295,7 @@ client.on('guildCreate', guild => {
 											createdAt: guild.createdTimestamp,
 											memberCount: guild.memberCount,
 											ownerID: guild.ownerID
-										}).save();
+										}).save().catch(console.error);
 									});
 								}
 							});
@@ -318,7 +318,7 @@ client.on('guildCreate', guild => {
 									createdAt: guild.createdTimestamp,
 									memberCount: guild.memberCount,
 									ownerID: guild.ownerID
-								}).save();
+								}).save().catch(console.error);
 							});
 						}
 					}
@@ -346,7 +346,7 @@ client.on('channelDelete', channel => {
 				needsSaving = true;
 			}
 
-			if (needsSaving) server.save();
+			if (needsSaving) server.save().catch(console.error);
 		});
 	}
 });

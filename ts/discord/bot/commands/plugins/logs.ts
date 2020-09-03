@@ -102,7 +102,7 @@ class Logs extends Command {
 							log_channel.priority = as_num;
 						}
 
-						server.save();
+						await server.save();
 
 						return Command.info([
 							[ 'Logs', 'Priority now set to "' + as_num + '"']
@@ -113,8 +113,6 @@ class Logs extends Command {
 						[ 'Logs', `The current priority is ${log_channel.priority == null ? 0 : log_channel.priority}` ]
 					]);
 				}
-
-				break;
 			}
 
 			case 'output': {
@@ -161,7 +159,8 @@ class Logs extends Command {
 					});
 				}
 
-				server.save();
+				await server.save();
+
 				break;
 			}
 
@@ -242,7 +241,7 @@ class Logs extends Command {
 							}
 						}
 
-						server.save();
+						await server.save();
 
 						break;
 					}

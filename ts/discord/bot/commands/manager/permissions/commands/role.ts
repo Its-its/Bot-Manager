@@ -97,7 +97,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 		} else return Command.error([['Permissions', 'Invalid Params']]);
 	}
 
-	server.save();
+	await server.save();
 
 	return Promise.resolve();
 }

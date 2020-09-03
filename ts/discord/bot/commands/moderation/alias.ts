@@ -65,7 +65,7 @@ class Alias extends Command {
 
 				if (!server.createAlias(alias, command)) return Command.error([['Alias', 'Unable to add alias. Alias used somewhere else?']]);
 
-				server.save();
+				await server.save();
 
 				return Command.success([['Alias', 'Added new alias.']]);
 			}
@@ -78,7 +78,7 @@ class Alias extends Command {
 				if (name == null) return Command.error([['Alias', 'Pleave provide an alias name to remove.']]);
 
 				if (server.removeAlias(name)) {
-					server.save();
+					await server.save();
 
 					return Command.success([['Alias', 'Successfully removed alias.']]);
 				} else {

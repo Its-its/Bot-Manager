@@ -200,52 +200,50 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 	.then(() => {
 		asdf([
 			// Roles || Required for: perms.roles, ranks
-			function(next) {
+			async function() {
 				if (isRestoring('roles')) {
-					message.edit(Command.info([
+					await message.edit(Command.info([
 						[
 							'Restore',
 							'Restoring Roles...\n' + items.roles!.length + ' roles will take ~' + Math.round(items.roles!.length * 1.5) + ' seconds.'
 						]
-					]))
-					.then(() => nextRole(0))
-					.catch(e => console.error(e));
+					]));
+
+					await nextRole(0);
 
 					// 0, 1, 2, 3
 					items.roles = items.roles!.sort((r1, r2) => r1.position - r2.position);
 
-					function nextWait(pos: number) {
-						setTimeout(() => nextRole(pos), 1000);
-					}
-
-					function nextRole(pos: number) {
-						if (items.roles!.length == pos) return next();
+					async function nextRole(pos: number) {
+						if (items.roles!.length == pos) {
+							return Promise.resolve();
+						}
 
 						let or = items.roles![pos];
 
 						if (or.name == '@everyone' && or.position == 0) {
 							let roles = guild.roles.cache.array();
+
 							for(let i = 0; i < roles.length; i++) {
 								let role = roles[i];
+
 								if (role.position == 0) {
-									role.edit({
+									let discRole = await role.edit({
 										permissions: or.permissions,//<any>utils.getPermissions(or.permissions).toArray()
-									})
-									.then(r => {
-										console.log(`[Roles]: ${or.id} - ${r.id} - ${r.name}`);
-										tempIdToNew[or.id] =  r.id;
-										nextWait(pos + 1);
-									})
-									.catch(e => {
-										console.log(`[Roles]: ${or.id} - catch`);
-										console.error(e);
-										nextWait(pos + 1);
 									});
+
+									console.log(`[Roles]: ${or.id} - ${discRole.id} - ${discRole.name}`);
+									tempIdToNew[or.id] =  discRole.id;
+
+									await utils.asyncTimeout(1000);
+
+									await nextRole(pos + 1);
+
 									break;
 								}
 							}
 						} else {
-							guild.roles.create({
+							let discRole = await guild.roles.create({
 								data: {
 									name: or.name,
 									color: or.color,
@@ -255,212 +253,208 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 									mentionable: or.mentionable
 								},
 								reason: 'Restore'
-							})
-							.then(r => {
-								console.log(`[Roles]: ${or.id} - ${r.id} - ${r.name}`);
-								tempIdToNew[or.id] =  r.id;
-								nextWait(pos + 1);
-							})
-							.catch(e => {
-								console.log(`[Roles]: ${or.id} - catch`);
-								console.error(e);
-								nextWait(pos + 1);
 							});
-						}
-					}
 
-				} else next();
+							console.log(`[Roles]: ${or.id} - ${discRole.id} - ${discRole.name}`);
+							tempIdToNew[or.id] =  discRole.id;
+
+							await utils.asyncTimeout(1000);
+
+							await nextRole(pos + 1);
+						}
+
+						return Promise.resolve();
+					}
+				}
+
+				return Promise.resolve();
 			},
 			// Channels || Required for: overview.afk_channel, overview.new_member_channel
-			function(next) {
+			async function() {
 				if (isRestoring('channels')) {
-					message.edit(Command.info([['Restore', 'Restoring Channels...']]))
-					.then(() => {
-						createChannels(items.channels!, () => {
-							next();
-						});
-					})
-					.catch(e => console.error(e));
-				} else next();
+					await message.edit(Command.info([['Restore', 'Restoring Channels...']]));
 
-				function createChannels(channels: Optional<DiscordBot.BackupChannel[]>, fin: () => any) {
-					if (channels == null || channels.length == 0) return fin();
+					await createChannels(items.channels!);
+				}
+
+				async function createChannels(channels: Optional<DiscordBot.BackupChannel[]>) {
+					if (channels == null || channels.length == 0) {
+						return Promise.resolve();
+					}
 
 					channels = channels.sort((c1, c2) => c1.position - c2.position);
 
-					create(0);
+					await create(0);
 
-					function nextWait(pos: number) {
-						setTimeout(() => create(pos), 1000);
-					}
-
-					function create(pos: number) {
-						if (channels!.length == pos) return fin && fin();
+					async function create(pos: number) {
+						if (channels!.length == pos) {
+							return Promise.resolve();
+						}
 
 						let c = channels![pos];
 
-						guild.channels.create(c.name, {
+						let channel = await guild.channels.create(c.name, {
 							type: c.type,
 							permissionOverwrites: c.perms
-						})
-						.then(channel => {
-							console.log(`[Channels]: ${c.id} - ${channel.id}`);
-							tempIdToNew[c.id] = channel.id;
-
-							if (c.parent != null && tempIdToNew[c.parent] != null) {
-								channel.setParent(tempIdToNew[c.parent], { reason: 'Restore' });
-							}
-
-							//TODO: temp save channel name. (ignored channels)
-							createChannels(c.children, () => {
-								nextWait(pos + 1);
-							});
-						})
-						.catch(e => {
-							console.error(e);
-							nextWait(pos + 1);
-						})
-					}
-				}
-			},
-			// Overview
-			function(next) {
-				if (!isRestoring('moderation') && !isRestoring('overview')) return next();
-
-				message.edit(Command.info([['Restore', 'Restoring Overview/Moderation...']]))
-				.then(() => {
-					if (isRestoring('overview')) {
-						let overview = items.overview;
-
-						async.mapSeries([
-							guild.setName(overview!.server_name),
-							guild.setRegion(overview!.server_region),
-							guild.setAFKTimeout(overview!.afk_timeout),
-							// overview.server_image ? guild.setIcon(overview.server_image) : null,
-							// Possibility to be null if channels weren't included in backup.
-							overview!.afk_channel ? guild.setAFKChannel(tempIdToNew[overview!.afk_channel]) : null,
-							overview!.new_member_channel ? guild.setSystemChannel(tempIdToNew[overview!.new_member_channel]) : null
-						], (promise, callback) => {
-							if (promise != null) {
-								promise.then(() => setTimeout(() => callback(), 500))
-								.catch(() => setTimeout(() => callback(), 500));
-							}
-						}, (err, res) => {
-							if (err != null) console.error(err);
-							next();
 						});
 
-						// notification_settings: Discord.MessageNotifications;
+						console.log(`[Channels]: ${c.id} - ${channel.id}`);
+						tempIdToNew[c.id] = channel.id;
 
-						next();
-					} else {
-						next();
+						if (c.parent != null && tempIdToNew[c.parent] != null) {
+							await channel.setParent(tempIdToNew[c.parent], { reason: 'Restore' });
+						}
+
+						//TODO: temp save channel name. (ignored channels)
+						await createChannels(c.children);
+
+						await utils.asyncTimeout(1000);
+
+						await create(pos + 1);
+
+						return Promise.resolve();
 					}
-				})
-				.catch(e => console.error(e));
+				}
+
+				return Promise.resolve();
+			},
+			// Overview
+			async function() {
+				if (!isRestoring('moderation') && !isRestoring('overview')) {
+					return Promise.resolve();
+				}
+
+				await message.edit(Command.info([['Restore', 'Restoring Overview/Moderation...']]));
+
+				if (isRestoring('overview')) {
+					let overview = items.overview;
+
+					await utils.asyncCatchBool(guild.setName(overview!.server_name));
+					await utils.asyncCatchBool(guild.setRegion(overview!.server_region));
+					await utils.asyncCatchBool(guild.setAFKTimeout(overview!.afk_timeout));
+					// overview.server_image ? guild.setIcon(overview.server_image) : null,
+					// Possibility to be null if channels weren't included in backup.
+					if (overview!.afk_channel) {
+						await utils.asyncCatchBool(guild.setAFKChannel(tempIdToNew[overview!.afk_channel]));
+					}
+
+					if (overview!.new_member_channel) {
+						await utils.asyncCatchBool(guild.setSystemChannel(tempIdToNew[overview!.new_member_channel]));
+					}
+
+					// notification_settings: Discord.MessageNotifications;
+				}
+
+				return Promise.resolve();
 			},
 			// Moderation
-			function(next) {
+			async function() {
 				if (isRestoring('moderation')) {
-					async.mapSeries([
-						guild.setVerificationLevel(items.moderation!.verification),
-						// TODO: Linode crashes @ this one. guild.setExcplicitContentFilter(items.moderation.content_filter)
-					], (promise, callback) => {
-						if (promise != null) {
-							promise.then(() => setTimeout(() => callback(), 500))
-							.catch(() => setTimeout(() => callback(), 500));
-						}
-					}, (err, res) => {
-						if (err != null) console.error(err);
-						next();
-					});
-				} else next();
+					await utils.asyncCatchBool(guild.setVerificationLevel(items.moderation!.verification));
+
+					// TODO: Linode crashes @ this one. guild.setExcplicitContentFilter(items.moderation.content_filter)
+				}
+
+				return Promise.resolve();
 			},
 			// Emoji
-			function(next) {
+			async function() {
 				if (isRestoring('emojis')) {
 					// nextEmoji(0);
-					next();
 
 					function nextEmoji(pos: number) {
-						if (items.emojis!.length == pos) return next();
+						if (items.emojis!.length == pos) return;
 
 						let emoji = items.emojis![pos];
 
 						// emoji.
 					}
-				} else next();
+				}
+
+				return Promise.resolve();
 			},
 			// Bans
-			function(next) {
+			async function() {
 				if (isRestoring('bans')) {
-					message.edit(Command.info([
+					await message.edit(Command.info([
 						[
 							'Restore',
 							'Restoring Bans...\n' + items.roles!.length + ' bans may take ~' + Math.round(items.roles!.length * 1.5) + ' seconds.'
 						]
-					]))
-					.then(() => nextBan(0))
-					.catch(e => console.error(e));
+					]));
 
-					function nextWait(pos: number) {
-						setTimeout(() => nextBan(pos), 500);
-					}
+					await nextBan(0);
 
-					function nextBan(pos: number) {
-						if (items.bans!.length == pos) return next();
+
+					async function nextBan(pos: number) {
+						if (items.bans!.length == pos) {
+							return Promise.resolve();
+						}
 
 						let b = items.bans![pos];
 
-						guild.members.ban(b/*, { days: null, reason: null }*/)
-						.then(b => nextWait(pos + 1))
-						.catch(e => {
-							console.error(e);
-							nextWait(pos + 1);
-						});
+						await guild.members.ban(b/*, { days: null, reason: null }*/);
+
+						await utils.asyncTimeout(200);
+
+						await nextBan(pos + 1);
+
+						return Promise.resolve();
 					}
-				} else next();
+				}
+
+				return Promise.resolve();
 			},
 			// Phrases
-			function(next) {
+			async function() {
 				if (isRestoring('phrases')) {
-					message.edit(Command.info([['Restore', 'Restoring Phrases...']]))
-					.then(() => nextPhrase(0))
-					.catch(e => console.error(e));
+					await message.edit(Command.info([['Restore', 'Restoring Phrases...']]));
 
-					function nextPhrase(pos: number) {
-						if (items.phrases!.length == pos) return next();
+					await nextPhrase(0);
+
+					async function nextPhrase(pos: number) {
+						if (items.phrases!.length == pos) {
+							return Promise.resolve();
+						}
 
 						let p = items.phrases![pos];
 
-						server.createPhrase(message.member!, p.phrases, phrase => {
-							server.setPhraseIgnoreCase(phrase.pid, p.ignoreCase);
-							server.setPhraseResponse(phrase.pid, p.responses);
+						let phrase = await server.createPhrase(message.member!, p.phrases);
 
-							nextPhrase(pos + 1);
-						});
+						server.setPhraseIgnoreCase(phrase.pid, p.ignoreCase);
+						server.setPhraseResponse(phrase.pid, p.responses);
+
+						await nextPhrase(pos + 1);
 					}
-				} else next();
+				}
+
+				return Promise.resolve();
 			},
 			// Commands
-			function(next) {
+			async function() {
 				if (isRestoring('commands')) {
-					message.edit(Command.info([['Restore', 'Restoring Commands...']]))
-					.then(() => nextCommand(0))
-					.catch(e => console.error(e));
+					await message.edit(Command.info([['Restore', 'Restoring Commands...']]));
+
+					nextCommand(0);
 
 
-					function nextCommand(pos: number) {
-						if (items.commands!.length == pos) return next();
+					async function nextCommand(pos: number): Promise<void> {
+						if (items.commands!.length == pos) {
+							return Promise.resolve();
+						}
 
 						let c = items.commands![pos];
 
-						server.createCommand(guild.owner!, c.alias, c.params, () => nextCommand(pos + 1));
+						await server.createCommand(guild.owner!, c.alias, c.params);
+
+						return nextCommand(pos + 1);
 					}
-				} else next();
+				}
+
+				return Promise.resolve();
 			},
 			// Everything else.
-			function(next) {
+			async function() {
 				if (isRestoring('alias')) {
 					items.alias!.forEach(a => server.createAlias(a.alias, a.command));
 				}
@@ -548,14 +542,16 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 					});
 				}
 
-				next();
+				return Promise.resolve();
 			}
-		], function() {
-			server.save(() => {
-				message.edit(Command.info([['Restore', 'Finished.\nTook: ' + ((Date.now() - startTime)/1000) + 's']]))
-				.catch(e => console.error(e));
-				console.log('Saved to server.');
-			});
+		], async function() {
+			await server.save();
+
+			await message.edit(Command.info([['Restore', 'Finished.\nTook: ' + ((Date.now() - startTime)/1000) + 's']]));
+
+			console.log('Saved to server.');
+
+			return Promise.resolve();
 		});
 	})
 	.catch(e => console.error(e));
@@ -564,15 +560,12 @@ function startImport(backup: Backup, message: Discord.Message, server: DiscordSe
 export = Restore;
 
 
-function asdf(items: ((cb: () => any) => any)[], finish: () => any) {
-	let pos = 0;
-
-	next();
-
-	function next() {
-		if (pos >= items.length) return finish();
-		items[pos++](() => next());
+async function asdf(items: (() => Promise<void>)[], finish: () => Promise<void>) {
+	for (let i = 0; i < items.length; i++) {
+		await items[i]();
 	}
+
+	return finish();
 }
 
 interface Compiled {

@@ -97,7 +97,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 		}
 	}
 
-	server.save();
+	await server.save();
 
 	return Promise.resolve();
 }

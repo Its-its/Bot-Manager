@@ -81,7 +81,7 @@ class Ignore extends Command {
 					server.clearIgnoreList('all');
 				} else return Command.error([['Error on Clearing', 'Unknown clear option "' + clearType + '" Use: "channel", "user", "all"']]);
 
-				server.save();
+				await server.save();
 
 				return Command.success([['Ingore', 'Cleared successfully.']]);
 			}
@@ -105,7 +105,7 @@ class Ignore extends Command {
 
 				if (channel != null) {
 					server.ignore('channel', id);
-					server.save();
+					await server.save();
 
 					return Command.success([['Ignore', 'Now ignoring channel "' + channel.name + '"']]);
 				} else {
@@ -132,7 +132,7 @@ class Ignore extends Command {
 
 				if (member != null) {
 					server.ignore('member', id);
-					server.save();
+					await server.save();
 
 					return Command.success([['Ignore', 'Now ignoring user "' + member.displayName + '"']]);
 				} else {
@@ -156,7 +156,7 @@ class Ignore extends Command {
 
 					if (member != null) {
 						server.ignore('member', id);
-						server.save();
+						await server.save();
 
 						return Command.success([['Ignore', 'I am now ignoring user "' + member.displayName + '"']]);
 					} else {
@@ -173,7 +173,7 @@ class Ignore extends Command {
 
 					if (channel != null) {
 						server.ignore('channel', id);
-						server.save();
+						await server.save();
 
 						return Command.success([['Ignore', 'I am now ignoring channel "#' + channel.name + '"']]);
 					} else {

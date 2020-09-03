@@ -64,10 +64,12 @@ class Comm extends Command {
 
 				if (onCalledMessage.length == 0) return;
 
-				server.createCommand(message.member!, commandName, { type: 'echo', message: onCalledMessage }, (resp) => {
-					if (resp) server.save(() => message.reply(`Successfully created command "${commandName}"`));
-					else message.reply('Command with that name already exists!');
-				});
+				let resp = await server.createCommand(message.member!, commandName, { type: 'echo', message: onCalledMessage });
+
+				if (resp) {
+					await server.save();
+					await message.reply(`Successfully created command "${commandName}"`);
+				} else message.reply('Command with that name already exists!');
 
 				break;
 			}
@@ -90,7 +92,8 @@ class Comm extends Command {
 				if (!Number.isInteger(paramId)) paramId = undefined;
 
 				server.removeCommand(commandName, paramId);
-				server.save(() => message.reply(`Successfully removed command "${commandName}"`));
+				await server.save();
+				await message.reply(`Successfully removed command "${commandName}"`)
 
 				break;
 			}
