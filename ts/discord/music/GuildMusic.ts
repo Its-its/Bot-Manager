@@ -64,7 +64,8 @@ class Music implements DiscordBot.plugins.Music {
 			})
 			.then(item => {
 				this.guildPlaylist = item.public_id;
-				this.save();
+				this.save()
+				.catch(err => console.error(err));
 			}, err => console.error(err))
 			.catch(err => console.error(err));
 
@@ -84,24 +85,32 @@ class Music implements DiscordBot.plugins.Music {
 		}
 	}
 
-	public hasPlaylistPerms(user_id: string, playlist_id: string | undefined, cb: (value: boolean) => any) {
+	public async hasPlaylistPerms(user_id: string, playlist_id: string | undefined) {
 		if (playlist_id == null || this.guildPlaylist == playlist_id) {
 			// TODO: Check is has music perms
 			if (this.playingFrom == Music.Playlist.Default || this.guildPlaylist == playlist_id)
-				return cb(true);
+				return Promise.resolve(true);
 
 			playlist_id = this.currentPlaylist;
 		}
 
-		MusicPlaylist.findOne({ public_id: playlist_id }, (err, playlist) => {
-			if (playlist == null) return cb(false);
+		let playlist = await MusicPlaylist.findOne({ public_id: playlist_id });
 
-			cb(playlist.creator.toString() == user_id);
-		});
+		if (playlist == null) return Promise.resolve(false);
+
+		return Promise.resolve(playlist.creator.toString() == user_id);
 	}
 
-	public save(cb?: redis.Callback<'OK'>) {
-		redisMusic.set(this.guildId, this.toString(), cb);
+	public async save() {
+		return new Promise((resolve, reject) => {
+			redisMusic.set(this.guildId, this.toString(), (err, resp) => {
+				if (err) {
+					return reject(err);
+				} else {
+					return resolve(resp);
+				}
+			});
+		})
 	}
 
 	// Controls
@@ -207,8 +216,8 @@ class Music implements DiscordBot.plugins.Music {
 
 
 	// History
-	public addToHistory(song: DiscordBot.plugins.PlayedSong) {
-		MusicHistory.updateOne({ server_id: this.guildId }, {
+	public async addToHistory(song: DiscordBot.plugins.PlayedSong) {
+		await MusicHistory.updateOne({ server_id: this.guildId }, {
 			$inc: {
 				song_count: 1
 			},
@@ -228,10 +237,14 @@ class Music implements DiscordBot.plugins.Music {
 				server_id: this.guildId
 			}
 		}, { upsert: true }).exec();
+
+		return Promise.resolve();
 	}
 
-	public clearHistory(cb: (err: any) => any) {
-		MusicHistory.updateOne({ server_id: this.guildId }, { $set: { songs: [], song_count: 0 } }, err => cb(err));
+	public async clearHistory() {
+		await MusicHistory.updateOne({ server_id: this.guildId }, { $set: { songs: [], song_count: 0 } }).exec();
+
+		return Promise.resolve();
 	}
 
 
@@ -240,16 +253,17 @@ class Music implements DiscordBot.plugins.Music {
 	// 	//
 	// }
 
-	public sendMessageFromGuild(guild: Discord.Guild, message: any) {
+	public async sendMessageFromGuild(guild: Discord.Guild, message: any) {
 		let channel = <Discord.TextChannel>guild.channels.cache.get(this.lastTextChannelId);
 		if (channel == null) return console.error('Channel is none existent. - ' + this.lastTextChannelId);
-		channel.send(message)
-		.catch(e => console.error(e));
+
+		await channel.send(message);
+
+		return Promise.resolve();
 	}
 
-	public regrab(cb: (music?: Music) => any) {
-		getMusic(this.guildId)
-		.then(cb, () => cb());
+	public async regrab() {
+		return getMusic(this.guildId);
 	}
 
 	public playingFromString() {

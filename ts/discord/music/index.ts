@@ -454,7 +454,7 @@ async function playSong(
 			let nextSong = await music.nextInQueue();
 
 			if (nextSong == null) {
-				music.sendMessageFromGuild(guild!, 'End of Queue.');
+				await music.sendMessageFromGuild(guild!, 'End of Queue.');
 				return Promise.reject('End of Queue');
 			}
 
@@ -480,7 +480,7 @@ async function playSong(
 
 				let dispatcher = conn!.play(pass);
 
-				req.on('response', () => {
+				req.on('response', utils.asyncFnWrapper(async () => {
 					console.log('Stream Info: ' + Date.now());
 
 					let lastSong = music.playing;
@@ -498,13 +498,13 @@ async function playSong(
 						song.title, song.thumbnail_url, song.length,
 						song.channel_id, new Date(song.published).toISOString());
 
-					music.sendMessageFromGuild(guild!, send);
+					await utils.asyncCatch(music.sendMessageFromGuild(guild!, send));
+					await utils.asyncCatch(music.addToHistory(music.playing));
 
-					music.addToHistory(music.playing);
 					music.save();
 
 					resolve({ newSong: music.playing, lastSong: lastSong });
-				});
+				}));
 
 				req.on('error', reject);
 
