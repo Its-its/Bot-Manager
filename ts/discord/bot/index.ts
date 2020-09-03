@@ -152,15 +152,23 @@ client.on('message', msg => {
 
 			if (server.channelIgnored(msg.channel.id)) return;
 
-			if (commandPlugin.onDidCallCommand(client.user!.id, msg, server)) {
-				statistics.guild_bot_command_count++;
-			} else {
-				statistics.guild_user_chat_count++;
+			commandPlugin.onDidCallCommand(client.user!.id, msg, server)
+			.then(calledCommand => {
+				if (calledCommand) {
+					statistics.guild_bot_command_count++;
+				} else {
+					statistics.guild_user_chat_count++;
 
-				BlacklistCmd.onMessage(msg, server);
+					BlacklistCmd.onMessage(msg, server!);
 
-				levelsPlugin.onMessage(msg, server);
-			}
+					levelsPlugin.onMessage(msg, server!);
+				}
+			})
+			.catch(e => {
+				console.error(e);
+				msg.channel.send('An Error Occured: ' + e);
+			});
+
 		});
 	} catch (error) {
 		logger.error(error);

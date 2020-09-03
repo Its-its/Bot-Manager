@@ -45,7 +45,7 @@ class Mute extends Command {
 		this.description = 'Permanently mute and temp-mute members.';
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return Command.info([
 				[ 'Description', this.description ],
@@ -128,7 +128,7 @@ class Mute extends Command {
 
 		// TODO: Check to see if user currently is being punished. (temp or perm)
 
-		new Punishments({
+		let model = new Punishments({
 			server_id: message.guild!.id,
 			member_id: discUserId,
 			creator_id: message.member!.id,
@@ -140,32 +140,30 @@ class Mute extends Command {
 			expires: seconds == null ? undefined : Date.now() + (seconds * 1000),
 
 			reason: reason
-		}).save((err, item) => {
-			if (err != null) {
-				return console.error(err);
-			}
-
-			if (seconds != null) {
-				// TODO: Check to see if punishment uses same role (if currently punished)
-				TempPunishments.updateOne(
-					{
-						server_id: message.guild!.id,
-						member_id: discUserId!
-					},
-					{
-						$set: {
-							server_id: message.guild!.id,
-							member_id: discUserId!,
-							punishment: item._id,
-							expires: new Date(Date.now() + (seconds * 1000))
-						}
-					},
-					{
-						upsert: true
-					}
-				).exec();
-			}
 		});
+
+		let item = await model.save();
+
+		if (seconds != null) {
+			// TODO: Check to see if punishment uses same role (if currently punished)
+			await TempPunishments.updateOne(
+				{
+					server_id: message.guild!.id,
+					member_id: discUserId!
+				},
+				{
+					$set: {
+						server_id: message.guild!.id,
+						member_id: discUserId!,
+						punishment: item._id,
+						expires: new Date(Date.now() + (seconds * 1000))
+					}
+				},
+				{
+					upsert: true
+				}
+			).exec();
+		}
 
 		// TODO: Return punishment count, and improve stuffs.
 		return Command.success([

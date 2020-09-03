@@ -24,7 +24,7 @@ class Info extends Command {
 		this.description = 'Shows information about a guild member.';
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return Command.info([
 				[
@@ -58,16 +58,16 @@ class Info extends Command {
 
 				if (roles.length == 0) roles = 'None';
 
-				return {
+				return <any>{
 					type: 'echo',
 					embed: {
 						color: Command.InfoColor,
 						author: {
 							name: guildMember.user.tag,
-							icon_url: guildMember.user.displayAvatarURL
+							icon_url: guildMember.user.displayAvatarURL()
 						},
 						thumbnail: {
-							url: guildMember.user.displayAvatarURL
+							url: guildMember.user.displayAvatarURL()
 						},
 						fields: [
 							{
@@ -115,6 +115,8 @@ class Info extends Command {
 			case 'role': break;
 			case 'channel': break;
 		}
+
+		return Promise.resolve();
 	}
 }
 

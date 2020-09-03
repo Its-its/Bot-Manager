@@ -2,29 +2,30 @@ import { DiscordBot, Nullable } from "../typings/manager";
 
 // TODO: Completely seperate from discord.
 
+type UserConfig = {
+	commands: Command[];
+};
+
 interface DefaultCommands {
-	parseMessage: (message: string, userConfig: any, extra: any) => any;
-	get: (commandName: string) => any;
+	parseMessage(message: string, userConfig: any, extra: any): Promise<any>;
+	get(commandName: string): any;
 }
 
-function parseMessageForCmd(defaultCommands: DefaultCommands, userConfig: any, message: string, extra: any, cb: (obj: DiscordBot.PhraseResponses) => void): boolean {
+async function parseMessageForCmd(defaultCommands: DefaultCommands, userConfig: UserConfig, message: string, extra: any): Promise<DiscordBot.PhraseResponses[] | null> {
 	let parts = message.split(' ');
 	let messageCommand = parts[0].toLowerCase();
 
 	// Check default made commands first.
-	let parsed = defaultCommands.parseMessage(message, userConfig, extra);
-	if (parsed != null) {
-		if (Array.isArray(parsed)) {
-			for (let a = 0; a < parsed.length; a++) cb(parsed[a]);
-		} else cb(parsed);
+	let parsed = await defaultCommands.parseMessage(message, userConfig, extra);
 
-		return true;
+	if (parsed != null) {
+		return Array.isArray(parsed) ? parsed : [parsed];
 	}
 
 	// Check user-made commands.
 	if (userConfig.commands.length != 0) {
 		for (let i = 0; i < userConfig.commands.length; i++) {
-			let command: Command = userConfig.commands[i];
+			let command = userConfig.commands[i];
 
 			if (command.alias.indexOf(messageCommand) != -1) {
 				let fixedParams = getProperParam(parts, command.params);
@@ -33,30 +34,27 @@ function parseMessageForCmd(defaultCommands: DefaultCommands, userConfig: any, m
 
 				if (fixedParams == null) {
 					console.error('command Manager: fixedParams returned null');
-					return false;
+					return null;
 				}
 
 				let calls = dealWithOnCalled(
 					userConfig.commands,
 					fixedParams.newParams,
 					command.params[fixedParams.pos],
-					command.params);
+					command.params
+				);
 
 				if (calls == null) {
 					console.error('command Manager: dealWithOnCalled returned null');
-					return false;
+					return null;
 				}
 
-				if (Array.isArray(calls)) {
-					for (let a = 0; a < calls.length; a++) cb(calls[a]);
-				} else cb(calls);
-
-				return true;
+				return Array.isArray(calls) ? calls : [calls];
 			}
 		}
 	}
 
-	return false;
+	return null;
 }
 
 function hasPermissions(defaultCommands: DefaultCommands, message: string, isAdmin: boolean): boolean {
@@ -184,10 +182,24 @@ function getCommandParam(commandName: string, id: number, commands: Array<Comman
 	return param;
 }
 
+/**
+ * Returns if you did the prefix or @'d the bot.
+ *
+ * If it starts with a prefix
+ *
+ * If it starts with bots' @
+ */
 function isCallingCommand(prefix: string, userId: string, message: string) {
 	return message[0] == prefix || message.indexOf(`<@${userId}>`) == 0 || message.indexOf(`<@!${userId}>`) == 0;
 }
 
+/**
+ * Returns the actual message from the command.
+ *
+ * If it starts with a prefix remove it and return the rest.
+ *
+ * If it starts with bots' @ then remove it and return the rest.
+ */
 function getCommandMessage(prefix: string, userId: string, message: string) {
 	if (message[0] == prefix) return message.substr(1);
 
@@ -255,10 +267,7 @@ export = {
 
 
 interface Command {
-	id: string;
 	alias: string[];
-	disabled?: boolean;
-	enabled: boolean;
 	params: CommandParam[];
 }
 

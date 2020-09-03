@@ -7,7 +7,7 @@ import { sendReq } from '@discord/music/plugins/music';
 import PERMS = require('../perms');
 import { Optional } from '@type-manager';
 
-function call(params: string[], server: DiscordServer, message: Discord.Message) {
+async function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMS.JOIN)) return Command.noPermsMessage('Music');
 
 	let voiceChannel: Optional<string> = params.shift();
@@ -25,6 +25,8 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 		voice_channel: voiceChannel
 	});
+
+	return Promise.resolve();
 }
 
 export {

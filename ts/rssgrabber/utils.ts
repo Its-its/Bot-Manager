@@ -48,7 +48,13 @@ interface TwitterFeedFix extends Document {
 	}[];
 }
 
-function addTwitterFeed(urlOrScreenName: string, cb: (err?: string, newFeed?: boolean, feed?: TwitterFeedFix, items?: TwitterStatusesDB[]) => any) {
+interface AddTwitterFeedResponse {
+	newFeed: boolean;
+	feed: TwitterFeedFix;
+	items: TwitterStatusesDB[];
+}
+
+async function addTwitterFeed(urlOrScreenName: string): Promise<AddTwitterFeedResponse> {
 	let urlRegex = new RegExp('twitter.com/(\\w+)', 'i');
 
 	if (urlRegex.test(urlOrScreenName)) {
@@ -56,42 +62,46 @@ function addTwitterFeed(urlOrScreenName: string, cb: (err?: string, newFeed?: bo
 		if (exec != null) urlOrScreenName = exec[1];
 	}
 
-	// @ts-ignore
-	twitter.get('users/lookup', { screen_name: urlOrScreenName }, (err, res: Twit.Twitter.User[]) => {
-		if (err != null) return cb(err.toString());
+	let lookup = await twitter.get('users/lookup', { screen_name: urlOrScreenName });
+	let res: Twit.Twitter.User[] = <any>lookup.data;
 
-		if (res.length == 0) return cb("User cannot be found!");
+	if (res.length == 0) return Promise.reject("User cannot be found!");
 
-		const user = res[0];
+	let user = res[0];
 
-		TwitterFeeds.findOne({ user_id: user.id_str }, (err, feed) => {
-			if (err != null) return cb(err);
+	let feed = await TwitterFeeds.findOne({ user_id: user.id_str });
 
-			// @ts-ignore
-			twitter.get('statuses/user_timeline', { id: user.id_str, count: 10, include_rts: true }, (err, statuses: Twit.Twitter.Status[]) => {
-				if (err != null) return cb(err.toString());
+	let stat = await twitter.get('statuses/user_timeline', { id: user.id_str, count: 10, include_rts: true });
+	let statuses: Twit.Twitter.Status[] = <any>stat.data;
 
-				let feedItems = twitterStatusesToDB(statuses);
+	let feedItems = twitterStatusesToDB(statuses);
 
-				// Exists already? Return with statuses
-				if (feed != null) return cb(undefined, false, feed, feedItems);
+	// Exists already? Return with statuses
+	if (feed != null) {
+		return {
+			feed,
+			newFeed: false,
+			items: feedItems
+		};
+	}
 
-				new TwitterFeeds({
-					user_id: user.id_str,
-					screenName: user.screen_name,
-					displayName: user.name,
+	let model = new TwitterFeeds({
+		user_id: user.id_str,
+		screenName: user.screen_name,
+		displayName: user.name,
 
-					sending_to: 1,
+		sending_to: 1,
 
-					items: feedItems
-				})
-				.save((err, feed) => {
-					if (err != null) return cb(err);
-					cb(undefined, true, feed, feedItems);
-				});
-			});
-		});
+		items: feedItems
 	});
+
+	await model.save();
+
+	return {
+		newFeed: true,
+		feed: model,
+		items: feedItems
+	};
 }
 
 
@@ -144,57 +154,68 @@ interface RSSFeedFix extends Document {
 	last_called: Date;
 }
 
-function getFeedItems(url: string, cookies: any, cb: (err?: Error, items?: FeedParser.Item[]) => any) {
-	let cbCalled = false;
+async function getFeedItems(url: string, cookies: any) {
+	return new Promise<FeedParser.Item[]>((resolve, reject) => {
+		let cbCalled = false;
 
-	function callback(err?: Error, items?: FeedParser.Item[]) {
-		if (cbCalled) return;
-		cbCalled = true;
+		let feedparser = new FeedParser({});
 
-		cb(err, items);
-	}
+		let req = request.get(url, { strictSSL: false });
 
-	const feedparser = new FeedParser({});
+		function callback(err?: Error, items?: FeedParser.Item[]) {
+			if (cbCalled) return;
+			cbCalled = true;
 
-	const req = request.get(url, { strictSSL: false });
+			req.abort();
+			feedparser.destroy();
 
-	req.on('error', err => {
-		callback(err);
-	});
-
-	// if (cookies != null) {
-	// 	let j = request.jar();
-
-	// 	let cookie = request.cookie('');
-	// 	j.setCookie(cookie, '');
-
-	// 	req.jar(j);
-	// }
-
-	req.pipe(feedparser);
-
-
-	let feedItems: FeedParser.Item[] = [];
-
-
-	feedparser.on('error', (err: any) => {
-		callback(err);
-	});
-
-	feedparser.on('readable', function(this: FeedParser) {
-		let item: FeedParser.Item;
-		while(item = this.read()) {
-			feedItems.push(item);
+			if (err != null) {
+				reject(err);
+			} else if (items != null) {
+				resolve(items);
+			}
 		}
-	});
 
-	feedparser.on('end', () => {
-		callback(undefined, feedItems);
+
+		req.on('error', err => callback(err));
+
+		// if (cookies != null) {
+		// 	let j = request.jar();
+
+		// 	let cookie = request.cookie('');
+		// 	j.setCookie(cookie, '');
+
+		// 	req.jar(j);
+		// }
+
+		req.pipe(feedparser);
+
+
+		let feedItems: FeedParser.Item[] = [];
+
+
+		feedparser.on('error', (err: any) => callback(err));
+
+		feedparser.on('readable', function(this: FeedParser) {
+			let item: FeedParser.Item;
+
+			while(item = this.read()) {
+				feedItems.push(item);
+			}
+		});
+
+		feedparser.on('end', () => callback(undefined, feedItems));
 	});
 }
 
 
-function addNewFeed(uri: string, cookies: any, title: string | null, cb: (err?: string, newFeed?: boolean, feed?: RSSFeedFix, article?: ArticleDB) => any) {
+interface AddRSSFeedResponse {
+	newFeed: boolean;
+	feed: RSSFeedFix;
+	article: ArticleDB;
+}
+
+async function addNewFeed(uri: string, cookies: any): Promise<AddRSSFeedResponse> {
 	// Find db from url
 	//   - Not found? Get items, Check again with one of the items xml urls (usually more proper) if not found, register as new.
 
@@ -203,59 +224,73 @@ function addNewFeed(uri: string, cookies: any, title: string | null, cb: (err?: 
 	try {
 		new URL(uri);
 	} catch(e) {
-		return cb('Invalid URL.');
+		return Promise.reject('Invalid URL.');
 	}
 
 	// TODO: Check if links are the same (https/http) | I believe I did it partially.
 
-	RSSFeeds.findOne({ $or: [ { xmlUrl: uri }, { link: uri } ] }, (err, feed) => {
-		if (err != null) return cb(err);
+	let feed = await RSSFeeds.findOne({ $or: [ { xmlUrl: uri }, { link: uri } ] });
 
-		getFeedItems(uri, cookies, (err, items) => {
-			if (err != null || items == null) return cb('An error occured while trying to grab Feed Items.');
+	let items = await getFeedItems(uri, cookies);
 
-			// Feed already exist? No need to continue and create it.
-			if (feed != null) return cb(undefined, false, feed, articlesToDB(uri, items));
+	if (items == null) return Promise.reject('An error occured while trying to grab Feed Items.');
+
+	// Feed already exist? No need to continue and create it.
+	if (feed != null) {
+		return {
+			feed,
+			newFeed: false,
+			article: articlesToDB(uri, items)
+		};
+	}
+
+	let fItem = items[0];
+
+	if (fItem == null) return Promise.reject('XML page didn\'t have any items on it.');
+
+	if (fItem.meta != null && fItem.meta.xmlurl != null && fItem.meta.xmlurl.toLowerCase() != uri.toLowerCase()) {
+		uri = fItem.meta.xmlurl;
+
+		if (fItem.meta.link == null || fItem.meta.link.length == 0) {
+			fItem.meta.link = fItem.meta.xmlurl;
+		}
+
+		// Check DB again for xmlurl this time.
+		let feed = await RSSFeeds.findOne({ $or: [ { xmlUrl: uri }, { link: fItem.meta.link.replace(/https?:\/\//i, '') } ] });
+
+		if (feed != null) {
+			return {
+				feed,
+				newFeed: false,
+				article: articlesToDB(uri, items)
+			};
+		} else {
+			return createFeed();
+		}
+	} else {
+		return createFeed();
+	}
 
 
-			let fItem = items[0];
+	async function createFeed() {
+		let article = articlesToDB(uri, items);
 
-			if (fItem == null) return cb('XML page didn\'t have any items on it.');
+		let feed = new RSSFeeds(article);
 
-			if (fItem.meta != null && fItem.meta.xmlurl != null && fItem.meta.xmlurl.toLowerCase() != uri.toLowerCase()) {
-				uri = fItem.meta.xmlurl;
+		await feed.save();
 
-				if (fItem.meta.link == null || fItem.meta.link.length == 0) {
-					fItem.meta.link = fItem.meta.xmlurl;
-				}
+		return {
+			feed,
+			article,
+			newFeed: true,
+		};
+	}
 
-				// Check DB again for xmlurl this time.
-				RSSFeeds.findOne({ $or: [ { xmlUrl: uri }, { link: fItem.meta.link.replace(/https?:\/\//i, '') } ] }, (err, feed) => {
-					if (err != null) return cb('Error contacting DB. Please try again in a minute.');
+	// console.log(JSON.stringify(items[0], null, 2));
 
-					if (feed != null) cb(undefined, false, feed);
-					else createFeed();
-				});
-			} else createFeed();
-
-
-			function createFeed() {
-				let articles = articlesToDB(uri, <FeedParser.Item[]>items);
-
-				new RSSFeeds(articles)
-				.save((err, feed) => {
-					if (err != null) return cb(err);
-					cb(undefined, true, feed, articles);
-				});
-			}
-
-			// console.log(JSON.stringify(items[0], null, 2));
-
-			// for(let i = 0; i < items.length; i++) {
-			// 	console.log('ID: ' + getArticleId(items[i], items));
-			// }
-		});
-	});
+	// for(let i = 0; i < items.length; i++) {
+	// 	console.log('ID: ' + getArticleId(items[i], items));
+	// }
 }
 
 function articlesToDB(url: string, items: FeedParser.Item[]): ArticleDB {

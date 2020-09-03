@@ -99,9 +99,8 @@ setInterval(() => {
 		async.everyLimit(feedDocs, 10, (doc, cbEvery) => {
 			console.log('Getting Items: ' + doc.url);
 
-			utils.getFeedItems(doc.url, null, (err, items) => {
-				if (err != null || items == null) return console.error(err);
-
+			utils.getFeedItems(doc.url, null)
+			.then(items => {
 				let newItems = utils.articleItemsToDB(items);
 				let oldIds = doc.items.map(i => i.id);
 
@@ -123,7 +122,8 @@ setInterval(() => {
 				doc.last_called = new Date();
 
 				doc.save(() => cbEvery());
-			});
+			})
+			.catch(err => console.error(err));
 		});
 	});
 }, 1000 * 60);

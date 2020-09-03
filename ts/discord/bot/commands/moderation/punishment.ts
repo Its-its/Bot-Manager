@@ -12,6 +12,7 @@ import guildClient = require('../../../guildClient');
 import TempPunishments = require('../../../models/temp_punishments');
 import Punishments = require('../../../models/punishments');
 import { DiscordBot } from '@type-manager';
+import utils = require('@discord/utils');
 
 //! Option to track manual bans (right click -> ban/kick)
 //! Have different punishments for different things.
@@ -153,7 +154,7 @@ class Punishment extends Command {
 		this.perms = Object.values(PERMS);
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return Command.info([
 				[
@@ -191,35 +192,21 @@ class Punishment extends Command {
 
 				if (!message.guild!.members.cache.has(userId)) return Command.error([[ 'Punishments', 'Member does not exist in Guild.' ]]);
 
-				message.channel.send('Grabbing that for you. Please wait...')
-				.then(msg => {
-					let singleMsg: Discord.Message;
-					if (Array.isArray(msg)) singleMsg = msg[0];
-					else singleMsg = msg;
-					if (singleMsg == null) return;
+				let singleMsg = await message.channel.send('Grabbing that for you. Please wait...');
 
-					Punishments.find({ server_id: message.guild!.id, member_id: userId! }, (err, items) => {
-						if (err != null) return console.error(err);
+				let items = await Punishments.find({ server_id: message.guild!.id, member_id: userId! });
 
-						singleMsg.edit(Command.table(
-							[ 'ID', 'Type', 'Issued (YY/MM/DD)', 'Length', 'Punished By', 'Reason' ],
-							items.map(i => [
-								i.pid,
-								i.type,
-								toDateTime(i.created_at),
-								secondsToTime(i.length),
-								punisherToName(i.creator_id),
-								i.reason.slice(0, 40)
-							])
-						));
-
-						function punisherToName(name: string) {
-							let user = discordClient.users.cache.get(name);
-							return user == null ? name : `${user.username}#${user.discriminator}`;
-						}
-					});
-				})
-				.catch((e: any) => console.error(e));
+				await singleMsg.edit(Command.table(
+					[ 'ID', 'Type', 'Issued (YY/MM/DD)', 'Length', 'Punished By', 'Reason' ],
+					items.map(i => [
+						i.pid,
+						i.type,
+						toDateTime(i.created_at),
+						secondsToTime(i.length),
+						punisherToName(i.creator_id),
+						i.reason.slice(0, 40)
+					])
+				));
 
 				break;
 			}
@@ -244,10 +231,9 @@ class Punishment extends Command {
 
 				let punishmentId = params.shift();
 
-				Punishments.remove({ server_id: message.guild!.id, member_id: userId, pid: punishmentId }).exec();
+				await Punishments.remove({ server_id: message.guild!.id, member_id: userId, pid: punishmentId }).exec();
 
-				message.channel.send('Removed Punishment on user.')
-				.catch(e => console.error(e));
+				await message.channel.send('Removed Punishment on user.');
 
 				break;
 			}
@@ -266,10 +252,9 @@ class Punishment extends Command {
 
 				if (!message.guild!.members.cache.has(userId)) return Command.error([[ 'Punishments', 'Member does not exist in Guild.' ]]);
 
-				Punishments.remove({ server_id: message.guild!.id, member_id: userId }).exec();
+				await Punishments.remove({ server_id: message.guild!.id, member_id: userId }).exec();
 
-				message.channel.send('Cleared Punishments for user.')
-				.catch(e => console.error(e));
+				await message.channel.send('Cleared Punishments for user.');
 
 				break;
 			}
@@ -297,26 +282,27 @@ class Punishment extends Command {
 						if (punishDoType == null) return Command.error([['Punishment', 'Invalid Params']]);
 
 						if (punishDoType == 'auto') {
-							message.guild!.roles.create({
+							let role = await message.guild!.roles.create({
 								data: {
 									name: 'Punished',
 									color: '#b32626'
 								},
 								reason: 'Creating Punishment Role'
-							})
-							.then(role => {
-								server.punishments.punished_role_id = role.id;
-								server.save();
+							});
 
-								message.guild!.channels.cache
-								.forEach(channel => {
-									channel.createOverwrite(role, DEFAULT_OVERWRITE_PERMS)
-									.catch(e => console.error(e));
-								});
+							server.punishments.punished_role_id = role.id;
+							server.save();
 
-								message.channel.send(Command.success([['Punishment', 'Changed Punishment Role']]));
-							})
-							.catch(e => console.error(e));
+							let channels = message.guild!.channels.cache.array();
+
+							for (let i = 0; i < channels.length; i++) {
+								let channel = channels[i];
+
+								await channel.createOverwrite(role, DEFAULT_OVERWRITE_PERMS);
+								await utils.asyncTimeout(200);
+							}
+
+							await message.channel.send(Command.success([['Punishment', 'Changed Punishment Role']]));
 						} else {
 							let roleIdType = server.idType(punishDoType);
 							if (roleIdType != null && roleIdType != 'role') return Command.error([['Punishment', 'ID is not a role.']]);
@@ -341,6 +327,8 @@ class Punishment extends Command {
 				break;
 			}
 		}
+
+		return Promise.resolve();
 	}
 
 	public onChannelCreate(channel: Discord.GuildChannel, server: DiscordServer) {
@@ -437,6 +425,12 @@ setInterval(() => {
 		});
 	});
 }, 1000 * 60 * 2);
+
+
+function punisherToName(name: string) {
+	let user = discordClient.users.cache.get(name);
+	return user == null ? name : `${user.username}#${user.discriminator}`;
+}
 
 function toDateTime(date: Date): string {
 	// 2018/09/07 00:00 GMT-0000

@@ -6,7 +6,7 @@ import Command = require('@discord/bot/command');
 import { sendReq } from '@discord/music/plugins/music';
 import PERMS = require('../perms');
 
-function call(_params: string[], server: DiscordServer, message: Discord.Message) {
+async function call(_params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMS.STOP)) return Command.noPermsMessage('Music');
 
 	sendReq('stop', {
@@ -14,6 +14,8 @@ function call(_params: string[], server: DiscordServer, message: Discord.Message
 		_channel: message.channel.id,
 		_sender: message.member!.id,
 	});
+
+	return Promise.resolve();
 }
 
 export {

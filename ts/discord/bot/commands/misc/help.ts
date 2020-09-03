@@ -10,7 +10,7 @@ class Help extends Command {
 		super('help', true, false);
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		let commandList = (<{[str: string]: Command[]}>Commands.list());
 		let commandCategories: [string, string, number][] = Object.keys(commandList).map(c => [ c, c.toLowerCase(), commandList[c].length ]);
 
@@ -75,17 +75,17 @@ class Help extends Command {
 				length += each[each.length - 1].length;
 
 				if (length >= 1950) {
-					message.channel.send(each.splice(0, each.length - 1).join('\n'));
+					await message.channel.send(each.splice(0, each.length - 1).join('\n'));
 					length = each[0].length;
 				}
 			}
 
-			message.channel.send(each.join('\n'));
+			await message.channel.send(each.join('\n'));
 
-			return;
+			return Promise.resolve();
 		}
 
-		if (paramHelpName == 'owner') return;
+		if (paramHelpName == 'owner') return Promise.resolve();
 
 		// List commands in a category
 		for(let i = 0; i < commandCategories.length; i++) {
@@ -94,7 +94,7 @@ class Help extends Command {
 			if (categoryInfo[1] == paramHelpName) {
 				let commandsInCategory = commandList[categoryInfo[0]];
 
-				message.channel.send(`**${categoryInfo[0]}**\n` +
+				await message.channel.send(`**${categoryInfo[0]}**\n` +
 					Command.table(['Name', 'Perms', 'Description'],
 						commandsInCategory.map(c =>
 							[
@@ -106,11 +106,12 @@ class Help extends Command {
 					)
 				);
 
-				return;
+				return Promise.resolve();
 			}
 		}
 
 		// TODO: Commands instead of categories
+		return Promise.resolve();
 	}
 }
 

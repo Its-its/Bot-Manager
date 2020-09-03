@@ -18,7 +18,7 @@ function noPermsMessage(cmdName: string) {
 	return errorMsg([[cmdName, 'You don\'t have perms to access this.']]);
 }
 
-function defCall(color: number, array: any[][] | { embed: any; }) {
+function defCall(color: number, array: any[][] | { embed: any; }): { type: 'echo', embed: any } {
 	return {
 		type: 'echo',
 		embed: Array.isArray(array) ? {
@@ -50,7 +50,7 @@ function infoMsg(array: [string, string][]) {
 
 //! Text is different widths if not in code blocks.
 // TODO: Max cell width
-function tableMsg(header: string[], body: any[][], opts?: { delimiter?: string; spacing?: number; monospaced?: boolean; }): string {
+function tableMsg(header: string[], body: any[][], opts?: { delimiter?: string; spacing?: number; monospaced?: boolean; }) {
 	let compOpts = Object.assign({
 		delimiter: ' ',
 		spacing: 2,
@@ -530,6 +530,7 @@ class MessagePage {
 		this.parent.display();
 	}
 
+	// TODO: Handle Async | setup: (value: MessagePage) => Promise<any> | void
 	public addSelection(inputValue: string, description: string, setup: (value: MessagePage) => any): MessagePage {
 		if (this.selectionCalls[inputValue.toLowerCase()] == null) {
 			this.selectionCalls[inputValue.toLowerCase()] = setup;
@@ -629,6 +630,69 @@ class MessagePage {
 }
 
 
+// ASYNC
+
+/**
+ * Uses setTimeout to wait.
+ */
+async function asyncTimeout(timeout: number) {
+	return new Promise(res => setTimeout(res, timeout));
+}
+
+/**
+ * Catches Promise error by outputting to [value, error]
+ */
+async function asyncCatch<P>(value: Promise<P>): Promise<[Nullable<P>, Nullable<any>]> {
+	return new Promise(res => {
+		value.then(v => res([v, null]))
+		.catch(e => res([null, e]));
+	});
+}
+
+/**
+ * Catches Promise error by outputting as Value or NULL
+ */
+async function asyncCatchAsNull<P>(value: Promise<P>): Promise<Nullable<P>> {
+	return new Promise(res => {
+		value.then(v => res(v))
+		.catch(e => res(null));
+	});
+}
+
+/**
+ * Catches Promise errors by outputting as true or false if it was a success.
+ */
+async function asyncCatchBool<P>(value: Promise<P>): Promise<boolean> {
+	return new Promise(res => {
+		value.then(_ => res(true))
+		.catch(_ => res(false));
+	});
+}
+
+/**
+ * Catches Promise errors by outputting as true or false if it was a success.
+ */
+async function asyncCatchError<P>(value: Promise<P>): Promise<any | null> {
+	return new Promise(res => {
+		value.then(_ => res(null))
+		.catch(e => res(e));
+	});
+}
+
+
+/**
+ * Wraps a function to catch errors. Useful for function blocks that don't support async.
+ */
+function asyncFnWrapper<P, V extends any[]>(value: (...args: V) => Promise<P>): (...args: V) => void {
+	return function(...args) {
+		value.call(null, ...args)
+		.catch(e => console.error(e));
+	}
+}
+
+
+
+
 export {
 	getPermissions,
 	Permissions,
@@ -660,5 +724,13 @@ export {
 
 	// Page
 	MessagePage,
-	createPageSelector
+	createPageSelector,
+
+	// Async
+	asyncTimeout,
+	asyncCatch,
+	asyncCatchBool,
+	asyncCatchAsNull,
+	asyncFnWrapper,
+	asyncCatchError
 }

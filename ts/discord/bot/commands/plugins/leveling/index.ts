@@ -30,7 +30,7 @@ class Leveling extends Command {
 		this.description = 'Level up plugin.';
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (!server.isPluginEnabled('leveling')) return Command.error([['Error', 'Please enable the Leveling Plugin!']]);
 
 		let callType = params.shift();

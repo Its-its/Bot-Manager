@@ -30,7 +30,7 @@ class Rank extends Command {
 		this.perms = Object.values(PERMS);
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		let ranks = server.ranks;
 
 		if (params.length == 0) {
@@ -68,9 +68,7 @@ class Rank extends Command {
 				if (!server.isRank(roleId)) return Command.error([['ERROR!', 'That is not a public rank!']]);
 				if (guildNember.roles.cache.has(valueOfParameter)) return Command.error([['ERROR!', 'You already have the role!']]);
 
-				guildNember.roles.add(roleId, 'Public Rank - User requested.')
-				.then(s => {}, reason => { console.error(' - ' + reason); })
-				.catch(reason => console.error(reason));
+				await guildNember.roles.add(roleId, 'Public Rank - User requested.');
 
 				break;
 
@@ -82,9 +80,7 @@ class Rank extends Command {
 				if (!server.isRank(roleId)) return Command.error([['ERROR!', 'That is not a public rank!']]);
 				if (!guildNember.roles.cache.has(valueOfParameter)) return Command.error([['ERROR!', 'You already have the role!']]);
 
-				guildNember.roles.remove(roleId, 'Public Rank - User requested.')
-				.then(s => {}, reason => { console.error(' - ' + reason); })
-				.catch(reason => console.error(reason));
+				await guildNember.roles.remove(roleId, 'Public Rank - User requested.');
 
 				break;
 

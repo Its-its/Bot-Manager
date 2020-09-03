@@ -12,8 +12,8 @@ const ID_TO_NAME = {
 	member_remove: 'Member Remove'
 }
 
-function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	//
+async function call(params: string[], server: DiscordServer, message: Discord.Message) {
+	return Promise.resolve();
 }
 
 function showEditPage(compiled: DiscordBot.ListenEvents, senderMessage: Discord.Message, server: DiscordServer) {

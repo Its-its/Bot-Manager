@@ -46,92 +46,96 @@ function sendPlay(channel_id: string, guild_id: string, member_id: string, searc
 
 // Playlist crap
 
-function createPlaylist(guildId: string, cb: (errorMessage?: string) => any) {
-	//
+async function createPlaylist(guildId: string) {
+	return Promise.resolve();
 }
 
-function removePlaylist(playlistId: string, cb: (errorMessage?: string) => any) {
-	if (playlistId == 'default') return cb('Cannot remove default playlist!');
-	Playlists.updateOne({ public_id: playlistId }, { $set: { markedForDeletion: true } }, (err) => cb());
+async function removePlaylist(playlistId: string) {
+	if (playlistId == 'default') return Promise.reject('Cannot remove default playlist!');
+
+	await Playlists.updateOne({ public_id: playlistId }, { $set: { markedForDeletion: true } }).exec();
+
+	return Promise.resolve();
 }
 
-function restorePlaylist(playlistId: string, cb: (errorMessage?: string) => any) {
-	if (playlistId == 'default') return cb('Cannot restore default playlist!');
-	Playlists.updateOne({ public_id: playlistId }, { $set: { markedForDeletion: false } }, (err) => cb());
+async function restorePlaylist(playlistId: string) {
+	if (playlistId == 'default') return Promise.reject('Cannot restore default playlist!');
+
+	await Playlists.updateOne({ public_id: playlistId }, { $set: { markedForDeletion: false } }).exec();
+
+	return Promise.resolve();
 }
 
-function addToPlaylist(
+async function addToPlaylist(
 	guildId: string,
 	discordMemberId: string,
 	playlistPublicId: string,
-	songId: string,
-	cb: (errorMessage?: string, info?: { song: SongGlobal, playlist_id: string }) => any)
-{
-	if (songId == null) return cb('Please provide an ID to the song.');
+	songId: string
+) {
+	if (songId == null) return Promise.reject('Please provide an ID to the song.');
 
-	getMusic(guildId, (music) => {
-		if (music == null) {
-			return cb('Unable to get Music. Please try again in a few minutes.');
+	let music = await getMusic(guildId);
+
+	if (playlistPublicId == 'default') playlistPublicId = music.currentPlaylist;
+
+	let val = /(?:(?:https?:\/\/)?(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11})/g.exec(songId);
+	if (val == null) val = /^([a-zA-Z0-9-_]{11})$/.exec(songId);
+
+	// TODO:  Search by ID, if failed, search by string?
+
+	if (val != null) {
+		let id = val[1];
+
+		let song = await getSong(id);
+
+		if (song == null || song.length == 0) {
+			return Promise.reject('Unable to find song!');
 		}
 
-		if (playlistPublicId == 'default') playlistPublicId = music.currentPlaylist;
+		return addTo(song[0]);
+	} else {
+		let song = await findFirstSong(songId);
 
-		let val = /(?:(?:https?:\/\/)?(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11})/g.exec(songId);
-		if (val == null) val = /^([a-zA-Z0-9-_]{11})$/.exec(songId);
-
-		// TODO:  Search by ID, if failed, search by string?
-
-		if (val != null) {
-			let id = val[1];
-
-			getSong(id, (errMsg, song) => {
-				if (errMsg != null) return cb(errMsg);
-				if (song == null || song.length == 0) return cb('Unable to find song!');
-				addTo(song[0]);
-			});
-		} else {
-			findFirstSong(songId, (errMsg, song) => {
-				if (errMsg != null) return cb(errMsg);
-				if (song == null) return cb('Unable to find song!');
-				addTo(song);
-			});
+		if (song == null) {
+			return Promise.reject('Unable to find song!');
 		}
 
-		function addTo(song: DiscordBot.plugins.SongYT) {
-			Users.findOne({ 'discord.id': discordMemberId }, (err, user) => {
-				if (user == null) return cb('You cannot add songs to a playlist without authenticating your discord account!\nPlease do so here: ');
+		return addTo(song);
+	}
 
-				Playlists.updateOne(
-					{ public_id: playlistPublicId, 'songs.song': { $ne: song.id } },
-					{
-						$inc: {
-							song_count: 1
-						},
-						$push: {
-							songs: {
-								user: user.id,
-								song: song.id,
-								added: Date.now()
-							}
-						}
-					},
-					(err, raw) => {
-						console.log(raw);
+	async function addTo(song: DiscordBot.plugins.SongYT) {
+		let user = await Users.findOne({ 'discord.id': discordMemberId });
 
-						if (raw.nModified == 0) return cb('Song is already in playlist!');
+		if (user == null) return Promise.reject('You cannot add songs to a playlist without authenticating your discord account!\nPlease do so here: ');
 
-						cb(err, { song: song, playlist_id: playlistPublicId });
+		let raw = await Playlists.updateOne(
+			{ public_id: playlistPublicId, 'songs.song': { $ne: song.id } },
+			{
+				$inc: {
+					song_count: 1
+				},
+				$push: {
+					songs: {
+						user: user.id,
+						song: song.id,
+						added: Date.now()
 					}
-				);
-			});
-		}
-	});
+				}
+			},
+		).exec();
+
+		console.log(raw);
+
+		if (raw.nModified == 0) return Promise.reject('Song is already in playlist!');
+
+		return Promise.resolve({ song: song, playlist_id: playlistPublicId });
+	}
 }
 
-function removeFromPlaylist(guildId: string, discordMemberId: string, playlistPublicId: string, songId: string, cb: (errorMessage?: string, info?: { song: SongGlobal, playlist: any }) => any) {
-	if (songId == null) return cb('Please provide an ID to the song.');
+async function removeFromPlaylist(guildId: string, discordMemberId: string, playlistPublicId: string, songId: string) {
+	if (songId == null) return Promise.reject('Please provide an ID to the song.');
 
-	Playlists.updateOne(
+	let raw = await Playlists.updateOne(
 		{ public_id: playlistPublicId, 'songs.song': songId },
 		{
 			$inc: {
@@ -140,14 +144,14 @@ function removeFromPlaylist(guildId: string, discordMemberId: string, playlistPu
 			$pull: {
 				songs: { song: songId }
 			}
-		},
-		(err, raw) => {
-			console.log(raw);
-			if (raw.nModified == 0) return cb('Song is not in playlist!');
-
-			cb(err);
 		}
-	);
+	).exec();
+
+	console.log(raw);
+
+	if (raw.nModified == 0) return Promise.reject('Song is not in playlist!');
+
+	return Promise.resolve();
 
 	// Song.findOne({ uid: songId }, (err, song) => {
 	// 	if (song == null) return;
@@ -160,12 +164,16 @@ function removeFromPlaylist(guildId: string, discordMemberId: string, playlistPu
 	// });
 }
 
-function editPlaylist(playlistPublicId: string, type: 'title' | 'description' | 'thumb', value: string, cb: (errMsg?: string) => any) {
-	Playlists.updateOne({ public_id: playlistPublicId }, { $set: { [type]: value } }, () => cb());
+async function editPlaylist(playlistPublicId: string, type: 'title' | 'description' | 'thumb', value: string) {
+	await Playlists.updateOne({ public_id: playlistPublicId }, { $set: { [type]: value } }).exec();
+
+	return Promise.resolve();
 }
 
-function clearPlaylist(guildId: string, discordMemberId: string, playlistPublicId: string, cb: (errorMessage?: string, playlist?: any) => any) {
-	Playlists.updateOne({ public_id: playlistPublicId }, { $set: { songs: [] } }, (err, item) => cb());
+async function clearPlaylist(guildId: string, discordMemberId: string, playlistPublicId: string) {
+	await Playlists.updateOne({ public_id: playlistPublicId }, { $set: { songs: [] } }).exec();
+
+	return Promise.resolve();
 }
 
 
@@ -181,27 +189,29 @@ interface SongInfoReponse {
 	})[];
 }
 
-function getSong(uri: string | string[], cb: (errorMessage?: string, song?: SongGlobal[]) => any) {
-	request.get(`http://${config.ytdl.full}/info?force=true&id=` + (typeof uri == 'string' ? uri : uri.join(',')), (err, res) => {
-		if (err != null) return cb(err);
+async function getSong(uri: string | string[]) {
+	return new Promise<SongGlobal[]>((resolve, reject) => {
+		request.get(`http://${config.ytdl.full}/info?force=true&id=` + (typeof uri == 'string' ? uri : uri.join(',')), (err, res) => {
+			if (err != null) return reject(err);
 
-		let data: SongInfoReponse = JSON.parse(res.body);
+			let data: SongInfoReponse = JSON.parse(res.body);
 
-		if (data.error) return cb(data.error);
+			if (data.error) return reject(data.error);
 
-		let songs = data.songs.map(s => {
-			let clone: any = Object.assign({}, s);
+			let songs = data.songs.map(s => {
+				let clone: any = Object.assign({}, s);
 
-			clone.type = 'youtube';
+				clone.type = 'youtube';
 
-			delete clone['description'];
-			delete clone['download_count'];
-			delete clone['stream_count'];
+				delete clone['description'];
+				delete clone['download_count'];
+				delete clone['stream_count'];
 
-			return clone;
+				return clone;
+			});
+
+			resolve(songs);
 		});
-
-		cb(undefined, songs);
 	});
 }
 
@@ -229,35 +239,40 @@ interface SongSearch {
 	}[];
 }
 
-function searchForSong(search: string, page: string | null | undefined, cb: (errorMsg?: any, data?: SongSearch) => any) {
-	request.get(`http://${config.ytdl.full}/search?query=${search}${page == null ? '' : '&pageToken=' + page}`, (err, res) => {
-		if (err != null) return cb(err);
+async function searchForSong(search: string, page: string | null | undefined) {
+	return new Promise<SongSearch>((resolve, reject) => {
+		request.get(`http://${config.ytdl.full}/search?query=${search}${page == null ? '' : '&pageToken=' + page}`, (err, res) => {
+			if (err != null) return reject(err);
 
-		let data = JSON.parse(res.body);
+			let data = JSON.parse(res.body);
 
-		if (data.error) return cb(data.error);
+			if (data.error) return reject(data.error);
 
-		cb(null, data);
+			resolve(data);
+		});
 	});
 }
 
-function findFirstSong(search: string, cb: (errorMsg?: any, song?: SongGlobal) => any) {
-	request.get(`http://${config.ytdl.full}/info?search=${search}`, (err, res) => {
-		if (err != null) return cb(err);
-		let song = JSON.parse(res.body);
+async function findFirstSong(search: string) {
+	return new Promise<SongGlobal | null>((resolve, reject) => {
+		request.get(`http://${config.ytdl.full}/info?search=${search}`, (err, res) => {
+			if (err != null) return reject(err);
 
-		if (song.error) return cb(song.error);
+			let song = JSON.parse(res.body);
 
-		song = song.songs[0];
+			if (song.error) return reject(song.error);
 
-		if (song == null) return cb('No song found.');
+			song = song.songs[0];
 
-		song.type = 'youtube';
-		delete song['description'];
-		delete song['download_count'];
-		delete song['stream_count'];
+			if (song == null) return resolve(null);
 
-		cb(null, song);
+			song.type = 'youtube';
+			delete song['description'];
+			delete song['download_count'];
+			delete song['stream_count'];
+
+			resolve(song);
+		});
 	});
 }
 

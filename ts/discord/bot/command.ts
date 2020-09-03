@@ -61,7 +61,9 @@ class Command {
 		return this.commandName.indexOf(name) != -1;
 	}
 
-	public call(params: string[], userOptions: Server, message: Discord.Message): any {}
+	public async call(params: string[], userOptions: Server, message: Discord.Message): Promise<DiscordBot.PhraseResponses | DiscordBot.PhraseResponses[] | undefined | void> {
+		return Promise.reject('CALL NOT IMPLEMENTED FOR ' + this.commandName);
+	}
 
 	// Events
 
@@ -128,7 +130,7 @@ class Command {
 		return Command.defCall(Command.InfoColor, array);
 	}
 
-	static table(header: string[], body: any[][], opts?: { delimiter?: string; spacing?: number; monospaced?: boolean; }): string {
+	static table(header: string[], body: any[][], opts?: { delimiter?: string; spacing?: number; monospaced?: boolean; }) {
 		return info.tableMsg(header, body, opts);
 	}
 

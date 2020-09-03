@@ -13,66 +13,54 @@ import { CustomDocs } from '@type-manager';
 // TODO: Sort out options into respectable files.
 
 
-function call(params: string[], server: DiscordServer, message: Discord.Message) {
+async function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMISSIONS.LIST)) return utils.noPermsMessage('RSS Feed');
 
-	message.channel.send(utils.infoMsg([['RSS Feed', 'Finding all RSS Feeds in current Guild.']]))
-	.then(m => {
-		let singleMsg: Discord.Message;
-		if (Array.isArray(m)) singleMsg = m[0];
-		else singleMsg = m;
-		if (singleMsg == null) return;
+	let singleMsg = await message.channel.send(utils.infoMsg([['RSS Feed', 'Finding all RSS Feeds in current Guild.']]));
 
-		let guild = singleMsg.guild!;
+	let guild = singleMsg.guild!;
 
-		DiscordFeeds.find({ guild_id: guild.id })
-		.exec((err, feeds) => {
-			if (err != null) {
-				singleMsg.edit(utils.errorMsg([['RSS Feed', 'An error occured while trying to find RSS Feeds. Please try again in a few moments.']]));
-				return;
-			}
+	let feeds = await DiscordFeeds.find({ guild_id: guild.id });
 
-			if (feeds.length == 0) {
-				singleMsg.edit(utils.infoMsg([['RSS Feed', 'No RSS Feeds found in current Guild.\nIf you\'d like to add one please use "!rss add <url>"']]));
-				return;
-			}
+	if (feeds.length == 0) {
+		await singleMsg.edit(utils.infoMsg([['RSS Feed', 'No RSS Feeds found in current Guild.\nIf you\'d like to add one please use "!rss add <url>"']]));
+		return Promise.resolve();
+	}
 
-			let selector = utils.createPageSelector(message.member!.id, message.channel)!;
-			selector.setEditing(singleMsg);
+	let selector = utils.createPageSelector(message.member!.id, message.channel)!;
+	selector.setEditing(singleMsg);
 
-			selector.setFormat([
-				'**Feed Limit:** 0/0',
-				'**Guild:** ' + guild.name,
-				'',
-				'You can choose a channel feed to view more info about it by typing the number before the channe name.​',
-				'',
-				'{page_items}',
-				'',
-				'Always select responsibly.'
-			]);
+	selector.setFormat([
+		'**Feed Limit:** 0/0',
+		'**Guild:** ' + guild.name,
+		'',
+		'You can choose a channel feed to view more info about it by typing the number before the channe name.​',
+		'',
+		'{page_items}',
+		'',
+		'Always select responsibly.'
+	]);
 
-			feeds.forEach((feed, i) => {
-				// const channel = guild.channels.get(feed.channel_id);
-				// TODO: Check to see if channel still exists for selection name.
-				// TODO: Permission checks
+	feeds.forEach((feed, i) => {
+		// const channel = guild.channels.get(feed.channel_id);
+		// TODO: Check to see if channel still exists for selection name.
+		// TODO: Permission checks
 
-				selector.addSelection(String(i + 1), `<#${feed.channel_id}> (Feeds: ${feed.feeds.length})`, (page) => {
-					DiscordFeeds.findOne({ guild_id: guild.id, channel_id: feed.channel_id })
-					.populate('feeds.feed')
-					.exec((err, feed: CustomDocs.discord.DiscordRssPopulated) => {
-						if (err != null) {
-							singleMsg.edit(utils.errorMsg([['RSS Feed', 'An error occured while trying to find RSS Feed for Channel. Please try again in a few moments.']]));
-							return;
-						}
+		selector.addSelection(String(i + 1), `<#${feed.channel_id}> (Feeds: ${feed.feeds.length})`, (page) => {
+			DiscordFeeds.findOne({ guild_id: guild.id, channel_id: feed.channel_id })
+			.populate('feeds.feed')
+			.exec((err, feed: CustomDocs.discord.DiscordRssPopulated) => {
+				if (err != null) {
+					singleMsg.edit(utils.errorMsg([['RSS Feed', 'An error occured while trying to find RSS Feed for Channel. Please try again in a few moments.']]));
+					return;
+				}
 
-						showChannel(server, message.member!, page, feed);
-					});
-				});
+				showChannel(server, message.member!, page, feed);
 			});
-
-			selector.display();
 		});
 	});
+
+	selector.display();
 }
 
 function showChannel(server: DiscordServer, guildMember: Discord.GuildMember, page: utils.MessagePage, channelFeed: CustomDocs.discord.DiscordRssPopulated) {

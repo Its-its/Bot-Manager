@@ -23,7 +23,7 @@ class Perms extends Command {
 		this.perms = Object.values(PERMISSIONS);
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return LocalCommands.help.call(this.description, params, server, message);
 		}

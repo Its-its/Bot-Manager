@@ -36,9 +36,9 @@ class Plugin extends Command {
 		this.perms = Object.values(PERMISSIONS);
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
-			message.channel.send(Command.info([
+			await message.channel.send(Command.info([
 				[ 'Description', this.description ],
 				[	'Command Usage',
 					[	'list',
@@ -47,19 +47,22 @@ class Plugin extends Command {
 					].join('\n')
 				]
 			]));
-			return;
+
+			return Promise.resolve();
 		}
 
 		switch (params.shift()) {
 			case 'list': {
 				if (!this.hasPerms(message.member!, server, PERMISSIONS.LIST)) return Command.noPermsMessage('Plugin');
 
-				return Command.table(['Name', 'Active'], plugins.map((name, i) => {
+				await message.channel.send(Command.table(['Name', 'Active'], plugins.map((name, i) => {
 					return [
 						displayNames[i],
 						(server.isPluginEnabled(name) ? 'Enabled' : 'Disabled')
 					]
-				}));
+				})));
+
+				return Promise.resolve();
 			}
 
 			case 'enable': {
@@ -82,7 +85,7 @@ class Plugin extends Command {
 						}
 					});
 
-					message.channel.send(Command.info([
+					await message.channel.send(Command.info([
 						[ 'Plugin', 'Enabled All Plugins' ]
 					]));
 				} else {
@@ -98,11 +101,11 @@ class Plugin extends Command {
 							server.plugins[pluginName] = { enabled: true };
 						}
 
-						message.channel.send(Command.info([
+						await message.channel.send(Command.info([
 							[ 'Plugin', 'Enabled ' + pluginName ]
 						]));
 					} else {
-						message.channel.send(Command.info([
+						await message.channel.send(Command.info([
 							[	'Plugin',
 								[	'No plugin exists with the name "' + pluginName + '"',
 									'Please use one of the following:',
@@ -133,7 +136,7 @@ class Plugin extends Command {
 						}
 					});
 
-					message.channel.send(Command.info([
+					await message.channel.send(Command.info([
 						[ 'Plugin', 'Disabled All Plugins' ]
 					]));
 				} else {
@@ -149,9 +152,9 @@ class Plugin extends Command {
 							server.plugins[pluginName] = { enabled: false };
 						}
 
-						message.channel.send(Command.info([[ 'Plugin', 'Disabled Plugin.' ]]));
+						await message.channel.send(Command.info([[ 'Plugin', 'Disabled Plugin.' ]]));
 					} else {
-						message.channel.send(Command.info([
+						await message.channel.send(Command.info([
 							[
 								'Plugin',
 								[
@@ -195,10 +198,12 @@ class Plugin extends Command {
 			// 		[ 'Plugin', 'Required perms for ' + plugin + ' now set to ' + setTo ]
 			// 	]));
 			// 	break;
-			default: return;
+			default: return Promise.resolve();
 		}
 
 		server.save();
+
+		return Promise.resolve();
 	}
 }
 

@@ -2,6 +2,7 @@ import Discord = require('discord.js');
 import DiscordServer = require('../../GuildServer');
 
 import Command = require('../../command');
+import utils = require('@discord/utils');
 
 const PERMISSIONS = {
 	MAIN: 'commands.dm'
@@ -19,7 +20,7 @@ class Message extends Command {
 		this.description = 'DM A group of people individually (or in one huge group chat coming soon).';
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length <= 1) {
 			return Command.info([
 				[ 'Description', this.description ],
@@ -52,33 +53,31 @@ class Message extends Command {
 		let sRoleId = server.strpToId(roleId);
 		if (sRoleId == null) return Command.error([['Message', 'Invalid ID']]);
 
-		const discordGuildRole = message.guild!.roles.cache.get(sRoleId);
+		let discordGuildRole = message.guild!.roles.cache.get(sRoleId);
 		if (discordGuildRole == null) return Command.error([['Error', 'Not a valid Server Role.']]);
 
-		const membersInRole = discordGuildRole.members.array();
+		let membersInRole = discordGuildRole.members.array();
 
 		// if (!isGroupDM) {
-			message.channel.send(Command.info([['Success', `Sending a DM to ${membersInRole.length} players in the role ${discordGuildRole.name}. This may take a minute.`]]));
+			await message.channel.send(Command.info([['Success', `Sending a DM to ${membersInRole.length} players in the role ${discordGuildRole.name}. This may take a minute.`]]));
 			messageToSend += `\n\n_Sent from "${message.guild!.name}" by <@${message.member!.id}> to everyone in the role @${discordGuildRole.name} (with ${membersInRole.length} members)_`;
 		// } else {
 		// 	message.channel.send(Command.info([['Success', `Creating a group DM with ${members.length} players in the role ${server_role.name}. This may take a minute.`]]));
 		// }
 
 		// if (!isGroupDM) {
-			function nextMessage(pos: number) {
+			async function nextMessage(pos: number) {
 				if (pos == membersInRole.length) return message.channel.send(Command.success([['Success', `Sent a DM to ${membersInRole.length} players in the role ${discordGuildRole!.name}`]]));
 				let member = membersInRole[pos];
 
-				member.createDM()
-				.then(channel => {
-					channel.send(messageToSend)
-					.then(() => setTimeout(() => nextMessage(pos + 1), 500))
-					.catch(e => console.error(e));
-				})
-				.catch(e => console.error(e));
+				let channel = await member.createDM();
+
+				await channel.send(messageToSend);
+				await utils.asyncTimeout(500);
+				await nextMessage(pos + 1);
 			}
 
-			nextMessage(0);
+			await nextMessage(0);
 		// } else {
 		// 	message.member.createDM()
 		// 	.then(dm => {

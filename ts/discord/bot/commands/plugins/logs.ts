@@ -27,7 +27,7 @@ class Logs extends Command {
 		this.description = 'Logs filtered items to specified channel.';
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (!server.isPluginEnabled('logs')) return Command.error([['Error', 'Please enable Logs Plugin!']]);
 
 		if (params.length == 0) {
@@ -48,7 +48,7 @@ class Logs extends Command {
 
 		switch(params.shift()) {
 			case 'list': {
-				message.channel.send(Command.info([
+				await message.channel.send(Command.info([
 					[
 						'Logs',
 						server.plugins.logs!.channels.length == 0 ?
@@ -134,7 +134,7 @@ class Logs extends Command {
 				let index = server.plugins.logs!.channels.findIndex(c => c.id == channelId);
 				if (index != -1) {
 					// Remove Channel
-					message.channel.send(Command.info([
+					await message.channel.send(Command.info([
 						[ 'Logs', 'I an no longer listening to the channel. :(' ]
 					]));
 
@@ -142,7 +142,7 @@ class Logs extends Command {
 				} else {
 					// Add Channel
 					if (channelId == message.channel.id) {
-						message.channel.send(Command.info([
+						await message.channel.send(Command.info([
 							[ 'Logs', 'I am now listening for events and outputting them to this channel. :)' ]
 						]));
 					} else {
@@ -151,7 +151,7 @@ class Logs extends Command {
 						if (channel == null) return Command.error([[ 'Logs', 'Channel with that ID does not exist!' ]]);
 						if (channel.type != 'text')  return Command.error([[ 'Logs', 'Channel is not a text channel!' ]]);
 
-						channel.send(Command.info([
+						await channel.send(Command.info([
 							[ 'Logs', 'I am now listening for events and outputting them to this channel. :)' ]
 						]));
 					}
@@ -170,7 +170,7 @@ class Logs extends Command {
 
 				switch (params.shift()) {
 					case 'list': {
-						message.channel.send(Command.info([
+						await message.channel.send(Command.info([
 							[
 								'Logs | Filter List',
 								[
@@ -202,7 +202,7 @@ class Logs extends Command {
 						if (filter_channel_id == 'clear') {
 							delete log_channel['filterChannels'];
 
-							message.channel.send(Command.info([
+							await message.channel.send(Command.info([
 								[ 'Logs', 'Cleared Filtered Channels' ]
 							]));
 						} else {
@@ -226,7 +226,7 @@ class Logs extends Command {
 							if (index_of == -1) {
 								log_channel.filterChannels.push(filter_channel_id);
 
-								message.channel.send(Command.info([
+								await message.channel.send(Command.info([
 									[ 'Logs', `Updated ${log_channel_id}, added channel ${filter_channel_id} to watch list.` ]
 								]));
 							} else {
@@ -236,7 +236,7 @@ class Logs extends Command {
 									delete log_channel['filterChannels'];
 								}
 
-								message.channel.send(Command.info([
+								await message.channel.send(Command.info([
 									[ 'Logs', `Updated ${log_channel_id}, removed channel ${filter_channel_id} from watch list.` ]
 								]));
 							}
@@ -251,6 +251,8 @@ class Logs extends Command {
 				break;
 			}
 		}
+
+		return Promise.resolve();
 	}
 }
 

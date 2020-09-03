@@ -21,10 +21,10 @@ class Raw extends Command {
 		this.ownerOnly = true;
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) return Command.info([[ 'Description', this.description ], [ 'Command Usage', 'raw <message>' ]]);
 
-		message.channel.send(params.map(p => p.replace(/\</g, '\\<').replace(/\>/g, '\\>')).join(' '));
+		await message.channel.send(params.map(p => p.replace(/\</g, '\\<').replace(/\>/g, '\\>')).join(' '));
 	}
 }
 

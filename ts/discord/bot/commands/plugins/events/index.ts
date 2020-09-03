@@ -16,7 +16,7 @@ class Events extends Command {
 		this.description = 'Events from Player joins to Player reacts.';
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (!server.isPluginEnabled('events')) return Command.error([['Error', 'Please enable the Events Plugin!']]);
 
 		let callType = params.shift();

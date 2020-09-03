@@ -7,7 +7,7 @@ import GlobalCommands = require('../../../index');
 import PERMISSIONS = require('../perms');
 import { DiscordBot } from '@type-manager';
 
-function call(params: string[], server: DiscordServer, message: Discord.Message) {
+async function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMISSIONS.LIST)) return Command.noPermsMessage('Perms');
 
 	let cmdToDo = params.shift();
@@ -21,7 +21,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		let commandClass = GlobalCommands.get(commandName);
 		if (commandClass == null) return Command.error([['Permissions', 'Command doesn\'t exist.']]);
 
-		message.channel.send('**Permissions**\n```' + commandClass.perms.join('\n') + '```');
+		await message.channel.send('**Permissions**\n```' + commandClass.perms.join('\n') + '```');
 	} else {
 		let type: string;
 
@@ -55,13 +55,15 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 
 		if (permissions == null) return Command.error([['Permissions', `Couldn't find ${type} from ID.`]]);
 
-		message.channel.send(Command.info([
+		await message.channel.send(Command.info([
 			[
 				'Permissions',
 				'```' + [ type + ': ' + cmdToDo ].concat(permissions.perms.map(p => ' - ' + p)).join('\n') + '```'
 			]
 		]));
 	}
+
+	return Promise.resolve();
 }
 
 export {

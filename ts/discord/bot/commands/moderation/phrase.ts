@@ -31,7 +31,7 @@ class Phrase extends Command {
 		this.perms = Object.values(PERMS);
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return Command.info([
 				[ 'Description', this.description ],
@@ -51,20 +51,17 @@ class Phrase extends Command {
 		}
 
 		let cmdCallOrPhraseId = params.shift()!;
+
 		switch (cmdCallOrPhraseId) {
 			case 'list':
 				if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Phrase');
 
-				let args = [
-					'**Phrase List**',
-					'Phrase Count: ' + server.phrases.length
-				];
-
-				message.channel.send([
+				await message.channel.send([
 					'**Phrase List**',
 					'Phrase Count: ' + server.phrases.length,
 					Command.table([ 'ID', 'Phrases', 'Response' ], server.phrases.map((p, i) => [ p.pid, p.phrases.join(', '), p.responses.map(r => server.phraseResponseToString(r)).join('\n') ]))
 				].join('\n'));
+
 				break;
 
 			case 'create':
@@ -161,6 +158,8 @@ class Phrase extends Command {
 			// 	server.save(() => message.channel.send(Command.info([['Phrase', 'Changed Phrase Response.']])));
 			// 	break;
 		}
+
+		return Promise.resolve();
 	}
 }
 

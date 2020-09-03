@@ -5,8 +5,8 @@ import DiscordServer = require('@discord/bot/GuildServer');
 const filterTypes = [ 'Title', 'Description', 'Summary', 'Author', 'Tag' ];
 
 
-function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	//
+async function call(params: string[], server: DiscordServer, message: Discord.Message) {
+	return Promise.resolve();
 }
 
 export {

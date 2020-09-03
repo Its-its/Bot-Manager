@@ -14,53 +14,55 @@ import Playlists = require('@base/music/models/playlists');
 import musicPlugin = require('@discord/music/plugins/music');
 import musicPermissions = require('@base/music/permissions');
 
-function call(params: string[], server: DiscordServer, message: Discord.Message) {
+async function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	let playlistId = params.shift();
 
 	if (playlistId == 'create') {
 		if (!server.userHasPerm(message.member!, PERMS.PLAYLIST_CREATE)) return Command.noPermsMessage('Music');
 
-		DiscordMembers.findOne({ did: message.member!.id }, (err, member) => {
-			if (member == null) {
-				message.channel.send(Command.error([['Playlist', 'Unable to find user. Please']]));
-				return;
-			}
+		let member = await DiscordMembers.findOne({ did: message.member!.id });
 
-			Playlists.count({ creator: member._id }, (err, count) => {
-				if (count >= 10) return message.channel.send(Command.error([['Playlist', 'Max Playlists reached.']]));
+		if (member == null) {
+			await message.channel.send(Command.error([['Playlist', 'Unable to find user. Please']]));
+			return Promise.resolve();
+		}
 
-				// @ts-ignore
-				Playlists.create({
-					creator: member._id,
 
-					type: 1,
-					visibility: 2,
+		let count = await Playlists.count({ creator: member._id });
 
-					permissions: Object.values(musicPermissions.PLAYLIST_FLAGS).reduce((all, p) => all | p, 0),
+		if (count >= 10) {
+			await message.channel.send(Command.error([['Playlist', 'Max Playlists reached.']]));
+			return Promise.resolve();
+		}
 
-					public_id: uniqueID(9),
+		// @ts-ignore
+		let playlist = await Playlists.create({
+			creator: member._id,
 
-					title: 'New Playlist',
-					description: 'New Playlist',
-				})
-				.then(playlist => {
-					message.channel.send(Command.info([[
-						'Playlist',
-						[
-							'Successfully created a new Playlist!',
-							'',
-							'Title: ' + playlist.title,
-							'Description: ' + playlist.description,
-							'',
-							'ID: ' + playlist.public_id
-						].join('\n')
-					]]));
-				}, err => console.error(err))
-				.catch(err => console.error(err));
-			});
+			type: 1,
+			visibility: 2,
+
+			permissions: Object.values(musicPermissions.PLAYLIST_FLAGS).reduce((all, p) => all | p, 0),
+
+			public_id: uniqueID(9),
+
+			title: 'New Playlist',
+			description: 'New Playlist',
 		});
 
-		return;
+		await message.channel.send(Command.info([[
+			'Playlist',
+			[
+				'Successfully created a new Playlist!',
+				'',
+				'Title: ' + playlist.title,
+				'Description: ' + playlist.description,
+				'',
+				'ID: ' + playlist.public_id
+			].join('\n')
+		]]));
+
+		return Promise.resolve();
 	}
 
 	let todo = params.shift() || 'info';
@@ -74,147 +76,223 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	if (!server.userHasPerm(message.member!, PERMS['PLAYLIST_' + todo.toUpperCase()])) return Command.noPermsMessage('Music');
 
 	switch (todo) {
-		case 'info':
-			guildClient.getMusic(message.guild!.id, (music) => {
-				if (music == null) return message.channel.send(Command.error([['Playlist', 'Unbale to find Music']]));
+		case 'info': {
+			let music = await guildClient.getMusic(message.guild!.id);
 
-				if (defaultPlaylist) playlistId = music.currentPlaylist;
+			if (music == null) {
+				await message.channel.send(Command.error([['Playlist', 'Unbale to find Music']]));
+				return Promise.resolve();
+			}
 
-				Playlists.findOne({ public_id: playlistId }, {}, (err, playlist) => {
-					if (playlist == null) return message.channel.send(Command.error([['Playlist', 'No Playlist found.']]));
+			if (defaultPlaylist) playlistId = music.currentPlaylist;
 
-					message.channel.send(Command.info([[
-						'Playlist',
-						[
-							'Title: ' + playlist.title,
-							'Description: ' + playlist.description,
-							'',
-							'Plays: ' + playlist.plays,
-							'Views: ' + playlist.views,
-							'Items: ' + playlist.song_count,
-							'',
-							'ID: ' + playlist.public_id
-						].join('\n')
-					]]));
-				});
-			});
+			let playlist = await Playlists.findOne({ public_id: playlistId }, {});
+
+			if (playlist == null) {
+				await message.channel.send(Command.error([['Playlist', 'No Playlist found.']]));
+				return Promise.resolve();
+			}
+
+			await message.channel.send(Command.info([[
+				'Playlist',
+				[
+					'Title: ' + playlist.title,
+					'Description: ' + playlist.description,
+					'',
+					'Plays: ' + playlist.plays,
+					'Views: ' + playlist.views,
+					'Items: ' + playlist.song_count,
+					'',
+					'ID: ' + playlist.public_id
+				].join('\n')
+			]]));
+
 			break;
-		case 'list':
-			guildClient.getMusic(message.guild!.id, (music) => {
-				if (music == null) return message.channel.send(Command.error([['Playlist', 'Unable to find Music']]));
+		}
 
-				if (defaultPlaylist) playlistId = music.currentPlaylist;
+		case 'list': {
+			let music = await guildClient.getMusic(message.guild!.id);
 
-				let paramPage = params.shift();
+			if (music == null) {
+				await message.channel.send(Command.error([['Playlist', 'Unable to find Music']]));
+				return Promise.resolve();
+			}
 
-				if (paramPage == null || /^[0-9]+$/g.test(paramPage)) {
-					let page = 1;
-					let maxItems = 5;
+			if (defaultPlaylist) playlistId = music.currentPlaylist;
 
-					if (page < 1) page = 1;
+			let paramPage = params.shift();
 
-					if (paramPage != null) {
-						let parsed = parseInt(paramPage);
-						if (Number.isInteger(parsed)) page = parsed;
-					}
+			if (paramPage == null || /^[0-9]+$/g.test(paramPage)) {
+				let page = 1;
+				let maxItems = 5;
 
-					Playlists.findOne({ public_id: playlistId }, { songs: { $slice: [(page - 1) * maxItems, maxItems] } }, (err, item) => {
-						if (item == null) return message.channel.send(Command.error([['Playlist', 'Unable to find Playlist']]));
-						if (item.song_count == 0) return message.channel.send(Command.info([['Playlist', 'Nothing in Playlist!']]));
+				if (page < 1) page = 1;
 
-						let maxPages = Math.ceil(item.song_count/5);
-
-						if (page > maxPages) return message.channel.send(Command.info([['Playlist', 'Max pages exceeded!']]));
-
-						musicPlugin.getSong(item.songs.map(i => i.song), (err, songs) => {
-							if (songs == null) return message.channel.send(Command.error([['Playlist', 'Unable to find Songs']]));
-
-							songs = Array.isArray(songs) ? songs : [songs];
-
-							let fields = [
-								[
-									'Playlist',
-									'Items: ' + item.song_count + '\nPage: ' + page + '/' + maxPages
-								]
-							]
-
-							fields = fields.concat(songs
-							.map((q: any, i) => [
-								'ID: ' + (((page - 1) * 5) + i + 1),
-								[	q.title,
-									utils.videoIdToUrl(q.type || 'youtube', q.id)
-								].join('\n')
-							]));
-
-							return message.channel.send(Command.info(fields));
-						});
-					});
-					return;
+				if (paramPage != null) {
+					let parsed = parseInt(paramPage);
+					if (Number.isInteger(parsed)) page = parsed;
 				}
-			});
-			break;
-		case 'delete':
-			if (playlistId == null) return message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
 
-			musicPlugin.removePlaylist(playlistId, err => {
-				if (err != null) return message.channel.send(Command.error([['Playlist', err]]));
-				message.channel.send(Command.info([['Playlist', 'Playlist now queued for deletion.']]));
-			});
-			break;
-		case 'add':
-			if (playlistId == null) return message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
-			if (params.length == 0) return message.channel.send(Command.error([['Playlist', 'Invalid Params']]));
+				let item = await Playlists.findOne({ public_id: playlistId }, { songs: { $slice: [(page - 1) * maxItems, maxItems] } });
 
-			musicPlugin.addToPlaylist(message.guild!.id, message.member!.id, playlistId, params.shift()!, (err, info) => {
-				if (err != null) return message.channel.send(Command.error([['Playlist', err]]));
-				message.channel.send(Command.error([['Playlist', 'Added song to playlist.']]));
-			});
-			break;
-		case 'remove':
-			if (playlistId == null) return message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
-			if (params.length == 0) return message.channel.send(Command.error([['Playlist', 'Invalid Params']]));
+				if (item == null) {
+					await message.channel.send(Command.error([['Playlist', 'Unable to find Playlist']]));
+					return Promise.resolve();
+				}
 
-			musicPlugin.removeFromPlaylist(message.guild!.id, message.member!.id, playlistId, params.shift()!, (err, info) => {
-				if (err != null) return message.channel.send(Command.error([['Playlist', err]]));
-				message.channel.send(Command.error([['Playlist', 'Removed song from playlist.']]));
-			});
-			break;
-		case 'clear':
-			if (playlistId == null) return message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
+				if (item.song_count == 0) {
+					await message.channel.send(Command.info([['Playlist', 'Nothing in Playlist!']]));
+					return Promise.resolve();
+				}
 
-			musicPlugin.clearPlaylist(message.guild!.id, message.member!.id, playlistId, (err, playlist) => {
-				if (err != null) return message.channel.send(Command.error([['Playlist', err]]));
-				message.channel.send(Command.error([['Playlist', 'Removed song from playlist.']]));
-			});
+				let maxPages = Math.ceil(item.song_count/5);
+
+				if (page > maxPages) {
+					await message.channel.send(Command.info([['Playlist', 'Max pages exceeded!']]));
+					return Promise.resolve();
+				}
+
+				let songs = await musicPlugin.getSong(item.songs.map(i => i.song));
+
+				if (songs == null) {
+					await message.channel.send(Command.error([['Playlist', 'Unable to find Songs']]));
+					return Promise.resolve();
+				}
+
+				songs = Array.isArray(songs) ? songs : [songs];
+
+				let fields = [
+					[
+						'Playlist',
+						'Items: ' + item.song_count + '\nPage: ' + page + '/' + maxPages
+					]
+				]
+
+				fields = fields.concat(songs
+				.map((q: any, i) => [
+					'ID: ' + (((page - 1) * 5) + i + 1),
+					[	q.title,
+						utils.videoIdToUrl(q.type || 'youtube', q.id)
+					].join('\n')
+				]));
+
+				await message.channel.send(Command.info(fields));
+
+				return Promise.resolve();
+			}
 			break;
-		case 'title':
-			if (playlistId == null) return message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
+		}
+
+		case 'delete': {
+			if (playlistId == null) {
+				await message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
+				return Promise.resolve();
+			}
+
+			await musicPlugin.removePlaylist(playlistId);
+
+			await message.channel.send(Command.info([['Playlist', 'Playlist now queued for deletion.']]));
+
+			break;
+		}
+
+		case 'add': {
+			if (playlistId == null) {
+				await message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
+				return Promise.resolve();
+			}
+
+			if (params.length == 0) {
+				await message.channel.send(Command.error([['Playlist', 'Invalid Params']]));
+				return Promise.resolve();
+			}
+
+			await musicPlugin.addToPlaylist(message.guild!.id, message.member!.id, playlistId, params.shift()!);
+
+			await message.channel.send(Command.error([['Playlist', 'Added song to playlist.']]));
+
+			break;
+		}
+
+		case 'remove': {
+			if (playlistId == null) {
+				await message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
+				return Promise.resolve();
+			}
+
+			if (params.length == 0) {
+				await message.channel.send(Command.error([['Playlist', 'Invalid Params']]));
+				return Promise.resolve();
+			}
+
+			await musicPlugin.removeFromPlaylist(message.guild!.id, message.member!.id, playlistId, params.shift()!);
+
+			await message.channel.send(Command.error([['Playlist', 'Removed song from playlist.']]));
+
+			break;
+		}
+
+		case 'clear': {
+			if (playlistId == null) {
+				await message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
+				return Promise.resolve();
+			}
+
+			await musicPlugin.clearPlaylist(message.guild!.id, message.member!.id, playlistId);
+
+			await message.channel.send(Command.error([['Playlist', 'Removed song from playlist.']]));
+
+			break;
+		}
+
+		case 'title': {
+			if (playlistId == null) {
+				await message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
+				return Promise.resolve();
+			}
 
 			let title = params.join(' ');
-			if (title.length == 0) return message.channel.send(Command.error([['Playlist', 'Playlist title cannot be nothing.']]));
+			if (title.length == 0) {
+				await message.channel.send(Command.error([['Playlist', 'Playlist title cannot be nothing.']]));
+				return Promise.resolve();
+			}
 
-			musicPlugin.editPlaylist(playlistId, 'title', title.slice(0, 50), errMsg => {
-				message.channel.send(Command.info([['Playlist', 'Updated Playlist title.']]));
-			});
+			await musicPlugin.editPlaylist(playlistId, 'title', title.slice(0, 50));
+
+			await message.channel.send(Command.info([['Playlist', 'Updated Playlist title.']]));
+
 			break;
-		case 'description':
-			if (playlistId == null) return message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
+		}
+
+		case 'description': {
+			if (playlistId == null) {
+				await message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
+				return Promise.resolve();
+			}
 
 			let desc = params.join(' ');
 
-			musicPlugin.editPlaylist(playlistId, 'description', desc.slice(0, 1000), errMsg => {
-				message.channel.send(Command.info([['Playlist', 'Updated Playlist description.']]));
-			});
+			await musicPlugin.editPlaylist(playlistId, 'description', desc.slice(0, 1000));
+
+			await message.channel.send(Command.info([['Playlist', 'Updated Playlist description.']]));
+
 			break;
-		case 'thumbnail':
-			if (playlistId == null) return message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
+		}
+
+		case 'thumbnail': {
+			if (playlistId == null) {
+				await message.channel.send(Command.error([['Playlist', 'No playlist ID specified']]));
+				return Promise.resolve();
+			}
 
 			let thumb = params.join(' ');
 
-			musicPlugin.editPlaylist(playlistId, 'thumb', thumb, errMsg => {
-				message.channel.send(Command.info([['Playlist', 'Updated Playlist thumbnail']]));
-			});
+			await musicPlugin.editPlaylist(playlistId, 'thumb', thumb);
+
+			await message.channel.send(Command.info([['Playlist', 'Updated Playlist thumbnail']]));
+
 			break;
+		}
 	}
 }
 

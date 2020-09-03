@@ -23,7 +23,7 @@ class Random extends Command {
 		this.description = 'A box full of random';
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		let item = params.shift();
 
 		if (item == null) {
@@ -43,7 +43,7 @@ class Random extends Command {
 		}
 
 		switch (item) {
-			case 'color':
+			case 'color': {
 				if (!this.hasPerms(message.member!, server, PERMS.COLOR)) return Command.noPermsMessage('Random');
 
 				let newColor = randomColor();
@@ -54,8 +54,9 @@ class Random extends Command {
 						'Generated "' + newColor + '" for you.'
 					]
 				]);
+			}
 
-			case 'number':
+			case 'number': {
 				if (!this.hasPerms(message.member!, server, PERMS.NUMBER)) return Command.noPermsMessage('Random');
 
 				// Ensure params are correct if only calling a max amount.
@@ -79,14 +80,15 @@ class Random extends Command {
 					[ 'Number Picked!', 'Picked ' + random(minNumber, maxNumber) ],
 					[ 'Picked From', 'Min: ' + minNumber + ', Max: ' + maxNumber ]
 				]);
+			}
 
-			case 'list':
+			case 'list': {
 				if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Random');
 
 				if (params.length != 0) {
 					parseList(params, message.channel);
 				} else {
-					const selector = utils.createPageSelector(message.author.id, message.channel)!;
+					let selector = utils.createPageSelector(message.author.id, message.channel)!;
 
 					selector.setFormat([
 						'Please now paste the list of items or a pastebin URL (soon) with the items.',
@@ -107,9 +109,9 @@ class Random extends Command {
 					selector.display();
 				}
 
-				return;
+			}
 
-			case 'reaction':
+			case 'reaction': {
 				if (!this.hasPerms(message.member!, server, PERMS.REACTION)) return Command.noPermsMessage('Random');
 
 				let discordChannelIdStr = params.shift()!;
@@ -127,65 +129,57 @@ class Random extends Command {
 				if (discordChannel == null || discordChannel.type != 'text') return Command.error([[ 'Random', 'Message ID is invalid. Doesn\'t exist or not a text channel.' ]]);
 
 
-				discordChannel.messages.fetch(msgIdStripped)
-				.then((reqDiscordMessage) => {
-					if (reqDiscordMessage == null) {
-						message.channel.send(Command.error([[ 'Random', 'Message not found! Invalid Message ID or not in channel.' ]]));
-						return;
-					}
+				let reqDiscordMessage = await discordChannel.messages.fetch(msgIdStripped);
 
-					let messageReaction = reqDiscordMessage.reactions.cache.get(reactionIdStripped);
+				let messageReaction = reqDiscordMessage.reactions.cache.get(reactionIdStripped);
 
-					if (messageReaction == null) {
-						message.channel.send(Command.error([[ 'Random', 'Unable to find reaction (emoji) ID in message.' ]]));
-						return;
-					}
+				if (messageReaction == null) {
+					await message.channel.send(Command.error([[ 'Random', 'Unable to find reaction (emoji) ID in message.' ]]));
+					return Promise.resolve();
+				}
 
-					if (messageReaction.count == null || messageReaction.count == 0) {
-						message.channel.send(Command.error([[ 'Random', 'There are no reactions affiliated with this message.' ]]));
-						return;
-					}
+				if (messageReaction.count == null || messageReaction.count == 0) {
+					await message.channel.send(Command.error([[ 'Random', 'There are no reactions affiliated with this message.' ]]));
+					return Promise.resolve();
+				}
 
-					if (messageReaction.count == messageReaction.users.cache.size) {
-						// Use cache if we already have it filled.
+				if (messageReaction.count == messageReaction.users.cache.size) {
+					// Use cache if we already have it filled.
 
-						let randomUserId = messageReaction.users.cache.random();
+					let randomUserId = messageReaction.users.cache.random();
 
-						if (randomUserId != null) {
-							message.channel.send(Command.success([
-								[
-									'Random',
-									'Randomly picked <@' + randomUserId + '>'
-								]
-							]));
-						} else {
-							message.channel.send(Command.error([[ 'Random', 'Unable to grab member.' ]]));
-						}
+					if (randomUserId != null) {
+						await message.channel.send(Command.success([
+							[
+								'Random',
+								'Randomly picked <@' + randomUserId + '>'
+							]
+						]));
 					} else {
-						// Fetch all the users if cache wasn't filled.
-
-						messageReaction.users.fetch()
-						.then(userCollection => {
-							let randomUserId = userCollection.random();
-
-							if (randomUserId != null) {
-								message.channel.send(Command.success([
-									[
-										'Random',
-										'Randomly picked <@' + randomUserId + '>'
-									]
-								]));
-							} else {
-								message.channel.send(Command.error([[ 'Random', 'Unable to grab member.' ]]));
-							}
-						})
-						.catch(e => console.error(e));
+						await message.channel.send(Command.error([[ 'Random', 'Unable to grab member.' ]]));
 					}
-				})
-				.catch((e: any) => console.error(e));
+				} else {
+					// Fetch all the users if cache wasn't filled.
 
-				return;
+					let userCollection = await messageReaction.users.fetch();
+
+					let randomUserId = userCollection.random();
+
+					if (randomUserId != null) {
+						await message.channel.send(Command.success([
+							[
+								'Random',
+								'Randomly picked <@' + randomUserId + '>'
+							]
+						]));
+					} else {
+						await message.channel.send(Command.error([[ 'Random', 'Unable to grab member.' ]]));
+					}
+				}
+			}
 		}
+
+		return Promise.resolve();
 	}
 }
 

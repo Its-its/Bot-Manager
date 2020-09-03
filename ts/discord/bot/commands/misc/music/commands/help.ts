@@ -49,7 +49,7 @@ const commandUsage = Command.info([
 ]);
 
 
-function call(_params: string[], _server: DiscordServer, _message: Discord.Message) {
+async function call(_params: string[], _server: DiscordServer, _message: Discord.Message) {
 	return commandUsage;
 }
 

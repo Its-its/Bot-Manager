@@ -3,8 +3,8 @@ import DiscordServer = require('@discord/bot/GuildServer');
 
 import util = require('@discord/bot/../utils');
 
-function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	message.channel.send(util.infoMsg([
+async function call(params: string[], server: DiscordServer, message: Discord.Message) {
+	await message.channel.send(util.infoMsg([
 		[
 			'Leveling - Help',
 			[
@@ -18,6 +18,8 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			].join('\n')
 		]
 	]));
+
+	return Promise.resolve();
 }
 
 export {

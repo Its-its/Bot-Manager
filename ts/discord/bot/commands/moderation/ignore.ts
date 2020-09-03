@@ -26,7 +26,7 @@ class Ignore extends Command {
 		this.perms = Object.values(PERMS);
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return Command.info([
 				[ 'Description', this.description ],
@@ -83,7 +83,7 @@ class Ignore extends Command {
 
 				server.save();
 
-				break;
+				return Command.success([['Ingore', 'Cleared successfully.']]);
 			}
 
 			case 'channel': {
@@ -108,7 +108,9 @@ class Ignore extends Command {
 					server.save();
 
 					return Command.success([['Ignore', 'Now ignoring channel "' + channel.name + '"']]);
-				} else return Command.error([['Ignore', 'Unable to find channel! Does it Exist?!']]);
+				} else {
+					return Command.error([['Ignore', 'Unable to find channel! Does it Exist?!']]);
+				}
 			}
 
 			case 'user': {
@@ -133,7 +135,9 @@ class Ignore extends Command {
 					server.save();
 
 					return Command.success([['Ignore', 'Now ignoring user "' + member.displayName + '"']]);
-				} else return Command.error([['Ignore', 'Unable to find member! Does it Exist?!']]);
+				} else {
+					return Command.error([['Ignore', 'Unable to find member! Does it Exist?!']]);
+				}
 			}
 
 			case 'role': break;
@@ -155,7 +159,9 @@ class Ignore extends Command {
 						server.save();
 
 						return Command.success([['Ignore', 'I am now ignoring user "' + member.displayName + '"']]);
-					} else return Command.error([['Ignore', 'Unable to find member! Does it Exist?!']]);
+					} else {
+						return Command.error([['Ignore', 'Unable to find member! Does it Exist?!']]);
+					}
 				} else if (idType == 'channel') {
 					if (!this.hasPerms(message.member!, server, PERMS.CHANNEL)) return Command.noPermsMessage('Ignore');
 
@@ -170,7 +176,9 @@ class Ignore extends Command {
 						server.save();
 
 						return Command.success([['Ignore', 'I am now ignoring channel "#' + channel.name + '"']]);
-					} else return Command.error([['Ignore', 'Unable to find channel! Does it Exist?!']]);
+					} else {
+						return Command.error([['Ignore', 'Unable to find channel! Does it Exist?!']]);
+					}
 				} else {
 					return Command.error([['Ignore', 'ID Type not valid.']]);
 				}

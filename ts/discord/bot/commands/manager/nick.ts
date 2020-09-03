@@ -16,7 +16,7 @@ class Nick extends Command {
 		this.description = 'Changes the bots nickname for your discord server.';
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return Command.info([
 				[ 'Description', this.description ],
@@ -31,10 +31,8 @@ class Nick extends Command {
 
 		let name = params.join(' ');
 
-		message.guild!.me!.setNickname(name, 'Requested by ' + message.member!.user.tag)
-		.then(() => {
-			message.channel.send(Command.success([[ 'Nick', 'Sucessfully changed nickname.' ]]));
-		}, e => console.error(e));
+		await message.guild!.me!.setNickname(name, 'Requested by ' + message.member!.user.tag);
+		await message.channel.send(Command.success([[ 'Nick', 'Sucessfully changed nickname.' ]]));
 	}
 }
 

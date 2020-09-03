@@ -808,12 +808,18 @@ declare namespace DiscordBot {
 	}
 
 
-	type PhraseResponses = PhraseResEcho | PhraseResInterval | PhraseResAlias | PhraseResSet | PhraseResRank;
+	type PhraseResponses = PhraseResEchoReply | PhraseResEcho | PhraseResInterval | PhraseResAlias | PhraseResSet | PhraseResRank;
+
+	interface PhraseResEchoReply {
+		type: 'echo';
+		message: string;
+		reply: true;
+	}
 
 	interface PhraseResEcho {
 		type: 'echo';
-		message: string;
-		reply?: boolean;
+		reply?: false | undefined;
+		message?: string;
 		embed?: any;
 	}
 

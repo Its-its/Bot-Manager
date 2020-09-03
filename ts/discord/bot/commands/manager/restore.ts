@@ -60,7 +60,7 @@ class Restore extends Command {
 		this.description = 'Restore the backed up discord server to the new server.';
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return Command.info([
 				[ 'Description', this.description ],
@@ -73,36 +73,36 @@ class Restore extends Command {
 
 		let pid = params.shift();
 
-		message.channel.send(Command.info([['Restore', 'Searching for backups from imputted ID.']]))
-		.then(resp => {
-			Backups.find({ $or: [ { server_id: pid }, { pid: pid } ]}, (err, backups) => {
-				if (err != null) return message.channel.send(Command.info([['Restore', 'An error occured. Please try again in a few moments.']]));
-				if (backups.length == 0) return message.channel.send(Command.info([['Restore', 'No Backups found for server/pid.']]));
+		let resp = await message.channel.send(Command.info([['Restore', 'Searching for backups from imputted ID.']]));
 
-				const selector = utils.createPageSelector(message.author.id, message.channel)!
-				.setFormat([
-					'Please pick a backup from the list below.',
-					'',
-					'{page_items}',
-					'',
-					'_Enter the number for the backup you\'d like to use/view._'
-				])
-				.setCollectionFormat(s => s.input + ' > ' + s.description)
-				.setEditing(Array.isArray(resp) ? resp[0] : resp);
+		let backups = await Backups.find({ $or: [ { server_id: pid }, { pid: pid } ]});
 
-				for(let i = 0; i < backups.length; i++) {
-					(function(pos, backup: Backup) {
-						// TODO: Add version
-						selector.addSelection('' + pos, `Created At: ${backup.created_at.toUTCString()}\nItems: \`${backup.items.join(', ')}\``, (page) => {
-							mainEditPage(backup, page, server);
-						});
-					}(i + 1, backups[i].toJSON()));
-				}
+		if (backups.length == 0) {
+			await message.channel.send(Command.info([['Restore', 'No Backups found for server/pid.']]));
+			return Promise.resolve();
+		}
 
-				selector.display();
-			});
-		})
-		.catch((e: any) => console.error(e));
+		const selector = utils.createPageSelector(message.author.id, message.channel)!
+		.setFormat([
+			'Please pick a backup from the list below.',
+			'',
+			'{page_items}',
+			'',
+			'_Enter the number for the backup you\'d like to use/view._'
+		])
+		.setCollectionFormat(s => s.input + ' > ' + s.description)
+		.setEditing(resp);
+
+		for(let i = 0; i < backups.length; i++) {
+			(function(pos, backup: Backup) {
+				// TODO: Add version
+				selector.addSelection('' + pos, `Created At: ${backup.created_at.toUTCString()}\nItems: \`${backup.items.join(', ')}\``, (page) => {
+					mainEditPage(backup, page, server);
+				});
+			}(i + 1, backups[i].toJSON()));
+		}
+
+		selector.display();
 	}
 }
 

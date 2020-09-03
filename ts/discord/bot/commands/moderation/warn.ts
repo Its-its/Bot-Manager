@@ -27,7 +27,7 @@ class Warn extends Command {
 		this.description = 'Warn a player';
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return Command.info([
 				[ 'Description', this.description ],
@@ -50,7 +50,7 @@ class Warn extends Command {
 
 		let reason = params.join(' ');
 
-		new Punishments({
+		let model = new Punishments({
 			server_id: message.guild!.id,
 			member_id: userId,
 			creator_id: message.member!.id,
@@ -60,7 +60,9 @@ class Warn extends Command {
 			type: 'warn',
 
 			reason: reason
-		}).save();
+		});
+
+		await model.save();
 
 		// TODO: Return punishment count, and improve stuffs.
 		return Command.success([

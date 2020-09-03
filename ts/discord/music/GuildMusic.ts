@@ -123,71 +123,78 @@ class Music implements DiscordBot.plugins.Music {
 
 
 	// Queue
-	public clearQueue(cb: (err: string) => any) {
-		MusicQueue.updateOne({ server_id: this.guildId }, { $set: { items: [] } }, err => cb(err));
-		// MusicQueue.deleteMany({ server_id: this.guildId }, err => cb(err));
+	public async clearQueue() {
+		await MusicQueue.updateOne({ server_id: this.guildId }, { $set: { items: [] } }).exec();
+
+		return Promise.resolve();
 	}
 
-	public addToQueue(user: string, song: DiscordBot.plugins.SongGlobal, cb: (err?: string) => any) {
-		MusicQueue.findOne({
+	public async addToQueue(user: string, song: DiscordBot.plugins.SongGlobal) {
+		let queue = await MusicQueue.findOne({
 			server_id: this.guildId
-		}, (err, queue: any) => {
-			if (queue == null) return cb('WHOOPS! I wasn\'t able to find the queue! My fault.');
-
-			for(let i = 0; i < queue.items.length; i++) {
-				if (queue.items[i].id == song.id) return cb('Item already exists in queue.');
-			}
-
-			queue.items.push({
-				addedBy: user,
-				id: song.id
-			});
-
-			queue.save(() => cb());
 		});
+
+		if (queue == null) return Promise.reject('WHOOPS! I wasn\'t able to find the queue! My fault.');
+
+		for(let i = 0; i < queue.items.length; i++) {
+			if (queue.items[i].id == song.id) return Promise.reject('Item already exists in queue.');
+		}
+
+		queue.items.push({
+			addedBy: user,
+			id: song.id,
+			song: '' // TODO:
+		});
+
+		await queue.save();
+
+		return Promise.resolve();
 	}
 
-	public removeFromQueue(id: string, cb: (err: any) => any) {
-		MusicQueue.findOne({ server_id: this.guildId })
-		.exec((err, queue: any) => {
-			if (err != null) return cb('An Error Occured trying to query the Database.');
-			if (queue == null) return cb('Queue not found!');
+	public async removeFromQueue(id: string) {
+		let queue = await MusicQueue.findOne({ server_id: this.guildId });
 
-			for(let i = 0; i < queue.items.length; i++) {
-				if (queue.items[i].id == id) {
-					queue.items.splice(i, 1);
-					return queue.save((err: any) => cb(err));
-				}
+		if (queue == null) return Promise.reject('Queue not found!');
+
+		for(let i = 0; i < queue.items.length; i++) {
+			if (queue.items[i].id == id) {
+				queue.items.splice(i, 1);
+
+				await queue.save();
+
+				return Promise.resolve();
 			}
+		}
 
-			cb('No queued item with that id was found.');
-		});
+		return Promise.reject('No queued item with that id was found.');
 	}
 
-	public nextInQueue(cb: (song?: DiscordBot.plugins.SongGlobal) => any) {
-		MusicQueue.findOne({ server_id: this.guildId }, (err, queue: any) => {
-			if (err != null) {
-				console.error(err);
-				return cb();
-			}
+	public async nextInQueue(): Promise<DiscordBot.plugins.SongGlobal> {
+		let queue = await MusicQueue.findOne({ server_id: this.guildId });
 
-			let item = (!this.repeatSong ? queue.items.shift() : queue.items[0]);
+		if (queue == null) {
+			return Promise.reject('Queue not found!');
+		}
 
-			if (item == null) return cb();
+		let item = (!this.repeatSong ? queue.items.shift() : queue.items[0]);
 
-			if (!this.repeatSong && this.repeatQueue) queue.items.push(item);
+		if (item == null) {
+			return Promise.reject('No songs in queue!');
+		}
 
-			queue.save((err: any) => {
-				if (err != null) { console.error(err); cb(); return; }
+		if (!this.repeatSong && this.repeatQueue) queue.items.push(item);
 
-				musicPlugin.getSong(item.id, (err, songs) => {
-					if (err != null) { console.error(err); cb(); return; }
-					if (songs == null) { console.error('No songs found.'); cb(); return; }
-					songs[0].addedBy = item.addedBy;
-					cb(songs[0]);
-				});
-			});
-		});
+		await queue.save();
+
+		let songs = await musicPlugin.getSong(item.id);
+
+		if (songs.length == 0) {
+			return Promise.reject('No songs found.');
+		}
+
+		songs[0].addedBy = item.addedBy;
+
+		return Promise.resolve(songs[0]);
 	}
 
 	public shuffleQueue() {
@@ -241,7 +248,8 @@ class Music implements DiscordBot.plugins.Music {
 	}
 
 	public regrab(cb: (music?: Music) => any) {
-		getMusic(this.guildId, music => cb(music));
+		getMusic(this.guildId)
+		.then(cb, () => cb());
 	}
 
 	public playingFromString() {
@@ -269,10 +277,16 @@ class Music implements DiscordBot.plugins.Music {
 	}
 }
 
-function getMusic(serverId: string,  cb: (music?: Music) => any) {
-	redisMusic.get(serverId, (err, str) => {
-		if (err != null) { console.error(err); cb(); }
-		cb(new Music(serverId, str == null ? {} : JSON.parse(str)));
+async function getMusic(serverId: string) {
+	return new Promise<Music>((resolve, reject) => {
+		redisMusic.get(serverId, (err, str) => {
+			if (err != null) {
+				console.error(err);
+				reject(err);
+			} else {
+				resolve(new Music(serverId, str == null ? {} : JSON.parse(str)));
+			}
+		});
 	});
 }
 

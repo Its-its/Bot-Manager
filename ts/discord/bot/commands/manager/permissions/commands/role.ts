@@ -14,7 +14,7 @@ import Command = require('@discord/bot/command');
 import GlobalCommands = require('../../../index');
 import PERMISSIONS = require('../perms');
 
-function call(params: string[], server: DiscordServer, message: Discord.Message) {
+async function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMISSIONS.ROLE)) return Command.noPermsMessage('Perms');
 
 	let roleFull = params.shift();
@@ -58,9 +58,9 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		let added = server.addPermTo('roles', roleId!, commandPermOrDo!);
 
 		if (added) {
-			message.channel.send(Command.error([['Permissions', 'Added ' + commandPermOrDo + ' to ' + roleFull]]));
+			await message.channel.send(Command.error([['Permissions', 'Added ' + commandPermOrDo + ' to ' + roleFull]]));
 		} else {
-			message.channel.send(Command.error([['Permissions', 'Failed']]));
+			await message.channel.send(Command.error([['Permissions', 'Failed']]));
 		}
 	} else if (cmdToDo == 'remove') {
 		if (!server.userHasPerm(message.member!, PERMISSIONS.ROLE_REMOVE)) return Command.noPermsMessage('Perms');
@@ -70,9 +70,9 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		let added = server.removePermFrom('roles', roleId!, commandPermOrDo!);
 
 		if (added) {
-			message.channel.send(Command.error([['Permissions', 'Removed ' + commandPermOrDo + ' from ' + roleFull]]));
+			await message.channel.send(Command.error([['Permissions', 'Removed ' + commandPermOrDo + ' from ' + roleFull]]));
 		} else {
-			message.channel.send(Command.error([['Permissions', 'Failed']]));
+			await message.channel.send(Command.error([['Permissions', 'Failed']]));
 		}
 	} else if (cmdToDo == 'group') {
 		let groupName = params.shift();
@@ -82,22 +82,24 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			let added = server.addGroupTo('roles', roleId!, groupName.toLowerCase());
 
 			if (added) {
-				message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + roleFull]]));
+				await message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + roleFull]]));
 			} else {
-				message.channel.send(Command.error([['Permissions', 'Invalid Group name']]));
+				await message.channel.send(Command.error([['Permissions', 'Invalid Group name']]));
 			}
 		} else if (commandPermOrDo == 'remove') {
 			let added = server.removeGroupFrom('roles', roleId!, groupName.toLowerCase());
 
 			if (added) {
-				message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + roleFull]]));
+				await message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + roleFull]]));
 			} else {
-				message.channel.send(Command.error([['Permissions', 'Group does not exist']]));
+				await message.channel.send(Command.error([['Permissions', 'Group does not exist']]));
 			}
 		} else return Command.error([['Permissions', 'Invalid Params']]);
 	}
 
 	server.save();
+
+	return Promise.resolve();
 }
 
 export {

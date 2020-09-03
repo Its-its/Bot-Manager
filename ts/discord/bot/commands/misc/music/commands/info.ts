@@ -7,36 +7,34 @@ import guildClient = require('@discord/guildClient');
 import utils = require('@discord/utils');
 import PERMS = require('../perms');
 
-function call(_params: string[], server: DiscordServer, message: Discord.Message) {
+async function call(_params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMS.INFO)) return Command.noPermsMessage('Music');
 
 	let items: [string, string][] = [];
 
-	guildClient.getMusic(message.guild!.id, (music) => {
-		if (music == null) return message.channel.send(Command.error([['Music', 'Unable to find Music.']]));
+	let music = await guildClient.getMusic(message.guild!.id);
 
-		if (music.playing != null) {
-			items.push([
-				'Song',
-				[
-					'The Current song is:',
-					'Title: ' + music.playing.title,
-					'Link: ' + utils.videoIdToUrl(music.playing.type, music.playing.id)
-				].join('\n')
-			]);
-		} else items.push([ 'Song', 'Not currently playing any music.' ]);
-
+	if (music.playing != null) {
 		items.push([
-			'Options',
+			'Song',
 			[
-				// 'Playing From: ' + music.playingFrom,
-				'Repeat Queue: ' + (music.repeatQueue ? 'Yes' : 'No'),
-				'Repeat song: ' + (music.repeatSong ? 'Yes' : 'No')
+				'The Current song is:',
+				'Title: ' + music.playing.title,
+				'Link: ' + utils.videoIdToUrl(music.playing.type, music.playing.id)
 			].join('\n')
 		]);
+	} else items.push([ 'Song', 'Not currently playing any music.' ]);
 
-		return Command.info(items);
-	});
+	items.push([
+		'Options',
+		[
+			// 'Playing From: ' + music.playingFrom,
+			'Repeat Queue: ' + (music.repeatQueue ? 'Yes' : 'No'),
+			'Repeat song: ' + (music.repeatSong ? 'Yes' : 'No')
+		].join('\n')
+	]);
+
+	return Command.info(items);
 }
 
 export {

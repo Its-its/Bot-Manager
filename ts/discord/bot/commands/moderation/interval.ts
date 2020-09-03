@@ -31,7 +31,7 @@ class Interval extends Command {
 		this.perms = Object.values(PERMS);
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return Command.info([
 				[ 'Description', this.description ],
@@ -63,8 +63,9 @@ class Interval extends Command {
 						]
 					]);
 				} else {
-					message.channel.send(Command.table(['ID', 'Status', 'Repeat Time'], server.intervals.map((i, index) => [(index + 1), i.active ? 'Active' : 'Disabled', i.every])));
-					return;
+					await message.channel.send(Command.table(['ID', 'Status', 'Repeat Time'], server.intervals.map((i, index) => [(index + 1), i.active ? 'Active' : 'Disabled', i.every])));
+
+					break;
 				}
 			}
 
@@ -72,9 +73,9 @@ class Interval extends Command {
 				if (!this.hasPerms(message.member!, server, PERMS.CREATE)) return Command.noPermsMessage('Interval');
 
 				let minutes = parseInt(params[1]);
-				if (isNaN(minutes)) return;
+				if (isNaN(minutes)) return Command.error([[ 'Interval', 'Invalid number.' ]]);
 
-				if (message.channel.type != 'text') return;
+				if (message.channel.type != 'text') return Command.error([[ 'Interval', 'Channel is not a text channel.' ]]);
 
 				let pos = server.addInterval(minutes, message.guild!.id, message.channel.id);
 				server.save();
@@ -170,6 +171,8 @@ class Interval extends Command {
 				}
 			}
 		}
+
+		return Promise.resolve();
 	}
 }
 

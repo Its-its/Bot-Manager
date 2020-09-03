@@ -29,7 +29,7 @@ class Prune extends Command {
 		this.perms = Object.values(PERMS);
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (!message.member!.hasPermission([ 'MANAGE_MESSAGES' ])) {
 			return Command.error([['Prune', 'Missing Manage Messages Perms!']]);
 		}
@@ -67,7 +67,7 @@ class Prune extends Command {
 			case 'user': // TODO:
 				if (!this.hasPerms(message.member!, server, PERMS.USER)) return Command.noPermsMessage('Prune');
 				return Command.error([['Prune', 'Not implemented yet.']]);
-			case 'channel':
+			case 'channel': {
 				if (!this.hasPerms(message.member!, server, PERMS.CHANNEL)) return Command.noPermsMessage('Prune');
 
 				let channelId = server.strpToId(params.shift());
@@ -92,161 +92,142 @@ class Prune extends Command {
 
 				if (reason == 'all') {
 					if (!message.member!.hasPermission([ 'MANAGE_CHANNELS' ])) {
-						return send(message.channel, Command.error([['Prune', 'Missing Manage Channels Perms!']])).catch(e => console.error(e));
+						await message.channel.send(Command.error([['Prune', 'Missing Manage Channels Perms!']]));
+						break;
+					} else {
+						await recreateChannel(message.channel, channelBeingPruned);
 					}
-					return recreateChannel(message.channel, channelBeingPruned);
+				} else {
+					let editMessage = await message.channel.send(Command.info([['Prune', 'Fetching Messages']]))
+					await fetchMessages(channelBeingPruned, pruneLimit, Array.isArray(editMessage) ? editMessage[0] : editMessage);
 				}
 
-				send(message.channel, Command.info([['Prune', 'Fetching Messages']]))
-				.then((editMessage) => {
-					fetchMessages(channelBeingPruned, pruneLimit, Array.isArray(editMessage) ? editMessage[0] : editMessage);
-				}, (err) => {
-					console.error(err);
-					send(message.channel, Command.error([['Prune', 'An error occured! Please try again in a few seconds.']]));
-				});
-			break;
+
+				break;
+			}
 		}
+
+		return Promise.resolve();
 	}
 }
 
-function fetchMessages(channel: Discord.TextChannel, limit: number, editMessage: Discord.Message) {
-	channel.messages.fetch({ limit: limit })
-	.then((messages) => {
-		messages = messages.filter(m => m.id != editMessage.id);
+async function fetchMessages(channel: Discord.TextChannel, limit: number, editMessage: Discord.Message) {
+	let messages = await channel.messages.fetch({ limit: limit });
 
-		let filtered = messages.filter(m => Date.now() - m.createdTimestamp < maxBulkDeleteTime);
+	messages = messages.filter(m => m.id != editMessage.id);
 
-		// TODO: Instead of replacing, append message?
-		editMessage.edit(Command.info([['Prune', 'Bulk Deleting messages.']]))
-		.then(editMessage => {
-			channel.bulkDelete(filtered)
-			.then(() => {
-				let deleted = filtered.size;
+	let filtered = messages.filter(m => Date.now() - m.createdTimestamp < maxBulkDeleteTime);
 
-				if (deleted != messages.size) {
-					let singles = messages.filter(m => Date.now() - m.createdTimestamp >= maxBulkDeleteTime);
-					singleDeletions(singles.array(), editMessage);
-					return;
-				}
+	// TODO: Instead of replacing, append message?
+	let newEditMessage = await editMessage.edit(Command.info([['Prune', 'Bulk Deleting messages.']]));
 
-				editMessage.edit(Command.success([[ 'Prune', 'Deleted a total of ' + deleted + ' Messages from <#' + channel.id + '>' ]]));
-			}, (e) => {
-				editMessage.edit(Command.error([
-					[
-						'Prune',
-						[
-							'An error occured bulk deleting!',
-							e.message,
-							'Attempting normal deletion in 5 seconds.'
-						].join('\n')
-					]
-				]));
+	let [v, error] = await utils.asyncCatch(channel.bulkDelete(filtered));
 
-				setTimeout(() => {
-					singleDeletions(messages.array(), editMessage);
-				}, 5000);
-			});
-		}, () => {
-			//
-		});
-	}, (e) => {
-		console.error(e);
-		editMessage.edit(Command.error([[ 'Prune', 'An error occured! Make sure you gave the bot the proper perms!' ]]));
-	});
+	if (v != null) {
+		let deleted = filtered.size;
+
+		if (deleted != messages.size) {
+			let singles = messages.filter(m => Date.now() - m.createdTimestamp >= maxBulkDeleteTime);
+
+			await singleDeletions(singles.array(), newEditMessage);
+		} else {
+			await newEditMessage.edit(Command.success([[ 'Prune', 'Deleted a total of ' + deleted + ' Messages from <#' + channel.id + '>' ]]));
+		}
+	} else if (error != null) {
+		await newEditMessage.edit(Command.error([
+			[
+				'Prune',
+				[
+					'An error occured bulk deleting!',
+					error.message,
+					'Attempting normal deletion in 5 seconds.'
+				].join('\n')
+			]
+		]));
+
+		await utils.asyncTimeout(5000);
+
+		await singleDeletions(messages.array(), newEditMessage);
+	}
 }
 
-function singleDeletions(messages: Discord.Message[], editMessage: Discord.Message) {
-	editMessage.edit(Command.info([['Prune', 'Please wait...\nRemoving commands 1 by 1. Since they\'re older than 14 days they can\'t be bulk deleted.']]))
-	.then(() => doSingles(), e => console.error(e));
+async function singleDeletions(messages: Discord.Message[], editMessage: Discord.Message) {
+	await editMessage.edit(Command.info([['Prune', 'Please wait...\nRemoving commands 1 by 1. Since they\'re older than 14 days they can\'t be bulk deleted.']]));
+
+	await doSingles();
 
 	let pos = 0;
 
-	function doSingles() {
-		if (pos >= messages.length) return editMessage.edit(Command.success([['Prune', 'Deleted messages.']])).catch(e => console.error(e));
+	async function doSingles() {
+		if (pos >= messages.length) {
+			await editMessage.edit(Command.success([['Prune', 'Deleted messages.']])).catch(e => console.error(e));
+			return Promise.resolve();
+		}
 
 		let message = messages[pos++];
 
-		message.delete()
-		.then(() => setTimeout(() => doSingles(), 500),
-		(e) => {
-			console.error(e);
-			editMessage.edit(Command.error([
+
+		let [_, error] = await utils.asyncCatch(message.delete());
+
+		if (error == null) {
+			await utils.asyncTimeout(500);
+			await doSingles();
+		} else {
+			console.error(error);
+
+			await editMessage.edit(Command.error([
 				[
 					'Prune',
 					[
 						'An error occured deleting singles!',
-						e.message
+						error.message
 					].join('\n')
 				]
 			]));
-		});
+		}
+
+		return Promise.resolve();
 	}
 }
 
-function recreateChannel(sendingChannel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel, channelBeingRecreated: Discord.TextChannel) {
-	send(sendingChannel, Command.success([['Prune', 'Cloning channel']]))
-	.then(m => {
-		let editMessage: Discord.Message;
-		if (Array.isArray(m)) editMessage = m[0];
-		else editMessage = m;
-		if (editMessage == null) return;
+async function recreateChannel(sendingChannel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel, channelBeingRecreated: Discord.TextChannel) {
+	let editMessage = await sendingChannel.send(Command.success([['Prune', 'Cloning channel']]));
 
-		console.log('Clone');
+	console.log('Clone');
 
-		channelBeingRecreated.clone({
-			name: channelBeingRecreated.name,
+	let newChannel = await channelBeingRecreated.clone({
+		name: channelBeingRecreated.name,
+		reason: '[PRUNE] Recreating channel.'
+	});
+
+	console.log('Pos');
+
+	await editMessage.edit(Command.success([['Prune', 'Setting Channel Position']]));
+
+	console.log('Parent');
+
+	await newChannel.setParent(
+		channelBeingRecreated.parent!,
+		{
 			reason: '[PRUNE] Recreating channel.'
-		})
-		.then(newChannel => {
-			console.log('Pos');
-			editMessage.edit(Command.success([['Prune', 'Setting Channel Position']]))
-			.catch(e => error(editMessage, e, '4'));
+		}
+	);
 
-			console.log('Parent');
+	let perms = channelBeingRecreated.permissionOverwrites.array();
 
-			newChannel.setParent(
-				channelBeingRecreated.parent!,
-				{
-					reason: '[PRUNE] Recreating channel.'
-				}
-			)
-			.then(() => {
-				channelBeingRecreated.permissionOverwrites
-				.forEach(perm => {
-					newChannel.overwritePermissions([perm], '[PRUNE] Recreating channel')
-					.catch(e => error(editMessage, e, '6'));
-				});
+	for (let i = 0; i < perms.length; i++) {
+		let perm = perms[i];
 
-				channelBeingRecreated.delete('Recreating Channel')
-				.then(() => {
+		await newChannel.overwritePermissions([perm], '[PRUNE] Recreating channel');
 
-					newChannel.setPosition(channelBeingRecreated.position)
-					.then(() => {
-						// editMessage.edit(Command.success([['Prune', 'Recreated channel']]));
-					})
-					.catch(e => error(editMessage, e, '7'));
-				})
-				.catch(e => error(editMessage, e, '3'));
-			})
-			.catch(e => error(editMessage, e, '5'));
-		})
-		.catch(e => error(editMessage, e, '2'))
-	})
-	.catch((e: any) => console.error(e));
-
-	function error(editMessage: Discord.Message, e: any, p: string) {
-		console.error('Prune Error: ' + p);
-		console.error(e);
-		editMessage.edit('An error occured.\n' + (e.message || e));
+		await utils.asyncTimeout(200);
 	}
+
+	await channelBeingRecreated.delete('Recreating Channel');
+
+	await newChannel.setPosition(channelBeingRecreated.position);
+	// editMessage.edit(Command.success([['Prune', 'Recreated channel']]));
 }
 
-function send(channel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel, str: any, cb?: (err?: Error, message?: Discord.Message | Discord.Message[]) => any) {
-	let msg = channel.send(new Discord.MessageEmbed(str.embed));
-
-	if (cb != null) msg.then(msg => cb(undefined, msg), e => cb(e));
-
-	return msg;
-}
 
 export = Prune;

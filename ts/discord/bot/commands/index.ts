@@ -23,7 +23,7 @@ import CommandManger = require('../../../command-manager');
 import Discord = require('discord.js');
 
 import Server = require('../GuildServer');
-import { Nullable } from '@type-manager';
+import { Nullable, DiscordBot } from '@type-manager';
 
 
 let categoryCommands: { [category: string]: Command[] } = {};
@@ -45,7 +45,7 @@ function initCommands() {
 	// addCommand(require('./roles'), 'Roles');
 }
 
-function parseMessage(message: string, server: Server, defaultMessage: Discord.Message) {
+async function parseMessage(message: string, server: Server, defaultMessage: Discord.Message): Promise<DiscordBot.PhraseResponses | DiscordBot.PhraseResponses[] | null | undefined | void> {
 	let parts = [];
 	let toFix = message.split(' ');
 
@@ -67,13 +67,13 @@ function parseMessage(message: string, server: Server, defaultMessage: Discord.M
 		let command = defaultCommands[i];
 
 		if (command.is(messageCommand)) {
-			if (command.ownerOnly && defaultMessage.member!.id != OWNER_ID) return;
+			if (command.ownerOnly && defaultMessage.member!.id != OWNER_ID) return Promise.resolve(null);
 
 			if (!defaultMessage.member!.hasPermission('ADMINISTRATOR')) {
 
 				if (command.perms.length != 0 &&
 					!(server.userHasAnyChildPerm(defaultMessage.member!.id, command.perms) || server.rolesHaveAnyChildPerm(defaultMessage.member!.roles.cache.keyArray(), command.perms))
-				) return;
+				) return Promise.resolve(null);
 			}
 
 			console.log('[DefComm]: ' + message);
@@ -82,7 +82,7 @@ function parseMessage(message: string, server: Server, defaultMessage: Discord.M
 		}
 	}
 
-	return null;
+	return Promise.resolve(null);
 }
 
 function is(commandName: string) {

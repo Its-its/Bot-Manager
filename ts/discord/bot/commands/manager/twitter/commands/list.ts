@@ -10,64 +10,58 @@ import { CustomDocs, Nullable } from '@type-manager';
 
 
 
-function call(_params: string[], _server: DiscordServer, message: Discord.Message) {
-	message.channel.send(utils.infoMsg([['Twitter Feed', 'Finding all Twitter Feeds in current Guild.']]))
-	.then(m => {
-		let singleMsg: Discord.Message;
-		if (Array.isArray(m)) singleMsg = m[0];
-		else singleMsg = m;
-		if (singleMsg == null) return;
+async function call(_params: string[], _server: DiscordServer, message: Discord.Message) {
+	let m = await message.channel.send(utils.infoMsg([['Twitter Feed', 'Finding all Twitter Feeds in current Guild.']]));
 
-		let guild = singleMsg.guild!;
+	let singleMsg: Discord.Message;
+	if (Array.isArray(m)) singleMsg = m[0];
+	else singleMsg = m;
 
-		DiscordTwitter.find({ guild_id: guild.id })
-		.exec((err, feeds) => {
-			if (err != null) {
-				singleMsg.edit(utils.errorMsg([['Twitter Feed', 'An error occured while trying to find Twitter Feeds. Please try again in a few moments.']]));
-				return;
-			}
+	if (singleMsg == null) return;
 
-			if (feeds.length == 0) {
-				singleMsg.edit(utils.infoMsg([['Twitter Feed', 'No Twitter Feeds found in current Guild.\nIf you\'d like to add one please use "!rss add <url>"']]));
-				return;
-			}
+	let guild = singleMsg.guild!;
 
-			let selector = utils.createPageSelector(message.member!.id, message.channel)!;
-			selector.setEditing(singleMsg);
+	let feeds = await DiscordTwitter.find({ guild_id: guild.id });
 
-			selector.setFormat([
-				'**Feed Limit:** 0/0',
-				'**Guild:** ' + guild.name,
-				'',
-				'You can choose a channel feed to view more info about it by typing the number before the channe name.​',
-				'',
-				'{page_items}',
-				'',
-				'Always select responsibly.'
-			]);
+	if (feeds.length == 0) {
+		singleMsg.edit(utils.infoMsg([['Twitter Feed', 'No Twitter Feeds found in current Guild.\nIf you\'d like to add one please use "!rss add <url>"']]));
+		return;
+	}
 
-			feeds.forEach((feed, i) => {
-				// const channel = guild.channels.get(feed.channel_id);
-				// TODO: Check to see if channel still exists for selection name.
-				// TODO: Permission checks
+	let selector = utils.createPageSelector(message.member!.id, message.channel)!;
+	selector.setEditing(singleMsg);
 
-				selector.addSelection(String(i + 1), `<#${feed.channel_id}> (Feeds: ${feed.feeds.length})`, (page) => {
-					DiscordTwitter.findOne({ guild_id: guild.id, channel_id: feed.channel_id })
-					.populate('feeds.feed')
-					.exec((err, feed: CustomDocs.discord.DiscordTwitterPopulated) => {
-						if (err != null) {
-							singleMsg.edit(utils.errorMsg([['Twitter Feed', 'An error occured while trying to find Twitter Feed for Channel. Please try again in a few moments.']]));
-							return;
-						}
+	selector.setFormat([
+		'**Feed Limit:** 0/0',
+		'**Guild:** ' + guild.name,
+		'',
+		'You can choose a channel feed to view more info about it by typing the number before the channe name.​',
+		'',
+		'{page_items}',
+		'',
+		'Always select responsibly.'
+	]);
 
-						showChannel(page, feed);
-					});
-				});
+	feeds.forEach((feed, i) => {
+		// const channel = guild.channels.get(feed.channel_id);
+		// TODO: Check to see if channel still exists for selection name.
+		// TODO: Permission checks
+
+		selector.addSelection(String(i + 1), `<#${feed.channel_id}> (Feeds: ${feed.feeds.length})`, async (page) => {
+			DiscordTwitter.findOne({ guild_id: guild.id, channel_id: feed.channel_id })
+			.populate('feeds.feed')
+			.exec((err, feed: CustomDocs.discord.DiscordTwitterPopulated) => {
+				if (err != null) {
+					singleMsg.edit(utils.errorMsg([['Twitter Feed', 'An error occured while trying to find Twitter Feed for Channel. Please try again in a few moments.']]));
+					return;
+				}
+
+				showChannel(page, feed);
 			});
-
-			selector.display();
 		});
 	});
+
+	selector.display();
 }
 
 

@@ -33,7 +33,7 @@ class Music extends Command {
 		this.description = 'Used to manage music in voice channels.';
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) return commands.help.call(params, server, message);
 
 		switch (params.shift()!.toLowerCase()) {

@@ -15,7 +15,7 @@ import Command = require('@discord/bot/command');
 import PERMISSIONS = require('../perms');
 import { DiscordBot } from '@type-manager';
 
-function call(params: string[], server: DiscordServer, message: Discord.Message) {
+async function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMISSIONS.GROUP)) return Command.noPermsMessage('Permissions');
 
 	let name = params.shift();
@@ -72,7 +72,7 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			let permissionsFromGroup = <DiscordBot.PermissionsGroup>server.getPermsFrom('groups', name);
 			if (permissionsFromGroup == null) return Command.error([['Permissions', 'Group not valid']]);
 
-			message.channel.send(Command.info([
+			await message.channel.send(Command.info([
 				[	'Permissions',
 					[ 'Group: ' + permissionsFromGroup.displayName, 'Name: ' + permissionsFromGroup.name, 'Perms:' ]
 					.concat(permissionsFromGroup.perms.map(p => ' - ' + p))
@@ -98,6 +98,8 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 	}
 
 	server.save();
+
+	return Promise.resolve();
 }
 
 export {

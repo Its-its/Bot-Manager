@@ -2,8 +2,8 @@ import Discord = require('discord.js');
 import DiscordServer = require('../../../../GuildServer');
 
 
-function call(params: string[], server: DiscordServer, message: Discord.Message) {
-	//
+async function call(params: string[], server: DiscordServer, message: Discord.Message) {
+	return Promise.resolve();
 }
 
 export {

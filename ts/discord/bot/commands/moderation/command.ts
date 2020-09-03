@@ -27,7 +27,7 @@ class Comm extends Command {
 		this.perms = Object.values(PERMS);
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (params.length == 0) {
 			return Command.info([[
 				'Command',
@@ -46,9 +46,9 @@ class Comm extends Command {
 			case 'list': {
 				if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Command');
 
-				message.channel.send(Command.table([ 'PID', 'Alias' ], server.commands.map(c => [c.pid, c.alias.join(', ')])));
+				await message.channel.send(Command.table([ 'PID', 'Alias' ], server.commands.map(c => [c.pid, c.alias.join(', ')])));
 
-				return;
+				break;
 			}
 
 			case 'create': {
@@ -95,6 +95,8 @@ class Comm extends Command {
 				break;
 			}
 		}
+
+		return Promise.resolve();
 	}
 }
 

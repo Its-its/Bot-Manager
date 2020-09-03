@@ -12,7 +12,7 @@ function isEnabled(server: Server): boolean {
 }
 
 
-function onDidCallCommand(bot_id: string, message: Discord.Message, server: Server): boolean {
+async function onDidCallCommand(bot_id: string, message: Discord.Message, server: Server): Promise<boolean> {
 	if (message.author.bot) return false;
 
 	if (server.memberIgnored(message.member!.id)) return false;
@@ -46,6 +46,7 @@ function onDidCallCommand(bot_id: string, message: Discord.Message, server: Serv
 
 		if (commandMessage.length == 0) return true;
 
+		// Get the command name. ['command', 'other stuff here']
 		let commName = commandMessage.split(' ', 2)[0].toLowerCase();
 
 		// Check for alias's.
@@ -71,10 +72,12 @@ function onDidCallCommand(bot_id: string, message: Discord.Message, server: Serv
 		// Not admin? not enabled?
 		// if (!message.member.hasPermission('ADMINISTRATOR') && (!isEnabled(server) && !server.userHasParentPerm(bot_id, 'commands.' + comm))) return true;
 
-		try {
-			CommandManager.parseMessageForCmd(defaultCommands, server, commandMessage, message, v => parseOptions(message, server, v));
-		} catch (e) {
-			console.error(e);
+		let parsed = await CommandManager.parseMessageForCmd(defaultCommands, server, commandMessage, message);
+
+		if (parsed != null) {
+			for (let i = 0; i < parsed.length; i++) {
+				parseOptions(message, server, parsed[i]);
+			}
 		}
 
 		return true;
@@ -90,6 +93,8 @@ function onDidCallCommand(bot_id: string, message: Discord.Message, server: Serv
 	return false;
 }
 
+// If something is returned from commands parse it.
+// Same for phrases.
 function parseOptions(message: Discord.Message, server: Server, value: DiscordBot.PhraseResponses) {
 	if (typeof value != 'string') {
 		switch(value.type) {

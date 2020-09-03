@@ -23,10 +23,12 @@ class Ping extends Command {
 		// this.perms = Object.values(PERMS);
 	}
 
-	public call(_params: string[], _server: DiscordServer, message: Discord.Message) {
-		message.channel.send([
+	public async call(_params: string[], _server: DiscordServer, message: Discord.Message) {
+		await message.channel.send([
 			'Temporarily Disabled.'
 		]);
+
+		return Promise.resolve();
 
 		// let client = message.client;
 

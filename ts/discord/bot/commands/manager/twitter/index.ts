@@ -22,7 +22,7 @@ class Twitter extends Command {
 		this.description = 'Twitter Feeds.';
 	}
 
-	public call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		let callType = params.shift();
 
 		if (callType == null || callType.toLowerCase() == 'help') return comm.Help.call(params, server, message);

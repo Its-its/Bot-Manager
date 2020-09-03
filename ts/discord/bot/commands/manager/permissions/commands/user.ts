@@ -15,7 +15,7 @@ import GlobalCommands = require('../../../index');
 import PERMISSIONS = require('../perms');
 
 
-function call(params: string[], server: DiscordServer, message: Discord.Message) {
+async function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMISSIONS.USER)) return Command.noPermsMessage('Permissions');
 
 	let userIdFull = params.shift();
@@ -75,9 +75,9 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		let wasPermAdded = server.addPermTo('users', userIdFull, permissionOrCalledCmd);
 
 		if (wasPermAdded) {
-			message.channel.send(Command.error([['Permissions', 'Added ' + permissionOrCalledCmd + ' to ' + userIdFull]]));
+			await message.channel.send(Command.error([['Permissions', 'Added ' + permissionOrCalledCmd + ' to ' + userIdFull]]));
 		} else {
-			message.channel.send(Command.error([['Permissions', 'Failed']]));
+			await message.channel.send(Command.error([['Permissions', 'Failed']]));
 		}
 	} else if (calledCmd == 'remove') {
 		if (!server.userHasPerm(message.member!, PERMISSIONS.USER_REMOVE)) return Command.noPermsMessage('Permissions');
@@ -87,9 +87,9 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 		let wasPermAdded = server.removePermFrom('users', userIdFull, permissionOrCalledCmd);
 
 		if (wasPermAdded) {
-			message.channel.send(Command.error([['Permissions', 'Removed ' + permissionOrCalledCmd + ' from ' + userIdFull]]));
+			await message.channel.send(Command.error([['Permissions', 'Removed ' + permissionOrCalledCmd + ' from ' + userIdFull]]));
 		} else {
-			message.channel.send(Command.error([['Permissions', 'Failed']]));
+			await message.channel.send(Command.error([['Permissions', 'Failed']]));
 		}
 	} else if (calledCmd == 'group') {
 		let groupName = params.shift();
@@ -101,9 +101,9 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			let wasPermAdded = server.addGroupTo('users', userIdFull, groupName.toLowerCase());
 
 			if (wasPermAdded) {
-				message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + userIdFull]]));
+				await message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + userIdFull]]));
 			} else {
-				message.channel.send(Command.error([['Permissions', 'Invalid Group name']]));
+				await message.channel.send(Command.error([['Permissions', 'Invalid Group name']]));
 			}
 		} else if (permissionOrCalledCmd == 'remove') {
 			if (!server.userHasPerm(message.member!, PERMISSIONS.GROUP_REMOVE)) return Command.noPermsMessage('Permissions');
@@ -111,14 +111,16 @@ function call(params: string[], server: DiscordServer, message: Discord.Message)
 			let wasPermAdded = server.removeGroupFrom('users', userIdFull, groupName.toLowerCase());
 
 			if (wasPermAdded) {
-				message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + userIdFull]]));
+				await message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + userIdFull]]));
 			} else {
-				message.channel.send(Command.error([['Permissions', 'Group does not exist']]));
+				await message.channel.send(Command.error([['Permissions', 'Group does not exist']]));
 			}
 		} else return Command.error([['Permissions', 'Invalid Parameters']]);
 	}
 
 	server.save();
+
+	return Promise.resolve();
 }
 
 export {
