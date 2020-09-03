@@ -6,6 +6,7 @@ import utils = require('../../../utils');
 import Command = require('../../command');
 
 const maxBulkDeleteTime = (1000 * 60 * 60 * 24 * 14);
+const MAX_PRUNE_SIZE = 100;
 
 
 const PERMS = {
@@ -40,6 +41,7 @@ class Prune extends Command {
 				[
 					'Command Usage',
 					[
+						'<=100',
 						'#channel [all/<=100]',
 						// 'user <id/@> [<=100]',
 						'channel [id/#] [all/<=100]'
@@ -49,12 +51,26 @@ class Prune extends Command {
 		}
 
 		let first_arg = params.shift()!;
+		let raw_channel = params.shift();
 
 		if (first_arg != 'user' && first_arg != 'channel') {
 			let type = server.idType(first_arg);
+
 			if (type != null) {
-				if (type == 'channel') params = ['channel'].concat(params);
-				else if (type == 'member') params = ['user'].concat(params);
+				if (type == 'channel') {
+					params = ['channel'].concat(params);
+				} else if (type == 'member') {
+					params = ['user'].concat(params);
+				}
+			} else {
+				let val = parseInt(first_arg);
+
+				// Check if number.
+				if (!isNaN(val) && val <= MAX_PRUNE_SIZE) {
+					raw_channel = message.channel.id;
+					params = [first_arg];
+					first_arg = 'channel';
+				}
 			}
 		}
 
@@ -70,19 +86,23 @@ class Prune extends Command {
 			case 'channel': {
 				if (!this.hasPerms(message.member!, server, PERMS.CHANNEL)) return Command.noPermsMessage('Prune');
 
-				let channelId = server.strpToId(params.shift());
-				let reason = params.shift();
-				let pruneLimit = 100;
+				let channelId = server.strpToId(raw_channel);
+				let amount = params.shift();
 
-				if (reason == null) return Command.error([['Prune', 'Invalid Params']]);
+				let pruneLimit = MAX_PRUNE_SIZE;
+
+				if (amount == null) return Command.error([['Prune', 'Invalid Params']]);
 
 				if (channelId == null) {
 					channelId = message.channel.id;
-				} else if (reason != 'all') {
-					pruneLimit = parseInt(reason);
-					if (Number.isNaN(pruneLimit)) pruneLimit = 100;
+				} else if (amount.toLowerCase() != 'all') {
+					pruneLimit = parseInt(amount);
+
+					if (Number.isNaN(pruneLimit)) pruneLimit = MAX_PRUNE_SIZE;
+
 					if (message.channel.id == channelId) pruneLimit++;
-					if (pruneLimit > 100) pruneLimit = 100;
+
+					if (pruneLimit > MAX_PRUNE_SIZE) pruneLimit = MAX_PRUNE_SIZE;
 				}
 
 				let channelBeingPruned = <Discord.TextChannel>message.guild!.channels.cache.get(channelId);
@@ -90,7 +110,7 @@ class Prune extends Command {
 				if (channelBeingPruned == null) return Command.error([[ 'Prune', 'Channel does not exist!' ]]);
 				if (channelBeingPruned.type != 'text') return Command.error([[ 'Prune', 'Channel must be text only!' ]]);
 
-				if (reason == 'all') {
+				if (amount.toLowerCase() == 'all') {
 					if (!message.member!.hasPermission([ 'MANAGE_CHANNELS' ])) {
 						await message.channel.send(Command.error([['Prune', 'Missing Manage Channels Perms!']]));
 						break;
@@ -98,7 +118,10 @@ class Prune extends Command {
 						await recreateChannel(message.channel, channelBeingPruned);
 					}
 				} else {
-					let editMessage = await message.channel.send(Command.info([['Prune', 'Fetching Messages']]))
+					let editMessage = await message.channel.send(Command.info([['Prune', 'Fetching Messages...']]))
+
+					await utils.asyncTimeout(1000);
+
 					await fetchMessages(channelBeingPruned, pruneLimit, Array.isArray(editMessage) ? editMessage[0] : editMessage);
 				}
 
@@ -121,6 +144,8 @@ async function fetchMessages(channel: Discord.TextChannel, limit: number, editMe
 	// TODO: Instead of replacing, append message?
 	let newEditMessage = await editMessage.edit(Command.info([['Prune', 'Bulk Deleting messages.']]));
 
+	await utils.asyncTimeout(1000);
+
 	let [v, error] = await utils.asyncCatch(channel.bulkDelete(filtered));
 
 	if (v != null) {
@@ -131,7 +156,7 @@ async function fetchMessages(channel: Discord.TextChannel, limit: number, editMe
 
 			await singleDeletions(singles.array(), newEditMessage);
 		} else {
-			await newEditMessage.edit(Command.success([[ 'Prune', 'Deleted a total of ' + deleted + ' Messages from <#' + channel.id + '>' ]]));
+			await newEditMessage.edit(Command.success([[ 'Prune', `Deleted a total of ${deleted} Messages from <#${channel.id}>` ]]));
 		}
 	} else if (error != null) {
 		await newEditMessage.edit(Command.error([
@@ -140,7 +165,7 @@ async function fetchMessages(channel: Discord.TextChannel, limit: number, editMe
 				[
 					'An error occured bulk deleting!',
 					error.message,
-					'Attempting normal deletion in 5 seconds.'
+					'Attempting normal single deletions in 5 seconds...'
 				].join('\n')
 			]
 		]));
