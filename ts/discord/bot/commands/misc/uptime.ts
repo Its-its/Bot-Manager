@@ -19,28 +19,13 @@ class Uptime extends Command {
 	}
 
 	public async call(_params: string[], _server: DiscordServer, message: Discord.Message) {
+		let client = message.client;
+
 		await message.channel.send([
-			'Temporarily Disabled.'
-		]);
+			`Uptime ${Math.floor((client.uptime || 0)/(1000 * 60 * 60 * 24))} Hours`
+		], { code: 'http' });
 
 		return Promise.resolve();
-
-		// let client = message.client;
-
-		// if (client.shard != null && client.shard.count != 0) {
-		// 	client.shard.broadcastEval('let opts = { id: this.shard.id, uptime: this.uptime }; opts;')
-		// 	.then(shards => {
-		// 		let output = [];
-
-		// 		for (let i = 0; i < shards.length; i++) {
-		// 			let shard = shards[i];
-		// 			output.push(`Shard ${shard.id}: Uptime ${Math.floor((client.uptime || 0)/(1000 * 60 * 60 * 24))} Hours`);
-		// 		}
-
-		// 		message.channel.send(output, { code: 'http' });
-		// 	})
-		// 	.catch(e => console.error(e));
-		// }
 	}
 }
 
