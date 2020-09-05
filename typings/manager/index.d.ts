@@ -9,9 +9,8 @@ declare module 'connect-mongo';
 declare module 'mogan';
 declare module 'express-session';
 
-type Nullable<T> = T | null;
-type Optional<T> = T | undefined;
-type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
+export type Nullable<T> = T | null;
+export type Optional<T> = T | undefined;
 
 
 declare interface CommandClient {
@@ -887,14 +886,120 @@ declare namespace DiscordBot {
 	type PLUGIN_NAMES = 'commands' | 'logs' | 'leveling' | 'events';
 
 	interface Plugin {
-
 		logs?: PluginLogs;
 		commands?: PluginItem;
 		leveling?: PluginItem;
-		events?: PluginItem;
+		events?: PluginEvents.Plugin;
 
-		[name: string]: PluginItem;
+		[name: string]: Optional<PluginItem>;
 	}
+
+	// Plugin Events
+
+	namespace PluginEvents {
+		interface Plugin extends PluginItem {
+			groups?: Grouping[];
+		}
+
+		interface Grouping {
+			enabled: boolean;
+			id: number;
+			title: string;
+
+			variables?: { [name: string]: string };
+
+			onEvent?: BaseEvents[];
+		}
+
+		type BaseEvents =
+			  Event.EventReact
+			| Event.EventRole
+			| Condition.GroupCondition
+			| EventWait;
+
+		type EventTypes =
+			  'react_add'
+			| 'react_remove'
+			| 'role_add'
+			| 'role_remove'
+			| 'member_add'
+			| 'member_remove';
+
+
+		interface EventWait {
+			type: 'wait';
+			duration: number;
+		}
+
+
+		// Event type Events
+		namespace Event {
+			// Reactions
+			interface EventReact {
+				type: 'event';
+				name: 'react_add' | 'react_remove';
+
+				reactionName: string;
+				messageId?: string;
+
+				thenDo?: BaseEvents[];
+			}
+
+			interface EventRole {
+				type: 'event';
+				name: 'role_add' | 'role_remove';
+
+				id: string;
+
+				// user has to already have these role ids.
+				existingRoleId?: string[];
+
+				thenDo?: BaseEvents[];
+			}
+
+			interface GroupEventContainer {
+				type: 'event';
+				name: EventTypes;
+
+				thenDo: BaseEvents[];
+			}
+		}
+
+
+
+		// Event type Conditions
+		namespace Condition {
+			type EventConditionTypes = 'if' | 'or';
+
+			interface GroupCondition {
+				type: 'condition';
+				name: EventConditionTypes;
+
+				conditions: EventCondition[];
+				thenDo: BaseEvents[];
+			}
+
+
+			type EventCondition = EventConditionRole | EventConditionChannel;
+
+
+			type ConditionEvent = 'role' | 'channel';
+
+			interface EventConditionRole {
+				type: 'role',
+				isMissing: boolean;
+				id: string;
+			}
+
+			interface EventConditionChannel {
+				type: 'channel',
+				id: string;
+			}
+		}
+	}
+
+
+	// Plugin Logs
 
 	interface OldPluginLogs extends PluginItem {
 		textChannelId?: string;
@@ -915,6 +1020,8 @@ declare namespace DiscordBot {
 		// 0 Add, 1 Rem, 2 Add/Rem
 		filterMembersAddRemove?: number;
 	}
+
+	// Plugin Item
 
 	interface PluginItem {
 		enabled: boolean;

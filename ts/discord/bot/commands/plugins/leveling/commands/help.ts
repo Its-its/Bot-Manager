@@ -1,7 +1,7 @@
 import Discord = require('discord.js');
 import DiscordServer = require('@discord/bot/GuildServer');
 
-import util = require('@discord/bot/../utils');
+import util = require('@discord/utils');
 
 async function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	await message.channel.send(util.infoMsg([

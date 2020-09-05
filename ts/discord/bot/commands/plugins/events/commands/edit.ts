@@ -10,16 +10,78 @@ const ID_TO_NAME = {
 	react_add: 'React Add',
 	member_add: 'Member Add',
 	member_remove: 'Member Remove'
-}
+};
+
+
+const TYPES = [
+	'react_add', 'react_remove',
+	'member_add', 'member_remove'
+];
+
+// edit <id>
+
 
 async function call(params: string[], server: DiscordServer, message: Discord.Message) {
+	let raw_id = params.shift();
+
+	if (raw_id != null) {
+		let id = parseInt(raw_id);
+
+		if (!isNaN(id)) {
+			if (server.plugins.events!.groups!.find(g => g.id == id) != null) {
+				showEditPage(id, message, server);
+			} else {
+				await message.channel.send(utils.errorMsg([
+					[
+						'Events',
+						'Unable to find event grouping with specified ID.'
+					]
+				]));
+			}
+		} else {
+			await message.channel.send(utils.errorMsg([
+				[
+					'Events',
+					'Not a valid number'
+				]
+			]));
+		}
+	} else {
+		await message.channel.send(utils.errorMsg([
+			[
+				'Events',
+				'Incorrect Arguments'
+			]
+		]));
+	}
+
 	return Promise.resolve();
 }
 
-function showEditPage(compiled: DiscordBot.ListenEvents, senderMessage: Discord.Message, server: DiscordServer) {
-	if (!server.userHasPerm(senderMessage.member!,PERMS.EDIT)) return utils.noPermsMessage('Events');
+function showEditPage(event_id: number, senderMessage: Discord.Message, server: DiscordServer) {
+	if (!server.userHasPerm(senderMessage.member!, PERMS.EDIT)) return utils.noPermsMessage('Events');
 
-	const selector = utils.createPageSelector(senderMessage.author.id, senderMessage.channel)!;
+	let group = server.plugins.events!.groups!.find(g => g.id == event_id)!;
+
+	let selector = utils.createPageSelector(senderMessage.author.id, senderMessage.channel)!;
+
+	selector.setFormat([
+		`You are now editing "${group.title}"`,
+		'',
+		'{page_items}'
+	]);
+
+	selector.addSelection('variables', 'Changes the event specific variables you can access throughout.', page => {
+		//
+	});
+
+	selector.display();
+}
+
+function showEditEventPage(compiled: DiscordBot.ListenEvents, senderMessage: Discord.Message, server: DiscordServer) {
+	if (!server.userHasPerm(senderMessage.member!, PERMS.EDIT)) return utils.noPermsMessage('Events');
+
+	let selector = utils.createPageSelector(senderMessage.author.id, senderMessage.channel)!;
 
 	selector.setFormat([
 		`Editing event on ${ID_TO_NAME[compiled.type]}. Your on called events are below.`,
@@ -190,5 +252,5 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 
 export {
 	call,
-	showEditPage
+	showEditEventPage as showEditPage
 };
