@@ -683,10 +683,21 @@ async function asyncCatchError<P>(value: Promise<P>): Promise<any | null> {
 /**
  * Wraps a function to catch errors. Useful for function blocks that don't support async.
  */
-function asyncFnWrapper<P, V extends any[]>(value: (...args: V) => Promise<P>): (...args: V) => void {
+function asyncFnWrapper<P, V extends any[]>(
+	complete: (...args: V) => Promise<P>,
+	ifError?: (error: any, ...args: V) => Promise<P>
+): (...args: V) => void {
 	return function(...args) {
-		value.call(null, ...args)
-		.catch(e => console.error(e));
+		complete.call(null, ...args)
+		.catch(e => {
+			if (ifError != null) {
+				// @ts-ignore
+				ifError.call(null, e, ...args)
+				.catch(console.error);
+			} else {
+				console.error(e)
+			}
+		});
 	}
 }
 

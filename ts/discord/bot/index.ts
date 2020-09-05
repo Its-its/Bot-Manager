@@ -28,6 +28,8 @@ import Server = require('./GuildServer');
 
 import limits = require('../limits');
 
+import { asyncFnWrapper, asyncCatch, asyncCatchError } from '../utils';
+
 
 commandPlugin.defaultCommands.initCommands();
 
@@ -103,14 +105,19 @@ function shardListener() {
 }
 
 
-client.on('roleDelete', role => {
-	guildClient.get(role.guild.id, server => {
+client.on('roleDelete', asyncFnWrapper(
+	async role => {
+		let server = await guildClient.get(role.guild.id);
+
 		if (server == null) return;
 
-		PunishmentCmd.onRoleDelete(role, server);
+		await PunishmentCmd.onRoleDelete(role, server);
 		levelsPlugin.roleRemove(role, server);
-	});
-});
+	},
+	async async_err => {
+		logger.error(async_err);
+	}
+));
 
 
 // client.on('roleCreate', (role) => {
@@ -125,58 +132,56 @@ client.on('rateLimit', rateLimit => {
 });
 
 
-client.on('message', msg => {
-	// Possible b/c of webhooks ??
-	if (msg.member == null) return;
+client.on('message', asyncFnWrapper(
+	async msg => {
+		// Possible b/c of webhooks ??
+		if (msg.member == null) return;
 
-	// TODO: Temp. Only allow the bot to respond in guilds.
-	if (msg.guild == null) return;
+		// TODO: Temp. Only allow the bot to respond in guilds.
+		if (msg.guild == null) return;
 
-	// Bot?
-	if (msg.member.user == null || msg.member.user.bot) return;
+		// Bot?
+		if (msg.member.user == null || msg.member.user.bot) return;
 
-	try {
-		guildClient.get(msg.guild!.id, server => {
-			if (server == null) {
-				server = new Server(msg.guild!.id, {
-					region: msg.guild!.region,
-					name: msg.guild!.name,
-					iconURL: msg.guild!.iconURL() || '',
-					createdAt: msg.guild!.createdTimestamp,
-					memberCount: msg.guild!.memberCount,
-					ownerID: msg.guild!.ownerID
-				});
+		let server = await guildClient.get(msg.guild!.id);
 
-				server.save().catch(console.error);
-			}
-
-			if (server.channelIgnored(msg.channel.id)) return;
-
-			commandPlugin.onDidCallCommand(client.user!.id, msg, server)
-			.then(calledCommand => {
-				if (calledCommand) {
-					statistics.guild_bot_command_count++;
-				} else {
-					statistics.guild_user_chat_count++;
-
-					BlacklistCmd.onMessage(msg, server!);
-
-					levelsPlugin.onMessage(msg, server!);
-				}
-			})
-			.catch(e => {
-				console.error(e);
-				msg.channel.send('An Error Occured: ' + e);
+		if (server == null) {
+			server = new Server(msg.guild!.id, {
+				region: msg.guild!.region,
+				name: msg.guild!.name,
+				iconURL: msg.guild!.iconURL() || '',
+				createdAt: msg.guild!.createdTimestamp,
+				memberCount: msg.guild!.memberCount,
+				ownerID: msg.guild!.ownerID
 			});
 
-		});
-	} catch (error) {
-		logger.error(error);
-	}
-});
+			await server.save();
+		}
 
-client.on('guildUpdate', (oldGuild, newGuild) => {
-	guildClient.get(newGuild.id, server => {
+		if (server.channelIgnored(msg.channel.id)) return;
+
+		let calledCommand = await commandPlugin.onDidCallCommand(client.user!.id, msg, server);
+
+		if (calledCommand) {
+			statistics.guild_bot_command_count++;
+		} else {
+			statistics.guild_user_chat_count++;
+
+			await BlacklistCmd.onMessage(msg, server!);
+			levelsPlugin.onMessage(msg, server!);
+		}
+	},
+	async (async_err, msg) => {
+		logger.error(async_err);
+
+		msg.channel.send('An Error Occured: ' + async_err);
+	}
+));
+
+client.on('guildUpdate', asyncFnWrapper(
+	async (oldGuild, newGuild) => {
+		let server = await guildClient.get(newGuild.id);
+
 		if (server == null) return;
 
 		let edited = false;
@@ -212,132 +217,147 @@ client.on('guildUpdate', (oldGuild, newGuild) => {
 			edited = true;
 		}
 
-		if (edited) server.save().catch(console.error);
-	});
-});
+		if (edited) {
+			await server.save();
+		}
+	},
+	async async_err => {
+		logger.error(async_err);
+	}
+));
 
-client.on('guildDelete', (guild) => {
-	client.shard!.send('update');
+client.on('guildDelete', asyncFnWrapper(
+	async guild => {
+		logger.info('Left Server: ' + guild.name);
 
-	logger.info('Left Server: ' + guild.name);
+		await client.shard!.send('update');
 
-	limits.guildDelete(guild.id);
 
-	intervalPlugin.onGuildDelete(guild);
-	PunishmentCmd.onGuildRemove(guild);
+		limits.guildDelete(guild.id);
 
-	DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: true } }).exec();
-	guildClient.removeFromCache(guild.id, () => {});
-});
+		intervalPlugin.onGuildDelete(guild);
+		await PunishmentCmd.onGuildRemove(guild);
+
+		await DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: true } }).exec();
+		await guildClient.removeFromCache(guild.id);
+	},
+	async async_err => {
+		logger.error(async_err);
+	}
+));
 
 // Server joined
-client.on('guildCreate', guild => {
-	client.shard!.send('update');
+client.on('guildCreate', asyncFnWrapper(
+	async guild => {
+		await client.shard!.send('update');
 
-	logger.info('Joined Server: ' + guild.name);
+		logger.info('Joined Server: ' + guild.name);
 
-	try {
-		Validation.findOneAndRemove({ listener_id: guild.id }, (err, validation: any) => {
-			if (err != null) return logger.error(err);
+		let validation: any = await Validation.findOneAndRemove({ listener_id: guild.id });
+		// if (validation == null) {
+		// 	guild.leave()
+		// 	.catch(e => logger.error(e));
+		// 	return;
+		// }
 
-			// if (validation == null) {
-			// 	guild.leave()
-			// 	.catch(e => logger.error(e));
-			// 	return;
-			// }
+		let exists = await guildClient.existsInCache(guild.id);
 
-			guildClient.existsInCache(guild.id, exists => {
-				if (exists) return;
+		if (exists) return;
 
-				DiscordServers.findOne({ server_id: guild.id }, (err, server) => {
-					if (err != null) logger.error('DiscordServers:', err);
+		let [server, err] = await asyncCatch(DiscordServers.findOne({ server_id: guild.id }).exec());
 
-					let newServer = (server == null);
+		if (err != null) logger.error('DiscordServers:', err);
 
-					// Server exists? Update DB, update and add to redis.
-					if (!newServer) {
-						DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: false } }).exec();
-						guildClient.updateServerFromDB(guild.id, () => {
-							logger.info('Grabbed From DB!');
-						});
-					}
+		let newServer = (server == null);
 
-					if (validation != null) {
-						Bots.findOne({ uid: validation.bot_id }, (err, item) => {
-							if (err != null) logger.error('Bots:', err);
-							if (item == null) return // TODO: Create without bot.
+		// Server exists? Update DB, update and add to redis.
+		if (!newServer) {
+			await DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: false } }).exec();
+			await guildClient.updateServerFromDB(guild.id);
+		}
 
-							if (newServer) {
-								server = new DiscordServers({
-									user_id: validation.user_id,
-									bot_id: item.id,
-									server_id: validation.listener_id,
-									key: uniqueID(16)
-								});
-							}
+		if (validation != null) {
+			let [item, err1] = await asyncCatch(Bots.findOne({ uid: validation.bot_id }).exec());
 
-							item.is_active = true;
+			if (err1 != null) logger.error('Bots:', err1);
+			if (item == null) return // TODO: Create without bot.
 
-							item.botType = Bots.appName('discord');
-							item.botId = server!.id;
-							item.displayName = guild.name;
-
-							item.save((err) => {
-								if (err != null) logger.error('Bots.save:', err);
-
-								if (newServer) {
-									server!.save(err => {
-										if (err != null) logger.error('DiscordServers.save:', err);
-										new Server(guild.id, {
-											region: guild.region,
-											name: guild.name,
-											iconURL: guild.iconURL() || '',
-											createdAt: guild.createdTimestamp,
-											memberCount: guild.memberCount,
-											ownerID: guild.ownerID
-										}).save().catch(console.error);
-									});
-								}
-							});
-						});
-					} else {
-						if (newServer) {
-							server = new DiscordServers({
-								// user_id: validation.user_id,
-								// bot_id: item.id,
-								server_id: guild.id,
-								key: uniqueID(16)
-							});
-
-							server.save(err => {
-								if (err != null) logger.error('DiscordServers.save:', err);
-								new Server(guild.id, {
-									region: guild.region,
-									name: guild.name,
-									iconURL: guild.iconURL() || '',
-									createdAt: guild.createdTimestamp,
-									memberCount: guild.memberCount,
-									ownerID: guild.ownerID
-								}).save().catch(console.error);
-							});
-						}
-					}
+			if (newServer) {
+				server = new DiscordServers({
+					user_id: validation.user_id,
+					bot_id: item.id,
+					server_id: validation.listener_id,
+					key: uniqueID(16)
 				});
-			});
-		});
-	} catch (error) {
-		logger.error(error);
+			}
+
+			item.is_active = true;
+
+			item.botType = Bots.appName('discord');
+			item.botId = server!.id;
+			item.displayName = guild.name;
+
+			let err2 = await asyncCatchError(item.save());
+
+			if (err2 != null) logger.error('Bots.save:', err);
+
+			if (newServer) {
+				let err3 = await asyncCatchError(server!.save());
+
+				if (err3 != null) logger.error('DiscordServers.save:', err3);
+
+				let model = new Server(guild.id, {
+					region: guild.region,
+					name: guild.name,
+					iconURL: guild.iconURL() || '',
+					createdAt: guild.createdTimestamp,
+					memberCount: guild.memberCount,
+					ownerID: guild.ownerID
+				});
+
+				await model.save();
+			}
+		} else {
+			if (newServer) {
+				server = new DiscordServers({
+					// user_id: validation.user_id,
+					// bot_id: item.id,
+					server_id: guild.id,
+					key: uniqueID(16)
+				});
+
+				let err = await asyncCatchError(server!.save());
+
+				if (err != null) logger.error('DiscordServers.save:', err);
+
+				let model = new Server(guild.id, {
+					region: guild.region,
+					name: guild.name,
+					iconURL: guild.iconURL() || '',
+					createdAt: guild.createdTimestamp,
+					memberCount: guild.memberCount,
+					ownerID: guild.ownerID
+				});
+
+				await model.save();
+			}
+		}
+	},
+	async async_err => {
+		logger.error(async_err);
 	}
-});
+));
 
-client.on('channelDelete', channel => {
-	intervalPlugin.onChannelDelete(channel);
+client.on('channelDelete', asyncFnWrapper(
+	async channel => {
+		intervalPlugin.onChannelDelete(channel);
 
-	if (channel.type != 'dm' && channel.type != 'group') {
-		guildClient.get((<Discord.GuildChannel>channel).guild.id, server => {
+		if (channel.type == 'text' || channel.type == 'category' || channel.type == 'voice') {
+			let server = await guildClient.get((<Discord.GuildChannel>channel).guild.id);
+
 			if (server == null) return;
 
-			BlacklistCmd.onChannelDelete(<Discord.GuildChannel>channel, server);
+			await BlacklistCmd.onChannelDelete(<Discord.GuildChannel>channel, server);
 
 			let needsSaving = false;
 
@@ -346,85 +366,121 @@ client.on('channelDelete', channel => {
 				needsSaving = true;
 			}
 
-			if (needsSaving) server.save().catch(console.error);
-		});
+			if (needsSaving) {
+				await server.save();
+			}
+		}
+	},
+	async async_err => {
+		logger.error(async_err);
 	}
-});
+));
 
-client.on('channelCreate', channel => {
-	if (channel.type != 'dm' && channel.type != 'group') {
-		guildClient.get((<Discord.GuildChannel>channel).guild.id, server => {
+client.on('channelCreate', asyncFnWrapper(
+	async channel => {
+		if (channel.type == 'text' || channel.type == 'category' || channel.type == 'voice') {
+			let server = await guildClient.get((<Discord.GuildChannel>channel).guild.id);
+
 			if (server == null) return;
-			PunishmentCmd.onChannelCreate(<Discord.GuildChannel>channel, server);
-		});
+
+			await PunishmentCmd.onChannelCreate(<Discord.GuildChannel>channel, server);
+		}
+	},
+	async async_err => {
+		logger.error(async_err);
 	}
-});
+));
 
 
-client.on('messageDelete', (message) => {
-	logsPlugin.messageDelete(message);
-});
+client.on('messageDelete', asyncFnWrapper(
+	async message => {
+		await logsPlugin.messageDelete(message);
+	},
+	async async_err => {
+		logger.error(async_err);
+	}
+));
 
-client.on('messageDeleteBulk', (messages) => {
-	logsPlugin.messageDeleteBulk(messages);
-});
+client.on('messageDeleteBulk', asyncFnWrapper(
+	async message => {
+		await logsPlugin.messageDeleteBulk(message);
+	},
+	async async_err => {
+		logger.error(async_err);
+	}
+));
 
-client.on('messageUpdate', (oldMessage, newMessage) => {
-	logsPlugin.messageUpdate(oldMessage, newMessage);
-});
+client.on('messageUpdate', asyncFnWrapper(
+	async (oldMessage, newMessage) => {
+		await logsPlugin.messageUpdate(oldMessage, newMessage);
+	},
+	async async_err => {
+		logger.error(async_err);
+	}
+));
 
-client.on('messageReactionAdd', (reaction, user) => {
-	try {
-		guildClient.get(reaction.message.guild!.id, server => {
+client.on('messageReactionAdd', asyncFnWrapper(
+	async (reaction, user) => {
+			let server = await guildClient.get(reaction.message.guild!.id);
+
 			if (server == null) return;
+
 			levelsPlugin.onReactionAdd(user, reaction, server);
-		});
-	} catch (error) {
-		logger.error(error);
+	},
+	async async_err => {
+		logger.error(async_err);
 	}
-});
+));
 
-client.on('messageReactionRemove', (reaction, user) => {
-	try {
-		guildClient.get(reaction.message.guild!.id, server => {
-			if (server == null) return;
-			levelsPlugin.onReactionRemove(user, reaction, server);
-		});
-	} catch (error) {
-		logger.error(error);
+client.on('messageReactionRemove', asyncFnWrapper(
+	async (reaction, user) => {
+		let server = await guildClient.get(reaction.message.guild!.id);
+
+		if (server == null) return;
+
+		levelsPlugin.onReactionRemove(user, reaction, server);
+	},
+	async async_err => {
+		logger.error(async_err);
 	}
-});
+));
 
 // client.on('guildMemberAdd', guildMember => {
 // 	logsPlugin.guildMemberAdd(guildMember);
 // });
 
-client.on('guildMemberRemove', guildMember => {
-	levelsPlugin.memberLeave(guildMember);
-	PunishmentCmd.onGuildMemberRemove(guildMember);
-	// logsPlugin.guildMemberRemove(guildMember);
-});
-
-client.on('guildMemberUpdate', (oldUser, newUser) => {
-	if (oldUser.roles.cache.size != newUser.roles.cache.size) {
-		try {
-			guildClient.get(oldUser.guild.id, server => {
-				if (server == null) return;
-
-				if (newUser.roles.cache.size < oldUser.roles.cache.size) {
-					let removed = oldUser.roles.cache.filter(role => !newUser.roles.cache.has(role.id));
-					PunishmentCmd.onGuildMemberRoleRemove(newUser, removed.array(), server);
-					// logger.info(removed);
-				} else {
-					let added = newUser.roles.cache.filter(role => !oldUser.roles.cache.has(role.id));
-					// logger.info(added);
-				}
-			});
-		} catch (error) {
-			logger.error(error);
-		}
+client.on('guildMemberRemove', asyncFnWrapper(
+	async guildMember => {
+		levelsPlugin.memberLeave(guildMember);
+		await PunishmentCmd.onGuildMemberRemove(guildMember);
+		// logsPlugin.guildMemberRemove(guildMember);
+	},
+	async async_err => {
+		logger.error(async_err);
 	}
-});
+));
+
+client.on('guildMemberUpdate', asyncFnWrapper(
+	async (oldUser, newUser) => {
+		if (oldUser.roles.cache.size != newUser.roles.cache.size) {
+			let server = await guildClient.get(oldUser.guild.id);
+
+			if (server == null) return;
+
+			if (newUser.roles.cache.size < oldUser.roles.cache.size) {
+				let removed = oldUser.roles.cache.filter(role => !newUser.roles.cache.has(role.id));
+				await PunishmentCmd.onGuildMemberRoleRemove(newUser, removed.array(), server);
+				// logger.info(removed);
+			} else {
+				let added = newUser.roles.cache.filter(role => !oldUser.roles.cache.has(role.id));
+				// logger.info(added);
+			}
+		}
+	},
+	async async_err => {
+		logger.error(async_err);
+	}
+));
 
 
 function uniqueID(size: number): string {

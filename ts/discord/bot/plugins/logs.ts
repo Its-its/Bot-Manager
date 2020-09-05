@@ -12,122 +12,28 @@ function def(n?: number): number {
 	return n == null ? 0 : n;
 }
 
-function messageDelete(message: Discord.Message | Discord.PartialMessage) {
+async function messageDelete(message: Discord.Message | Discord.PartialMessage) {
 	if (message.member == null || message.member.user.bot || message.channel.type != 'text') return;
 
-	guildClient.get(message.guild!.id, server => {
-		if (server == null || !server.isPluginEnabled('logs')) return;
+	let server = await guildClient.get(message.guild!.id);
 
-		let logs = server.plugins.logs!;
+	if (server == null || !server.isPluginEnabled('logs')) return;
 
-		let not_a_log_chann = logs.channels.find(c => c.id == message.channel.id) == null;
+	let logs = server.plugins.logs!;
 
-		if (not_a_log_chann) {
-			let sorted = logs.channels.sort(sortChannel);
+	let not_a_log_chann = logs.channels.find(c => c.id == message.channel.id) == null;
 
-			let log_channel = sorted.find((c) => {
-				// Is in filter channel?
-				if (c.filterChannels != null) {
-					if (c.filterChannels.indexOf(message.channel.id) != -1) {
-						return true;
-					}
-
-					let parent = (<Discord.TextChannel>message.channel).parent;
-					if (parent != null && c.filterChannels.indexOf(parent.id) != -1) {
-						return true;
-					}
-				}
-
-				// Otherwise, find a "default".
-				return c.filterChannels == null;
-			});
-
-			if (log_channel != null) {
-				let channel = <Discord.TextChannel>message.guild!.channels.cache.get(log_channel.id);
-
-				if (channel != null) {
-					channel.send(messageDeleted(message.channel, message.member!, message));
-				} else {
-					let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
-					server.plugins.logs!.channels.splice(index_of, 1);
-					server.save().catch(console.error);
-				}
-			}
-
-		}
-	})
-}
-
-function messageDeleteBulk(messageCollection: Discord.Collection<string, Discord.Message | Discord.PartialMessage>) {
-	let messages = messageCollection.array().filter(m => m.type == 'DEFAULT' && !m.member!.user.bot);
-
-	if (messages.length != 0) {
-		let guildID = messages[0].guild!.id;
-		guildClient.get(guildID, server => {
-			if (server == null || !server.isPluginEnabled('logs')) return;
-
-			let logs = server.plugins.logs!;
-
-			let not_a_log_chann = logs.channels.find(c => c.id == messages[0].channel.id) == null;
-
-			if (not_a_log_chann) {
-				let sorted = logs.channels.sort(sortChannel);
-
-				let log_channel = sorted.find((c) => {
-					// Is in filter channel?
-					if (c.filterChannels != null) {
-						if (c.filterChannels.indexOf(messages[0].channel.id) != -1) {
-							return true;
-						}
-
-						let parent = (<Discord.TextChannel>messages[0].channel).parent;
-						if (parent != null && c.filterChannels.indexOf(parent.id) != -1) {
-							return true;
-						}
-					}
-
-
-					// Otherwise, find a "default".
-					return c.filterChannels == null;
-				});
-
-				if (log_channel != null) {
-					let channel = <Discord.TextChannel>messages[0].guild!.channels.cache.get(log_channel.id);
-
-					if (channel != null) {
-						channel.send(messagesDeleted(messages));
-					} else {
-						let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
-						server.plugins.logs!.channels.splice(index_of, 1);
-						server.save().catch(console.error);
-					}
-				}
-
-			}
-		})
-	}
-}
-
-function messageUpdate(oldMessage: Discord.Message | Discord.PartialMessage, newMessage: Discord.Message | Discord.PartialMessage) {
-	if (oldMessage.member == null || oldMessage.member.user.bot || newMessage.channel.type != 'text' || oldMessage.content == newMessage.content) return;
-
-	guildClient.get(oldMessage.guild!.id, server => {
-		if (server == null || !server.isPluginEnabled('logs')) return;
-
-		let logs = server.plugins.logs!;
-
+	if (not_a_log_chann) {
 		let sorted = logs.channels.sort(sortChannel);
-
-		(<Discord.TextChannel>oldMessage.channel).parent
 
 		let log_channel = sorted.find((c) => {
 			// Is in filter channel?
 			if (c.filterChannels != null) {
-				if (c.filterChannels.indexOf(oldMessage.channel.id) != -1) {
+				if (c.filterChannels.indexOf(message.channel.id) != -1) {
 					return true;
 				}
 
-				let parent = (<Discord.TextChannel>oldMessage.channel).parent;
+				let parent = (<Discord.TextChannel>message.channel).parent;
 				if (parent != null && c.filterChannels.indexOf(parent.id) != -1) {
 					return true;
 				}
@@ -138,79 +44,175 @@ function messageUpdate(oldMessage: Discord.Message | Discord.PartialMessage, new
 		});
 
 		if (log_channel != null) {
-			let channel = <Discord.TextChannel>oldMessage.guild!.channels.cache.get(log_channel.id);
+			let channel = <Discord.TextChannel>message.guild!.channels.cache.get(log_channel.id);
 
 			if (channel != null) {
-				channel.send(messageEdited(newMessage.channel, newMessage.member!, oldMessage, newMessage));
+				await channel.send(messageDeleted(message.channel, message.member!, message));
 			} else {
 				let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
 				server.plugins.logs!.channels.splice(index_of, 1);
-				server.save().catch(console.error);
+
+				await server.save();
 			}
 		}
-	})
+	}
 }
 
-function guildMemberAdd(guildMember: Discord.GuildMember) {
-	guildClient.get(guildMember.guild.id, server => {
+async function messageDeleteBulk(messageCollection: Discord.Collection<string, Discord.Message | Discord.PartialMessage>) {
+	let messages = messageCollection.array().filter(m => m.type == 'DEFAULT' && !m.member!.user.bot);
+
+	if (messages.length != 0) {
+		let guildID = messages[0].guild!.id;
+
+		let server = await guildClient.get(guildID);
+
 		if (server == null || !server.isPluginEnabled('logs')) return;
 
 		let logs = server.plugins.logs!;
 
-		let sorted = logs.channels.sort((a, b) => def(b.priority) - def(a.priority));
+		let not_a_log_chann = logs.channels.find(c => c.id == messages[0].channel.id) == null;
 
-		let log_channel = sorted.find((c) => {
-			// Is in filter members?
-			if (c.filterMembersAddRemove != null && (c.filterMembersAddRemove == 0 || c.filterMembersAddRemove == 2)) {
-				return true;
-			}
+		if (not_a_log_chann) {
+			let sorted = logs.channels.sort(sortChannel);
 
-			return false;
-		});
+			let log_channel = sorted.find((c) => {
+				// Is in filter channel?
+				if (c.filterChannels != null) {
+					if (c.filterChannels.indexOf(messages[0].channel.id) != -1) {
+						return true;
+					}
 
-		if (log_channel != null) {
-			let channel = <Discord.TextChannel>guildMember.guild.channels.cache.get(log_channel.id);
+					let parent = (<Discord.TextChannel>messages[0].channel).parent;
+					if (parent != null && c.filterChannels.indexOf(parent.id) != -1) {
+						return true;
+					}
+				}
 
-			if (channel != null) {
-				//
-			} else {
-				let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
-				server.plugins.logs!.channels.splice(index_of, 1);
-				server.save().catch(console.error);
+
+				// Otherwise, find a "default".
+				return c.filterChannels == null;
+			});
+
+			if (log_channel != null) {
+				let channel = <Discord.TextChannel>messages[0].guild!.channels.cache.get(log_channel.id);
+
+				if (channel != null) {
+					await channel.send(messagesDeleted(messages));
+				} else {
+					let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
+					server.plugins.logs!.channels.splice(index_of, 1);
+
+					await server.save();
+				}
 			}
 		}
-	})
+	}
 }
 
-function guildMemberRemove(guildMember: Discord.GuildMember) {
-	guildClient.get(guildMember.guild.id, server => {
-		if (server == null || !server.isPluginEnabled('logs')) return;
+async function messageUpdate(oldMessage: Discord.Message | Discord.PartialMessage, newMessage: Discord.Message | Discord.PartialMessage) {
+	if (oldMessage.member == null || oldMessage.member.user.bot || newMessage.channel.type != 'text' || oldMessage.content == newMessage.content) return;
 
-		let logs = server.plugins.logs!;
+	let server = await guildClient.get(oldMessage.guild!.id);
 
-		let sorted = logs.channels.sort((a, b) => def(b.priority) - def(a.priority));
+	if (server == null || !server.isPluginEnabled('logs')) return;
 
-		let log_channel = sorted.find((c) => {
-			// Is in filter members?
-			if (c.filterMembersAddRemove != null && (c.filterMembersAddRemove == 1 || c.filterMembersAddRemove == 2)) {
+	let logs = server.plugins.logs!;
+
+	let sorted = logs.channels.sort(sortChannel);
+
+	let log_channel = sorted.find((c) => {
+		// Is in filter channel?
+		if (c.filterChannels != null) {
+			if (c.filterChannels.indexOf(oldMessage.channel.id) != -1) {
 				return true;
 			}
 
-			return false;
-		});
-
-		if (log_channel != null) {
-			let channel = <Discord.TextChannel>guildMember.guild.channels.cache.get(log_channel.id);
-
-			if (channel != null) {
-				//
-			} else {
-				let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
-				server.plugins.logs!.channels.splice(index_of, 1);
-				server.save().catch(console.error);
+			let parent = (<Discord.TextChannel>oldMessage.channel).parent;
+			if (parent != null && c.filterChannels.indexOf(parent.id) != -1) {
+				return true;
 			}
 		}
-	})
+
+		// Otherwise, find a "default".
+		return c.filterChannels == null;
+	});
+
+	if (log_channel != null) {
+		let channel = <Discord.TextChannel>oldMessage.guild!.channels.cache.get(log_channel.id);
+
+		if (channel != null) {
+			await channel.send(messageEdited(newMessage.channel, newMessage.member!, oldMessage, newMessage));
+		} else {
+			let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
+			server.plugins.logs!.channels.splice(index_of, 1);
+
+			await server.save();
+		}
+	}
+}
+
+async function guildMemberAdd(guildMember: Discord.GuildMember) {
+	let server = await guildClient.get(guildMember.guild.id);
+
+	if (server == null || !server.isPluginEnabled('logs')) return;
+
+	let logs = server.plugins.logs!;
+
+	let sorted = logs.channels.sort(sortChannel);
+
+	let log_channel = sorted.find((c) => {
+		// Is in filter members?
+		if (c.filterMembersAddRemove != null && (c.filterMembersAddRemove == 0 || c.filterMembersAddRemove == 2)) {
+			return true;
+		}
+
+		return false;
+	});
+
+	if (log_channel != null) {
+		let channel = <Discord.TextChannel>guildMember.guild.channels.cache.get(log_channel.id);
+
+		if (channel != null) {
+			//
+		} else {
+			let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
+			server.plugins.logs!.channels.splice(index_of, 1);
+
+			await server.save();
+		}
+	}
+}
+
+async function guildMemberRemove(guildMember: Discord.GuildMember) {
+	let server = await guildClient.get(guildMember.guild.id);
+
+	if (server == null || !server.isPluginEnabled('logs')) return;
+
+	let logs = server.plugins.logs!;
+
+	let sorted = logs.channels.sort(sortChannel);
+
+	let log_channel = sorted.find((c) => {
+		// Is in filter members?
+		if (c.filterMembersAddRemove != null && (c.filterMembersAddRemove == 1 || c.filterMembersAddRemove == 2)) {
+			return true;
+		}
+
+		return false;
+	});
+
+	if (log_channel != null) {
+		let channel = <Discord.TextChannel>guildMember.guild.channels.cache.get(log_channel.id);
+
+		if (channel != null) {
+			//
+		} else {
+			let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
+			server.plugins.logs!.channels.splice(index_of, 1);
+
+			await server.save();
+		}
+	}
 }
 
 

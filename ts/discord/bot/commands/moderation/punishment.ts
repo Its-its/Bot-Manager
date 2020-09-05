@@ -386,48 +386,51 @@ class Punishment extends Command {
 }
 
 
-setInterval(() => {
-	TempPunishments.find({ expires: { $lte: new Date() } })
-	// .populate('punishment')
-	.exec((err, items) => {
-		if (err != null) return console.error(err);
+setInterval(utils.asyncFnWrapper(async () => {
+	let items = await TempPunishments.find({ expires: { $lte: new Date() } })
+		// .populate('punishment')
+		.exec();
 
-		async.everyLimit(items, 5, (item, cb) => {
-			const guild = discordClient.guilds.cache.get(item.server_id);
-			if (guild == null) {
-				console.log('No guild exists: ' + item.server_id);
-				return cb();
-			}
+	async.everyLimit(items, 5, utils.asyncFnWrapper(async (item, cb) => {
+		let guild = discordClient.guilds.cache.get(item.server_id);
 
-			const member = guild.members.cache.get(item.member_id);
-			if (member == null) {
-				console.log('No member exists: ' + item.member_id);
-				return cb();
-			}
-
-			item.remove(() => {
-				guildClient.get(guild.id, client => {
-					if (client == null) {
-						console.log('No Redis Client exists');
-						return cb();
-					}
-
-					if (client.punishments.punished_role_id == null) return cb();
+		if (guild == null) {
+			console.log('No guild exists: ' + item.server_id);
+			return cb();
+		}
 
 
-					member.roles.remove(client.punishments.punished_role_id, 'Expired')
-					.catch((e: any) => console.error(e));
+		let member = guild.members.cache.get(item.member_id);
 
-					cb();
-				});
-			});
+		if (member == null) {
+			console.log('No member exists: ' + item.member_id);
+			return cb();
+		}
 
 
-		}, () => {
-			if (items.length != 0) console.log('Finished expired punishments (' + items.length + ' count)');
-		});
+		await item.remove();
+
+		let client = await guildClient.get(guild.id);
+
+		if (client == null) {
+			console.log('No Redis Client exists');
+			return cb();
+		}
+
+
+		if (client.punishments.punished_role_id == null) return cb();
+
+
+		await member.roles.remove(client.punishments.punished_role_id, 'Expired');;
+
+		return cb();
+	}, async (async_err, _, cb) => {
+		console.error(async_err);
+		return cb();
+	}), () => {
+		if (items.length != 0) console.log('Finished expired punishments (' + items.length + ' count)');
 	});
-}, 1000 * 60 * 2);
+}), 1000 * 60 * 2);
 
 
 function punisherToName(name: string) {
