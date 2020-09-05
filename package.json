@@ -2,7 +2,7 @@
 	"scripts": {
 		"tunnel": "ngrok http 8088",
 		"build": "tsc -p tsconfig.json",
-		"build:full": "tsc -p tsconfig.json ; node node_modules/@ef-carbon/tspm/dist/bin/tspm",
+		"build:full": "tsc -p tsconfig.json && node node_modules/@ef-carbon/tspm/dist/bin/tspm",
 		"build:watch": "node scripts/watch4changes.js",
 		"postbuild": "node node_modules/@ef-carbon/tspm/dist/bin/tspm",
 		"discord_bot": "nodemon src/discord --delay 3 --watch src -- --client bot",

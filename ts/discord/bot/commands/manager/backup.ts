@@ -4,7 +4,7 @@ import DiscordServer = require('../../GuildServer');
 import Backups = require('../../../models/backup');
 
 import Command = require('../../command');
-import { DiscordBot, Omit, Nullable } from '@type-manager';
+import { DiscordBot, Nullable } from '@type-manager';
 import utils = require('../../../utils');
 
 const PERMISSIONS = {

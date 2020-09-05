@@ -8,7 +8,8 @@ import Command = require('../../command');
 const displayNames = [
 	'Commands',
 	'Logs',
-	'Leveling'
+	'Leveling',
+	'Events'
 ];
 
 const plugins = displayNames.map(p => p.toLowerCase());
@@ -75,12 +76,9 @@ class Plugin extends Command {
 
 				if (pluginName == 'all') {
 					plugins.forEach(p => {
-						// @ts-ignore
 						if (server.plugins[p] != null) {
-							// @ts-ignore
-							server.plugins[p].enabled = true;
+							server.plugins[p]!.enabled = true;
 						} else {
-							// @ts-ignore
 							server.plugins[p] = { enabled: true };
 						}
 					});
@@ -92,12 +90,9 @@ class Plugin extends Command {
 					let indexOfPlugin = plugins.indexOf(pluginName);
 
 					if (indexOfPlugin != -1) {
-						// @ts-ignore
 						if (server.plugins[pluginName] != null) {
-							// @ts-ignore
-							server.plugins[pluginName].enabled = true;
+							server.plugins[pluginName]!.enabled = true;
 						} else {
-							// @ts-ignore
 							server.plugins[pluginName] = { enabled: true };
 						}
 
