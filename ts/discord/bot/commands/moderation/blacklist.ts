@@ -227,15 +227,14 @@ class Blacklist extends Command {
 		return Promise.resolve();
 	}
 
-	public onMessage(message: Discord.Message, server: DiscordServer) {
+	public async onMessage(message: Discord.Message, server: DiscordServer) {
 		if (!server.userHasPerm(message.member!, PERMS.IGNORE)) return false;
 
 		let opts1 = dealWithBlacklists(server, 'global', message.content);
 		let opts2 = dealWithBlacklists(server, message.channel.id, opts1.editedMessage);
 
 		if (opts1.edited || opts2.edited) {
-			message.edit(opts2.editedMessage)
-			.catch(e => console.error(e));
+			await message.edit(opts2.editedMessage);
 
 			return true;
 		}
@@ -243,10 +242,10 @@ class Blacklist extends Command {
 		return false;
 	}
 
-	public onChannelDelete(channel: Discord.GuildChannel, server: DiscordServer) {
+	public async onChannelDelete(channel: Discord.GuildChannel, server: DiscordServer) {
 		if (server.moderation.blacklisted[channel.id] != null) {
 			delete server.moderation.blacklisted[channel.id];
-			server.save().catch(console.error);
+			await server.save();
 		}
 
 		return false;

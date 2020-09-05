@@ -333,13 +333,12 @@ class Punishment extends Command {
 		return Promise.resolve();
 	}
 
-	public onChannelCreate(channel: Discord.GuildChannel, server: DiscordServer) {
+	public async onChannelCreate(channel: Discord.GuildChannel, server: DiscordServer) {
 		if (server.punishments.punished_role_id != null) {
 			let role = channel.guild.roles.cache.get(server.punishments.punished_role_id);
 			if (role == null) return false;
 
-			channel.createOverwrite(role, DEFAULT_OVERWRITE_PERMS)
-			.catch(e => console.error(e));
+			await channel.createOverwrite(role, DEFAULT_OVERWRITE_PERMS);
 
 			return true;
 		}
@@ -347,33 +346,35 @@ class Punishment extends Command {
 		return false;
 	}
 
-	public onGuildRemove(guild: Discord.Guild) {
-		TempPunishments.remove({ server_id: guild.id }).exec();
+	public async onGuildRemove(guild: Discord.Guild) {
+		await TempPunishments.remove({ server_id: guild.id }).exec();
 		return true;
 	}
 
-	public onGuildMemberRemove(member: Discord.GuildMember) {
-		TempPunishments.remove({ server_id: member.guild.id, member_id: member.id }).exec();
+	public async onGuildMemberRemove(member: Discord.GuildMember) {
+		await TempPunishments.remove({ server_id: member.guild.id, member_id: member.id }).exec();
 		return true;
 	}
 
-	public onRoleDelete(role: Discord.Role, server: DiscordServer) {
+	public async onRoleDelete(role: Discord.Role, server: DiscordServer) {
 		if (server.punishments != null && server.punishments.punished_role_id != null) {
 			if (role.id == server.punishments.punished_role_id) {
-				TempPunishments.remove({ server_id: role.guild.id }).exec();
+				await TempPunishments.remove({ server_id: role.guild.id }).exec();
+
 				server.punishments.punished_role_id = undefined;
-				server.save().catch(console.error);
+				await server.save();
+
 				return true;
 			}
 		}
 		return false;
 	}
 
-	public onGuildMemberRoleRemove(member: Discord.GuildMember, roles: Discord.Role[], server: DiscordServer) {
+	public async onGuildMemberRoleRemove(member: Discord.GuildMember, roles: Discord.Role[], server: DiscordServer) {
 		if (server.punishments != null && server.punishments.punished_role_id != null) {
 			for (let i = 0 ; i < roles.length; i++) {
 				if (roles[i].id == server.punishments.punished_role_id) {
-					TempPunishments.remove({ server_id: member.guild.id, member_id: member.id }).exec();
+					await TempPunishments.remove({ server_id: member.guild.id, member_id: member.id }).exec();
 					return true;
 				}
 			}
