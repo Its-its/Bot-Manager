@@ -29,8 +29,7 @@ interface FeedFix extends mongoose.Document {
 }
 
 if (config.debug) mongoose.set('debug', true);
-mongoose.Promise = global.Promise;
-mongoose.connect(config.database, { useNewUrlParser: true });
+mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const twitter = new Twit({
 	consumer_key:         'dZwMAukw0gd1U3detHh38XvK8',

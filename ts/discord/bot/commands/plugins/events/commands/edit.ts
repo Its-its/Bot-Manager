@@ -6,6 +6,10 @@ import utils = require('@discord/bot/../utils');
 import PERMS = require('../perms');
 import { DiscordBot } from '@type-manager';
 
+
+// Max time a single group can be timed out.
+const MAX_EVENT_GROUP_TIMEOUT = 10 * 1000;
+
 const ID_TO_NAME = {
 	react_add: 'React Add',
 	member_add: 'Member Add',
@@ -13,13 +17,16 @@ const ID_TO_NAME = {
 };
 
 
-const TYPES = [
-	'react_add', 'react_remove',
-	'member_add', 'member_remove'
-];
+const TYPES = {
+	'react': ['add', 'remove'],
+	'role': ['add', 'remove']
+	// 'member': ['']
+};
 
 // edit <id>
 
+// message.guild!.emojis.resolveIdentifier(emoji!)
+// Check if role has a higher priority than bot.
 
 async function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	let raw_id = params.shift();

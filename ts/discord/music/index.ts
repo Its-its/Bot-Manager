@@ -19,9 +19,8 @@ import utils = require('../utils');
 import { getMusic, Music } from './GuildMusic';
 
 
-mongoose.Promise = global.Promise;
 if (config.debug) mongoose.set('debug', true);
-mongoose.connect(config.database, { useNewUrlParser: true });
+mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true });
 
 import client = require('../client');
 

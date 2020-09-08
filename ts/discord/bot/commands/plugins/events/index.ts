@@ -8,7 +8,8 @@ import comm = require('./commands');
 
 import PERMS = require('./perms');
 
-import { DiscordBot } from '@type-manager';
+import { DiscordBot, Optional } from '@type-manager';
+import utils = require('@base/discord/utils');
 
 
 class Events extends Command {
@@ -39,8 +40,295 @@ class Events extends Command {
 			default: return comm.Help.call(params, server, message);
 		}
 	}
+
+	public async onReactionAdd(reaction: Discord.MessageReaction, user: Discord.User | Discord.PartialUser, server: DiscordServer) {
+		if (!server.isPluginEnabled('events') || reaction.message.guild == null) return false;
+
+		console.log(reaction.emoji.identifier);
+
+		let eventGroup = idea;
+
+		let success = await doEventCondition(
+			{
+				exists: true,
+				reaction: reaction,
+				guild: reaction.message.guild,
+				channel: reaction.message.channel,
+				user
+			},
+			eventGroup.variables,
+			eventGroup.onEvent
+		);
+
+		return true;
+	}
+
+	public async onReactionRemove(reaction: Discord.MessageReaction, user: Discord.User | Discord.PartialUser, server: DiscordServer) {
+		if (!server.isPluginEnabled('events') || reaction.message.guild == null) return false;
+
+		console.log(reaction.emoji.identifier);
+
+		let eventGroup = idea;
+
+		let success = await doEventCondition(
+			{
+				exists: false,
+				reaction: reaction,
+				guild: reaction.message.guild,
+				channel: reaction.message.channel,
+				user
+			},
+			eventGroup.variables,
+			eventGroup.onEvent
+		);
+
+		return true;
+	}
 }
 
+interface EventOptions {
+	exists?: boolean;
+
+	reaction?: Discord.MessageReaction;
+
+	guild: Discord.Guild;
+	channel: Discord.Channel;
+	user: Discord.User | Discord.PartialUser;
+}
+
+async function doEvents(
+	opts: EventOptions,
+	variables: Optional<DiscordBot.PluginEvents.Variables>,
+	event: DiscordBot.PluginEvents.BaseEvents
+) {
+	switch (event.type) {
+		case 'condition': return doEventCondition(opts, variables, event);
+		case 'modify': return doEventModify(opts, variables, event);
+		case 'wait': {
+			console.log(' - Waiting: ' + event.duration + 'ms');
+			await utils.asyncTimeout(event.duration);
+			return true;
+		}
+
+		default: return false;
+	}
+}
+
+async function doEventModify(
+	opts: EventOptions,
+
+	variables: Optional<DiscordBot.PluginEvents.Variables>,
+	modify: DiscordBot.PluginEvents.Modify.EventModify
+) {
+	modify.id = correctString(modify.id, variables);
+
+	switch (modify.name) {
+		case 'react': {
+			switch (modify.do) {
+				case 'add': {
+					// Called Event was a reaction event.
+					if (opts.reaction != null) {
+						// Current reaction removed equals specified modify one.
+						if (opts.reaction.emoji.identifier == modify.id && !opts.exists!) {
+							opts.reaction.users.add(opts.user.id);
+							return true;
+						}
+					}
+				}
+
+				case 'remove': {
+					// Called Event was a reaction event.
+					if (opts.reaction != null) {
+						// Current reaction added equals specified modify one.
+						if (opts.reaction.emoji.identifier == modify.id && opts.exists!) {
+							await opts.reaction.users.remove(opts.user.id);
+							return true;
+						}
+					}
+				}
+
+				case 'create': {
+					break;
+				}
+
+				case 'delete': {
+					break;
+				}
+			}
+
+			break;
+		}
+
+		case 'role': {
+			switch (modify.do) {
+				case 'add': {
+					let member = await opts.guild.members.fetch(opts.user.id);
+
+					if (member != null) {
+						await member.roles.add(modify.id);
+
+						return true;
+					}
+
+					break;
+				}
+
+				case 'remove': {
+					let member = await opts.guild.members.fetch(opts.user.id);
+
+					if (member != null) {
+						await member.roles.remove(modify.id);
+
+						return true;
+					}
+
+					break;
+				}
+
+				case 'create': {
+					break;
+				}
+
+				case 'delete': {
+					break;
+				}
+			}
+
+			break;
+		}
+	}
+
+	return false;
+}
+
+
+async function doEventCondition(
+	opts: EventOptions,
+
+	variables: Optional<DiscordBot.PluginEvents.Variables>,
+	condition: Optional<DiscordBot.PluginEvents.Condition.GroupCondition>
+) {
+	if (condition == null) return false;
+
+	switch (condition.name) {
+		case 'if': {
+			let all_events_correct = true;
+
+			for (let i = 0; i < condition.conditions.length; i++) {
+				let con_opts = condition.conditions[i];
+
+				let result = await verifyCondition(con_opts);
+
+				if (!result) {
+					all_events_correct = false;
+					console.log('Failed at: ', con_opts);
+					break;
+				}
+			}
+
+			// All conditions must be satisfied.
+			if (all_events_correct) {
+				for (let i = 0; i < condition.thenDo.length; i++) {
+					let event = condition.thenDo[i];
+
+					await doEvents(opts, variables, event)
+				}
+
+				return true;
+			}
+
+			break;
+		}
+
+		case 'or': {
+			let at_least_one_correct = false;
+
+			for (let i = 0; i < condition.conditions.length; i++) {
+				let con_opts = condition.conditions[i];
+
+				let result = await verifyCondition(con_opts);
+
+				if (result) {
+					at_least_one_correct = true;
+					break;
+				}
+			}
+
+			// At least one condition must be satisfied.
+			if (at_least_one_correct) {
+				for (let i = 0; i < condition.thenDo.length; i++) {
+					let event = condition.thenDo[i];
+
+					await doEvents(opts, variables, event);
+				}
+
+				return true;
+			} else {
+				console.log('Failed at: ', condition.conditions);
+			}
+
+			break;
+		}
+	}
+
+	async function verifyCondition(condition: DiscordBot.PluginEvents.Condition.EventCondition) {
+		condition.id = correctString(condition.id, variables);
+
+		switch (condition.type) {
+			case 'role': {
+				if (condition.for == 'member') {
+					if (opts.user != null) {
+						let guildMember = opts.guild.members.resolve(opts.user.id);
+
+						if (guildMember != null) {
+							let exists = guildMember.roles.cache.findKey(r => r.id == condition.id) != null;
+							return condition.exists == exists;
+						}
+					}
+				} else if (condition.for == 'guild') {
+					let exists = opts.guild.roles.cache.findKey(r => r.id == condition.id) != null;
+					return condition.exists == exists;
+				}
+
+				break;
+			}
+
+			case 'channel': {
+				if (opts.channel != null) {
+					return opts.channel.id == condition.id;
+				}
+
+				break;
+			}
+
+			case 'react': {
+				if (opts.reaction != null) {
+					return opts.reaction.emoji.identifier == condition.id && condition.exists == opts.exists!;
+				}
+
+				break;
+			}
+		}
+
+		return false;
+	}
+
+	return false;
+}
+
+function correctString(str: string, variables: Optional<DiscordBot.PluginEvents.Variables>): string {
+	if (variables != null && str.startsWith('{') && str.endsWith('}')) {
+		for (let key in variables) {
+			let value = variables[key];
+
+			if (str.slice(1, str.length - 1) == key) {
+				return value;
+			}
+		}
+	}
+
+	return str;
+}
 
 /**
  * If clicked reaction in channel # on message #.
@@ -52,69 +340,62 @@ const idea: DiscordBot.PluginEvents.Grouping = {
 	title: 'Agree to rules.',
 	variables: {
 		rulesMessageId: '010101',
-		reactionName: ':check:',
-		memberRoleId: '0101'
+		reactionId: '%E2%9C%85',
+		memberRoleId: '373164745114648576'
 	},
-	onEvent: [
-		{
-			// If channel is id.
-			type: 'condition',
-			name: 'if',
+	onEvent: {
+		// If channel is id.
+		type: 'condition',
+		name: 'if',
 
-			conditions: [
-				{
-					type: 'channel',
-					id: '010101010101010101'
-				}
-			],
+		conditions: [
+			{
+				type: 'channel',
+				id: '314946214523174913'
+			},
+			{
+				type: 'react',
+				exists: true,
+				id: '{reactionId}'
+			}
+		],
 
-			thenDo: [
-				{
-					type: 'event',
-					name: 'react_add',
+		thenDo: [
+			{ // Check if role is already on member.
+				type: 'condition',
+				name: 'if',
 
-					// Reaction name.
-					reactionName: '{reactionName}',
-					// Message ID
-					messageId: '{rulesMessageId}',
+				conditions: [
+					// Missing Role ID.
+					{
+						type: 'role',
+						for: 'member',
+						exists: false,
+						id: '{memberRoleId}'
+					}
+				],
 
-					thenDo: [
-						{ // Check if role is already on member.
-							type: 'condition',
-							name: 'if',
-
-							conditions: [
-								// Missing Role ID.
-								{
-									type: 'role',
-									isMissing: true,
-									id: '{memberRoleId}'
-								}
-							],
-
-							thenDo: [
-								{ // Add role to member.
-									type: 'event',
-									name: 'role_add',
-									// Role ID
-									id: '{memberRoleId}'
-								}
-							]
-						},
-						{ // Wait 500ms. Fail safe incase player is spamming it.
-							type: 'wait',
-							duration: 500
-						},
-						{ // Remove Reaction from member if exists still (concurrency.)
-							type: 'event',
-							name: 'react_remove',
-							reactionName: '{reactionName}'
-						}
-					]
-				}
-			]
-		}
-	]
+				thenDo: [
+					{ // Add role to member.
+						type: 'modify',
+						name: 'role',
+						id: '{memberRoleId}',
+						do: 'add'
+					}
+				]
+			},
+			{ // Wait 500ms. Fail safe incase player is spamming it.
+				type: 'wait',
+				duration: 500
+			},
+			{ // Remove Reaction from member if exists still (concurrency.)
+				type: 'modify',
+				name: 'react',
+				id: '{reactionId}',
+				do: 'remove'
+			}
+		]
+	}
 };
 
 const idea2 = {
@@ -128,6 +409,23 @@ const idea2 = {
 		}
 	]
 };
+
+
+async function getOrFetchUser(user: Discord.User | Discord.PartialUser): Promise<Discord.User> {
+	if (user.username == null) {
+		return user.fetch();
+	} else {
+		return user;
+	}
+}
+
+async function getOrFetchGuildMember(user: Discord.GuildMember | Discord.PartialGuildMember): Promise<Discord.GuildMember> {
+	if (user.joinedTimestamp == null) {
+		return user.fetch();
+	} else {
+		return user;
+	}
+}
 
 
 export = Events;

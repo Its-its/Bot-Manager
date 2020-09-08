@@ -103,13 +103,13 @@ function memberLeave(member: Discord.GuildMember | Discord.PartialGuildMember) {
 	// Remove from redis
 }
 
-function onReactionAdd(user: Discord.User | Discord.PartialUser, reaction: Discord.MessageReaction, server: Server) {
+async function onReactionAdd(user: Discord.User | Discord.PartialUser, reaction: Discord.MessageReaction, server: Server) {
 	if (!server.isPluginEnabled('leveling')) return;
 
 	if (!reaction.me) {
 		if (!user.bot) {
 			// redisXP.zincrby(reaction.message.guild!.id, -util.XP_FOR_REACTION_GIVE.value(), user.id);
-			UserLevel.updateOne({
+			await UserLevel.updateOne({
 				server_id: reaction.message.guild!.id,
 				member_id: user.id
 			}, {
@@ -124,9 +124,13 @@ function onReactionAdd(user: Discord.User | Discord.PartialUser, reaction: Disco
 			}, { upsert: true }).exec();
 		}
 
+		if (reaction.message.partial) {
+			await reaction.message.fetch();
+		}
+
 		if (!reaction.message.member!.user.bot) {
 			// redisXP.zincrby(reaction.message.guild!.id, -util.XP_FOR_REACTION_RECEIVE.value(), reaction.message.member!.id);
-			UserLevel.updateOne({
+			await UserLevel.updateOne({
 				server_id: reaction.message.guild!.id,
 				member_id: reaction.message.member!.id
 			}, {
@@ -143,13 +147,13 @@ function onReactionAdd(user: Discord.User | Discord.PartialUser, reaction: Disco
 	}
 }
 
-function onReactionRemove(user: Discord.User | Discord.PartialUser, reaction: Discord.MessageReaction, server: Server) {
+async function onReactionRemove(user: Discord.User | Discord.PartialUser, reaction: Discord.MessageReaction, server: Server) {
 	if (!server.isPluginEnabled('leveling')) return;
 
 	if (!reaction.me) {
 		if (!user.bot) {
 			// redisXP.zincrby(reaction.message.guild!.id, -util.XP_FOR_REACTION_GIVE.value(), user.id);
-			UserLevel.updateOne({
+			await UserLevel.updateOne({
 				server_id: reaction.message.guild!.id,
 				member_id: user.id
 			}, {
@@ -164,9 +168,13 @@ function onReactionRemove(user: Discord.User | Discord.PartialUser, reaction: Di
 			}, { upsert: true }).exec();
 		}
 
+		if (reaction.message.partial) {
+			await reaction.message.fetch();
+		}
+
 		if (!reaction.message.member!.user.bot) {
 			// redisXP.zincrby(reaction.message.guild!.id, -util.XP_FOR_REACTION_RECEIVE.value(), reaction.message.member!.id);
-			UserLevel.updateOne({
+			await UserLevel.updateOne({
 				server_id: reaction.message.guild!.id,
 				member_id: reaction.message.member!.id
 			}, {

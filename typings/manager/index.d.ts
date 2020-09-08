@@ -901,29 +901,29 @@ declare namespace DiscordBot {
 			groups?: Grouping[];
 		}
 
+		type Variables = { [name: string]: string };
+
 		interface Grouping {
 			enabled: boolean;
 			id: number;
 			title: string;
 
-			variables?: { [name: string]: string };
+			variables?: Variables;
 
-			onEvent?: BaseEvents[];
+			onEvent?: Condition.GroupCondition;
 		}
 
 		type BaseEvents =
-			  Event.EventReact
-			| Event.EventRole
-			| Condition.GroupCondition
+			//   Event.EventReact
+			// | Event.EventRole
+			Condition.GroupCondition
+			| Modify.EventModify
 			| EventWait;
 
 		type EventTypes =
-			  'react_add'
-			| 'react_remove'
-			| 'role_add'
-			| 'role_remove'
-			| 'member_add'
-			| 'member_remove';
+			  'react'
+			| 'role'
+			| 'member';
 
 
 		interface EventWait {
@@ -932,38 +932,38 @@ declare namespace DiscordBot {
 		}
 
 
-		// Event type Events
-		namespace Event {
-			// Reactions
-			interface EventReact {
-				type: 'event';
-				name: 'react_add' | 'react_remove';
+		// // Event type Events
+		// namespace Event {
+		// 	// Reactions
+		// 	interface EventReact {
+		// 		type: 'event';
+		// 		name: 'react_add' | 'react_remove';
 
-				reactionName: string;
-				messageId?: string;
+		// 		reactionId: string;
+		// 		messageId?: string;
 
-				thenDo?: BaseEvents[];
-			}
+		// 		thenDo?: BaseEvents[];
+		// 	}
 
-			interface EventRole {
-				type: 'event';
-				name: 'role_add' | 'role_remove';
+		// 	interface EventRole {
+		// 		type: 'event';
+		// 		name: 'role_add' | 'role_remove';
 
-				id: string;
+		// 		id: string;
 
-				// user has to already have these role ids.
-				existingRoleId?: string[];
+		// 		// user has to already have these role ids.
+		// 		existingRoleId?: string[];
 
-				thenDo?: BaseEvents[];
-			}
+		// 		thenDo?: BaseEvents[];
+		// 	}
 
-			interface GroupEventContainer {
-				type: 'event';
-				name: EventTypes;
+		// 	interface GroupEventContainer {
+		// 		type: 'event';
+		// 		name: EventTypes;
 
-				thenDo: BaseEvents[];
-			}
-		}
+		// 		thenDo: BaseEvents[];
+		// 	}
+		// }
 
 
 
@@ -980,20 +980,41 @@ declare namespace DiscordBot {
 			}
 
 
-			type EventCondition = EventConditionRole | EventConditionChannel;
+			type EventCondition = ConditionRole | ConditionChannel | ConditionReact;
 
 
-			type ConditionEvent = 'role' | 'channel';
+			type ConditionEventTypes = 'role' | 'channel' | 'react';
 
-			interface EventConditionRole {
-				type: 'role',
-				isMissing: boolean;
+			interface ConditionRole {
+				type: 'role';
+				for: 'member' | 'guild';
+				exists: boolean;
 				id: string;
 			}
 
-			interface EventConditionChannel {
-				type: 'channel',
+			interface ConditionChannel {
+				type: 'channel';
 				id: string;
+			}
+
+			interface ConditionReact {
+				type: 'react';
+				exists: boolean;
+				id: string;
+			}
+		}
+
+		namespace Modify {
+			interface EventModify {
+				type: 'modify';
+
+				name: EventTypes;
+
+				id: string;
+
+				do: 'add' | 'remove' | 'create' | 'delete';
+
+				thenDo?: BaseEvents[];
 			}
 		}
 	}

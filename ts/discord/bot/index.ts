@@ -36,9 +36,9 @@ commandPlugin.defaultCommands.initCommands();
 // Commands
 const BlacklistCmd =  commandPlugin.defaultCommands.get('blacklist')!;
 const PunishmentCmd = commandPlugin.defaultCommands.get('punishment')!;
+const EventsCmd = commandPlugin.defaultCommands.get('events')!;
 
 
-mongoose.Promise = global.Promise;
 if (config.debug) mongoose.set('debug', true);
 mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true });
 
@@ -56,41 +56,52 @@ function defaultStats() {
 
 
 
-client.on('ready', () => {
-	logger.info(' - Client ID:' + client.user!.id);
-	logger.info(' - Found ' + client.guilds.cache.size + ' Guild(s).');
+client.on('ready', asyncFnWrapper(
+	async () => {
+		logger.info(' - Client ID:' + client.user!.id);
+		logger.info(' - Found ' + client.guilds.cache.size + ' Guild(s).');
 
-	client.guilds.cache.forEach(g => logger.info(' - - ' + g.id +  ' | ' + g.region + ' | ' + g.name));
+		client.guilds.cache.forEach(g => logger.info(' - - ' + g.id +  ' | ' + g.region + ' | ' + g.name));
 
-	client.user!.setActivity('my surroundings...', { type: 'WATCHING' });
+		await client.user!.setActivity({
+			name: 'my surroundings...',
+			type: 'WATCHING'
+		});
 
-	setInterval(() => {
-		logger.info('Statistics');
+		setInterval(() => {
+			logger.info('Statistics');
 
-		let statistics_copy = Object.assign({}, statistics);
+			let statistics_copy = Object.assign({}, statistics);
 
-		// Reset stats since we now have a copy of it and it gets added to the doc.
-		statistics = defaultStats();
+			// Reset stats since we now have a copy of it and it gets added to the doc.
+			statistics = defaultStats();
 
 
-		let date = new Date();
-		date.setUTCHours(0);
-		date.setUTCSeconds(0);
-		date.setUTCMinutes(0);
-		date.setUTCMilliseconds(0);
+			let date = new Date();
+			date.setUTCHours(0);
+			date.setUTCSeconds(0);
+			date.setUTCMinutes(0);
+			date.setUTCMilliseconds(0);
 
-		ModelStats.updateOne({
-			created_at: date
-		}, {
-			$inc: statistics_copy,
-			$setOnInsert: {
+			ModelStats.updateOne({
 				created_at: date
-			}
-		}, { upsert: true }).exec();
-	}, 9 * 60 * 1000);
+			}, {
+				$inc: statistics_copy,
+				$setOnInsert: {
+					created_at: date
+				}
+			}, { upsert: true }).exec();
+		}, 9 * 60 * 1000);
 
-	if (client.shard != null) client.shard.send('ready');
-});
+		if (client.shard != null) {
+			await client.shard.send('ready');
+		}
+	},
+	async (err) => {
+		logger.error(err);
+		process.abort();
+	}
+));
 
 
 if (client.shard != null && client.shard.count != 0) shardListener();
@@ -143,6 +154,9 @@ client.on('message', asyncFnWrapper(
 		// Bot?
 		if (msg.member.user == null || msg.member.user.bot) return;
 
+		// Only look at text channels for now.
+		if (msg.channel.type != 'text') return;
+
 		let server = await guildClient.get(msg.guild!.id);
 
 		if (server == null) {
@@ -167,8 +181,10 @@ client.on('message', asyncFnWrapper(
 		} else {
 			statistics.guild_user_chat_count++;
 
-			await BlacklistCmd.onMessage(msg, server!);
-			levelsPlugin.onMessage(msg, server!);
+			await BlacklistCmd.onMessage(msg, server);
+			await EventsCmd.onMessage(msg, server);
+
+			levelsPlugin.onMessage(msg, server);
 		}
 	},
 	async (async_err, msg) => {
@@ -232,11 +248,14 @@ client.on('guildDelete', asyncFnWrapper(
 
 		await client.shard!.send('update');
 
+		let server = await guildClient.get(guild.id);
+		if (server == null) return;
+
 
 		limits.guildDelete(guild.id);
 
 		intervalPlugin.onGuildDelete(guild);
-		await PunishmentCmd.onGuildRemove(guild);
+		await PunishmentCmd.onGuildRemove(guild, server);
 
 		await DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: true } }).exec();
 		await guildClient.removeFromCache(guild.id);
@@ -421,14 +440,18 @@ client.on('messageUpdate', asyncFnWrapper(
 
 client.on('messageReactionAdd', asyncFnWrapper(
 	async (reaction, user) => {
-			let server = await guildClient.get(reaction.message.guild!.id);
+		if (reaction.message.guild == null) return;
 
-			if (server == null) return;
+		let server = await guildClient.get(reaction.message.guild.id);
 
-			levelsPlugin.onReactionAdd(user, reaction, server);
+		if (server == null) return;
+
+		await levelsPlugin.onReactionAdd(user, reaction, server);
+
+		await EventsCmd.onReactionAdd(reaction, user, server);
 	},
 	async async_err => {
-		logger.error(async_err);
+		console.log(async_err);
 	}
 ));
 
@@ -438,21 +461,38 @@ client.on('messageReactionRemove', asyncFnWrapper(
 
 		if (server == null) return;
 
-		levelsPlugin.onReactionRemove(user, reaction, server);
+		await levelsPlugin.onReactionRemove(user, reaction, server);
+
+		await EventsCmd.onReactionRemove(reaction, user, server);
 	},
 	async async_err => {
 		logger.error(async_err);
 	}
 ));
 
-// client.on('guildMemberAdd', guildMember => {
-// 	logsPlugin.guildMemberAdd(guildMember);
-// });
+client.on('guildMemberAdd', asyncFnWrapper(
+	async guildMember => {
+		let server = await guildClient.get(guildMember.guild.id);
+		if (server == null) return;
+
+		await EventsCmd.onGuildMemberAdd(guildMember, server);
+		// logsPlugin.guildMemberAdd(guildMember);
+	},
+	async async_err => {
+		logger.error(async_err);
+	}
+));
 
 client.on('guildMemberRemove', asyncFnWrapper(
 	async guildMember => {
 		levelsPlugin.memberLeave(guildMember);
-		await PunishmentCmd.onGuildMemberRemove(guildMember);
+
+		let server = await guildClient.get(guildMember.guild.id);
+		if (server == null) return;
+
+		await PunishmentCmd.onGuildMemberRemove(guildMember, server);
+
+		await EventsCmd.onGuildMemberRemove(guildMember, server);
 		// logsPlugin.guildMemberRemove(guildMember);
 	},
 	async async_err => {

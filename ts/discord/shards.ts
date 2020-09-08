@@ -76,9 +76,8 @@ function launch(client: string) {
 }
 
 function botClientSetup() {
-	mongoose.Promise = global.Promise;
 	if (config.debug) mongoose.set('debug', true);
-	mongoose.connect(config.database, { useNewUrlParser: true });
+	mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true });
 
 	const ModelStats: mongoose.Model<mongoose.Document> = require('./models/statistics');
 
