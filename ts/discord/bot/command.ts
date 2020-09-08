@@ -67,32 +67,32 @@ class Command {
 
 	// Events
 
-	public async onGuildRemove(guild: Discord.Guild, server?: Server) { return false; }
-	public async onGuildCreate(guild: Discord.Guild, server?: Server) { return false; }
+	public async onGuildRemove(guild: Discord.Guild, server: Server) { return false; }
+	public async onGuildCreate(guild: Discord.Guild, server: Server) { return false; }
 
 	// Channels
-	public async onChannelCreate(channel: Discord.GuildChannel, server?: Server) { return false; }
-	public async onChannelDelete(channel: Discord.GuildChannel, server?: Server) { return false; }
+	public async onChannelCreate(channel: Discord.GuildChannel, server: Server) { return false; }
+	public async onChannelDelete(channel: Discord.GuildChannel, server: Server) { return false; }
 
 	// Users
-	public async onGuildMemberAdd(member: Discord.GuildMember | Discord.PartialGuildMember, server?: Server) { return false; }
-	public async onGuildMemberRemove(member: Discord.GuildMember | Discord.PartialGuildMember, server?: Server) { return false; }
-	public async onGuildMemberRoleAdd(member: Discord.GuildMember | Discord.PartialGuildMember, roles: Discord.Role[], server?: Server) { return false; }
-	public async onGuildMemberRoleRemove(member: Discord.GuildMember | Discord.PartialGuildMember, roles: Discord.Role[], server?: Server) { return false; }
+	public async onGuildMemberAdd(member: Discord.GuildMember | Discord.PartialGuildMember, server: Server) { return false; }
+	public async onGuildMemberRemove(member: Discord.GuildMember | Discord.PartialGuildMember, server: Server) { return false; }
+	public async onGuildMemberRoleAdd(member: Discord.GuildMember | Discord.PartialGuildMember, roles: Discord.Role[], server: Server) { return false; }
+	public async onGuildMemberRoleRemove(member: Discord.GuildMember | Discord.PartialGuildMember, roles: Discord.Role[], server: Server) { return false; }
 
 	// Roles
-	public async onRoleDelete(role: Discord.Role, server?: Server) { return false; }
-	public async onRoleCreate(role: Discord.Role, server?: Server) { return false; }
-	public async onRoleUpdate(oldRole: Discord.Role, newRole: Discord.Role, server?: Server) { return false; }
+	public async onRoleDelete(role: Discord.Role, server: Server) { return false; }
+	public async onRoleCreate(role: Discord.Role, server: Server) { return false; }
+	public async onRoleUpdate(oldRole: Discord.Role, newRole: Discord.Role, server: Server) { return false; }
 
 	//
-	public async onReactionAdd(reaction: Discord.MessageReaction, user: Discord.User, server?: Server) { return false; }
-	public async onReactionRemove(reaction: Discord.MessageReaction, user: Discord.User, server?: Server) { return false; }
+	public async onReactionAdd(reaction: Discord.MessageReaction, user: Discord.User | Discord.PartialUser, server: Server) { return false; }
+	public async onReactionRemove(reaction: Discord.MessageReaction, user: Discord.User | Discord.PartialUser, server: Server) { return false; }
 
-	public async onMessage(message: Discord.Message, server?: Server) { return false; }
-	public async onMessageDelete(message: Discord.Message, server?: Server) { return false; }
-	public async onMessageDeleteBulk(messages: Discord.Collection<string, Discord.Message>, server?: Server) { return false; }
-	public async onMessageUpdate(oldMessage: Discord.Message, newMessage: Discord.Message, server?: Server) { return false; }
+	public async onMessage(message: Discord.Message, server: Server) { return false; }
+	public async onMessageDelete(message: Discord.Message, server: Server) { return false; }
+	public async onMessageDeleteBulk(messages: Discord.Collection<string, Discord.Message>, server: Server) { return false; }
+	public async onMessageUpdate(oldMessage: Discord.Message, newMessage: Discord.Message, server: Server) { return false; }
 
 	// Statics
 

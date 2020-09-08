@@ -124,7 +124,7 @@ class Mute extends Command {
 		let user = message.guild!.member(discUserId);
 		if (user == null) return Command.error([['Mute', 'Invalid User.']]);
 
-		user.roles.add(server.punishments.punished_role_id, 'Punished [Mute]');
+		await user.roles.add(server.punishments.punished_role_id, 'Punished [Mute]');
 
 		// TODO: Check to see if user currently is being punished. (temp or perm)
 
@@ -144,26 +144,24 @@ class Mute extends Command {
 
 		let item = await model.save();
 
-		if (seconds != null) {
-			// TODO: Check to see if punishment uses same role (if currently punished)
-			await TempPunishments.updateOne(
-				{
+		// TODO: Check to see if punishment uses same role (if currently punished)
+		await TempPunishments.updateOne(
+			{
+				server_id: message.guild!.id,
+				member_id: discUserId!
+			},
+			{
+				$set: {
 					server_id: message.guild!.id,
-					member_id: discUserId!
-				},
-				{
-					$set: {
-						server_id: message.guild!.id,
-						member_id: discUserId!,
-						punishment: item._id,
-						expires: new Date(Date.now() + (seconds * 1000))
-					}
-				},
-				{
-					upsert: true
+					member_id: discUserId!,
+					punishment: item._id,
+					expires: seconds != null ? new Date(Date.now() + (seconds * 1000)) : undefined
 				}
-			).exec();
-		}
+			},
+			{
+				upsert: true
+			}
+		).exec();
 
 		// TODO: Return punishment count, and improve stuffs.
 		return Command.success([

@@ -356,6 +356,16 @@ class Punishment extends Command {
 		return true;
 	}
 
+	public async onGuildMemberAdd(member: Discord.GuildMember, server: DiscordServer) {
+		let punishment = await TempPunishments.findOne({ server_id: member.guild.id, member_id: member.id });
+
+		if (punishment != null && server.punishments.punished_role_id != null) {
+			await member.roles.add(server.punishments.punished_role_id, 'Re-added punishment role.');
+		}
+
+		return true;
+	}
+
 	public async onRoleDelete(role: Discord.Role, server: DiscordServer) {
 		if (server.punishments != null && server.punishments.punished_role_id != null) {
 			if (role.id == server.punishments.punished_role_id) {
@@ -421,7 +431,7 @@ setInterval(utils.asyncFnWrapper(async () => {
 		if (client.punishments.punished_role_id == null) return cb();
 
 
-		await member.roles.remove(client.punishments.punished_role_id, 'Expired');;
+		await member.roles.remove(client.punishments.punished_role_id, 'Expired');
 
 		return cb();
 	}, async (async_err, _, cb) => {

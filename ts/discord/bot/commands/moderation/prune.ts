@@ -105,7 +105,7 @@ class Prune extends Command {
 					if (pruneLimit > MAX_PRUNE_SIZE) pruneLimit = MAX_PRUNE_SIZE;
 				}
 
-				let channelBeingPruned = <Discord.TextChannel>message.guild!.channels.cache.get(channelId);
+				let channelBeingPruned = <Discord.TextChannel>message.guild!.channels.resolve(channelId);
 
 				if (channelBeingPruned == null) return Command.error([[ 'Prune', 'Channel does not exist!' ]]);
 				if (channelBeingPruned.type != 'text') return Command.error([[ 'Prune', 'Channel must be text only!' ]]);
