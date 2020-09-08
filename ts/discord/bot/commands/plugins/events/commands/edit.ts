@@ -36,7 +36,11 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 
 		if (!isNaN(id)) {
 			if (server.plugins.events!.groups!.find(g => g.id == id) != null) {
-				showEditPage(id, message, server);
+				let msg = await showEditPage(id, message, server);
+
+				if (msg != null) {
+					await message.channel.send(msg);
+				}
 			} else {
 				await message.channel.send(utils.errorMsg([
 					[
@@ -65,7 +69,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 	return Promise.resolve();
 }
 
-function showEditPage(event_id: number, senderMessage: Discord.Message, server: DiscordServer) {
+async function showEditPage(event_id: number, senderMessage: Discord.Message, server: DiscordServer) {
 	if (!server.userHasPerm(senderMessage.member!, PERMS.EDIT)) return utils.noPermsMessage('Events');
 
 	let group = server.plugins.events!.groups!.find(g => g.id == event_id)!;
@@ -78,14 +82,16 @@ function showEditPage(event_id: number, senderMessage: Discord.Message, server: 
 		'{page_items}'
 	]);
 
-	selector.addSelection('variables', 'Changes the event specific variables you can access throughout.', page => {
+	selector.addSelection('variables', 'Changes the event specific variables you can access throughout.', async page => {
 		//
 	});
 
 	selector.display();
+
+	return null;
 }
 
-function showEditEventPage(compiled: DiscordBot.ListenEvents, senderMessage: Discord.Message, server: DiscordServer) {
+async function showEditEventPage(compiled: DiscordBot.ListenEvents, senderMessage: Discord.Message, server: DiscordServer) {
 	if (!server.userHasPerm(senderMessage.member!, PERMS.EDIT)) return utils.noPermsMessage('Events');
 
 	let selector = utils.createPageSelector(senderMessage.author.id, senderMessage.channel)!;
@@ -99,38 +105,40 @@ function showEditEventPage(compiled: DiscordBot.ListenEvents, senderMessage: Dis
 	if (compiled.event == null) {
 		showListenerPage(compiled, selector, server);
 	} else {
-		selector.addSelection('change', 'Change current on called event', page => {
+		selector.addSelection('change', 'Change current on called event', async page => {
 			//
 		});
 
-		selector.addSelection('edit', 'Edit current on called event', page => {
+		selector.addSelection('edit', 'Edit current on called event', async page => {
 			//
 		});
 
-		selector.display();
+		await selector.display();
 	}
+
+	return null;
 }
 
-function showListenerPage(compiled: DiscordBot.ListenEvents, selector: utils.MessagePage, server: DiscordServer) {
-	selector.addSelection('role', 'Add/Remove role when event is called', page => {
+async function showListenerPage(compiled: DiscordBot.ListenEvents, selector: utils.MessagePage, server: DiscordServer) {
+	selector.addSelection('role', 'Add/Remove role when event is called', async page => {
 		compiled.event = { type: 'role' };
-		editEventPage(compiled, page, server);
+		return editEventPage(compiled, page, server);
 	});
 
-	selector.addSelection('message', 'Send message in channel when event is called', page => {
+	selector.addSelection('message', 'Send message in channel when event is called', async page => {
 		compiled.event = { type: 'message' };
-		editEventPage(compiled, page, server);
+		return editEventPage(compiled, page, server);
 	});
 
-	selector.addSelection('dm', 'Send Direct Message to user when event is called', page => {
+	selector.addSelection('dm', 'Send Direct Message to user when event is called', async page => {
 		compiled.event = { type: 'dm' };
-		editEventPage(compiled, page, server);
+		return editEventPage(compiled, page, server);
 	});
 
-	selector.display();
+	await selector.display();
 }
 
-function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.MessagePage, server: DiscordServer) {
+async function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.MessagePage, server: DiscordServer) {
 	switch (compiled.event.type) {
 		case 'role':
 			selector.setFormat([
@@ -140,12 +148,12 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 				'{page_items}'
 			]);
 
-			selector.addSelection('Add', 'Add a role to guild member', page => {
+			selector.addSelection('Add', 'Add a role to guild member', async page => {
 				(<DiscordBot.DoGroupEvent>compiled.event).do = 'add';
 				nextPage(page);
 			});
 
-			selector.addSelection('Remove', 'Remove a role from guild member', page => {
+			selector.addSelection('Remove', 'Remove a role from guild member', async page => {
 				(<DiscordBot.DoGroupEvent>compiled.event).do = 'remove';
 				nextPage(page);
 			});
@@ -158,7 +166,7 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 					'{page_items}'
 				]);
 
-				page.listen(id_message => {
+				page.listen(async id_message => {
 					let type = server.idType(id_message);
 					if (type != null && type != 'channel') return false;
 
@@ -190,7 +198,7 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 				'{page_items}'
 			]);
 
-			selector.listen(id_message => {
+			selector.listen(async id_message => {
 				let type = server.idType(id_message);
 				if (type != null && type != 'channel') return false;
 
@@ -213,7 +221,7 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 					'{page_items}'
 				]);
 
-				messageSelector.listen(message => {
+				messageSelector.listen(async message => {
 					(<DiscordBot.DoMessageEvent>compiled.event).message = message;
 
 					server.regrab(copy => {
@@ -239,7 +247,7 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 				'{page_items}'
 			]);
 
-			selector.listen(message => {
+			selector.listen(async message => {
 				(<DiscordBot.DoDirectMessageEvent>compiled.event).message = message;
 
 				server.regrab(copy => {
@@ -253,7 +261,7 @@ function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.Messag
 			break;
 	}
 
-	selector.display();
+	await selector.display();
 }
 
 

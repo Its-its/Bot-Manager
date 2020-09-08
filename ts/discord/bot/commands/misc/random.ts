@@ -86,7 +86,7 @@ class Random extends Command {
 				if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Random');
 
 				if (params.length != 0) {
-					parseList(params, message.channel);
+					await parseList(params, message.channel);
 				} else {
 					let selector = utils.createPageSelector(message.author.id, message.channel)!;
 
@@ -100,13 +100,14 @@ class Random extends Command {
 						'{page_items}'
 					]);
 
-					selector.listen(newMessage => {
-						parseList(newMessage.split('\n'), message.channel);
-						selector.close('delete');
+					selector.listen(async newMessage => {
+						await parseList(newMessage.split('\n'), message.channel);
+						await selector.close('delete');
+
 						return true;
 					});
 
-					selector.display();
+					await selector.display();
 				}
 
 			}
@@ -198,7 +199,7 @@ function strToNumber(reqStrNumber: string, defaultNumber: number): number {
 }
 
 
-function parseList(lines: string[], channel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel) {
+async function parseList(lines: string[], channel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel) {
 	let codeblockCount = getCodeblockCount(lines);
 	let lists: string[][] = [];
 
@@ -249,7 +250,7 @@ function parseList(lines: string[], channel: Discord.TextChannel | Discord.DMCha
 		].concat(lists.map((l, i) => `**List #${i + 1}:** ${l.length} items`)).join('\n')
 	]);
 
-	channel.send(Command.success(compiledLists));
+	return channel.send(Command.success(compiledLists));
 }
 
 function getCodeblockCount(lines: string[]) {

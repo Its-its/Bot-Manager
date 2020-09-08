@@ -46,24 +46,24 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 		// TODO: Check to see if channel still exists for selection name.
 		// TODO: Permission checks
 
-		selector.addSelection(String(i + 1), `<#${feed.channel_id}> (Feeds: ${feed.feeds.length})`, (page) => {
-			DiscordFeeds.findOne({ guild_id: guild.id, channel_id: feed.channel_id })
-			.populate('feeds.feed')
-			.exec((err, feed: CustomDocs.discord.DiscordRssPopulated) => {
-				if (err != null) {
-					singleMsg.edit(utils.errorMsg([['RSS Feed', 'An error occured while trying to find RSS Feed for Channel. Please try again in a few moments.']]));
-					return;
-				}
+		selector.addSelection(String(i + 1), `<#${feed.channel_id}> (Feeds: ${feed.feeds.length})`, async (page) => {
+			let [feedPopped, err] = await utils.asyncCatch(DiscordFeeds.findOne({ guild_id: guild.id, channel_id: feed.channel_id })
+				.populate('feeds.feed')
+				.exec());
 
-				showChannel(server, message.member!, page, feed);
-			});
+			if (err != null) {
+				await singleMsg.edit(utils.errorMsg([['RSS Feed', 'An error occured while trying to find RSS Feed for Channel. Please try again in a few moments.']]));
+				return;
+			}
+
+			return showChannel(server, message.member!, page, <any>feedPopped);
 		});
 	});
 
 	selector.display();
 }
 
-function showChannel(server: DiscordServer, guildMember: Discord.GuildMember, page: utils.MessagePage, channelFeed: CustomDocs.discord.DiscordRssPopulated) {
+async function showChannel(server: DiscordServer, guildMember: Discord.GuildMember, page: utils.MessagePage, channelFeed: CustomDocs.discord.DiscordRssPopulated) {
 	let channel = <Discord.TextChannel>page.channel;
 
 	// const channelExists = channel.guild.channels.has(channelFeed.channel_id);
@@ -91,31 +91,31 @@ function showChannel(server: DiscordServer, guildMember: Discord.GuildMember, pa
 	// }
 
 	if (server.userHasPerm(guildMember, PERMISSIONS.MOVE)) {
-		page.addSelection('Move', 'Moves the Channel Feed to a new channel.', (pageMove) => {
+		page.addSelection('Move', 'Moves the Channel Feed to a new channel.', async pageMove => {
 			pageMove.setFormat([
 				'Send Channel ID or # to move the feed to that channel.​',
 				'',
 				'{page_items}'
 			]);
 
-			pageMove.listen(message => moveFeedToDifferentChannel(message, channelFeed._id, page, pageMove));
+			await pageMove.listen(async message => moveFeedToDifferentChannel(message, channelFeed._id, page, pageMove));
 
-			pageMove.display();
+			return pageMove.display();
 		});
 	}
 
 	if (server.userHasPerm(guildMember, PERMISSIONS.REMOVE)) {
-		page.addSelection('Delete', 'Permanently delete all Channel Feeds.', (page) => {
-			page.addSelection('yes', 'Yes, PERMANENTLY delete all Channel Feeds.', () => {
-				removeMultipleFeedsFromChannel(channelFeed.feeds.map(f => mongoose.Types.ObjectId(f.feed._id)), channelFeed._id);
-				page.temporaryMessage(`Deleted <#${channelFeed.channel_id}> Channel Feeds`, 3000);
+		page.addSelection('Delete', 'Permanently delete all Channel Feeds.', async page => {
+			page.addSelection('yes', 'Yes, PERMANENTLY delete all Channel Feeds.', async () => {
+				await removeMultipleFeedsFromChannel(channelFeed.feeds.map(f => mongoose.Types.ObjectId(f.feed._id)), channelFeed._id);
+				await page.temporaryMessage(`Deleted <#${channelFeed.channel_id}> Channel Feeds`, 3000);
+
+				return Promise.resolve();
 			});
 
-			page.addSelection('no', 'No, go back to previous page.', () => {
-				page.back();
-			});
+			page.addSelection('no', 'No, go back to previous page.', () => page.back());
 
-			page.display();
+			return page.display();
 		});
 	}
 
@@ -123,17 +123,17 @@ function showChannel(server: DiscordServer, guildMember: Discord.GuildMember, pa
 		page.addSelection(
 			String(i + 1),
 			'[' + (channelFeed.active ? (feed.active ? 'Active' : 'Disabled') : 'Disabled') + '] ' + feed.feed.link.slice(0, 50),
-			next => showPageFeed(server, guildMember, next, channelFeed, i)
+			async next => showPageFeed(server, guildMember, next, channelFeed, i)
 		);
 	});
 
 	page.addSpacer();
 
-	page.display();
+	return page.display();
 }
 
 
-function moveFeedToDifferentChannel(channelStrId: string, mongoFeedId: any, page: utils.MessagePage, pageMove: utils.MessagePage): boolean {
+async function moveFeedToDifferentChannel(channelStrId: string, mongoFeedId: any, page: utils.MessagePage, pageMove: utils.MessagePage): Promise<boolean> {
 	let type = utils.getIdType(channelStrId);
 	if (type != null || type != 'channel') return false;
 
@@ -143,37 +143,43 @@ function moveFeedToDifferentChannel(channelStrId: string, mongoFeedId: any, page
 	let channel = (<Discord.TextChannel>page.channel).guild.channels.cache.get(id);
 	if (channel == null) return false;
 
-	DiscordFeeds.updateOne({ _id: mongoFeedId }, { $set: { channel_id: channel.id } }).exec();
+	await DiscordFeeds.updateOne({ _id: mongoFeedId }, { $set: { channel_id: channel.id } }).exec();
 
-	pageMove.temporaryMessage('Changed Feed to requested channel.', 3000);
+	await pageMove.temporaryMessage('Changed Feed to requested channel.', 3000);
 
 	return true;
 }
 
-function changeFeedTemplate(newTemplate: string, mongoFeedId: any, feedPos: number) {
+async function changeFeedTemplate(newTemplate: string, mongoFeedId: any, feedPos: number) {
 	let setting: string | null;
 
 	if (newTemplate.length == 0 || newTemplate == 'default') setting = null;
 	else setting = newTemplate.replace(/\</g, '\\<').replace(/\>/g, '\\>');
 
-	DiscordFeeds.updateOne({ _id: mongoFeedId }, { $set: { ['feeds.' + feedPos + '.format']: setting } }).exec();
+	await DiscordFeeds.updateOne({ _id: mongoFeedId }, { $set: { ['feeds.' + feedPos + '.format']: setting } }).exec();
+
+	return Promise.resolve();
 }
 
-function removeMultipleFeedsFromChannel(mongoGlobalFeedIds: any[], mongoDiscordFeedId: any) {
-	DiscordFeeds.remove({ _id: mongoDiscordFeedId }).exec();
+async function removeMultipleFeedsFromChannel(mongoGlobalFeedIds: any[], mongoDiscordFeedId: any) {
+	await DiscordFeeds.remove({ _id: mongoDiscordFeedId }).exec();
 	// TODO! Ensure correct
-	RSSFeeds.updateMany({ _id: { $in: mongoGlobalFeedIds } }, { $inc: { sending_to: -1 } }).exec();
+	await RSSFeeds.updateMany({ _id: { $in: mongoGlobalFeedIds } }, { $inc: { sending_to: -1 } }).exec();
+
+	return Promise.resolve();
 }
 
-function removeFeedFromChannel(mongoGlobalFeedId: any, mongoDiscordFeedId: any) {
-	DiscordFeeds.updateOne({ _id: mongoDiscordFeedId }, { $pull: { feeds: { feed: mongoGlobalFeedId } } }).exec();
-	RSSFeeds.updateOne({ _id: mongoGlobalFeedId }, { $inc: { sending_to: -1 } }).exec();
+async function removeFeedFromChannel(mongoGlobalFeedId: any, mongoDiscordFeedId: any) {
+	await DiscordFeeds.updateOne({ _id: mongoDiscordFeedId }, { $pull: { feeds: { feed: mongoGlobalFeedId } } }).exec();
+	await RSSFeeds.updateOne({ _id: mongoGlobalFeedId }, { $inc: { sending_to: -1 } }).exec();
+
+	return Promise.resolve();
 }
 
 
 const DEFAULT_RSS_FORMAT = ':newspaper:  **{title}**\n\n{link}';
 
-function showPageFeed(server: DiscordServer, guildMember: Discord.GuildMember, page: utils.MessagePage, channelFeed: CustomDocs.discord.DiscordRssPopulated, pos: number) {
+async function showPageFeed(server: DiscordServer, guildMember: Discord.GuildMember, page: utils.MessagePage, channelFeed: CustomDocs.discord.DiscordRssPopulated, pos: number) {
 	let feed = channelFeed.feeds[pos];
 
 	page.setFormat([
@@ -194,7 +200,7 @@ function showPageFeed(server: DiscordServer, guildMember: Discord.GuildMember, p
 	// }
 
 	if (server.userHasPerm(guildMember, PERMISSIONS.EDIT_TEMPLATE)) {
-		page.addSelection('Template', 'Change the feed template', (pageTemplate) => {
+		page.addSelection('Template', 'Change the feed template', async pageTemplate => {
 			pageTemplate.setFormat([
 				'Template currently:',
 				'```' + (feed.format || DEFAULT_RSS_FORMAT) + '```',
@@ -206,32 +212,33 @@ function showPageFeed(server: DiscordServer, guildMember: Discord.GuildMember, p
 				'Always select responsibly.'
 			]);
 
-			pageTemplate.listen(value => {
-				changeFeedTemplate(value, channelFeed._id, pos);
-				pageTemplate.temporaryMessage('Changed Feed Format.', 3000);
+			pageTemplate.listen(async value => {
+				await changeFeedTemplate(value, channelFeed._id, pos);
+				await pageTemplate.temporaryMessage('Changed Feed Format.', 3000);
+
 				return true;
 			});
 
-			pageTemplate.display();
+			await pageTemplate.display();
 		});
 	}
 
 	if (server.userHasPerm(guildMember, PERMISSIONS.REMOVE)) {
-		page.addSelection('Remove', 'Remove the feed from the channel.', (pageRemove) => {
-			pageRemove.addSelection('yes', 'Yes, PERMANENTLY delete the Channel Feeds.', () => {
-				removeFeedFromChannel(feed.feed._id, channelFeed._id);
-				pageRemove.temporaryMessage(`Deleted <#${channelFeed.channel_id}> Channel Feeds`, 3000);
+		page.addSelection('Remove', 'Remove the feed from the channel.', async pageRemove => {
+			pageRemove.addSelection('yes', 'Yes, PERMANENTLY delete the Channel Feeds.', async () => {
+				await removeFeedFromChannel(feed.feed._id, channelFeed._id);
+				await pageRemove.temporaryMessage(`Deleted <#${channelFeed.channel_id}> Channel Feeds`, 3000);
+
+				return Promise.resolve();
 			});
 
-			pageRemove.addSelection('no', 'No, go back to previous page.', () => {
-				pageRemove.back();
-			});
+			pageRemove.addSelection('no', 'No, go back to previous page.', async () => pageRemove.back());
 
-			pageRemove.display();
+			await pageRemove.display();
 		});
 	}
 
-	page.display();
+	return page.display();
 }
 
 export {

@@ -35,7 +35,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 		let data = await searchForSong(query, page);
 
 		data.items.forEach((song, p) => {
-			pager.addSelection(String(p + 1), song.title, (newPage) => {
+			pager.addSelection(String(p + 1), song.title, async (newPage) => {
 				newPage.setFormat([
 					'ID: ' + song.id,
 					'Title: ' + song.title,
@@ -47,37 +47,38 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 				newPage.addSpacer();
 
 				if (server.userHasPerm(message.member!, PERMS.PLAY)) {
-					newPage.addSelection('Play', 'Play it now.', () => {
-						newPage.edit(Command.info([['Music', 'Playing song please wait.']]), () => {
-							sendPlay(message.channel.id, message.guild!.id, message.member!.id, song.id);
-							newPage.close('delete');
-						});
+					newPage.addSelection('Play', 'Play it now.', async () => {
+						await newPage.edit(Command.info([['Music', 'Playing song please wait.']]));
+
+						sendPlay(message.channel.id, message.guild!.id, message.member!.id, song.id);
+
+						await newPage.close('delete');
 					});
 				}
 
 				if (server.userHasPerm(message.member!, PERMS.QUEUE_ADD)) {
-					newPage.addSelection('Queue', 'Queue it for later.', () => {
-						newPage.edit(Command.info([['Music', 'Queueing song...']]), () => {
-							sendQueue('add', message.guild!.id, message.member!.id, message.channel.id, [song.id]);
-							newPage.close('delete');
-						});
+					newPage.addSelection('Queue', 'Queue it for later.', async () => {
+						await newPage.edit(Command.info([['Music', 'Queueing song...']]));
+
+						sendQueue('add', message.guild!.id, message.member!.id, message.channel.id, [song.id]);
+
+						await newPage.close('delete');
 					});
 				}
 
-				newPage.display();
+				return newPage.display();
 			});
 		});
 
 		pager.addSpacer();
 
 		if (data.nextPageToken) {
-			pager.addSelection('Next', 'Next Page', (newPage) => {
-				nextPage(newPage, query, data.nextPageToken)
-				.then(_ => newPage.display());
+			pager.addSelection('Next', 'Next Page', async (newPage) => {
+				return nextPage(newPage, query, data.nextPageToken);
 			});
 		}
 
-		pager.display();
+		await pager.display();
 	}
 }
 

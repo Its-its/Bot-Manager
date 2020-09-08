@@ -3,6 +3,7 @@ import Discord = require('discord.js');
 import Command = require('./bot/command');
 
 import { Nullable } from '@type-manager';
+import utils = require('@base/discord/utils');
 
 
 const startDate = Date.now();
@@ -376,14 +377,14 @@ const formatReplaceValues: { [name: string]: (page: MessagePage) => string } = {
 class MessagePage {
 	public author_id: string;
 
-	public onMessage?: (value: string) => boolean = undefined;
+	public onMessage?: (value: string) => Promise<boolean> = undefined;
 
 	public channel: GChannel;
 	public editingMessage?: Discord.Message;
 
 	public collector?: Discord.MessageCollector;
 
-	public selectionCalls: { [name: string]: (value: MessagePage) => any } = {};
+	public selectionCalls: { [name: string]: (value: MessagePage) => Promise<any> } = {};
 	public selections: (PageSelection | null)[] = [];
 
 	public removeReply: boolean;
@@ -420,101 +421,133 @@ class MessagePage {
 
 		let channel: GChannel = this.editingMessage != null ? this.editingMessage.channel : this.channel;
 
-		this.collector = channel.createMessageCollector(m => m.author.id == this.author_id, { time: this.timeoutMS });
-		this.collector.on('collect', (collectedMsg) => this.onCollect(collectedMsg));
-		this.collector.on('end', (_, reason) => this.onEnd(reason));
+		this.createCollector(channel);
 	}
 
-	public onCollect(userMessage: Discord.Message) {
+	createCollector(channel: GChannel) {
+		this.collector = channel.createMessageCollector(m => m.author.id == this.author_id, { time: this.timeoutMS });
+
+		this.collector.on(
+			'collect',
+			utils.asyncFnWrapper(
+				async collectedMsg => this.onCollect(collectedMsg),
+				async err => this.collectorError(err)
+			)
+		);
+
+		this.collector.on(
+			'end', utils.asyncFnWrapper(
+				async (_, reason) => this.onEnd(reason),
+				async err => this.collectorError(err)
+			)
+		);
+	}
+
+	async collectorError(err: any) {
+		console.error(err);
+
+		await this.close('exit');
+
+		await this.temporaryMessage(Command.error([[
+			'An Error Occured.',
+			'Please try again in a few minutes..\n\n' + err
+		]]), 3000);
+	}
+
+	public async onCollect(userMessage: Discord.Message) {
 		let input = userMessage.cleanContent.toLowerCase().trim();
 
 		if (this.removeReply) {
-			userMessage.delete()
-			.catch(e => console.error('removeReply:', e));
+			await userMessage.delete();
 		}
 
-		if (this.select(input)) return;
+		if (await this.select(input)) return;
 
 		// Stops current one, creates new one to refresh the time.
 		if (this.collector != null) this.collector.stop('invalid-input');
 
+		// Pick the editingMessage channel if it exists otherwise cached channel.
 		let channel = this.editingMessage != null ? this.editingMessage.channel : this.channel;
 
-		this.collector = channel.createMessageCollector(m => m.author.id == this.author_id, { time: this.timeoutMS });
-		this.collector.on('collect', (collectedMsg) => this.onCollect(collectedMsg));
-		this.collector.on('end', (_, reason) => this.onEnd(reason));
+		this.createCollector(channel);
 
 		if (this.editingMessage != null) {
-			this.editingMessage.channel.send(Command.error([[ 'Input Error', `"${input}" is not a valid selection input.` ]]))
-			.then(m => m.delete({ timeout: 2000, reason: 'Invalid Selection Input.' }).catch(e => console.error('del-2000:', e)))
-			.catch((e: any) => console.error('collect:', e));
+			let m = await this.editingMessage.channel.send(Command.error([[ 'Input Error', `"${input}" is not a valid selection input.` ]]));
+
+			await m.delete({ timeout: 2000, reason: 'Invalid Selection Input.' });
 		}
 	}
 
-	public onEnd(reason: string) {
+	public async onEnd(reason: string) {
 		console.log('End: ' + reason);
 
 		if (reason == 'time') {
 			if (this.editingMessage == null) return;
 
-			this.editingMessage.delete();
+			await this.editingMessage.delete();
+
 			this.editingMessage = undefined;
-			this.temporaryMessage(Command.error([[ 'Time limit exceeded.', 'Removing page selections...' ]]), 3000);
+			await this.temporaryMessage(Command.error([[ 'Time limit exceeded.', 'Removing page selections...' ]]), 3000);
 		} else if (reason == 'exit') {
-			this.edit(Command.error([['Pages', 'Exiting...']]), () => {
-				if (this.editingMessage == null) return;
+			await this.edit(Command.error([['Pages', 'Exiting...']]));
 
-				this.editingMessage.delete({ timeout: 3000, reason: 'Exiting Page.' })
-				.catch(e => console.error('exit:', e));
+			if (this.editingMessage == null) return;
 
-				this.editingMessage = undefined;
-			});
+			await this.editingMessage.delete({ timeout: 3000, reason: 'Exiting Page.' });
+
+			this.editingMessage = undefined;
 		} else if (reason == 'delete') {
 			if (this.editingMessage == null) return;
 
-			this.editingMessage.delete()
-			.catch(e => console.error('delete:', e));
+			await this.editingMessage.delete();
 
 			this.editingMessage = undefined;
 		}
 	}
 
-	public display() {
+	public async display() {
 		if (this.parent != null) {
-			this.parent.close('delete');
-			this.addSelection('Back', 'Return to previous page.', (page) => { this.back(); });
+			await this.parent.close('delete');
+
+			this.addSelection(
+				'Back',
+				'Return to previous page.',
+				async _ => this.back()
+			);
 		}
 
-		this.addSelection('Exit', 'Exits out of the selection.', (page) => { this.close('exit'); });
+		this.addSelection(
+			'Exit',
+			'Exits out of the selection.',
+			async _ => this.close('exit')
+		);
 
-		this.refresh();
+		await this.refresh();
 
 		return this;
 	}
 
-	public refresh() {
+	public async refresh() {
 		if (this.editingMessage == null) {
-			this.channel.send(this.compileMessage())
-			.then(m => {
-				this.editingMessage = Array.isArray(m) ? m[0]: m;
-				this.init();
-			})
-			.catch((e: any) => console.error('refresh:', e));
+			let m = await this.channel.send(this.compileMessage());
+
+			this.editingMessage = m;
+			this.init();
 		} else {
-			this.edit(this.compileMessage(), () => {
-				this.init();
-			});
+			await this.edit(this.compileMessage());
+
+			this.init();
 		}
 
 		return this;
 	}
 
-	public close(reason: 'close' | 'delete' | 'time' | string = 'close') {
+	public async close(reason: 'close' | 'delete' | 'time' | string = 'close') {
 		if (this.collector != null && !this.collector.ended) {
 			this.collector.stop(reason);
 		} else {
 			if (this.editingMessage != null && reason != 'close') {
-				this.editingMessage.delete();
+				await this.editingMessage.delete();
 				this.editingMessage = undefined;
 			}
 		}
@@ -523,15 +556,15 @@ class MessagePage {
 		this.initiated = false;
 	}
 
-	public back() {
+	public async back() {
 		if (this.parent == null) return;
 
-		this.close('delete');
-		this.parent.display();
+		await this.close('delete');
+		await this.parent.display();
 	}
 
 	// TODO: Handle Async | setup: (value: MessagePage) => Promise<any> | void
-	public addSelection(inputValue: string, description: string, setup: (value: MessagePage) => any): MessagePage {
+	public addSelection(inputValue: string, description: string, setup: (value: MessagePage) => Promise<any>): MessagePage {
 		if (this.selectionCalls[inputValue.toLowerCase()] == null) {
 			this.selectionCalls[inputValue.toLowerCase()] = setup;
 			this.selections.push({ input: inputValue, description: description });
@@ -548,6 +581,7 @@ class MessagePage {
 	public editSelection(inputValue: string, opts: PageSelection) {
 		for(let i = 0; i < this.selections.length; i++) {
 			let selection = this.selections[i];
+
 			if (selection != null && selection.input == inputValue) {
 				Object.assign(selection, opts);
 				break;
@@ -557,46 +591,44 @@ class MessagePage {
 		return this;
 	}
 
-	public listen(cb: (value: string) => boolean) {
+	public listen(cb: (value: string) => Promise<boolean>) {
 		this.onMessage = cb;
 	}
 
-	public select(inputValue: string): boolean {
+	public async select(inputValue: string): Promise<boolean> {
 		if (this.selectionCalls[inputValue] == null) {
-			if (this.onMessage && this.onMessage(inputValue)) return true;
-			return false;
+			return this.onMessage != null && this.onMessage(inputValue);
 		}
-
 
 		const newPage = new MessagePage({ author_id: this.author_id, channel: this.channel, parent: this });
 
-		this.selectionCalls[inputValue](newPage);
+		await this.selectionCalls[inputValue](newPage);
 
 		return true;
 	}
 
-	public temporaryMessage(contents: any, deletion: number, cb?: () => any) {
-		this.close(); // No need to select anything anymore.
+	public async temporaryMessage(contents: any, deletion: number) {
+		await this.close(); // No need to select anything anymore.
 
-		if (this.editingMessage == null) return;
+		if (this.editingMessage == null) return Promise.resolve();
 
-		this.editingMessage.edit(contents)
-		.then((msg: Discord.Message) => {
-			msg.delete({ timeout: deletion, reason: 'Temporary message.' })
-			.then(() => cb && cb())
-			.catch(e => console.error('temp1:', e));
-		})
-		.catch(e => console.error('temp0:', e));
+		let msg = await this.editingMessage.edit(contents);
+
+		await msg.delete({ timeout: deletion, reason: 'Temporary message.' });
+
+		return Promise.resolve();
 	}
 
-	public edit(newMessage: any, cb: (value: Discord.Message) => any) {
+	public async edit(newMessage: any) {
 		// this.close(); // No need to select anything anymore.
 
 		if (this.editingMessage == null) return;
 
-		this.editingMessage.edit(newMessage)
-		.then(m => { this.setEditing(m); cb(m); })
-		.catch(e => console.error('edit:', e));
+		let m = await this.editingMessage.edit(newMessage);
+
+		this.setEditing(m);
+
+		return m;
 	}
 
 
