@@ -82,7 +82,7 @@ async function onDidCallCommand(bot_id: string, message: Discord.Message, server
 
 		return true;
 	} else {
-		let phrase = server.findPhrase(message.content.split(' '));
+		let phrase = server.phrases.findPhrase(message.content.split(' '));
 
 		if (phrase != null && phrase.responses.length != 0) {
 			phrase.responses.forEach(r => parseOptions(message, server, r));

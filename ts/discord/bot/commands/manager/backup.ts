@@ -369,7 +369,7 @@ class Backup extends Command {
 					}
 
 					if (isBackingUp('phrases')) {
-						compiled['phrases'] = server.phrases.map(p => {
+						compiled['phrases'] = server.phrases.items.map(p => {
 							return {
 								enabled: p.enabled,
 								ignoreCase: p.ignoreCase,

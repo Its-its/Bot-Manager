@@ -10,8 +10,8 @@ import config = require('@config');
 import DiscordServers = require('../models/servers');
 import DiscordMembers = require('../models/members');
 
-import Command = require('../../models/commands');
-import Phrases = require('../../models/phrases');
+import ModelCommand = require('@base/models/commands');
+import ModelPhrases = require('@base/models/phrases');
 
 import Commands = require('./commands');
 
@@ -111,7 +111,7 @@ class Server extends Changes {
 
 	public alias: DiscordBot.Alias[];
 	public commands: DiscordBot.Command[];
-	public phrases: DiscordBot.Phrase[];
+	public phrases: Phrase;
 	public roles: DiscordBot.Role[];
 	public leveling: DiscordBot.Leveling = { roles: [], keepPreviousRoles: false };
 
@@ -149,7 +149,7 @@ class Server extends Changes {
 		this.ranks = def([], options.ranks);
 		this.roles = def([], options.roles);
 		this.commands = def([], options.commands);
-		this.phrases = def([], options.phrases);
+		this.phrases = new Phrase(this, options.phrases);
 
 		// Update from old plugins
 		this.plugins = def({}, options.plugins);
@@ -314,186 +314,6 @@ class Server extends Changes {
 
 //#endregion
 
-//#region Phrases
-
-	public async createPhrase(member: Discord.GuildMember, phraseText: string[]): Promise<DiscordBot.Phrase> {
-		phraseText.slice(0, SERVER.MAX_PHRASE_TEXT);
-
-		if (this.findPhrase(phraseText) != null) {
-			return Promise.reject('Phrase already exists.');
-		}
-
-		let phrase = {
-			_id: undefined,
-			enabled: true,
-			sid: this.serverId,
-			pid: uniqueID(4),
-			phrases: phraseText,
-			responses: [],
-			ignoreCase: true
-		};
-
-		let doc = await getOrCreateUser(member);
-
-		let model = new Phrases({
-			user_id: doc.id,
-			uid: phrase.pid,
-			sid: phrase.sid,
-			phrases: phrase.phrases,
-			responses: phrase.responses
-		});
-
-		let prod = await model.save();
-
-		phrase._id = prod.id;
-
-		this.phrases.push(phrase);
-
-		await DiscordServers.updateOne(
-			{ server_id: this.serverId },
-			{ $addToSet: { phrase_ids: prod.id } }
-		).exec();
-
-		return Promise.resolve(phrase);
-	}
-
-	public removePhrase(id: number | string, phrases?: string[]): Nullable<DiscordBot.Phrase> {
-		if (this.phrases.length < id) return null;
-
-		let phrase: Nullable<DiscordBot.Phrase> = null;
-		let pos = -1;
-
-		if (typeof id == 'string') {
-			for(let i = 0; i < this.phrases.length; i++) {
-				let p = this.phrases[i];
-				if (p.pid == id) {
-					phrase = p;
-					pos = i;
-					break;
-				}
-			}
-		} else {
-			pos = id - 1;
-			phrase = this.phrases[pos];
-		}
-
-		if (pos == -1) return null;
-		if (phrase == null) return null;
-
-		// Remove full phrase?
-		if (phrases == null) {
-			Phrases.remove({ _id: phrase._id }).exec();
-			this.phrases.splice(pos, 1);
-		} else {
-			Phrases.updateOne({ _id: phrase._id }, { $pull: { phrases: { $in: phrases } } }).exec();
-			phrases.forEach((p, i) => {
-				let index = phrase!.phrases.indexOf(p);
-				if (index != -1) phrase!.phrases.splice(index, 1);
-			});
-		}
-
-		return phrase;
-	}
-
-	public addPhrase(id: number | string, phrases: string[]): boolean {
-		if (this.phrases.length < id) return false;
-
-		if (typeof id == 'string') {
-			for(let i = 0; i < this.phrases.length; i++) {
-				let phrase = this.phrases[i];
-				if (phrase.pid == id) {
-					Phrases.updateOne({ _id: phrase._id }, { $push: { phrases: { $each: phrases } } }).exec();
-					phrase.phrases = phrase.phrases.concat(phrases).slice(0, SERVER.MAX_PHRASE_TEXT);
-					return true;
-				}
-			}
-		} else {
-			let phrase = this.phrases[id - 1];
-			Phrases.updateOne({ _id: phrase._id }, { $push: { phrases: { $each: phrases } } }).exec();
-			phrase.phrases = phrase.phrases.concat(phrases).slice(0, SERVER.MAX_PHRASE_TEXT);
-		}
-
-		return true;
-	}
-
-	public setPhraseResponse(id: number | string, response: DiscordBot.PhraseResponses[]): boolean {
-		if (this.phrases.length < id) return false;
-
-		response.splice(0, SERVER.MAX_PHRASE_RESPONSES);
-
-		if (typeof id == 'string') {
-			for(let i = 0; i < this.phrases.length; i++) {
-				let phrase = this.phrases[i];
-				if (phrase.pid == id || phrase._id == id) {
-					Phrases.updateOne({ _id: phrase._id }, { $set: { responses: response } }).exec();
-					phrase.responses = response;
-					return true;
-				}
-			}
-		} else {
-			let phrase = this.phrases[id - 1];
-			Phrases.updateOne({ _id: phrase._id }, { $set: { responses: response } }).exec();
-			phrase.responses = response;
-		}
-
-		return true;
-	}
-
-	public setPhraseIgnoreCase(id: number | string, ignoreCase: boolean): boolean {
-		if (typeof id == 'string') {
-			for(let i = 0; i < this.phrases.length; i++) {
-				let phrase = this.phrases[i];
-
-				if (phrase.pid == id || phrase._id == id) {
-					Phrases.updateOne({ _id: phrase._id }, { $set: { ignoreCase: ignoreCase } }).exec();
-					phrase.ignoreCase = ignoreCase;
-				}
-			}
-		} else {
-			if (this.phrases.length < id) return false;
-
-			let phrase = this.phrases[id - 1];
-			Phrases.updateOne({ _id: phrase._id }, { $set: { ignoreCase: ignoreCase } }).exec();
-			phrase.ignoreCase = ignoreCase;
-		}
-
-		return true;
-	}
-
-	public findPhrase(text: string[] | string): Nullable<DiscordBot.Phrase> {
-		if (Array.isArray(text)) {
-			text = text.slice(0, SERVER.MAX_PHRASE_TEXT);
-
-			for(let i = 0; i < text.length; i++) {
-				let phrase = this.findPhrase(text[i]);
-				if (phrase != null) return phrase;
-			}
-
-			return null;
-		}
-
-		for(let i = 0; i < this.phrases.length; i++) {
-			let ePhrase = this.phrases[i];
-
-			if (ePhrase.phrases.find(p => ePhrase.ignoreCase == null || ePhrase.ignoreCase ? p.toLowerCase() == (<string>text).toLowerCase() : p == text))
-				return ePhrase;
-		}
-
-		return null;
-	}
-
-	public phraseResponseToString(response: DiscordBot.PhraseResponses): string {
-		switch(response.type) {
-			case 'alias': return JSON.stringify(response);
-			case 'echo': return JSON.stringify(response);
-			case 'interval': return JSON.stringify(response);
-			case 'rank': return JSON.stringify(response);
-			case 'set': return JSON.stringify(response);
-		}
-	}
-
-//#endregion
-
 //#region Commands
 	public async createCommand(
 		member: Discord.GuildMember,
@@ -525,7 +345,7 @@ class Server extends Changes {
 
 		let doc = await getOrCreateUser(member);
 
-		let model = new Command({
+		let model = new ModelCommand({
 			user_id: doc.id,
 			uid: comm.pid,
 			alias: comm.alias,
@@ -551,7 +371,7 @@ class Server extends Changes {
 		let index = this.commandIndex(commandName);
 		if (index != -1) {
 			let comm = this.commands.splice(index, 1)[0];
-			Command.remove({ _id: Types.ObjectId(comm._id) }).exec();
+			ModelCommand.remove({ _id: Types.ObjectId(comm._id) }).exec();
 		}
 
 		return index != -1;
@@ -719,13 +539,226 @@ class Server extends Changes {
 			plugins: this.plugins,
 			intervals: this.intervals.toJSON(),
 			commands: this.commands,
-			phrases: this.phrases,
+			phrases: this.phrases.toJSON(),
 			roles: this.roles,
 			permissions: this.permissions.toJSON()
 		});
 	}
 }
 
+
+class Phrase {
+	server: Server;
+	items: DiscordBot.Phrase[];
+
+	constructor(server: Server, opts?: DiscordBot.Phrase[]) {
+		this.server = server;
+
+		if (opts == undefined) {
+			opts = [];
+		}
+
+		this.items = opts;
+	}
+
+	public async createPhrase(member: Discord.GuildMember, phraseText: string[]): Promise<DiscordBot.Phrase> {
+		phraseText.slice(0, SERVER.MAX_PHRASE_TEXT);
+
+		if (this.findPhrase(phraseText) != null) {
+			return Promise.reject('Phrase already exists.');
+		}
+
+		let phrase = {
+			_id: undefined,
+			enabled: true,
+			sid: this.items,
+			pid: uniqueID(4),
+			phrases: phraseText,
+			responses: [],
+			ignoreCase: true
+		};
+
+		let doc = await getOrCreateUser(member);
+
+		let model = new ModelPhrases({
+			user_id: doc.id,
+			uid: phrase.pid,
+			sid: phrase.sid,
+			phrases: phrase.phrases,
+			responses: phrase.responses
+		});
+
+		let prod = await model.save();
+
+		phrase._id = prod.id;
+
+		this.items.push(phrase);
+
+		await DiscordServers.updateOne(
+			{ server_id: this.server.serverId },
+			{ $addToSet: { phrase_ids: prod.id } }
+		).exec();
+
+		return phrase;
+	}
+
+	public async removePhrase(id: number | string, phrases?: string[]): Promise<Nullable<DiscordBot.Phrase>> {
+		if (this.items.length < id) return null;
+
+		let phrase: Nullable<DiscordBot.Phrase> = null;
+		let pos = -1;
+
+		if (typeof id == 'string') {
+			for(let i = 0; i < this.items.length; i++) {
+				let p = this.items[i];
+
+				if (p.pid == id) {
+					phrase = p;
+					pos = i;
+
+					break;
+				}
+			}
+		} else {
+			pos = id - 1;
+			phrase = this.items[pos];
+		}
+
+		if (pos == -1) return null;
+		if (phrase == null) return null;
+
+		// Remove full phrase?
+		if (phrases == null) {
+			await ModelPhrases.remove({ _id: phrase._id }).exec();
+
+			this.items.splice(pos, 1);
+		} else {
+			await ModelPhrases.updateOne({ _id: phrase._id }, { $pull: { phrases: { $in: phrases } } }).exec();
+
+			phrases.forEach((p, i) => {
+				let index = phrase!.phrases.indexOf(p);
+				if (index != -1) phrase!.phrases.splice(index, 1);
+			});
+		}
+
+		return phrase;
+	}
+
+	public async addPhrase(id: number | string, phrases: string[]): Promise<boolean> {
+		if (this.items.length < id) return false;
+
+		if (typeof id == 'string') {
+			for(let i = 0; i < this.items.length; i++) {
+				let phrase = this.items[i];
+
+				if (phrase.pid == id) {
+					await ModelPhrases.updateOne({ _id: phrase._id }, { $push: { phrases: { $each: phrases } } }).exec();
+
+					phrase.phrases = phrase.phrases.concat(phrases).slice(0, SERVER.MAX_PHRASE_TEXT);
+
+					return true;
+				}
+			}
+		} else {
+			let phrase = this.items[id - 1];
+
+			await ModelPhrases.updateOne({ _id: phrase._id }, { $push: { phrases: { $each: phrases } } }).exec();
+
+			phrase.phrases = phrase.phrases.concat(phrases).slice(0, SERVER.MAX_PHRASE_TEXT);
+		}
+
+		return true;
+	}
+
+	public async setPhraseResponse(id: number | string, response: DiscordBot.PhraseResponses[]): Promise<boolean> {
+		if (this.items.length < id) return false;
+
+		response.splice(0, SERVER.MAX_PHRASE_RESPONSES);
+
+		if (typeof id == 'string') {
+			for(let i = 0; i < this.items.length; i++) {
+				let phrase = this.items[i];
+
+				if (phrase.pid == id || phrase._id == id) {
+					await ModelPhrases.updateOne({ _id: phrase._id }, { $set: { responses: response } }).exec();
+
+					phrase.responses = response;
+
+					return true;
+				}
+			}
+		} else {
+			let phrase = this.items[id - 1];
+
+			await ModelPhrases.updateOne({ _id: phrase._id }, { $set: { responses: response } }).exec();
+
+			phrase.responses = response;
+		}
+
+		return true;
+	}
+
+	public async setPhraseIgnoreCase(id: number | string, ignoreCase: boolean): Promise<boolean> {
+		if (typeof id == 'string') {
+			for(let i = 0; i < this.items.length; i++) {
+				let phrase = this.items[i];
+
+				if (phrase.pid == id || phrase._id == id) {
+					await ModelPhrases.updateOne({ _id: phrase._id }, { $set: { ignoreCase: ignoreCase } }).exec();
+
+					phrase.ignoreCase = ignoreCase;
+				}
+			}
+		} else {
+			if (this.items.length < id) return false;
+
+			let phrase = this.items[id - 1];
+
+			await ModelPhrases.updateOne({ _id: phrase._id }, { $set: { ignoreCase: ignoreCase } }).exec();
+
+			phrase.ignoreCase = ignoreCase;
+		}
+
+		return true;
+	}
+
+	public findPhrase(text: string[] | string): Nullable<DiscordBot.Phrase> {
+		if (Array.isArray(text)) {
+			text = text.slice(0, SERVER.MAX_PHRASE_TEXT);
+
+			for(let i = 0; i < text.length; i++) {
+				let phrase = this.findPhrase(text[i]);
+				if (phrase != null) return phrase;
+			}
+
+			return null;
+		}
+
+		for(let i = 0; i < this.items.length; i++) {
+			let ePhrase = this.items[i];
+
+			if (ePhrase.phrases.find(p => ePhrase.ignoreCase == null || ePhrase.ignoreCase ? p.toLowerCase() == (<string>text).toLowerCase() : p == text))
+				return ePhrase;
+		}
+
+		return null;
+	}
+
+	public phraseResponseToString(response: DiscordBot.PhraseResponses): string {
+		switch(response.type) {
+			case 'alias': return JSON.stringify(response);
+			case 'echo': return JSON.stringify(response);
+			case 'interval': return JSON.stringify(response);
+			case 'rank': return JSON.stringify(response);
+			case 'set': return JSON.stringify(response);
+		}
+	}
+
+
+	public toJSON(): DiscordBot.Phrase[] {
+		return this.items;
+	}
+}
 
 class Interval {
 	items: DiscordBot.Interval[];

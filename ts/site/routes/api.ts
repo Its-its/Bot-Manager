@@ -744,7 +744,7 @@ function apiBots() {
 
 				getDiscordServer(doc.server_id, server => {
 					if (server != null) {
-						server.phrases.push({
+						server.phrases.items.push({
 							pid: prod.pid,
 							enabled: prod.enabled,
 							ignoreCase: prod.ignoreCase,

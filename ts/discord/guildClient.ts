@@ -145,7 +145,7 @@ async function updateServerFromDB(serverId: string) {
 		}
 	});
 
-	parsed.phrases = server.phrase_ids.map(p => {
+	parsed.phrases.items = server.phrase_ids.map(p => {
 		return {
 			_id: p._id,
 			pid: p.pid,

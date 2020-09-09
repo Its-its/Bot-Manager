@@ -418,10 +418,10 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 
 					let p = items.phrases![pos];
 
-					let phrase = await server.createPhrase(message.member!, p.phrases);
+					let phrase = await server.phrases.createPhrase(message.member!, p.phrases);
 
-					server.setPhraseIgnoreCase(phrase.pid, p.ignoreCase);
-					server.setPhraseResponse(phrase.pid, p.responses);
+					await server.phrases.setPhraseIgnoreCase(phrase.pid, p.ignoreCase);
+					await server.phrases.setPhraseResponse(phrase.pid, p.responses);
 
 					await nextPhrase(pos + 1);
 				}
