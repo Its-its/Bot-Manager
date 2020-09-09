@@ -172,7 +172,7 @@ client.on('message', asyncFnWrapper(
 			await server.save();
 		}
 
-		if (server.channelIgnored(msg.channel.id)) return;
+		if (server.moderation.channelIgnored(msg.channel.id)) return;
 
 		let calledCommand = await commandPlugin.onDidCallCommand(client.user!.id, msg, server);
 
@@ -380,8 +380,8 @@ client.on('channelDelete', asyncFnWrapper(
 
 			let needsSaving = false;
 
-			if (server.channelIgnored(channel.id)) {
-				server.removeIgnore('channel', channel.id);
+			if (server.moderation.channelIgnored(channel.id)) {
+				server.moderation.removeIgnore('channel', channel.id);
 				needsSaving = true;
 			}
 

@@ -74,11 +74,11 @@ class Ignore extends Command {
 				let clearType = (params.shift() || '').toLowerCase();
 
 				if (clearType == 'channel') {
-					server.clearIgnoreList('channel');
+					server.moderation.clearIgnoreList('channel');
 				} else if (clearType == 'user') {
-					server.clearIgnoreList('member');
+					server.moderation.clearIgnoreList('member');
 				} else if (clearType == 'all') {
-					server.clearIgnoreList('all');
+					server.moderation.clearIgnoreList('all');
 				} else return Command.error([['Error on Clearing', 'Unknown clear option "' + clearType + '" Use: "channel", "user", "all"']]);
 
 				await server.save();
@@ -104,7 +104,7 @@ class Ignore extends Command {
 				let channel = message.guild!.channels.cache.get(id);
 
 				if (channel != null) {
-					server.ignore('channel', id);
+					server.moderation.ignore('channel', id);
 					await server.save();
 
 					return Command.success([['Ignore', 'Now ignoring channel "' + channel.name + '"']]);
@@ -131,7 +131,7 @@ class Ignore extends Command {
 				let member = message.guild!.member(id);
 
 				if (member != null) {
-					server.ignore('member', id);
+					server.moderation.ignore('member', id);
 					await server.save();
 
 					return Command.success([['Ignore', 'Now ignoring user "' + member.displayName + '"']]);
@@ -155,7 +155,7 @@ class Ignore extends Command {
 					let member = message.guild!.member(id);
 
 					if (member != null) {
-						server.ignore('member', id);
+						server.moderation.ignore('member', id);
 						await server.save();
 
 						return Command.success([['Ignore', 'I am now ignoring user "' + member.displayName + '"']]);
@@ -172,7 +172,7 @@ class Ignore extends Command {
 					let channel = message.guild!.channels.cache.get(id);
 
 					if (channel != null) {
-						server.ignore('channel', id);
+						server.moderation.ignore('channel', id);
 						await server.save();
 
 						return Command.success([['Ignore', 'I am now ignoring channel "#' + channel.name + '"']]);

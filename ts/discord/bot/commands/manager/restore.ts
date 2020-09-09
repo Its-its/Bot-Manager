@@ -461,8 +461,8 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 			if (isRestoring('blacklists')) {
 				for(let cid in items.blacklists) {
 					let item = items.blacklists[cid];
-					item.items.forEach(b => server.blacklist(cid, b));
-					server.blacklistPunishment(cid, item.punishment);
+					item.items.forEach(b => server.moderation.blacklist(cid, b));
+					server.moderation.blacklistPunishment(cid, item.punishment);
 				}
 			}
 

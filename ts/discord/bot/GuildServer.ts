@@ -103,14 +103,7 @@ class Server extends Changes {
 	public channels: DiscordBot.Channels;
 	public punishments: DiscordBot.Punishments;
 
-	public moderation: DiscordBot.Moderation = {
-		blacklisted: {},
-		whitelisted: [],
-		ignoredChannels: [],
-		ignoredUsers: [],
-		disabledDefaultCommands: [],
-		disabledCustomCommands: []
-	};
+	public moderation: Moderation;
 
 	public events: DiscordBot.PluginEvents.Grouping[];
 	public intervals: DiscordBot.Interval[];
@@ -190,7 +183,7 @@ class Server extends Changes {
 		this.commandPrefix = options.commandPrefix;
 
 		this.leveling = def(this.leveling, options.leveling);
-		this.moderation = def(this.moderation, options.moderation);
+		this.moderation = new Moderation(options.moderation);
 		this.permissions = def(this.permissions, options.permissions);
 
 		this.init();
@@ -199,26 +192,7 @@ class Server extends Changes {
 	}
 
 	public init() {
-		// Blacklisted Fix. Make sure it's proper.
-		if (Array.isArray(this.moderation.blacklisted)) {
-			this.moderation.blacklisted = {
-				'global': {
-					punishment: { type: 'censor' },
-					items: this.moderation.blacklisted
-				}
-			};
-		} else if (this.moderation.blacklisted) {
-			for(let name in this.moderation.blacklisted) {
-				let item = this.moderation.blacklisted[name];
-
-				if (Array.isArray(item)) {
-					this.moderation.blacklisted[name] = {
-						punishment: { type: 'censor' },
-						items: item
-					}
-				}
-			}
-		}
+		//
 	}
 
 	public async regrab() {
@@ -518,115 +492,6 @@ class Server extends Changes {
 			case 'rank': return JSON.stringify(response);
 			case 'set': return JSON.stringify(response);
 		}
-	}
-
-//#endregion
-
-//#region Whitelisted/Blacklisted
-
-	public hasBlacklistedWord(id: string, content: string): boolean {
-		let splt = content.toLowerCase().split(' '); // TODO: URL Check
-
-		let blacklisted = this.moderation.blacklisted;
-
-		let channelBlacklist = blacklisted[id];
-
-		if (channelBlacklist == null || channelBlacklist.items.length == 0) return false;
-
-		for (let i = 0; i < splt.length; i++) {
-			if (channelBlacklist.items.indexOf(splt[i]) != -1) return true;
-		}
-
-		return false;
-	}
-
-	public isBlacklistedItem(id: string, item: string): boolean {
-		let blacklisted = this.moderation.blacklisted;
-
-		let channelBlacklist = blacklisted[id];
-
-		if (channelBlacklist == null || channelBlacklist.items.length == 0) return false;
-
-		return channelBlacklist.items.indexOf(item) != -1;
-	}
-
-	public blacklist(id: string, item: string): boolean {
-		let blacklisted = this.moderation.blacklisted;
-
-		let channelBlacklist = blacklisted[id];
-
-		if (channelBlacklist == null || channelBlacklist.items.length == 0) return false;
-
-		let indexOf = channelBlacklist.items.indexOf(item);
-
-		if (indexOf != -1) {
-			// items.splice(indexOf, 1);
-			return false;
-		}
-
-		channelBlacklist.items.push(item);
-
-		return true;
-	}
-
-	public blacklistPunishment(id: string, punishment: DiscordBot.PunishmentTypes): boolean {
-		let channelBlacklist = this.moderation.blacklisted[id];
-
-		if (channelBlacklist == null) return false;
-
-		channelBlacklist.punishment = punishment;
-
-		return true;
-	}
-
-//#endregion
-
-//#region Ignore
-	public ignore(type: 'member' | 'channel', id: string): boolean {
-		if (type == 'member') {
-			if (this.moderation.ignoredUsers.indexOf(id) != -1) return false;
-			this.moderation.ignoredUsers.push(id);
-		} else {
-			if (this.moderation.ignoredChannels.indexOf(id) != -1) return false;
-			this.moderation.ignoredChannels.push(id);
-		}
-
-		return true;
-	}
-
-	public removeIgnore(type: 'member' | 'channel', id: string): boolean {
-		if (type == 'member') {
-			let indexOf = this.moderation.ignoredUsers.indexOf(id);
-
-			if (indexOf != -1) this.moderation.ignoredUsers.splice(indexOf, 1);
-
-			return indexOf != -1;
-		} else {
-			let indexOf = this.moderation.ignoredChannels.indexOf(id);
-
-			if (indexOf != -1) this.moderation.ignoredChannels.splice(indexOf, 1);
-
-			return indexOf != -1;
-		}
-	}
-
-	public clearIgnoreList(list: 'member' | 'channel' | 'all') {
-		if (list == 'member') {
-			this.moderation.ignoredUsers = [];
-		} else if (list == 'channel') {
-			this.moderation.ignoredChannels = [];
-		} else {
-			this.moderation.ignoredChannels = [];
-			this.moderation.ignoredUsers = [];
-		}
-	}
-
-	public channelIgnored(id: string): boolean {
-		return this.moderation.ignoredChannels.indexOf(id) != -1;
-	}
-
-	public memberIgnored(id: string): boolean {
-		return this.moderation.ignoredUsers.indexOf(id) != -1;
 	}
 
 //#endregion
@@ -1260,7 +1125,7 @@ class Server extends Changes {
 			punishments: this.punishments,
 			aliasList: this.alias,
 			ranks: this.ranks,
-			moderation: this.moderation,
+			moderation: this.moderation.toJSON(),
 			plugins: this.plugins,
 
 			roles: this.roles,
@@ -1283,7 +1148,7 @@ class Server extends Changes {
 
 			aliasList: this.alias,
 			ranks: this.ranks,
-			moderation: this.moderation,
+			moderation: this.moderation.toJSON(),
 			plugins: this.plugins,
 			intervals: this.intervals,
 			commands: this.commands,
@@ -1291,6 +1156,175 @@ class Server extends Changes {
 			roles: this.roles,
 			permissions: this.permissions
 		});
+	}
+}
+
+
+class Moderation {
+	disabledDefaultCommands: string[];
+	disabledCustomCommands: string[];
+
+	blacklisted: DiscordBot.ModerationBlacklist;
+	whitelisted: string[];
+	ignoredChannels: string[];
+	ignoredUsers: string[];
+
+	constructor(opts?: DiscordBot.Moderation) {
+		if (opts == undefined) {
+			opts = {
+				disabledDefaultCommands: [],
+				disabledCustomCommands: [],
+				blacklisted: {},
+				whitelisted: [],
+				ignoredChannels: [],
+				ignoredUsers: []
+			};
+		}
+
+		this.blacklisted = def({}, opts.blacklisted);
+		this.whitelisted = def([], opts.whitelisted);
+		this.ignoredChannels = def([], opts.ignoredChannels);
+		this.ignoredUsers = def([], opts.ignoredUsers);
+
+		this.disabledDefaultCommands = def([], opts.disabledDefaultCommands);
+		this.disabledCustomCommands = def([], opts.disabledCustomCommands);
+
+		// Blacklisted Fix. Make sure it's proper.
+		if (Array.isArray(this.blacklisted)) {
+			this.blacklisted = {
+				'global': {
+					punishment: { type: 'censor' },
+					items: this.blacklisted
+				}
+			};
+		} else if (this.blacklisted) {
+			for(let name in this.blacklisted) {
+				let item = this.blacklisted[name];
+
+				if (Array.isArray(item)) {
+					this.blacklisted[name] = {
+						punishment: { type: 'censor' },
+						items: item
+					}
+				}
+			}
+		}
+	}
+
+	public ignore(type: 'member' | 'channel', id: string): boolean {
+		if (type == 'member') {
+			if (this.ignoredUsers.indexOf(id) != -1) return false;
+			this.ignoredUsers.push(id);
+		} else {
+			if (this.ignoredChannels.indexOf(id) != -1) return false;
+			this.ignoredChannels.push(id);
+		}
+
+		return true;
+	}
+
+	public removeIgnore(type: 'member' | 'channel', id: string): boolean {
+		if (type == 'member') {
+			let indexOf = this.ignoredUsers.indexOf(id);
+
+			if (indexOf != -1) this.ignoredUsers.splice(indexOf, 1);
+
+			return indexOf != -1;
+		} else {
+			let indexOf = this.ignoredChannels.indexOf(id);
+
+			if (indexOf != -1) this.ignoredChannels.splice(indexOf, 1);
+
+			return indexOf != -1;
+		}
+	}
+
+	public clearIgnoreList(list: 'member' | 'channel' | 'all') {
+		if (list == 'member') {
+			this.ignoredUsers = [];
+		} else if (list == 'channel') {
+			this.ignoredChannels = [];
+		} else {
+			this.ignoredChannels = [];
+			this.ignoredUsers = [];
+		}
+	}
+
+	public channelIgnored(id: string): boolean {
+		return this.ignoredChannels.indexOf(id) != -1;
+	}
+
+	public memberIgnored(id: string): boolean {
+		return this.ignoredUsers.indexOf(id) != -1;
+	}
+
+
+	public hasBlacklistedWord(id: string, content: string): boolean {
+		let splt = content.toLowerCase().split(' '); // TODO: URL Check
+
+		let blacklisted = this.blacklisted;
+
+		let channelBlacklist = blacklisted[id];
+
+		if (channelBlacklist == null || channelBlacklist.items.length == 0) return false;
+
+		for (let i = 0; i < splt.length; i++) {
+			if (channelBlacklist.items.indexOf(splt[i]) != -1) return true;
+		}
+
+		return false;
+	}
+
+	public isBlacklistedItem(id: string, item: string): boolean {
+		let blacklisted = this.blacklisted;
+
+		let channelBlacklist = blacklisted[id];
+
+		if (channelBlacklist == null || channelBlacklist.items.length == 0) return false;
+
+		return channelBlacklist.items.indexOf(item) != -1;
+	}
+
+	public blacklist(id: string, item: string): boolean {
+		let blacklisted = this.blacklisted;
+
+		let channelBlacklist = blacklisted[id];
+
+		if (channelBlacklist == null || channelBlacklist.items.length == 0) return false;
+
+		let indexOf = channelBlacklist.items.indexOf(item);
+
+		if (indexOf != -1) {
+			// items.splice(indexOf, 1);
+			return false;
+		}
+
+		channelBlacklist.items.push(item);
+
+		return true;
+	}
+
+	public blacklistPunishment(id: string, punishment: DiscordBot.PunishmentTypes): boolean {
+		let channelBlacklist = this.blacklisted[id];
+
+		if (channelBlacklist == null) return false;
+
+		channelBlacklist.punishment = punishment;
+
+		return true;
+	}
+
+
+	public toJSON(): DiscordBot.Moderation {
+		return {
+			blacklisted: this.blacklisted,
+			whitelisted: this.whitelisted,
+			ignoredUsers: this.ignoredUsers,
+			ignoredChannels: this.ignoredChannels,
+
+			disabledCustomCommands: this.disabledCustomCommands,
+			disabledDefaultCommands: this.disabledDefaultCommands
+		};
 	}
 }
 

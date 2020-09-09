@@ -168,7 +168,7 @@ class Blacklist extends Command {
 
 				let fullCommand = params.join(' ').trim().toLowerCase();
 
-				if (!server.blacklist(channelIdStripped, fullCommand)) {
+				if (!server.moderation.blacklist(channelIdStripped, fullCommand)) {
 					return Command.error([
 						[ 'Blacklist', 'That channel already has that word blacklisted!' ]
 					]);
@@ -211,7 +211,7 @@ class Blacklist extends Command {
 					]);
 				}
 
-				server.blacklistPunishment(channelIdStripped, action);
+				server.moderation.blacklistPunishment(channelIdStripped, action);
 
 				await server.save();
 

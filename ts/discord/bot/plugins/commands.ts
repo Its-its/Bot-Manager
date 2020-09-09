@@ -15,7 +15,7 @@ function isEnabled(server: Server): boolean {
 async function onDidCallCommand(bot_id: string, message: Discord.Message, server: Server): Promise<boolean> {
 	if (message.author.bot) return false;
 
-	if (server.memberIgnored(message.member!.id)) return false;
+	if (server.moderation.memberIgnored(message.member!.id)) return false;
 
 	if (CommandManager.isCallingCommand(server.getPrefix(), bot_id, message.content)) {
 		if (!limits.canCallCommand(message.guild!.id)) return true;
