@@ -21,6 +21,10 @@ async function messageDelete(message: Discord.Message | Discord.PartialMessage) 
 
 	let logs = server.plugins.logs!;
 
+	if (logs.channels == null) {
+		logs.channels = [];
+	}
+
 	let not_a_log_chann = logs.channels.find(c => c.id == message.channel.id) == null;
 
 	if (not_a_log_chann) {
@@ -50,7 +54,7 @@ async function messageDelete(message: Discord.Message | Discord.PartialMessage) 
 				await channel.send(messageDeleted(message.channel, message.member!, message));
 			} else {
 				let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
-				server.plugins.logs!.channels.splice(index_of, 1);
+				logs.channels.splice(index_of, 1);
 
 				await server.save();
 			}
@@ -69,6 +73,10 @@ async function messageDeleteBulk(messageCollection: Discord.Collection<string, D
 		if (server == null || !server.isPluginEnabled('logs')) return;
 
 		let logs = server.plugins.logs!;
+
+		if (logs.channels == null) {
+			logs.channels = [];
+		}
 
 		let not_a_log_chann = logs.channels.find(c => c.id == messages[0].channel.id) == null;
 
@@ -100,7 +108,7 @@ async function messageDeleteBulk(messageCollection: Discord.Collection<string, D
 					await channel.send(messagesDeleted(messages));
 				} else {
 					let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
-					server.plugins.logs!.channels.splice(index_of, 1);
+					logs.channels.splice(index_of, 1);
 
 					await server.save();
 				}
@@ -117,6 +125,10 @@ async function messageUpdate(oldMessage: Discord.Message | Discord.PartialMessag
 	if (server == null || !server.isPluginEnabled('logs')) return;
 
 	let logs = server.plugins.logs!;
+
+	if (logs.channels == null) {
+		logs.channels = [];
+	}
 
 	let sorted = logs.channels.sort(sortChannel);
 
@@ -144,7 +156,7 @@ async function messageUpdate(oldMessage: Discord.Message | Discord.PartialMessag
 			await channel.send(messageEdited(newMessage.channel, newMessage.member!, oldMessage, newMessage));
 		} else {
 			let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
-			server.plugins.logs!.channels.splice(index_of, 1);
+			logs.channels.splice(index_of, 1);
 
 			await server.save();
 		}
@@ -157,6 +169,10 @@ async function guildMemberAdd(guildMember: Discord.GuildMember) {
 	if (server == null || !server.isPluginEnabled('logs')) return;
 
 	let logs = server.plugins.logs!;
+
+	if (logs.channels == null) {
+		logs.channels = [];
+	}
 
 	let sorted = logs.channels.sort(sortChannel);
 
@@ -176,7 +192,7 @@ async function guildMemberAdd(guildMember: Discord.GuildMember) {
 			//
 		} else {
 			let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
-			server.plugins.logs!.channels.splice(index_of, 1);
+			logs.channels.splice(index_of, 1);
 
 			await server.save();
 		}
@@ -189,6 +205,10 @@ async function guildMemberRemove(guildMember: Discord.GuildMember) {
 	if (server == null || !server.isPluginEnabled('logs')) return;
 
 	let logs = server.plugins.logs!;
+
+	if (logs.channels == null) {
+		logs.channels = [];
+	}
 
 	let sorted = logs.channels.sort(sortChannel);
 
@@ -208,7 +228,7 @@ async function guildMemberRemove(guildMember: Discord.GuildMember) {
 			//
 		} else {
 			let index_of = logs.channels.findIndex(c => c.id == log_channel!.id);
-			server.plugins.logs!.channels.splice(index_of, 1);
+			logs.channels.splice(index_of, 1);
 
 			await server.save();
 		}

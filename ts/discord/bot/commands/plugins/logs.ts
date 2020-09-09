@@ -46,6 +46,10 @@ class Logs extends Command {
 			]);
 		}
 
+		if (server.plugins.logs!.channels == null) {
+			server.plugins.logs!.channels = [];
+		}
+
 		switch(params.shift()) {
 			case 'list': {
 				await message.channel.send(Command.info([

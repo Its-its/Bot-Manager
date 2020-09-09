@@ -983,7 +983,7 @@ declare namespace DiscordBot {
 	}
 
 	interface PluginLogs extends PluginItem {
-		channels: PluginLogsChannel[];
+		channels?: PluginLogsChannel[];
 	}
 
 	interface PluginLogsChannel {

@@ -103,31 +103,19 @@ class Server extends Changes {
 	public channels: DiscordBot.Channels;
 	public punishments: DiscordBot.Punishments;
 
-	public moderation: Moderation;
 
 	public events: DiscordBot.PluginEvents.Grouping[];
-	public intervals: Interval;
 	public ranks: string[];
 
 	public alias: DiscordBot.Alias[];
 	public commands: DiscordBot.Command[];
-	public phrases: Phrase;
 	public roles: DiscordBot.Role[];
 	public leveling: DiscordBot.Leveling = { roles: [], keepPreviousRoles: false };
 
-	public plugins: DiscordBot.Plugin = {
-		commands: {
-			enabled: true
-		},
-		// logs: {
-		// 	enabled: false
-		// },
-		// events: {
-		// 	enabled: false
-		// }
-	};
-
-
+	public phrases: Phrases;
+	public plugins: Plugins;
+	public intervals: Intervals;
+	public moderation: Moderation;
 	public permissions: Permissions;
 
 	constructor(serverID: string, options: DiscordBot.ServerOptions) {
@@ -145,33 +133,14 @@ class Server extends Changes {
 
 		this.events = def([], options.events);
 		this.alias = def([], options.alias, options.aliasList);
-		this.intervals = new Interval(options.intervals);
+		this.intervals = new Intervals(options.intervals);
 		this.ranks = def([], options.ranks);
 		this.roles = def([], options.roles);
 		this.commands = def([], options.commands);
-		this.phrases = new Phrase(this, options.phrases);
+		this.phrases = new Phrases(this, options.phrases);
 
 		// Update from old plugins
-		this.plugins = def({}, options.plugins);
-		if (this.plugins.logs != null) {
-			if (this.plugins.logs.channels == null) {
-				this.plugins.logs.channels = [];
-			}
-
-			// @ts-ignore
-			if (this.plugins.logs.textChannelId != null || this.plugins.logs.filter != null) {
-				this.plugins.logs.channels = [];
-				this.plugins.logs.channels.push({
-					// @ts-ignore
-					textChannelId: this.plugins.logs.textChannelId,
-				});
-
-				// @ts-ignore
-				delete this.plugins.logs['textChannelId'];
-				// @ts-ignore
-				delete this.plugins.logs['filter'];
-			}
-		}
+		this.plugins = new Plugins(options.plugins);
 
 		this.channels = def({}, options.channels);
 		this.punishments = def({}, options.punishments);
@@ -184,13 +153,7 @@ class Server extends Changes {
 		this.moderation = new Moderation(options.moderation);
 		this.permissions = new Permissions(options.permissions);
 
-		this.init();
-
 		this.init_changes();
-	}
-
-	public init() {
-		//
 	}
 
 	public async regrab() {
@@ -227,7 +190,7 @@ class Server extends Changes {
 		})
 	}
 
-	public isPluginEnabled(name: DiscordBot.PLUGIN_NAMES | string) {
+	public isPluginEnabled(name: DiscordBot.PLUGIN_NAMES) {
 		// Commands is enabled by default even if null.
 		if (name == 'commands') return this.plugins[name] == null || this.plugins[name]!.enabled;
 
@@ -513,7 +476,7 @@ class Server extends Changes {
 			aliasList: this.alias,
 			ranks: this.ranks,
 			moderation: this.moderation.toJSON(),
-			plugins: this.plugins,
+			plugins: this.plugins.toJSON(),
 
 			roles: this.roles,
 			permissions: this.permissions.toJSON()
@@ -536,7 +499,7 @@ class Server extends Changes {
 			aliasList: this.alias,
 			ranks: this.ranks,
 			moderation: this.moderation.toJSON(),
-			plugins: this.plugins,
+			plugins: this.plugins.toJSON(),
 			intervals: this.intervals.toJSON(),
 			commands: this.commands,
 			phrases: this.phrases.toJSON(),
@@ -547,7 +510,65 @@ class Server extends Changes {
 }
 
 
-class Phrase {
+class Plugins {
+	logs?: DiscordBot.PluginLogs;
+	commands?: DiscordBot.PluginItem;
+	leveling?: DiscordBot.PluginItem;
+	events?: DiscordBot.PluginEvents.Plugin;
+
+
+	constructor(opts?: DiscordBot.Plugin) {
+		if (opts == undefined) {
+			opts = {
+				commands: {
+					enabled: true
+				}
+			};
+		}
+
+
+		this.logs = def(undefined, opts.logs);
+		this.commands = def(undefined, opts.commands);
+		this.leveling = def(undefined, opts.leveling);
+		this.events = def(undefined, opts.events);
+
+		// Fix logs.
+		if (this.logs != null) {
+			if (this.logs.channels == null) {
+				this.logs.channels = [];
+			}
+
+			// @ts-ignore
+			if (this.logs.textChannelId != null || this.logs.filter != null) {
+				this.logs.channels = [];
+				this.logs.channels.push({
+					// @ts-ignore
+					textChannelId: this.logs.textChannelId,
+				});
+
+				// @ts-ignore
+				delete this.logs['textChannelId'];
+				// @ts-ignore
+				delete this.logs['filter'];
+			}
+		}
+	}
+
+
+
+
+
+	public toJSON(): DiscordBot.Plugin {
+		return {
+			logs: this.logs,
+			commands: this.commands,
+			leveling: this.leveling,
+			events: this.events
+		};
+	}
+}
+
+class Phrases {
 	server: Server;
 	items: DiscordBot.Phrase[];
 
@@ -760,7 +781,7 @@ class Phrase {
 	}
 }
 
-class Interval {
+class Intervals {
 	items: DiscordBot.Interval[];
 
 	constructor(opts?: DiscordBot.Interval[]) {
@@ -1470,7 +1491,8 @@ function uniqueID(size: number): string {
 
 export {
 	Server,
-	Interval,
+	Intervals,
 	Permissions,
-	Moderation
+	Moderation,
+	Phrases
 };

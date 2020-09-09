@@ -3,6 +3,9 @@ import { Server as DiscordServer } from '@discord/bot/GuildServer';
 
 import Command = require('../../command');
 
+import { DiscordBot } from '@type-manager';
+
+
 // TODO: ?? Relocate Commands to activate/deactivate.
 
 const displayNames = [
@@ -12,7 +15,7 @@ const displayNames = [
 	'Events'
 ];
 
-const plugins = displayNames.map(p => p.toLowerCase());
+const plugins = <DiscordBot.PLUGIN_NAMES[]>displayNames.map(p => p.toLowerCase());
 
 
 const PERMISSIONS = {
@@ -69,9 +72,10 @@ class Plugin extends Command {
 			case 'enable': {
 				if (!this.hasPerms(message.member!, server, PERMISSIONS.ENABLE)) return Command.noPermsMessage('Plugin');
 
-				let pluginName = params.shift();
+				let pluginName = <DiscordBot.PLUGIN_NAMES | 'all'>params.shift();
 				if (pluginName == null) return Command.error([['Plugin', 'Invalid Params']]);
 
+				// @ts-ignore
 				pluginName = pluginName.toLowerCase();
 
 				if (pluginName == 'all') {
@@ -116,17 +120,14 @@ class Plugin extends Command {
 			case 'disable': {
 				if (!this.hasPerms(message.member!, server, PERMISSIONS.DISABLE)) return Command.noPermsMessage('Plugin');
 
-				let pluginName = params.shift();
+				let pluginName = <DiscordBot.PLUGIN_NAMES | 'all'>params.shift();
 				if (pluginName == null) return Command.error([['Plugin', 'Invalid Params']]);
 
 				if (pluginName == 'all') {
 					plugins.forEach(p => {
-						// @ts-ignore
 						if (server.plugins[p] != null) {
-							// @ts-ignore
-							server.plugins[p].enabled = false;
+							server.plugins[p]!.enabled = false;
 						} else {
-							// @ts-ignore
 							server.plugins[p] = { enabled: false };
 						}
 					});
@@ -138,12 +139,9 @@ class Plugin extends Command {
 					let indexOfPlugin = plugins.indexOf(pluginName);
 
 					if (indexOfPlugin != -1) {
-						// @ts-ignore
 						if (server.plugins[pluginName] != null) {
-							// @ts-ignore
-							server.plugins[pluginName].enabled = false;
+							server.plugins[pluginName]!.enabled = false;
 						} else {
-							// @ts-ignore
 							server.plugins[pluginName] = { enabled: false };
 						}
 
