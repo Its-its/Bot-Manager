@@ -613,7 +613,7 @@ declare namespace DiscordBot {
 
 		commandPrefix?: string;
 		channels?: Channels;
-		events?: ListenEvents[];
+		events?: PluginEvents.Grouping[];
 		leveling?: Leveling;
 		aliasList?: Alias[];
 		alias?: Alias[];
@@ -640,7 +640,7 @@ declare namespace DiscordBot {
 
 		channels?: Channels;
 
-		events?: ListenEvents[];
+		events?: PluginEvents.Grouping[];
 		leveling?: Leveling;
 		aliasList?: Alias[];
 		alias?: Alias[];
@@ -697,51 +697,6 @@ declare namespace DiscordBot {
 
 	interface BanPunishment extends Punishment {
 		type: 'ban';
-	}
-
-	type DoEvents = DoGroupEvent | DoMessageEvent | DoDirectMessageEvent;
-	type ListenEvents = ReactAddEvent | MemberAddEvent | MemberRemoveEvent;
-
-	interface ListenEvent {
-		uid: string;
-		type: string;
-		event: DoEvents;
-	}
-
-	interface ReactAddEvent extends ListenEvent {
-		type: 'react_add';
-		message_id: string;
-		emoji_id: string;
-	}
-
-	interface MemberAddEvent extends ListenEvent {
-		type: 'member_add';
-	}
-
-	interface MemberRemoveEvent extends ListenEvent {
-		type: 'member_remove';
-	}
-
-
-	interface DoEvent {
-		type: string;
-	}
-
-	interface DoGroupEvent extends DoEvent {
-		type: 'role';
-		do?: 'add' | 'remove';
-		role_id?: string;
-	}
-
-	interface DoMessageEvent extends DoEvent {
-		type: 'message';
-		message?: string;
-		channel_id?: string;
-	}
-
-	interface DoDirectMessageEvent extends DoEvent {
-		type: 'dm';
-		message?: string;
 	}
 
 	interface Channels {

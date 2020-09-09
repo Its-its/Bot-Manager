@@ -1,7 +1,7 @@
 import Discord = require('discord.js');
 import DiscordServer = require('@discord/bot/GuildServer');
 
-import utils = require('@discord/bot/../utils');
+import utils = require('@discord/utils');
 
 import PERMS = require('../perms');
 import { DiscordBot } from '@type-manager';
@@ -10,18 +10,68 @@ import { DiscordBot } from '@type-manager';
 // Max time a single group can be timed out.
 const MAX_EVENT_GROUP_TIMEOUT = 10 * 1000;
 
-const ID_TO_NAME = {
-	react_add: 'React Add',
-	member_add: 'Member Add',
-	member_remove: 'Member Remove'
-};
-
-
 const TYPES = {
 	'react': ['add', 'remove'],
 	'role': ['add', 'remove']
 	// 'member': ['']
 };
+
+const DEFAULT_VARIABLES_SORTED = {
+	// Person who initiated the event.
+	user: {
+		guild: {
+			'callerNickname': 'nickname',
+		},
+
+		self: {
+			'callerId': 'id',
+			'callerUsername': 'username',
+			'callerDiscriminator': 'discriminator',
+			'callerTag': 'tag',
+			'callerIcon': 'defaultAvatarURL'
+		}
+	},
+
+	guild: {
+		self: {
+			'guildId': 'id',
+			'guildMemberCount': 'memberCount',
+			'guildName': 'name',
+			'guildIcon': 'icon',
+			'guildOwnerId': 'ownerID',
+			'guildRegion': 'region',
+			'guildVanityCode': 'vanityURLCode',
+		}
+	},
+
+
+	channel: {
+		self: {
+			'channelId': 'id',
+			'channelName': 'name',
+		}
+	},
+
+	bot: {
+		guild: {
+			'botNickname': 'nickname',
+		},
+
+		self: {
+			'botId': 'id',
+			'botUsername': 'username',
+			'botDiscriminator': 'discriminator',
+			'botTag': 'tag',
+			'botIcon': 'defaultAvatarURL'
+		}
+	}
+};
+
+// Names of the variables.
+const DEFAULT_VARIABLE_NAMES = Object.values(DEFAULT_VARIABLES_SORTED)
+	.flatMap(Object.values)
+	.flatMap(Object.keys)
+	.map(i => i.toLowerCase());
 
 // edit <id>
 
@@ -76,196 +126,204 @@ async function showEditPage(event_id: number, senderMessage: Discord.Message, se
 
 	let selector = utils.createPageSelector(senderMessage.author.id, senderMessage.channel)!;
 
-	selector.setFormat([
+	selector.setFormat(() => [
 		`You are now editing "${group.title}"`,
 		'',
 		'{page_items}'
 	]);
 
-	selector.addSelection('variables', 'Changes the event specific variables you can access throughout.', async page => {
-		//
-	});
+	selector.addSelection(
+		'Variables',
+		'Changes the event specific variables you can access throughout.',
+		async page => showVariablesPage(group, page, senderMessage, server)
+	);
 
-	selector.display();
+	selector.addSelection(
+		'Conditions',
+		'Specify the conditions to activate event.',
+		async page => showVariablesPage(group, page, senderMessage, server)
+	);
+
+	selector.addSelection(
+		'Events',
+		'What happens when the conditions are met.',
+		async page => showVariablesPage(group, page, senderMessage, server)
+	);
+
+
+	await selector.display();
 
 	return null;
 }
 
-async function showEditEventPage(compiled: DiscordBot.ListenEvents, senderMessage: Discord.Message, server: DiscordServer) {
+async function showVariablesPage(group: DiscordBot.PluginEvents.Grouping, page: utils.MessagePage, senderMessage: Discord.Message, server: DiscordServer) {
+	page.setFormat(() => [
+		'Add, Remove, or Edit your Variables.',
+		'```' + (group.variables != null ? Object.entries(group.variables).map(i => i[0] + ' = ' + i[1]).join('\n') : 'Empty') + '```',
+		'',
+		'{page_items}'
+	]);
+
+	page.addSelection('Add', 'Add a new variable', async addPage => {
+		addPage.setFormat(() => [
+			'Adding a new variable',
+			'```' + (group.variables != null ? Object.entries(group.variables).map(i => i[0] + ' = ' + i[1]).join('\n') : 'Empty') + '```',
+			'variableName=variable_value',
+			'',
+			'{page_items}'
+		]);
+
+		addPage.listen(async value => {
+			let split = value.split('=', 2);
+
+			if (split.length == 2) {
+				let name = split[0].trim();
+				let value = split[1].trim();
+
+				if (!DEFAULT_VARIABLE_NAMES.includes(name.toLowerCase())) {
+					if (group.variables == null || !Object.keys(group.variables).map(i => i.toLowerCase()).includes(name.toLowerCase())) {
+						if (group.variables == null) {
+							group.variables = {};
+						}
+
+						group.variables[name] = value;
+
+						await server.save();
+
+						await utils.asyncTimeout(300);
+						await addPage.back();
+
+						return true;
+					} else {
+						await addPage.temporaryMessage(utils.errorMsg([[
+							'Events | Adding Variable',
+							'Unable to add variable. It already exists!'
+						]]), 4000);
+					}
+				} else {
+					await addPage.temporaryMessage(utils.errorMsg([[
+						'Events | Adding Variable',
+						'Unable to add variable. It\'s a default variable with already exists!'
+					]]), 4000);
+				}
+			} else {
+				console.log('Incorrect size.');
+			}
+
+			return false;
+		});
+
+		addPage.display();
+	});
+
+	if (group.variables != null) {
+		page.addSelection('Remove', 'Remove an existing variable', async remPage => {
+			remPage.setFormat(() => [
+				'Remove a variable by name',
+				'```' + (group.variables != null ? Object.entries(group.variables).map(i => i[0] + ' = ' + i[1]).join('\n') : 'Empty') + '```',
+				'',
+				'{page_items}'
+			]);
+
+			remPage.listen(async name => {
+				name = name.trim();
+
+				let found = Object.keys(group.variables!).map(i => i.toLowerCase()).find(i => i == name.toLowerCase());
+				if (group.variables != null && found != null) {
+					if (Object.keys(group.variables).length == 1) {
+						group.variables = undefined;
+					} else {
+						delete group.variables[found];
+					}
+
+					await server.save();
+
+					await utils.asyncTimeout(300);
+					await remPage.back();
+
+					return true;
+				} else {
+					await remPage.temporaryMessage(utils.errorMsg([[
+						'Events | Removing Variable',
+						'Unable to find variable name.'
+					]]), 4000);
+				}
+
+				return false;
+			});
+
+			return remPage.display();
+		});
+
+		page.addSelection('Edit', 'Edit an existing variable', async editPage => {
+			editPage.setFormat(() => [
+				'Edit a variable',
+				'```' + (group.variables != null ? Object.entries(group.variables).map(i => i[0] + ' = ' + i[1]).join('\n') : 'Empty') + '```',
+				'variableName=variable_value',
+				'',
+				'{page_items}'
+			]);
+
+			editPage.listen(async value => {
+				let split = value.split('=', 2);
+
+				if (split.length == 2) {
+					let name = split[0].trim();
+					let value = split[1].trim();
+
+					let found = Object.keys(group.variables!).map(i => i.toLowerCase()).find(i => i == name.toLowerCase());
+					if (group.variables != null && found != null) {
+						group.variables[found] = value;
+
+						await server.save();
+
+						await utils.asyncTimeout(300);
+						await editPage.back();
+
+						return true;
+					} else {
+						await editPage.temporaryMessage(utils.errorMsg([[
+							'Events | Editing Variable',
+							'Unable to find variable name.'
+						]]), 4000);
+					}
+				} else {
+					await editPage.temporaryMessage(utils.errorMsg([[
+						'Events | Editing Variable',
+						'Incorrect arguments.'
+					]]), 4000);
+				}
+
+				return false;
+			});
+
+			return editPage.display();
+		});
+	}
+
+	page.addSpacer();
+
+	return page.display();
+}
+
+async function showEditEventPage(group: DiscordBot.PluginEvents.Grouping, page: utils.MessagePage, senderMessage: Discord.Message, server: DiscordServer) {
 	if (!server.userHasPerm(senderMessage.member!, PERMS.EDIT)) return utils.noPermsMessage('Events');
 
 	let selector = utils.createPageSelector(senderMessage.author.id, senderMessage.channel)!;
 
 	selector.setFormat([
-		`Editing event on ${ID_TO_NAME[compiled.type]}. Your on called events are below.`,
+		'Editing event on. Your on called events are below.',
 		'',
 		'{page_items}'
 	]);
 
-	if (compiled.event == null) {
-		showListenerPage(compiled, selector, server);
-	} else {
-		selector.addSelection('change', 'Change current on called event', async page => {
-			//
-		});
-
-		selector.addSelection('edit', 'Edit current on called event', async page => {
-			//
-		});
-
-		await selector.display();
-	}
-
-	return null;
-}
-
-async function showListenerPage(compiled: DiscordBot.ListenEvents, selector: utils.MessagePage, server: DiscordServer) {
-	selector.addSelection('role', 'Add/Remove role when event is called', async page => {
-		compiled.event = { type: 'role' };
-		return editEventPage(compiled, page, server);
-	});
-
-	selector.addSelection('message', 'Send message in channel when event is called', async page => {
-		compiled.event = { type: 'message' };
-		return editEventPage(compiled, page, server);
-	});
-
-	selector.addSelection('dm', 'Send Direct Message to user when event is called', async page => {
-		compiled.event = { type: 'dm' };
-		return editEventPage(compiled, page, server);
-	});
-
-	await selector.display();
-}
-
-async function editEventPage(compiled: DiscordBot.ListenEvents, selector: utils.MessagePage, server: DiscordServer) {
-	switch (compiled.event.type) {
-		case 'role':
-			selector.setFormat([
-				'**Add/Remove Role Event**',
-				'__Please select role add or remove__',
-				'',
-				'{page_items}'
-			]);
-
-			selector.addSelection('Add', 'Add a role to guild member', async page => {
-				(<DiscordBot.DoGroupEvent>compiled.event).do = 'add';
-				nextPage(page);
-			});
-
-			selector.addSelection('Remove', 'Remove a role from guild member', async page => {
-				(<DiscordBot.DoGroupEvent>compiled.event).do = 'remove';
-				nextPage(page);
-			});
-
-			function nextPage(page: utils.MessagePage) {
-				page.setFormat([
-					'**Add/Remove Role Event**',
-					'**Set Role ID**',
-					'',
-					'{page_items}'
-				]);
-
-				page.listen(async id_message => {
-					let type = server.idType(id_message);
-					if (type != null && type != 'channel') return false;
-
-					let id = server.strpToId(id_message);
-
-					if (id == null) return false;
-
-					id = id.trim();
-
-					if ((<Discord.TextChannel>selector.channel).guild.roles.cache.get(id) == null) return false;
-
-					(<DiscordBot.DoGroupEvent>compiled.event).role_id = id;
-
-					server.regrab(copy => {
-						if (copy == null) return;
-						copy.addOrEditEvent(compiled);
-						copy.save().catch(console.error);
-					});
-
-					return true;
-				});
-			}
-			break;
-		case 'message':
-			selector.setFormat([
-				'**Message Event**',
-				'__Set Channel (enter Channel ID or #)__',
-				'',
-				'{page_items}'
-			]);
-
-			selector.listen(async id_message => {
-				let type = server.idType(id_message);
-				if (type != null && type != 'channel') return false;
-
-				let id = server.strpToId(id_message);
-
-				if (id == null) return false;
-
-				id = id.trim();
-
-				if ((<Discord.TextChannel>selector.channel).guild.channels.cache.get(id) == null) return false;
-
-				(<DiscordBot.DoMessageEvent>compiled.event).channel_id = id;
-
-				const messageSelector = utils.createPageSelector(selector.author_id, selector.channel)!;
-
-				messageSelector.setFormat([
-					'**Message Event**',
-					'**Set Channel Message response**',
-					'',
-					'{page_items}'
-				]);
-
-				messageSelector.listen(async message => {
-					(<DiscordBot.DoMessageEvent>compiled.event).message = message;
-
-					server.regrab(copy => {
-						if (copy == null) return;
-
-						copy.addOrEditEvent(compiled);
-						copy.save().catch(console.error);
-					});
-
-					return true;
-				});
-
-				return true;
-			});
-			break;
-		case 'dm':
-			selector.setFormat([
-				'**Direct Message Event**',
-				'Current Message',
-				'```' + (compiled.event.message == null ? 'None' : compiled.event.message) +  '```',
-				'**Set Direct Message response**',
-				'',
-				'{page_items}'
-			]);
-
-			selector.listen(async message => {
-				(<DiscordBot.DoDirectMessageEvent>compiled.event).message = message;
-
-				server.regrab(copy => {
-					if (copy == null) return;
-
-					copy.addOrEditEvent(compiled);
-					copy.save().catch(console.error);
-				});
-				return true;
-			});
-			break;
-	}
-
-	await selector.display();
+	//
 }
 
 
 export {
 	call,
-	showEditEventPage as showEditPage
+
+	DEFAULT_VARIABLES_SORTED,
+	DEFAULT_VARIABLE_NAMES
 };

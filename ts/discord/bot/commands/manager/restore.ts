@@ -102,7 +102,7 @@ class Restore extends Command {
 			}(i + 1, backups[i].toJSON()));
 		}
 
-		selector.display();
+		await selector.display();
 	}
 }
 

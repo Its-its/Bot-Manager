@@ -12,6 +12,8 @@ import { DiscordBot, Optional } from '@type-manager';
 import utils = require('@base/discord/utils');
 
 
+// TODO: Correctly handle <@channelID> in variables obj.
+
 class Events extends Command {
 	constructor() {
 		super('events');
@@ -54,7 +56,7 @@ class Events extends Command {
 				reaction: reaction,
 				guild: reaction.message.guild,
 				channel: reaction.message.channel,
-				user
+				caller: user
 			},
 			eventGroup.variables,
 			eventGroup.onEvent
@@ -76,7 +78,7 @@ class Events extends Command {
 				reaction: reaction,
 				guild: reaction.message.guild,
 				channel: reaction.message.channel,
-				user
+				caller: user
 			},
 			eventGroup.variables,
 			eventGroup.onEvent
@@ -93,7 +95,7 @@ interface EventOptions {
 
 	guild: Discord.Guild;
 	channel: Discord.Channel;
-	user: Discord.User | Discord.PartialUser;
+	caller: Discord.User | Discord.PartialUser;
 }
 
 async function doEvents(
@@ -130,7 +132,7 @@ async function doEventModify(
 					if (opts.reaction != null) {
 						// Current reaction removed equals specified modify one.
 						if (opts.reaction.emoji.identifier == modify.id && !opts.exists!) {
-							opts.reaction.users.add(opts.user.id);
+							opts.reaction.users.add(opts.caller.id);
 							return true;
 						}
 					}
@@ -141,7 +143,7 @@ async function doEventModify(
 					if (opts.reaction != null) {
 						// Current reaction added equals specified modify one.
 						if (opts.reaction.emoji.identifier == modify.id && opts.exists!) {
-							await opts.reaction.users.remove(opts.user.id);
+							await opts.reaction.users.remove(opts.caller.id);
 							return true;
 						}
 					}
@@ -162,7 +164,7 @@ async function doEventModify(
 		case 'role': {
 			switch (modify.do) {
 				case 'add': {
-					let member = await opts.guild.members.fetch(opts.user.id);
+					let member = await opts.guild.members.fetch(opts.caller.id);
 
 					if (member != null) {
 						await member.roles.add(modify.id);
@@ -174,7 +176,7 @@ async function doEventModify(
 				}
 
 				case 'remove': {
-					let member = await opts.guild.members.fetch(opts.user.id);
+					let member = await opts.guild.members.fetch(opts.caller.id);
 
 					if (member != null) {
 						await member.roles.remove(modify.id);
@@ -277,8 +279,8 @@ async function doEventCondition(
 		switch (condition.type) {
 			case 'role': {
 				if (condition.for == 'member') {
-					if (opts.user != null) {
-						let guildMember = opts.guild.members.resolve(opts.user.id);
+					if (opts.caller != null) {
+						let guildMember = opts.guild.members.resolve(opts.caller.id);
 
 						if (guildMember != null) {
 							let exists = guildMember.roles.cache.findKey(r => r.id == condition.id) != null;

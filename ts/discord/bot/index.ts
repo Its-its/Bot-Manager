@@ -139,7 +139,7 @@ client.on('roleDelete', asyncFnWrapper(
 
 
 client.on('rateLimit', rateLimit => {
-	logger.info('Rate Limit:', rateLimit);
+	console.log('Rate Limit:', rateLimit);
 });
 
 

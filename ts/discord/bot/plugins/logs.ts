@@ -228,7 +228,7 @@ function messageEdited(channel: Discord.TextChannel | Discord.DMChannel | Discor
 			},
 			author: {
 				name: member.user.tag,
-				icon_url: member.user.displayAvatarURL
+				icon_url: member.user.displayAvatarURL()
 			},
 			fields: [
 				{
@@ -255,7 +255,7 @@ function messageDeleted(channel: Discord.TextChannel | Discord.DMChannel | Disco
 			},
 			author: {
 				name: member.user.tag,
-				icon_url: member.user.displayAvatarURL
+				icon_url: member.user.displayAvatarURL()
 			}
 		}
 	}

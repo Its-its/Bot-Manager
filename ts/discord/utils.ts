@@ -362,10 +362,12 @@ interface PageSelection {
 }
 
 
-const defaultConfigValues = {
+const DEFAULT_CONFIG_VALUES = {
 	removeReply: true,
 	timeoutMS: 1000 * 60 * 2,
 }
+
+const DELAY_BETWEEN_SELECTIONS = 3 * 1000;
 
 // const pageReplaceValues = [ '{input}', '{name}' ];
 
@@ -376,6 +378,15 @@ const formatReplaceValues: { [name: string]: (page: MessagePage) => string } = {
 
 class MessagePage {
 	public author_id: string;
+
+	// Last ran command. Used to prevent rate limits.
+	public lastUpdated: number;
+
+	// If user has ran a command.
+	public processingInput: boolean;
+
+	// Use cached data on back button from child.
+	public useCachedOnBack: boolean;
 
 	public onMessage?: (value: string) => Promise<boolean> = undefined;
 
@@ -394,13 +405,17 @@ class MessagePage {
 
 	public initiated = false;
 
-	public format: string[] = [];
+	public format: string[] | (() => string[]) = [];
 	public pageSelectionFormat = (item: PageSelection) => item.input + ' > ' + item.description;
 
 	constructor(config: MessagePageConfig) {
-		Object.assign(config, defaultConfigValues);
+		Object.assign(config, DEFAULT_CONFIG_VALUES);
 
+		this.useCachedOnBack = true;
+		this.lastUpdated = Date.now();
+		this.processingInput = false;
 		this.author_id = config.author_id;
+
 		this.editingMessage = config.editingMessage;
 		this.channel = config.channel;
 
@@ -430,14 +445,25 @@ class MessagePage {
 		this.collector.on(
 			'collect',
 			utils.asyncFnWrapper(
-				async collectedMsg => this.onCollect(collectedMsg),
-				async err => this.collectorError(err)
+				async collectedMsg => {
+					if (this.processingInput) return;
+
+					this.processingInput = true;
+
+					await this.onCollect(collectedMsg);
+
+					this.processingInput = false;
+				},
+				async err => {
+					await this.collectorError(err);
+					this.processingInput = false;
+				}
 			)
 		);
 
 		this.collector.on(
 			'end', utils.asyncFnWrapper(
-				async (_, reason) => this.onEnd(reason),
+				async (_, reason) => this.onEnd(<any>reason),
 				async err => this.collectorError(err)
 			)
 		);
@@ -457,8 +483,13 @@ class MessagePage {
 	public async onCollect(userMessage: Discord.Message) {
 		let input = userMessage.cleanContent.toLowerCase().trim();
 
+		if (Date.now() < this.lastUpdated + DELAY_BETWEEN_SELECTIONS) {
+			await asyncTimeout(Date.now() - this.lastUpdated);
+		}
+
 		if (this.removeReply) {
 			await userMessage.delete();
+			await asyncTimeout(500);
 		}
 
 		if (await this.select(input)) return;
@@ -478,7 +509,7 @@ class MessagePage {
 		}
 	}
 
-	public async onEnd(reason: string) {
+	public async onEnd(reason: 'time' | 'exit' | 'delete') {
 		console.log('End: ' + reason);
 
 		if (reason == 'time') {
@@ -559,7 +590,12 @@ class MessagePage {
 	public async back() {
 		if (this.parent == null) return;
 
+		this.parent.lastUpdated = Date.now();
+
 		await this.close('delete');
+
+		await asyncTimeout(500);
+
 		await this.parent.display();
 	}
 
@@ -597,10 +633,14 @@ class MessagePage {
 
 	public async select(inputValue: string): Promise<boolean> {
 		if (this.selectionCalls[inputValue] == null) {
-			return this.onMessage != null && this.onMessage(inputValue);
+			if (this.onMessage != null) {
+				return this.onMessage(inputValue);
+			} else {
+				return false;
+			}
 		}
 
-		const newPage = new MessagePage({ author_id: this.author_id, channel: this.channel, parent: this });
+		let newPage = new MessagePage({ author_id: this.author_id, channel: this.channel, parent: this });
 
 		await this.selectionCalls[inputValue](newPage);
 
@@ -633,9 +673,17 @@ class MessagePage {
 
 
 	public compileMessage() {
+		let format: string[];
+
+		if (!Array.isArray(this.format)) {
+			format = this.format();
+		} else {
+			format = this.format;
+		}
+
 		return infoMsg([[
 			'Pages',
-			this.format.map(f => {
+			format.map(f => {
 				for(let format in formatReplaceValues) {
 					if (f == format) return formatReplaceValues[format](this);
 				}
@@ -644,7 +692,7 @@ class MessagePage {
 		]]);
 	}
 
-	public setFormat(format: string[]) {
+	public setFormat(format: string[] | (() => string[])) {
 		this.format = format;
 		return this;
 	}

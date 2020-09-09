@@ -60,7 +60,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 		});
 	});
 
-	selector.display();
+	await selector.display();
 }
 
 async function showChannel(server: DiscordServer, guildMember: Discord.GuildMember, page: utils.MessagePage, channelFeed: CustomDocs.discord.DiscordRssPopulated) {
