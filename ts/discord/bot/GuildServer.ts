@@ -104,13 +104,13 @@ class Server extends Changes {
 	public punishments: DiscordBot.Punishments;
 
 
-	public events: DiscordBot.PluginEvents.Grouping[];
-	public ranks: string[];
+	public events: Events;
+	public ranks: Ranks;
 
-	public alias: DiscordBot.Alias[];
-	public commands: DiscordBot.Command[];
-	public roles: DiscordBot.Role[];
-	public leveling: DiscordBot.Leveling = { roles: [], keepPreviousRoles: false };
+	public alias: Alias;
+	public commands: Command;
+	public roles: Roles;
+	public leveling: Leveling;
 
 	public phrases: Phrases;
 	public plugins: Plugins;
@@ -131,15 +131,13 @@ class Server extends Changes {
 		this.memberCount = options.memberCount;
 		this.ownerID = options.ownerID;
 
-		this.events = def([], options.events);
-		this.alias = def([], options.alias, options.aliasList);
+		this.events = new Events(options.events);
+		this.alias = new Alias(this, def(options.alias, options.aliasList));
 		this.intervals = new Intervals(options.intervals);
-		this.ranks = def([], options.ranks);
-		this.roles = def([], options.roles);
-		this.commands = def([], options.commands);
+		this.ranks = new Ranks(options.ranks);
+		this.roles = new Roles(options.roles);
+		this.commands = new Command(this, options.commands);
 		this.phrases = new Phrases(this, options.phrases);
-
-		// Update from old plugins
 		this.plugins = new Plugins(options.plugins);
 
 		this.channels = def({}, options.channels);
@@ -149,7 +147,7 @@ class Server extends Changes {
 
 		this.commandPrefix = options.commandPrefix;
 
-		this.leveling = def(this.leveling, options.leveling);
+		this.leveling = new Leveling(options.leveling);
 		this.moderation = new Moderation(options.moderation);
 		this.permissions = new Permissions(options.permissions);
 
@@ -202,23 +200,113 @@ class Server extends Changes {
 	}
 
 
-//#region Events
+	public userHasPerm(user: Discord.GuildMember, perm: string): boolean {
+		return this.permissions.userHasPerm(user, perm);
+	}
 
 
+	public strpToId(str?: string): Nullable<string> {
+		return utils.strpToId(str);
+	}
 
-//#endregion
+	public idType(str: string) {
+		return utils.getIdType(str);
+	}
 
-//#region Leveling
 
-	public keepPreviousRoles() {
-		return this.leveling != null && (this.leveling.keepPreviousRoles == null ? false : this.leveling.keepPreviousRoles);
+	public toDBPrint() {
+		return {
+			version: this.migration,
+			region: this.region,
+			name: this.name,
+			iconURL: this.iconURL,
+			createdAt: this.createdAt,
+			memberCount: this.memberCount,
+			ownerID: this.ownerID,
+			commandPrefix: this.commandPrefix,
+
+			punishments: this.punishments,
+			aliasList: this.alias.toJSON(),
+			ranks: this.ranks.toJSON(),
+			moderation: this.moderation.toJSON(),
+			plugins: this.plugins.toJSON(),
+
+			roles: this.roles.toJSON(),
+			permissions: this.permissions.toJSON()
+		};
+	}
+
+	public toString() {
+		return JSON.stringify({
+			version: this.migration,
+			region: this.region,
+			name: this.name,
+			iconURL: this.iconURL,
+			createdAt: this.createdAt,
+			memberCount: this.memberCount,
+			ownerID: this.ownerID,
+			commandPrefix: this.commandPrefix,
+
+			punishments: this.punishments,
+
+			aliasList: this.alias.toJSON(),
+			ranks: this.ranks.toJSON(),
+			moderation: this.moderation.toJSON(),
+			plugins: this.plugins.toJSON(),
+			intervals: this.intervals.toJSON(),
+			commands: this.commands.toJSON(),
+			phrases: this.phrases.toJSON(),
+			roles: this.roles.toJSON(),
+			permissions: this.permissions.toJSON()
+		});
+	}
+}
+
+
+class Events {
+	items: DiscordBot.PluginEvents.Grouping[];
+
+	constructor(opts?: DiscordBot.PluginEvents.Grouping[]) {
+		if (opts == undefined) {
+			opts = [];
+		}
+
+		this.items = opts;
+	}
+
+	//
+
+	public toJSON(): DiscordBot.PluginEvents.Grouping[] {
+		return this.items;
+	}
+}
+
+
+class Leveling {
+	roles: {
+		id: string;
+		level: number;
+	}[];
+
+	keepPreviousRoles: boolean;
+
+	constructor(opts?: DiscordBot.Leveling) {
+		if (opts == undefined) {
+			opts = {
+				roles: [],
+				keepPreviousRoles: false
+			};
+		}
+
+		this.roles = opts.roles;
+		this.keepPreviousRoles = opts.keepPreviousRoles;
 	}
 
 	public roleForLevel(level: number) {
-		if (this.leveling == null || this.leveling.roles.length == 0) return null;
+		if (this.roles.length == 0) return null;
 
-		for(let i = this.leveling.roles.length - 1; i >= 0; i--) {
-			let role = this.leveling.roles[i];
+		for(let i = this.roles.length - 1; i >= 0; i--) {
+			let role = this.roles[i];
 			if (role.level <= level) return role.id;
 		}
 
@@ -226,19 +314,14 @@ class Server extends Changes {
 	}
 
 	public addLevelingRole(id: string, level: number) {
-		if (this.leveling != null) {
-			for(let i = 0; i < this.leveling.roles.length; i++) {
-				let role = this.leveling.roles[i];
+		if (this.roles.length != 0) {
+			for(let i = 0; i < this.roles.length; i++) {
+				let role = this.roles[i];
 				if (role.id == id) return false;
 			}
-		} else {
-			this.leveling = {
-				roles: [],
-				keepPreviousRoles: false
-			};
 		}
 
-		this.leveling.roles.push({
+		this.roles.push({
 			id: id,
 			level: level
 		});
@@ -247,12 +330,12 @@ class Server extends Changes {
 	}
 
 	public removeLevelingRole(id: string) {
-		if (this.leveling == null) return false;
+		if (this.roles.length == 0) return false;
 
-		for(let i = 0; i < this.leveling.roles.length; i++) {
-			let role = this.leveling.roles[i];
+		for(let i = 0; i < this.roles.length; i++) {
+			let role = this.roles[i];
 			if (role.id == id) {
-				this.leveling.roles.splice(i, 1);
+				this.roles.splice(i, 1);
 				return true;
 			}
 		}
@@ -261,10 +344,11 @@ class Server extends Changes {
 	}
 
 	public editLevelingRole(id: string, level: number) {
-		if (this.leveling == null) return false;
+		if (this.roles.length == 0) return false;
 
-		for(let i = 0; i < this.leveling.roles.length; i++) {
-			let role = this.leveling.roles[i];
+		for(let i = 0; i < this.roles.length; i++) {
+			let role = this.roles[i];
+
 			if (role.id == id) {
 				if (role.level == level) return false;
 				role.level = level;
@@ -275,9 +359,31 @@ class Server extends Changes {
 		return false;
 	}
 
-//#endregion
 
-//#region Commands
+	public toJSON(): DiscordBot.Leveling {
+		return {
+			roles: this.roles,
+			keepPreviousRoles: this.keepPreviousRoles
+		};
+	}
+}
+
+
+class Command {
+	server: Server;
+	items: DiscordBot.Command[];
+
+	constructor(server: Server, opts?: DiscordBot.Command[]) {
+		this.server = server;
+
+		if (opts == undefined) {
+			opts = [];
+		}
+
+		this.items = opts;
+	}
+
+
 	public async createCommand(
 		member: Discord.GuildMember,
 		commandNames: string | string[],
@@ -289,7 +395,7 @@ class Server extends Changes {
 		for(let i = 0; i < commandNames.length; i++) {
 			let name = commandNames[i];
 
-			if (this.commandIndex(name) != -1 || this.aliasIndex(name) != -1 || Commands.is(name)) {
+			if (this.commandIndex(name) != -1 || this.server.alias.aliasIndex(name) != -1 || Commands.is(name)) {
 				return Promise.resolve(false);
 			}
 		}
@@ -318,10 +424,10 @@ class Server extends Changes {
 		let prod = await model.save();
 
 		comm._id = prod.id;
-		this.commands.push(comm);
+		this.items.push(comm);
 
 		await DiscordServers.updateOne(
-			{ server_id: this.serverId },
+			{ server_id: this.server.serverId },
 			{ $addToSet: { command_ids: prod.id } }
 		).exec();
 
@@ -333,7 +439,7 @@ class Server extends Changes {
 
 		let index = this.commandIndex(commandName);
 		if (index != -1) {
-			let comm = this.commands.splice(index, 1)[0];
+			let comm = this.items.splice(index, 1)[0];
 			ModelCommand.remove({ _id: Types.ObjectId(comm._id) }).exec();
 		}
 
@@ -341,17 +447,35 @@ class Server extends Changes {
 	}
 
 	public commandIndex(commandName: string): number {
-		for (let i = 0; i < this.commands.length; i++) {
-			if (this.commands[i].alias.indexOf(commandName) != -1) {
+		for (let i = 0; i < this.items.length; i++) {
+			if (this.items[i].alias.indexOf(commandName) != -1) {
 				return i;
 			}
 		}
 		return -1;
 	}
 
-//#endregion
 
-//#region Alias
+	public toJSON(): DiscordBot.Command[] {
+		return this.items;
+	}
+}
+
+
+class Alias {
+	server: Server;
+	items: DiscordBot.Alias[];
+
+	constructor(server: Server, opts?: DiscordBot.Alias[]) {
+		this.server = server;
+
+		if (opts == undefined) {
+			opts = [];
+		}
+
+		this.items = opts;
+	}
+
 
 	public createAlias(alias: string | string[], command: string) {
 		if (!Array.isArray(alias)) alias = [alias.toLowerCase()];
@@ -359,10 +483,10 @@ class Server extends Changes {
 
 		for(let i = 0; i < alias.length; i++) {
 			let name = alias[i];
-			if (this.commandIndex(name) != -1 || this.aliasIndex(name) != -1 || Commands.is(name)) return false;
+			if (this.server.commands.commandIndex(name) != -1 || this.aliasIndex(name) != -1 || Commands.is(name)) return false;
 		}
 
-		this.alias.push({
+		this.items.push({
 			pid: uniqueID(4),
 			alias: alias,
 			command: command
@@ -376,15 +500,15 @@ class Server extends Changes {
 
 		let index = this.aliasIndex(alias);
 		if (index != -1) {
-			this.alias.splice(index, 1)[0];
+			this.items.splice(index, 1)[0];
 		}
 
 		return index != -1;
 	}
 
 	public aliasIndex(aliasName: string): number {
-		for (let i = 0; i < this.alias.length; i++) {
-			if (this.alias[i].alias.indexOf(aliasName) != -1) {
+		for (let i = 0; i < this.items.length; i++) {
+			if (this.items[i].alias.indexOf(aliasName) != -1) {
 				return i;
 			}
 		}
@@ -392,120 +516,97 @@ class Server extends Changes {
 		return -1;
 	}
 
-//#endregion
 
-//#region Ranks
+	public toJSON(): DiscordBot.Alias[] {
+		return this.items;
+	}
+}
+
+
+class Ranks {
+	items: string[];
+
+	constructor(opts?: string[]) {
+		if (opts == undefined) {
+			opts = [];
+		}
+
+		this.items = opts;
+	}
+
 
 	public addRank(name: string): boolean {
 		if (this.isRank(name)) return false;
-		this.ranks.push(name);
+
+		this.items.push(name);
+
 		return true;
 	}
 
 	public removeRank(name: string): boolean {
-		let index = this.ranks.indexOf(name);
+		let index = this.items.indexOf(name);
+
 		if (index == -1) return false;
-		this.ranks.splice(index, 1);
+
+		this.items.splice(index, 1);
+
 		return true;
 	}
 
 	public isRank(name: string) {
-		return this.ranks.indexOf(name) != -1;
+		return this.items.indexOf(name) != -1;
 	}
 
-//#endregion
 
-//#region Roles
-	public addRole(role: DiscordBot.Role): DiscordBot.Role[] {
-		if (this.getRoleIndex(role.id) == -1) {
-			this.roles.push(role);
-			this.roles.sort((r1, r2) => r2.position - r1.position);
+	public toJSON(): string[] {
+		return this.items;
+	}
+}
+
+
+class Roles {
+	items: DiscordBot.Role[];
+
+	constructor(opts?: DiscordBot.Role[]) {
+		if (opts == undefined) {
+			opts = [];
 		}
 
-		return this.roles;
+		this.items = opts;
+	}
+
+
+	public addRole(role: DiscordBot.Role): DiscordBot.Role[] {
+		if (this.getRoleIndex(role.id) == -1) {
+			this.items.push(role);
+			this.items.sort((r1, r2) => r2.position - r1.position);
+		}
+
+		return this.items;
 	}
 
 	public removeRole(roleId: string): DiscordBot.Role[] {
 		let index = this.getRoleIndex(roleId);
-		if (index != -1) this.roles.splice(index, 1);
-		return this.roles;
+		if (index != -1) this.items.splice(index, 1);
+		return this.items;
 	}
 
 	public getRole(roleId: string): Nullable<DiscordBot.Role> {
 		let index = this.getRoleIndex(roleId);
-		return index == -1 ? null : this.roles[index];
+		return index == -1 ? null : this.items[index];
 	}
 
 	public getRoleIndex(roleId: string): number {
-		for (let i = 0; i < this.roles.length; i++) {
-			if (this.roles[i].id == roleId) return i;
+		for (let i = 0; i < this.items.length; i++) {
+			if (this.items[i].id == roleId) return i;
 		}
 
 		return -1;
 	}
 
-//#endregion
 
-
-	public userHasPerm(user: Discord.GuildMember, perm: string): boolean {
-		return this.permissions.userHasPerm(user, perm);
-	}
-
-
-	public strpToId(str?: string): Nullable<string> {
-		return utils.strpToId(str);
-	}
-
-	public idType(str: string) {
-		return utils.getIdType(str);
-	}
-
-
-	public toDBPrint() {
-		return {
-			version: this.migration,
-			region: this.region,
-			name: this.name,
-			iconURL: this.iconURL,
-			createdAt: this.createdAt,
-			memberCount: this.memberCount,
-			ownerID: this.ownerID,
-			commandPrefix: this.commandPrefix,
-
-			punishments: this.punishments,
-			aliasList: this.alias,
-			ranks: this.ranks,
-			moderation: this.moderation.toJSON(),
-			plugins: this.plugins.toJSON(),
-
-			roles: this.roles,
-			permissions: this.permissions.toJSON()
-		};
-	}
-
-	public toString() {
-		return JSON.stringify({
-			version: this.migration,
-			region: this.region,
-			name: this.name,
-			iconURL: this.iconURL,
-			createdAt: this.createdAt,
-			memberCount: this.memberCount,
-			ownerID: this.ownerID,
-			commandPrefix: this.commandPrefix,
-
-			punishments: this.punishments,
-
-			aliasList: this.alias,
-			ranks: this.ranks,
-			moderation: this.moderation.toJSON(),
-			plugins: this.plugins.toJSON(),
-			intervals: this.intervals.toJSON(),
-			commands: this.commands,
-			phrases: this.phrases.toJSON(),
-			roles: this.roles,
-			permissions: this.permissions.toJSON()
-		});
+	public toJSON(): DiscordBot.Role[] {
+		return this.items;
 	}
 }
 
@@ -567,6 +668,7 @@ class Plugins {
 		};
 	}
 }
+
 
 class Phrases {
 	server: Server;
@@ -780,6 +882,7 @@ class Phrases {
 		return this.items;
 	}
 }
+
 
 class Intervals {
 	items: DiscordBot.Interval[];

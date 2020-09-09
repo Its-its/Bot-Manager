@@ -3,7 +3,7 @@ import { DiscordBot, Nullable } from "../typings/manager";
 // TODO: Completely seperate from discord.
 
 type UserConfig = {
-	commands: Command[];
+	commands: Command;
 };
 
 interface DefaultCommands {
@@ -23,9 +23,9 @@ async function parseMessageForCmd(defaultCommands: DefaultCommands, userConfig: 
 	}
 
 	// Check user-made commands.
-	if (userConfig.commands.length != 0) {
-		for (let i = 0; i < userConfig.commands.length; i++) {
-			let command = userConfig.commands[i];
+	if (userConfig.commands.items.length != 0) {
+		for (let i = 0; i < userConfig.commands.items.length; i++) {
+			let command = userConfig.commands.items[i];
 
 			if (command.alias.indexOf(messageCommand) != -1) {
 				let fixedParams = getProperParam(parts, command.params);
@@ -38,7 +38,7 @@ async function parseMessageForCmd(defaultCommands: DefaultCommands, userConfig: 
 				}
 
 				let calls = dealWithOnCalled(
-					userConfig.commands,
+					userConfig.commands.items,
 					fixedParams.newParams,
 					command.params[fixedParams.pos],
 					command.params
@@ -69,7 +69,7 @@ function hasPermissions(defaultCommands: DefaultCommands, message: string, isAdm
 }
 
 function dealWithOnCalled(
-	commands: Array<Command>,
+	commands: CommandOpts[],
 	messageParams: Array<string>,
 	usedParam: CommandParam,
 	allParams?: Array<CommandParam>): Nullable<DiscordBot.PhraseResponses> {
@@ -113,7 +113,7 @@ function dealWithOnCalled(
 	return response;
 }
 
-function getCommand(commands: Array<Command>, command: string): Nullable<Command> {
+function getCommand(commands: CommandOpts[], command: string): Nullable<CommandOpts> {
 	for (let i = 0; i < commands.length; i++) {
 		if (commands[i].alias.indexOf(command) != -1) return commands[i];
 	}
@@ -121,7 +121,7 @@ function getCommand(commands: Array<Command>, command: string): Nullable<Command
 	return null;
 }
 
-function getProperParam(message: string[], params: Array<CommandParam>): Nullable<{ pos: number; newParams: Array<string>; }> {
+function getProperParam(message: string[], params: CommandParam[]): Nullable<{ pos: number; newParams: string[]; }> {
 	for (let a = 0; a < params.length; a++) {
 		let param = params[a];
 
@@ -168,11 +168,11 @@ function getProperParam(message: string[], params: Array<CommandParam>): Nullabl
 function removeEmptiesFromArray(msg: string[]) { return msg.slice(1).filter(t => t.length != 0); }
 
 
-function getParam(command: Command, id: number): CommandParam {
+function getParam(command: CommandOpts, id: number): CommandParam {
 	return command.params[id];
 }
 
-function getCommandParam(commandName: string, id: number, commands: Array<Command>): Nullable<CommandParam> {
+function getCommandParam(commandName: string, id: number, commands: Array<CommandOpts>): Nullable<CommandParam> {
 	let command = getCommand(commands, commandName);
 
 	if (command == null) return null;
@@ -267,6 +267,10 @@ export = {
 
 
 interface Command {
+	items: CommandOpts[];
+}
+
+interface CommandOpts {
 	alias: string[];
 	params: CommandParam[];
 }

@@ -352,7 +352,7 @@ class Backup extends Command {
 				// Custom
 				async function() {
 					if (isBackingUp('commands')) {
-						compiled['commands'] = server.commands.map(c => { return { alias: c.alias, params: c.params }; });
+						compiled['commands'] = server.commands.items.map(c => { return { alias: c.alias, params: c.params }; });
 					}
 
 					if (isBackingUp('intervals')) {
@@ -402,10 +402,10 @@ class Backup extends Command {
 					if (isBackingUp('prefix')) compiled['prefix'] = server.commandPrefix;
 
 					if (isBackingUp('ranks') && isBackingUp('roles')) {
-						compiled['ranks'] = server.ranks;
+						compiled['ranks'] = server.ranks.items;
 					}
 
-					if (isBackingUp('alias')) compiled['alias'] = server.alias.map(a => { return { command: a.command, alias: a.alias }; });
+					if (isBackingUp('alias')) compiled['alias'] = server.alias.items.map(a => { return { command: a.command, alias: a.alias }; });
 
 					return Promise.resolve();
 				},

@@ -459,7 +459,7 @@ function apiBots() {
 						return;
 					}
 
-					server.commands.push({
+					server.commands.items.push({
 						_id: prod._id,
 						pid: prod.pid,
 						alias: prod.alias,
@@ -626,7 +626,7 @@ function apiBots() {
 					let indexOf = server.moderation.disabledCustomCommands.indexOf(cid);
 					if (indexOf != -1) server.moderation.disabledCustomCommands.splice(indexOf, 1);
 
-					if (comm.alias[0] != null) server.removeCommand(comm.alias[0]);
+					if (comm.alias[0] != null) server.commands.removeCommand(comm.alias[0]);
 
 					server.save();
 				});
@@ -881,7 +881,7 @@ function apiBots() {
 					return;
 				}
 
-				server.removeRank(name);
+				server.ranks.removeRank(name);
 
 				server.save();
 
@@ -962,7 +962,7 @@ function apiBots() {
 					return;
 				}
 
-				server.removeRole(pid);
+				server.roles.removeRole(pid);
 
 				server.save().catch(console.error);
 

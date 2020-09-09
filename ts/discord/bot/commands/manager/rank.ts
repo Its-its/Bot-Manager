@@ -50,9 +50,9 @@ class Rank extends Command {
 			case 'list':
 				if (!this.hasPerms(guildNember, server, PERMS.LIST)) return Command.noPermsMessage('Rank');
 
-				if (ranks.length == 0) return Command.info([[ 'Public Ranks:', 'No Ranks Public' ]]);
+				if (ranks.items.length == 0) return Command.info([[ 'Public Ranks:', 'No Ranks Public' ]]);
 
-				let roles = ranks.map(b => {
+				let roles = ranks.items.map(b => {
 					let role = message.guild!.roles.cache.get(b);
 					if (role == null) return null;
 					return [role.name, role.members.size + ' members'];
@@ -65,7 +65,7 @@ class Rank extends Command {
 
 				if (valueOfParameter == null) return Command.error([['ERROR!', 'Please specify the role!']]);
 				if ((roleId = getRoleId(valueOfParameter)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
-				if (!server.isRank(roleId)) return Command.error([['ERROR!', 'That is not a public rank!']]);
+				if (!server.ranks.isRank(roleId)) return Command.error([['ERROR!', 'That is not a public rank!']]);
 				if (guildNember.roles.cache.has(valueOfParameter)) return Command.error([['ERROR!', 'You already have the role!']]);
 
 				await guildNember.roles.add(roleId, 'Public Rank - User requested.');
@@ -77,7 +77,7 @@ class Rank extends Command {
 
 				if (valueOfParameter == null) return Command.error([['ERROR!', 'Please specify the role!']]);
 				if ((roleId = getRoleId(valueOfParameter)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
-				if (!server.isRank(roleId)) return Command.error([['ERROR!', 'That is not a public rank!']]);
+				if (!server.ranks.isRank(roleId)) return Command.error([['ERROR!', 'That is not a public rank!']]);
 				if (!guildNember.roles.cache.has(valueOfParameter)) return Command.error([['ERROR!', 'You already have the role!']]);
 
 				await guildNember.roles.remove(roleId, 'Public Rank - User requested.');
@@ -89,10 +89,10 @@ class Rank extends Command {
 				if (!this.hasPerms(guildNember, server, PERMS.ADD)) return Command.noPermsMessage('Rank');
 
 				if (valueOfParameter == null) return Command.error([['ERROR!', 'Please specify the role!']]);
-				if (server.isRank(valueOfParameter)) return Command.error([['ERROR!', 'Rank already exists!']]);
+				if (server.ranks.isRank(valueOfParameter)) return Command.error([['ERROR!', 'Rank already exists!']]);
 				if ((roleId = getRoleId(valueOfParameter)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
 
-				server.addRank(roleId);
+				server.ranks.addRank(roleId);
 
 				break;
 
@@ -100,10 +100,10 @@ class Rank extends Command {
 				if (!this.hasPerms(guildNember, server, PERMS.REMOVE)) return Command.noPermsMessage('Rank');
 
 				if (valueOfParameter == null) return Command.error([['ERROR!', 'Please specify the role!']]);
-				if (!server.isRank(valueOfParameter)) return Command.error([['ERROR!', 'Rank already removed!']]);
+				if (!server.ranks.isRank(valueOfParameter)) return Command.error([['ERROR!', 'Rank already removed!']]);
 				if ((roleId = getRoleId(valueOfParameter)) == null) return Command.error([['ERROR!', 'That is not a valid role name!']]);
 
-				server.removeRank(roleId);
+				server.ranks.removeRank(roleId);
 
 				break;
 		}

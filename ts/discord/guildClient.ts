@@ -135,7 +135,7 @@ async function updateServerFromDB(serverId: string) {
 
 	parsed.linked = (server.bot_id != null);
 
-	parsed.commands = server.command_ids.map(c => {
+	parsed.commands.items = server.command_ids.map(c => {
 		return {
 			_id: c._id,
 			pid: c.pid,

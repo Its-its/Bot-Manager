@@ -43,7 +43,7 @@ class Alias extends Command {
 			case 'list': {
 				if (!this.hasPerms(message.member!, server, PERMISSIONS.LIST)) return Command.noPermsMessage('Alias');
 
-				if (server.alias.length == 0) {
+				if (server.alias.items.length == 0) {
 					return Command.info([
 						[
 							'Alias',
@@ -51,7 +51,7 @@ class Alias extends Command {
 						]
 					]);
 				} else {
-					await message.channel.send(Command.table(['Alias', 'Command'], server.alias.map(a => [a.alias.join(','), a.command])))
+					await message.channel.send(Command.table(['Alias', 'Command'], server.alias.items.map(a => [a.alias.join(','), a.command])))
 				}
 			}
 
@@ -63,7 +63,7 @@ class Alias extends Command {
 
 				if (alias == null || command.length == 0) return Command.error([['Alias', 'Incorrect Usage.']]);
 
-				if (!server.createAlias(alias, command)) return Command.error([['Alias', 'Unable to add alias. Alias used somewhere else?']]);
+				if (!server.alias.createAlias(alias, command)) return Command.error([['Alias', 'Unable to add alias. Alias used somewhere else?']]);
 
 				await server.save();
 
@@ -77,7 +77,7 @@ class Alias extends Command {
 
 				if (name == null) return Command.error([['Alias', 'Pleave provide an alias name to remove.']]);
 
-				if (server.removeAlias(name)) {
+				if (server.alias.removeAlias(name)) {
 					await server.save();
 
 					return Command.success([['Alias', 'Successfully removed alias.']]);

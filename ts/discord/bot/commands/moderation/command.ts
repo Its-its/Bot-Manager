@@ -46,7 +46,7 @@ class Comm extends Command {
 			case 'list': {
 				if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Command');
 
-				await message.channel.send(Command.table([ 'PID', 'Alias' ], server.commands.map(c => [c.pid, c.alias.join(', ')])));
+				await message.channel.send(Command.table([ 'PID', 'Alias' ], server.commands.items.map(c => [c.pid, c.alias.join(', ')])));
 
 				break;
 			}
@@ -64,7 +64,7 @@ class Comm extends Command {
 
 				if (onCalledMessage.length == 0) return;
 
-				let resp = await server.createCommand(message.member!, commandName, { type: 'echo', message: onCalledMessage });
+				let resp = await server.commands.createCommand(message.member!, commandName, { type: 'echo', message: onCalledMessage });
 
 				if (resp) {
 					await server.save();
@@ -91,7 +91,7 @@ class Comm extends Command {
 
 				if (!Number.isInteger(paramId)) paramId = undefined;
 
-				server.removeCommand(commandName, paramId);
+				server.commands.removeCommand(commandName, paramId);
 				await server.save();
 				await message.reply(`Successfully removed command "${commandName}"`)
 

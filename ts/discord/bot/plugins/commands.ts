@@ -50,9 +50,9 @@ async function onDidCallCommand(bot_id: string, message: Discord.Message, server
 		let commName = commandMessage.split(' ', 2)[0].toLowerCase();
 
 		// Check for alias's.
-		if (server.alias.length != 0) {
-			for(let i = 0; i < server.alias.length; i++) {
-				let alias = server.alias[i];
+		if (server.alias.items.length != 0) {
+			for(let i = 0; i < server.alias.items.length; i++) {
+				let alias = server.alias.items[i];
 
 				if (alias.alias.indexOf(commName) != -1) {
 					commandMessage = alias.command + commandMessage.substring(commName.length);

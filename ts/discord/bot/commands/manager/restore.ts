@@ -444,7 +444,7 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 
 					let c = items.commands![pos];
 
-					await server.createCommand(guild.owner!, c.alias, c.params);
+					await server.commands.createCommand(guild.owner!, c.alias, c.params);
 
 					return nextCommand(pos + 1);
 				}
@@ -455,7 +455,7 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 		// Everything else.
 		async function() {
 			if (isRestoring('alias')) {
-				items.alias!.forEach(a => server.createAlias(a.alias, a.command));
+				items.alias!.forEach(a => server.alias.createAlias(a.alias, a.command));
 			}
 
 			if (isRestoring('blacklists')) {
@@ -536,7 +536,7 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 				items.ranks!.forEach(r => {
 					let actualId = tempIdToNew[r];
 					if (actualId != null) {
-						server.addRank(actualId);
+						server.ranks.addRank(actualId);
 					}
 				});
 			}
