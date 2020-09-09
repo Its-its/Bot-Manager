@@ -1,5 +1,5 @@
 import { Document, Types } from 'mongoose';
-import { DiscordBot, CustomDocs, Nullable } from '@type-manager';
+import { DiscordBot, CustomDocs, Nullable, Optional } from '@type-manager';
 import { ObjectId } from 'bson';
 
 import * as redis from 'redis';
@@ -112,7 +112,7 @@ class Server extends Changes {
 		disabledCustomCommands: []
 	};
 
-	public events: DiscordBot.ListenEvents[];
+	public events: DiscordBot.PluginEvents.Grouping[];
 	public intervals: DiscordBot.Interval[];
 	public ranks: string[];
 
@@ -142,7 +142,7 @@ class Server extends Changes {
 	constructor(serverID: string, options: DiscordBot.ServerOptions) {
 		super();
 
-		this.linked = def(true, options.linked)!;
+		this.linked = def(true, options.linked);
 		this.serverId = serverID;
 
 		this.region = options.region;
@@ -152,13 +152,13 @@ class Server extends Changes {
 		this.memberCount = options.memberCount;
 		this.ownerID = options.ownerID;
 
-		this.events = def([], options.events)!;
-		this.alias = def([], options.alias, options.aliasList)!;
-		this.intervals = def([], options.intervals)!;
-		this.ranks = def([], options.ranks)!;
-		this.roles = def([], options.roles)!;
-		this.commands = def([], options.commands)!;
-		this.phrases = def([], options.phrases)!;
+		this.events = def([], options.events);
+		this.alias = def([], options.alias, options.aliasList);
+		this.intervals = def([], options.intervals);
+		this.ranks = def([], options.ranks);
+		this.roles = def([], options.roles);
+		this.commands = def([], options.commands);
+		this.phrases = def([], options.phrases);
 
 		// Update from old plugins
 		this.plugins = def({}, options.plugins);
@@ -182,16 +182,16 @@ class Server extends Changes {
 			}
 		}
 
-		this.channels = def({}, options.channels)!;
-		this.punishments = def({}, options.punishments)!;
+		this.channels = def({}, options.channels);
+		this.punishments = def({}, options.punishments);
 
-		this.migration = def(SERVER.LATEST_VERSION, options.version)!;
+		this.migration = def(SERVER.LATEST_VERSION, options.version);
 
 		this.commandPrefix = options.commandPrefix;
 
-		this.leveling = def(this.leveling, options.leveling)!;
-		this.moderation = def(this.moderation, options.moderation)!;
-		this.permissions = def(this.permissions, options.permissions)!;
+		this.leveling = def(this.leveling, options.leveling);
+		this.moderation = def(this.moderation, options.moderation);
+		this.permissions = def(this.permissions, options.permissions);
 
 		this.init();
 
@@ -221,8 +221,8 @@ class Server extends Changes {
 		}
 	}
 
-	public regrab(cb: (server?: Server) => any) {
-		getServer(this.serverId, server => cb(server));
+	public async regrab() {
+		return getServer(this.serverId);
 	}
 
 	public async save(): Promise<'OK'> {
@@ -269,40 +269,7 @@ class Server extends Changes {
 
 //#region Events
 
-	public addOrEditEvent(listener: DiscordBot.ListenEvents) {
-		for(let i = 0; i < this.events.length; i++) {
-			if (this.events[i].uid == listener.uid) {
-				this.events[i].event = listener.event;
-				return true;
-			}
-		}
 
-		this.events.push(listener);
-
-		return false;
-	}
-
-	public editEvent(id: string, event: DiscordBot.DoEvents) {
-		for(let i = 0; i < this.events.length; i++) {
-			if (this.events[i].uid == id) {
-				this.events[i].event = event;
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	public removeEvent(id: string) {
-		for(let i = 0; i < this.events.length; i++) {
-			if (this.events[i].uid == id) {
-				this.events.splice(i, 1);
-				return true;
-			}
-		}
-
-		return false;
-	}
 
 //#endregion
 
@@ -1327,9 +1294,13 @@ class Server extends Changes {
 	}
 }
 
-function def<D, I>(def: D, ...opts: I[]): D | I {
+function def<D>(def: D, ...opts: Optional<Nullable<D>>[]): D {
 	for(let i = 0; i < opts.length; i++) {
-		if (opts[i] != null) return opts[i];
+		let value = opts[i];
+
+		if (value != null) {
+			return value;
+		}
 	}
 
 	return def;
@@ -1343,7 +1314,7 @@ async function getOrCreateUser(member: Discord.GuildMember) {
 			did: member.id,
 			name: member.user.username,
 			discriminator: member.user.discriminator,
-			avatar: member.user.avatarURL,
+			avatar: member.user.avatarURL(),
 			created_at: member.user.createdAt,
 			connections: [],
 			guilds: []
@@ -1351,29 +1322,35 @@ async function getOrCreateUser(member: Discord.GuildMember) {
 
 		let up = await model.save();
 
-		return Promise.resolve(up);
+		return up;
 	} else {
-		return Promise.resolve(exists);
+		return exists;
 	}
 }
 
-function getServer(serverId: string,  cb: (music?: Server) => any) {
-	redisGuildsClient.get(serverId, (err, str) => {
-		if (err != null) { console.error(err); return cb(); }
-		cb(new Server(serverId, str == null ? {} : JSON.parse(str)));
+function getServer(serverId: string) {
+	return new Promise<Server>((resolve, reject) => {
+		redisGuildsClient.get(serverId, (err, str) => {
+			if (err != null) {
+				return reject(err);
+			}
+
+			resolve(new Server(serverId, str == null ? {} : JSON.parse(str)));
+		});
 	});
 }
 
 function expandPerm(perm: string): string[] {
 	let splt = perm.split('.');
-	return splt.map((str, i) => splt.slice(0, i + 1).join('.'));
+	return splt.map((_, i) => splt.slice(0, i + 1).join('.'));
 }
 
 function uniqueID(size: number): string {
 	let bloc = [];
 
-	for(let i = 0; i < size; i++)
+	for(let i = 0; i < size; i++) {
 		bloc.push(Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1));
+	}
 
 	return bloc.join('');
 }
