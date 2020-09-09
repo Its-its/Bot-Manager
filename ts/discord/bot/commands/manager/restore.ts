@@ -514,7 +514,7 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 
 			if (isRestoring('intervals')) {
 				items.intervals!.forEach(i => {
-					server.createInterval({
+					server.intervals.createInterval({
 						guild_id: guild.id,
 
 						displayName: i.displayName,

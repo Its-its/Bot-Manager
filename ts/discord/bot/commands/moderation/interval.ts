@@ -56,14 +56,25 @@ class Interval extends Command {
 			case 'list': {
 				if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Interval');
 
-				if (server.intervals.length == 0) {
+				if (server.intervals.items.length == 0) {
 					return Command.info([
 						[	'Interval List',
 							'No intervals created'
 						]
 					]);
 				} else {
-					await message.channel.send(Command.table(['ID', 'Status', 'Repeat Time'], server.intervals.map((i, index) => [(index + 1), i.active ? 'Active' : 'Disabled', i.every])));
+					await message.channel.send(
+						Command.table(
+							['ID', 'Status', 'Repeat Time'],
+							server.intervals.items.map(
+								(i, index) => [
+									(index + 1),
+									i.active ? 'Active' : 'Disabled',
+									i.every
+								]
+							)
+						)
+					);
 
 					break;
 				}
@@ -77,7 +88,7 @@ class Interval extends Command {
 
 				if (message.channel.type != 'text') return Command.error([[ 'Interval', 'Channel is not a text channel.' ]]);
 
-				let pos = server.addInterval(minutes, message.guild!.id, message.channel.id);
+				let pos = server.intervals.addInterval(minutes, message.guild!.id, message.channel.id);
 				await server.save();
 
 				return Command.info([
@@ -94,7 +105,7 @@ class Interval extends Command {
 					case 'remove': {
 						if (!this.hasPerms(message.member!, server, PERMS.REMOVE)) return Command.noPermsMessage('Interval');
 
-						server.removeInterval(intervalId);
+						server.intervals.removeInterval(intervalId);
 						await server.save();
 
 						return Command.info([
@@ -105,7 +116,7 @@ class Interval extends Command {
 					case 'toggle': {
 						if (!this.hasPerms(message.member!, server, PERMS.TOGGLE)) return Command.noPermsMessage('Interval');
 
-						let togglePos = server.toggleInterval(intervalId);
+						let togglePos = server.intervals.toggleInterval(intervalId);
 						await server.save();
 
 						return Command.info([
@@ -122,7 +133,7 @@ class Interval extends Command {
 
 								let seconds = parseInt(params[3]);
 								if (isNaN(seconds)) return Command.error([[ 'Interval', 'Invalid Seconds.' ]]);
-								server.setIntervalTime(intervalId, seconds);
+								server.intervals.setIntervalTime(intervalId, seconds);
 								await server.save();
 
 								return Command.info([
@@ -134,7 +145,7 @@ class Interval extends Command {
 								if (!this.hasPerms(message.member!, server, PERMS.SET_MESSAGE)) return Command.noPermsMessage('Interval');
 
 								let text = params.slice(3).join(' ');
-								server.setIntervalMessage(intervalId, text);
+								server.intervals.setIntervalMessage(intervalId, text);
 								await server.save();
 
 								return Command.info([[ 'Interval', 'Interval ' + intervalId + ' updated.' ]]);
@@ -144,7 +155,7 @@ class Interval extends Command {
 								if (!this.hasPerms(message.member!, server, PERMS.SET_NAME)) return Command.noPermsMessage('Interval');
 
 								let text = params.slice(3).join(' ');
-								server.setIntervalName(intervalId, text);
+								server.intervals.setIntervalName(intervalId, text);
 								await server.save();
 
 								return Command.info([[ 'Interval', 'Interval ' + intervalId + ' updated.' ]]);

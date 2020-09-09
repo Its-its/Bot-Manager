@@ -106,7 +106,7 @@ class Server extends Changes {
 	public moderation: Moderation;
 
 	public events: DiscordBot.PluginEvents.Grouping[];
-	public intervals: DiscordBot.Interval[];
+	public intervals: Interval;
 	public ranks: string[];
 
 	public alias: DiscordBot.Alias[];
@@ -145,7 +145,7 @@ class Server extends Changes {
 
 		this.events = def([], options.events);
 		this.alias = def([], options.alias, options.aliasList);
-		this.intervals = def([], options.intervals);
+		this.intervals = new Interval(options.intervals);
 		this.ranks = def([], options.ranks);
 		this.roles = def([], options.roles);
 		this.commands = def([], options.commands);
@@ -663,169 +663,6 @@ class Server extends Changes {
 
 //#endregion
 
-//#region Intervals
-
-	public createInterval(opts: DiscordBot.Interval): number {
-		this.intervals.push(opts);
-		let modelId = intervalPlugin.addInterval(opts);
-		opts._id = modelId;
-
-		return this.intervals.length;
-	}
-
-	public addInterval(seconds: number, guildId: string, channelId: string): number {
-		this.createInterval({
-			pid: uniqueID(4),
-			guild_id: guildId,
-			channel_id: channelId,
-			every: seconds,
-			active: false,
-			message: 'No message set!',
-			displayName: 'Interval',
-			events: {}
-		});
-
-		return this.intervals.length;
-	}
-
-	public removeInterval(id: number | string) {
-		if (typeof id == 'string') {
-			for(let i = 0; i < this.intervals.length; i++) {
-				if (this.intervals[i].pid == id) {
-					intervalPlugin.removeInterval(this.intervals[i]._id!);
-					break;
-				}
-			}
-		} else {
-			let interval = this.intervals.splice(id - 1, 1)[0];
-			if (interval == null) return console.error('Remove Interval, id does not exist!');
-			intervalPlugin.removeInterval(interval._id!);
-		}
-	}
-
-	public toggleInterval(id: number | string): Nullable<boolean> {
-		let interval = null;
-
-		if (typeof id == 'string') {
-			for(let i = 0; i < this.intervals.length; i++) {
-				if (this.intervals[i].pid == id) {
-					interval = this.intervals[i];
-					break;
-				}
-			}
-		} else interval = this.intervals[id - 1];
-
-		if (interval == null) {
-			console.error('Interval not found for ID: ' + id);
-			return null;
-		}
-
-		interval.active = !interval.active;
-		interval.nextCall = undefined;
-
-		let opts: any = { active: interval.active };
-
-		if (interval.active) {
-			interval.nextCall = opts.nextCall = Date.now() + (interval.every! * 1000);
-		}
-
-		intervalPlugin.editInterval(interval._id!, opts);
-
-		return interval.active;
-	}
-
-	public setIntervalTime(id: number | string, minutes: number) {
-		let interval: DiscordBot.Interval | null = null;
-
-		if (typeof id == 'string') {
-			for(let i = 0; i < this.intervals.length; i++) {
-				if (this.intervals[i].pid == id) {
-					interval = this.intervals[i];
-					break;
-				}
-			}
-		} else interval = this.intervals[id - 1];
-
-		if (interval == null) return console.error('Interval not found for ID: ' + id);
-
-		let params: { every: number; nextCall?: any; } = {
-			every: minutes
-		};
-
-		if (interval.active) {
-			params.nextCall = interval.nextCall = Date.now() + (minutes * 1000);
-		}
-
-		Object.assign(interval, params);
-
-		intervalPlugin.editInterval(interval._id!, params);
-	}
-
-	public setIntervalName(id: number | string, name: string) {
-		let interval = null;
-
-		if (typeof id == 'string') {
-			for(let i = 0; i < this.intervals.length; i++) {
-				if (this.intervals[i].pid == id) {
-					interval = this.intervals[i];
-					break;
-				}
-			}
-		} else interval = this.intervals[id - 1];
-
-		if (interval == null) return console.error('Interval not found for ID: ' + id);
-
-		intervalPlugin.editInterval(interval._id!, { displayName: name });
-		interval.displayName = name;
-	}
-
-	public setIntervalMessage(id: number | string, name: string) {
-		let interval = null;
-
-		if (typeof id == 'string') {
-			for(let i = 0; i < this.intervals.length; i++) {
-				if (this.intervals[i].pid == id) {
-					interval = this.intervals[i];
-					break;
-				}
-			}
-		} else interval = this.intervals[id - 1];
-
-		if (interval == null) return console.error('Interval not found for ID: ' + id);
-
-		intervalPlugin.editInterval(interval._id!, { message: name });
-		interval.message = name;
-	}
-
-	// public setIntervalEvent(id: number, event: 'onCall' | 'onReset', content: string) {
-	// 	let interval = this.intervals[id - 1];
-	// 	if (interval == null) return console.error('Interval not found for ID: ' + (id - 1));
-
-	// 	if (interval.events == null) interval.events = {};
-	// 	interval.events[event] = content;
-
-	// 	intervalPlugin.editInterval(interval._id, { events: interval.events });
-	// }
-
-	public resetInterval(id: number | string): boolean {
-		let interval = null;
-
-		if (typeof id == 'string') {
-			for(let i = 0; i < this.intervals.length; i++) {
-				if (this.intervals[i].pid == id) {
-					interval = this.intervals[i];
-					break;
-				}
-			}
-		} else interval = this.intervals[id - 1];
-
-		if (interval == null) return false;
-
-		this.setIntervalTime(id, interval.every!);
-		return true;
-	}
-
-//#endregion
 
 	public userHasPerm(user: Discord.GuildMember, perm: string): boolean {
 		return this.permissions.userHasPerm(user, perm);
@@ -880,7 +717,7 @@ class Server extends Changes {
 			ranks: this.ranks,
 			moderation: this.moderation.toJSON(),
 			plugins: this.plugins,
-			intervals: this.intervals,
+			intervals: this.intervals.toJSON(),
 			commands: this.commands,
 			phrases: this.phrases,
 			roles: this.roles,
@@ -888,6 +725,185 @@ class Server extends Changes {
 		});
 	}
 }
+
+
+class Interval {
+	items: DiscordBot.Interval[];
+
+	constructor(opts?: DiscordBot.Interval[]) {
+		if (opts == undefined) {
+			opts = [];
+		}
+
+		this.items = opts;
+	}
+
+	public createInterval(opts: DiscordBot.Interval): number {
+		this.items.push(opts);
+		let modelId = intervalPlugin.addInterval(opts);
+		opts._id = modelId;
+
+		return this.items.length;
+	}
+
+	public addInterval(seconds: number, guildId: string, channelId: string): number {
+		this.createInterval({
+			pid: uniqueID(4),
+			guild_id: guildId,
+			channel_id: channelId,
+			every: seconds,
+			active: false,
+			message: 'No message set!',
+			displayName: 'Interval',
+			events: {}
+		});
+
+		return this.items.length;
+	}
+
+	public removeInterval(id: number | string) {
+		if (typeof id == 'string') {
+			for(let i = 0; i < this.items.length; i++) {
+				if (this.items[i].pid == id) {
+					intervalPlugin.removeInterval(this.items[i]._id!);
+					break;
+				}
+			}
+		} else {
+			let interval = this.items.splice(id - 1, 1)[0];
+			if (interval == null) return console.error('Remove Interval, id does not exist!');
+			intervalPlugin.removeInterval(interval._id!);
+		}
+	}
+
+	public toggleInterval(id: number | string): Nullable<boolean> {
+		let interval = null;
+
+		if (typeof id == 'string') {
+			for(let i = 0; i < this.items.length; i++) {
+				if (this.items[i].pid == id) {
+					interval = this.items[i];
+					break;
+				}
+			}
+		} else interval = this.items[id - 1];
+
+		if (interval == null) {
+			console.error('Interval not found for ID: ' + id);
+			return null;
+		}
+
+		interval.active = !interval.active;
+		interval.nextCall = undefined;
+
+		let opts: any = { active: interval.active };
+
+		if (interval.active) {
+			interval.nextCall = opts.nextCall = Date.now() + (interval.every! * 1000);
+		}
+
+		intervalPlugin.editInterval(interval._id!, opts);
+
+		return interval.active;
+	}
+
+	public setIntervalTime(id: number | string, minutes: number) {
+		let interval: DiscordBot.Interval | null = null;
+
+		if (typeof id == 'string') {
+			for(let i = 0; i < this.items.length; i++) {
+				if (this.items[i].pid == id) {
+					interval = this.items[i];
+					break;
+				}
+			}
+		} else interval = this.items[id - 1];
+
+		if (interval == null) return console.error('Interval not found for ID: ' + id);
+
+		let params: { every: number; nextCall?: any; } = {
+			every: minutes
+		};
+
+		if (interval.active) {
+			params.nextCall = interval.nextCall = Date.now() + (minutes * 1000);
+		}
+
+		Object.assign(interval, params);
+
+		intervalPlugin.editInterval(interval._id!, params);
+	}
+
+	public setIntervalName(id: number | string, name: string) {
+		let interval = null;
+
+		if (typeof id == 'string') {
+			for(let i = 0; i < this.items.length; i++) {
+				if (this.items[i].pid == id) {
+					interval = this.items[i];
+					break;
+				}
+			}
+		} else interval = this.items[id - 1];
+
+		if (interval == null) return console.error('Interval not found for ID: ' + id);
+
+		intervalPlugin.editInterval(interval._id!, { displayName: name });
+		interval.displayName = name;
+	}
+
+	public setIntervalMessage(id: number | string, name: string) {
+		let interval = null;
+
+		if (typeof id == 'string') {
+			for(let i = 0; i < this.items.length; i++) {
+				if (this.items[i].pid == id) {
+					interval = this.items[i];
+					break;
+				}
+			}
+		} else interval = this.items[id - 1];
+
+		if (interval == null) return console.error('Interval not found for ID: ' + id);
+
+		intervalPlugin.editInterval(interval._id!, { message: name });
+		interval.message = name;
+	}
+
+	// public setIntervalEvent(id: number, event: 'onCall' | 'onReset', content: string) {
+	// 	let interval = this.intervals[id - 1];
+	// 	if (interval == null) return console.error('Interval not found for ID: ' + (id - 1));
+
+	// 	if (interval.events == null) interval.events = {};
+	// 	interval.events[event] = content;
+
+	// 	intervalPlugin.editInterval(interval._id, { events: interval.events });
+	// }
+
+	public resetInterval(id: number | string): boolean {
+		let interval = null;
+
+		if (typeof id == 'string') {
+			for(let i = 0; i < this.items.length; i++) {
+				if (this.items[i].pid == id) {
+					interval = this.items[i];
+					break;
+				}
+			}
+		} else interval = this.items[id - 1];
+
+		if (interval == null) return false;
+
+		this.setIntervalTime(id, interval.every!);
+		return true;
+	}
+
+
+	public toJSON(): DiscordBot.Interval[] {
+		return this.items;
+	}
+}
+
 
 class Permissions {
 	roles: { [id: string]: DiscordBot.PermissionsUserOrRoles };
@@ -1185,6 +1201,8 @@ class Permissions {
 		};
 	}
 }
+
+
 class Moderation {
 	disabledDefaultCommands: string[];
 	disabledCustomCommands: string[];
@@ -1352,6 +1370,8 @@ class Moderation {
 		};
 	}
 }
+
+
 
 function def<D>(def: D, ...opts: Optional<Nullable<D>>[]): D {
 	for(let i = 0; i < opts.length; i++) {

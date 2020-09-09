@@ -356,7 +356,7 @@ class Backup extends Command {
 					}
 
 					if (isBackingUp('intervals')) {
-						compiled['intervals'] = server.intervals.map(i => {
+						compiled['intervals'] = server.intervals.items.map(i => {
 							return {
 								active: false,
 								displayName: i.displayName,

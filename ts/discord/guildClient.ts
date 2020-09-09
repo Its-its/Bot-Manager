@@ -158,7 +158,7 @@ async function updateServerFromDB(serverId: string) {
 		};
 	});
 
-	parsed.intervals = server.interval_ids.map(i => {
+	parsed.intervals.items = server.interval_ids.map(i => {
 		return {
 			_id: i._id,
 			pid: i.pid,
