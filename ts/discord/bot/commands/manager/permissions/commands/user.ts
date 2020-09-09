@@ -27,7 +27,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 	if (calledCmd == null) {
 		if (!server.userHasPerm(message.member!, PERMISSIONS.USER_LIST)) return Command.noPermsMessage('Permissions');
 
-		let permission = server.getPermsFrom('users', userIdFull);
+		let permission = server.permissions.getPermsFrom('users', userIdFull);
 		if (permission == null) permission = { perms: [], groups: [] };
 
 		let commandsList = <Command[]>GlobalCommands.list(true);
@@ -72,7 +72,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 			return Command.error([['Permissions', 'SORRY! There is a limit of 20 users max allowed custom permission. Please use a role instead.']]);
 		}
 
-		let wasPermAdded = server.addPermTo('users', userIdFull, permissionOrCalledCmd);
+		let wasPermAdded = server.permissions.addPermTo('users', userIdFull, permissionOrCalledCmd);
 
 		if (wasPermAdded) {
 			await message.channel.send(Command.error([['Permissions', 'Added ' + permissionOrCalledCmd + ' to ' + userIdFull]]));
@@ -84,7 +84,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 
 		if (GlobalCommands.validPerms.indexOf(permissionOrCalledCmd) == -1) return Command.error([['Permissions', 'That perm doesn\'t exist!']]);
 
-		let wasPermAdded = server.removePermFrom('users', userIdFull, permissionOrCalledCmd);
+		let wasPermAdded = server.permissions.removePermFrom('users', userIdFull, permissionOrCalledCmd);
 
 		if (wasPermAdded) {
 			await message.channel.send(Command.error([['Permissions', 'Removed ' + permissionOrCalledCmd + ' from ' + userIdFull]]));
@@ -98,7 +98,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 		if (permissionOrCalledCmd == 'add') {
 			if (!server.userHasPerm(message.member!, PERMISSIONS.GROUP_ADD)) return Command.noPermsMessage('Permissions');
 
-			let wasPermAdded = server.addGroupTo('users', userIdFull, groupName.toLowerCase());
+			let wasPermAdded = server.permissions.addGroupTo('users', userIdFull, groupName.toLowerCase());
 
 			if (wasPermAdded) {
 				await message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + userIdFull]]));
@@ -108,7 +108,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 		} else if (permissionOrCalledCmd == 'remove') {
 			if (!server.userHasPerm(message.member!, PERMISSIONS.GROUP_REMOVE)) return Command.noPermsMessage('Permissions');
 
-			let wasPermAdded = server.removeGroupFrom('users', userIdFull, groupName.toLowerCase());
+			let wasPermAdded = server.permissions.removeGroupFrom('users', userIdFull, groupName.toLowerCase());
 
 			if (wasPermAdded) {
 				await message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + userIdFull]]));

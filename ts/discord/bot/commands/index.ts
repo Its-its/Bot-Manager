@@ -72,7 +72,9 @@ async function parseMessage(message: string, server: Server, defaultMessage: Dis
 			if (!defaultMessage.member!.hasPermission('ADMINISTRATOR')) {
 
 				if (command.perms.length != 0 &&
-					!(server.userHasAnyChildPerm(defaultMessage.member!.id, command.perms) || server.rolesHaveAnyChildPerm(defaultMessage.member!.roles.cache.keyArray(), command.perms))
+					!(
+						server.permissions.userHasAnyChildPerm(defaultMessage.member!.id, command.perms)
+						|| server.permissions.rolesHaveAnyChildPerm(defaultMessage.member!.roles.cache.keyArray(), command.perms))
 				) return Promise.resolve(null);
 			}
 

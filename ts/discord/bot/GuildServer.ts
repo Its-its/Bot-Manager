@@ -128,9 +128,7 @@ class Server extends Changes {
 	};
 
 
-	public permissions: DiscordBot.Permissions = {
-		roles: {}, users: {}, groups: {}
-	};
+	public permissions: Permissions;
 
 	constructor(serverID: string, options: DiscordBot.ServerOptions) {
 		super();
@@ -184,7 +182,7 @@ class Server extends Changes {
 
 		this.leveling = def(this.leveling, options.leveling);
 		this.moderation = new Moderation(options.moderation);
-		this.permissions = def(this.permissions, options.permissions);
+		this.permissions = new Permissions(options.permissions);
 
 		this.init();
 
@@ -829,15 +827,94 @@ class Server extends Changes {
 
 //#endregion
 
-//#region Permissions
+	public userHasPerm(user: Discord.GuildMember, perm: string): boolean {
+		return this.permissions.userHasPerm(user, perm);
+	}
+
+
+	public strpToId(str?: string): Nullable<string> {
+		return utils.strpToId(str);
+	}
+
+	public idType(str: string) {
+		return utils.getIdType(str);
+	}
+
+
+	public toDBPrint() {
+		return {
+			version: this.migration,
+			region: this.region,
+			name: this.name,
+			iconURL: this.iconURL,
+			createdAt: this.createdAt,
+			memberCount: this.memberCount,
+			ownerID: this.ownerID,
+			commandPrefix: this.commandPrefix,
+
+			punishments: this.punishments,
+			aliasList: this.alias,
+			ranks: this.ranks,
+			moderation: this.moderation.toJSON(),
+			plugins: this.plugins,
+
+			roles: this.roles,
+			permissions: this.permissions.toJSON()
+		};
+	}
+
+	public toString() {
+		return JSON.stringify({
+			version: this.migration,
+			region: this.region,
+			name: this.name,
+			iconURL: this.iconURL,
+			createdAt: this.createdAt,
+			memberCount: this.memberCount,
+			ownerID: this.ownerID,
+			commandPrefix: this.commandPrefix,
+
+			punishments: this.punishments,
+
+			aliasList: this.alias,
+			ranks: this.ranks,
+			moderation: this.moderation.toJSON(),
+			plugins: this.plugins,
+			intervals: this.intervals,
+			commands: this.commands,
+			phrases: this.phrases,
+			roles: this.roles,
+			permissions: this.permissions.toJSON()
+		});
+	}
+}
+
+class Permissions {
+	roles: { [id: string]: DiscordBot.PermissionsUserOrRoles };
+	users: { [id: string]: DiscordBot.PermissionsUserOrRoles };
+	groups: { [id: string]: DiscordBot.PermissionsGroup; };
+
+	constructor(opts?: DiscordBot.Permissions) {
+		if (opts == undefined) {
+			opts = {
+				roles: {},
+				users: {},
+				groups: {}
+			};
+		}
+
+		this.roles = def({}, opts.roles);
+		this.users = def({}, opts.users);
+		this.groups = def({}, opts.groups);
+	}
 
 	public createGroup(displayName: string): Nullable<DiscordBot.PermissionsGroup> {
 		let tounique = displayName.replace(/ /, '').toLowerCase();
 
-		if (Object.keys(this.permissions.groups).length >= 15) return null;
-		if (this.permissions.groups[tounique] != null) return null;
+		if (Object.keys(this.groups).length >= 15) return null;
+		if (this.groups[tounique] != null) return null;
 
-		return this.permissions.groups[tounique] = {
+		return this.groups[tounique] = {
 			displayName: displayName,
 			name: displayName.replace(/\s/, '').toLowerCase(),
 			perms: [],
@@ -846,19 +923,19 @@ class Server extends Changes {
 	}
 
 	public removeGroup(name: string): boolean {
-		if (this.permissions.groups[name] == null) return false;
+		if (this.groups[name] == null) return false;
 
-		delete this.permissions.groups[name];
+		delete this.groups[name];
 
-		for(let id in this.permissions.roles) {
-			let role = this.permissions.roles[id];
+		for(let id in this.roles) {
+			let role = this.roles[id];
 
 			let index = role.groups.indexOf(name);
 			if (index != -1) role.groups.splice(index, 1);
 		}
 
-		for(let id in this.permissions.users) {
-			let user = this.permissions.users[id];
+		for(let id in this.users) {
+			let user = this.users[id];
 
 			let index = user.groups.indexOf(name);
 			if (index != -1) user.groups.splice(index, 1);
@@ -868,11 +945,11 @@ class Server extends Changes {
 	}
 
 	public getPermsFrom(type: 'roles' | 'users' | 'groups', id: string): Nullable<DiscordBot.PermissionTypes> {
-		let sid = this.strpToId(id);
+		let sid = utils.strpToId(id);
 
 		if (sid == null) return null;
 
-		return this.permissions[type][sid];
+		return this[type][sid];
 	}
 
 	public isGroupsRecursive(id: string, saved: string[] = []) {
@@ -880,7 +957,7 @@ class Server extends Changes {
 
 		saved.push(id);
 
-		let group = this.permissions.groups[id];
+		let group = this.groups[id];
 
 		for(let i = 0; i < group.groups!.length; i++) {
 			if (this.isGroupsRecursive(group.groups![i], saved)) return true;
@@ -890,9 +967,9 @@ class Server extends Changes {
 	}
 
 	public addGroupTo(type: 'roles' | 'users' | 'groups', id: string, groupId: string): boolean {
-		let perms = this.permissions[type];
+		let perms = this[type];
 
-		if (this.permissions.groups[groupId] == null) return false;
+		if (this.groups[groupId] == null) return false;
 
 		if (perms[id] == null) {
 			if (type == 'roles' || type == 'users') {
@@ -916,9 +993,9 @@ class Server extends Changes {
 	}
 
 	public addPermTo(type: 'roles' | 'groups' | 'users', id: string, perm: string): boolean {
-		let perms = this.permissions[type];
+		let perms = this[type];
 
-		let sid = this.strpToId(id);
+		let sid = utils.strpToId(id);
 
 		if (sid == null) return false;
 
@@ -947,11 +1024,11 @@ class Server extends Changes {
 	}
 
 	public removePermFrom(type: 'roles' | 'groups' | 'users', id: string, perm: string): boolean {
-		let sid = this.strpToId(id);
+		let sid = utils.strpToId(id);
 
 		if (sid == null) return false;
 
-		let perms = this.permissions[type];
+		let perms = this[type];
 
 		if (perms[sid] == null) return false;
 
@@ -964,11 +1041,11 @@ class Server extends Changes {
 	}
 
 	public removeGroupFrom(type: 'roles' | 'users', id: string, group: string): boolean {
-		let sid = this.strpToId(id);
+		let sid = utils.strpToId(id);
 
 		if (sid == null) return false;
 
-		let perms = this.permissions[type];
+		let perms = this[type];
 
 		if (perms[sid] == null) return false;
 		let index = perms[sid].groups.indexOf(group);
@@ -1003,14 +1080,14 @@ class Server extends Changes {
 	}
 
 	public roleHasExactPerm(id: string, perm: string): boolean {
-		let rolePerm = this.permissions.roles[id];
+		let rolePerm = this.roles[id];
 		if (rolePerm == null) return false;
 
 		return rolePerm.perms.indexOf(perm) != -1;
 	}
 
 	public userHasExactPerm(id: string, perm: string): boolean {
-		let userPerm = this.permissions.users[id];
+		let userPerm = this.users[id];
 		if (userPerm == null) return false;
 
 		return userPerm.perms.indexOf(perm) != -1;
@@ -1026,7 +1103,7 @@ class Server extends Changes {
 	}
 
 	public roleHasBasePerm(id: string, perm: string): boolean {
-		let rolePerm = this.permissions.roles[id];
+		let rolePerm = this.roles[id];
 		if (rolePerm == null) return false;
 
 		let expandedPerm = expandPerm(perm);
@@ -1039,7 +1116,7 @@ class Server extends Changes {
 	}
 
 	public userHasParentPerm(id: string, perm: string): boolean {
-		let userPerm = this.permissions.users[id];
+		let userPerm = this.users[id];
 		if (userPerm == null) return false;
 
 		let expandedPerm = expandPerm(perm);
@@ -1060,26 +1137,26 @@ class Server extends Changes {
 	}
 
 	public hasPerms(userId: string, roleIds: string[], permItem: string): boolean {
-		let userPerm = this.permissions.users[userId];
+		let userPerm = this.users[userId];
 
 		if (userPerm != null) {
 			if (userPerm.perms.indexOf(permItem) != -1) return true;
 
 			for(let i = 0; i < userPerm.groups.length; i++) {
 				let id = userPerm.groups[i];
-				let group = this.permissions.groups[id];
+				let group = this.groups[id];
 				if (group.perms.indexOf(permItem) != -1) return true;
 			}
 		}
 
 		for(let i = 0; i < roleIds.length; i++) {
 			let id = roleIds[i];
-			let role = this.permissions.roles[id];
+			let role = this.roles[id];
 			if (role.perms.indexOf(permItem) != -1) return true;
 
 			for(let x = 0; i < role.groups.length; x++) {
 				let id = role.groups[x];
-				let group = this.permissions.groups[id];
+				let group = this.groups[id];
 				if (group.perms.indexOf(permItem) != -1) return true;
 			}
 		}
@@ -1099,67 +1176,15 @@ class Server extends Changes {
 		return false;
 	}
 
-//#endregion
 
-
-	public strpToId(str?: string): Nullable<string> {
-		return utils.strpToId(str);
-	}
-
-	public idType(str: string) {
-		return utils.getIdType(str);
-	}
-
-
-	public toDBPrint() {
+	public toJSON(): DiscordBot.Permissions {
 		return {
-			version: this.migration,
-			region: this.region,
-			name: this.name,
-			iconURL: this.iconURL,
-			createdAt: this.createdAt,
-			memberCount: this.memberCount,
-			ownerID: this.ownerID,
-			commandPrefix: this.commandPrefix,
-
-			punishments: this.punishments,
-			aliasList: this.alias,
-			ranks: this.ranks,
-			moderation: this.moderation.toJSON(),
-			plugins: this.plugins,
-
 			roles: this.roles,
-			permissions: this.permissions
+			users: this.users,
+			groups: this.groups
 		};
 	}
-
-	public toString() {
-		return JSON.stringify({
-			version: this.migration,
-			region: this.region,
-			name: this.name,
-			iconURL: this.iconURL,
-			createdAt: this.createdAt,
-			memberCount: this.memberCount,
-			ownerID: this.ownerID,
-			commandPrefix: this.commandPrefix,
-
-			punishments: this.punishments,
-
-			aliasList: this.alias,
-			ranks: this.ranks,
-			moderation: this.moderation.toJSON(),
-			plugins: this.plugins,
-			intervals: this.intervals,
-			commands: this.commands,
-			phrases: this.phrases,
-			roles: this.roles,
-			permissions: this.permissions
-		});
-	}
 }
-
-
 class Moderation {
 	disabledDefaultCommands: string[];
 	disabledCustomCommands: string[];

@@ -64,7 +64,7 @@ async function onDidCallCommand(bot_id: string, message: Discord.Message, server
 
 
 		// Not enabled? Not "plugin" or "perms"? Doesn't have bypasstoggle perm? return
-		if (!isEnabled(server) && commName != 'plugin' && commName != 'perms' && !server.memberHasExactPerm(message.member!, 'commands.bypasstoggle')) {
+		if (!isEnabled(server) && commName != 'plugin' && commName != 'perms' && !server.permissions.memberHasExactPerm(message.member!, 'commands.bypasstoggle')) {
 			return true;
 		}
 

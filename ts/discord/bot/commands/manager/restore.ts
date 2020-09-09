@@ -485,7 +485,7 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 					let roleClazz = guild.roles.cache.get(tempIdToNew[id]);
 
 					if (roleClazz != null) {
-						group.perms.forEach(p => server.addPermTo('groups', roleClazz!.id, p));
+						group.perms.forEach(p => server.permissions.addPermTo('groups', roleClazz!.id, p));
 					} else {
 						//
 					}
@@ -497,8 +497,8 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 					let actualId = tempIdToNew[id];
 					if (actualId != null) {
 						let role = perms.roles[id];
-						role.perms.forEach(p => server.addPermTo('roles', actualId, p));
-						role.groups.forEach(p => server.addGroupTo('roles', actualId, p));
+						role.perms.forEach(p => server.permissions.addPermTo('roles', actualId, p));
+						role.groups.forEach(p => server.permissions.addGroupTo('roles', actualId, p));
 					}
 				}
 
@@ -506,8 +506,8 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 					let user = perms.users[id];
 					// Only add if member is in guild.
 					if (guild.members.cache.has(id)) {
-						user.perms.forEach(p => server.addPermTo('users', id, p));
-						user.groups.forEach(p => server.addGroupTo('users', id, p));
+						user.perms.forEach(p => server.permissions.addPermTo('users', id, p));
+						user.groups.forEach(p => server.permissions.addGroupTo('users', id, p));
 					}
 				}
 			}

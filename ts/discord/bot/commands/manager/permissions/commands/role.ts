@@ -38,7 +38,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 	if (cmdToDo == null) {
 		if (!server.userHasPerm(message.member!, PERMISSIONS.ROLE_LIST)) return Command.noPermsMessage('Perms');
 
-		let permission = server.getPermsFrom('roles', roleId!);
+		let permission = server.permissions.getPermsFrom('roles', roleId!);
 		if (permission == null) permission = { perms: [], groups: [] };
 
 		return Command.info([
@@ -55,7 +55,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 
 		if (GlobalCommands.validPerms.indexOf(commandPermOrDo!) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
 
-		let added = server.addPermTo('roles', roleId!, commandPermOrDo!);
+		let added = server.permissions.addPermTo('roles', roleId!, commandPermOrDo!);
 
 		if (added) {
 			await message.channel.send(Command.error([['Permissions', 'Added ' + commandPermOrDo + ' to ' + roleFull]]));
@@ -67,7 +67,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 
 		if (GlobalCommands.validPerms.indexOf(commandPermOrDo!) == -1) return Command.info([['Permissions', 'That perm doesn\'t exist!']]);
 
-		let added = server.removePermFrom('roles', roleId!, commandPermOrDo!);
+		let added = server.permissions.removePermFrom('roles', roleId!, commandPermOrDo!);
 
 		if (added) {
 			await message.channel.send(Command.error([['Permissions', 'Removed ' + commandPermOrDo + ' from ' + roleFull]]));
@@ -79,7 +79,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 		if (commandPermOrDo == null || groupName == null) return Command.error([['Permissions', 'Invalid Params']]);
 
 		if (commandPermOrDo == 'add') {
-			let added = server.addGroupTo('roles', roleId!, groupName.toLowerCase());
+			let added = server.permissions.addGroupTo('roles', roleId!, groupName.toLowerCase());
 
 			if (added) {
 				await message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + roleFull]]));
@@ -87,7 +87,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 				await message.channel.send(Command.error([['Permissions', 'Invalid Group name']]));
 			}
 		} else if (commandPermOrDo == 'remove') {
-			let added = server.removeGroupFrom('roles', roleId!, groupName.toLowerCase());
+			let added = server.permissions.removeGroupFrom('roles', roleId!, groupName.toLowerCase());
 
 			if (added) {
 				await message.channel.send(Command.error([['Permissions', 'Added ' + groupName + ' to ' + roleFull]]));

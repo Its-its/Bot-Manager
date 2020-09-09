@@ -30,7 +30,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 
 		if (!/^[a-z0-9 ]+$/i.test(displayName)) return Command.error([['Permissions', 'Invalid Display Name. A-Z, 0-9, spaces only.']]);
 
-		let group = server.createGroup(displayName);
+		let group = server.permissions.createGroup(displayName);
 
 		if (group == null) return Command.error([['Permissions', 'Group with that name already exists!']]);
 
@@ -69,7 +69,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 		if (paramAddOrRemove == null) {
 			if (!server.userHasPerm(message.member!, PERMISSIONS.GROUP_LIST)) return Command.noPermsMessage('Permissions');
 
-			let permissionsFromGroup = <DiscordBot.PermissionsGroup>server.getPermsFrom('groups', name);
+			let permissionsFromGroup = <DiscordBot.PermissionsGroup>server.permissions.getPermsFrom('groups', name);
 			if (permissionsFromGroup == null) return Command.error([['Permissions', 'Group not valid']]);
 
 			await message.channel.send(Command.info([
@@ -90,10 +90,10 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 
 		if (paramAddOrRemove == 'add') {
 			if (!server.userHasPerm(message.member!, PERMISSIONS.GROUP_ADD)) return Command.noPermsMessage('Permissions');
-			server.addPermTo('groups', name, paramCommandOrPermission);
+			server.permissions.addPermTo('groups', name, paramCommandOrPermission);
 		} else if (paramAddOrRemove == 'remove') {
 			if (!server.userHasPerm(message.member!, PERMISSIONS.GROUP_REMOVE)) return Command.noPermsMessage('Permissions');
-			server.removePermFrom('groups', name, paramCommandOrPermission);
+			server.permissions.removePermFrom('groups', name, paramCommandOrPermission);
 		}
 	}
 
