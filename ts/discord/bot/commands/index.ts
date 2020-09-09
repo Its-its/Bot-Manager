@@ -22,7 +22,7 @@ import CommandManger = require('../../../command-manager');
 
 import Discord = require('discord.js');
 
-import Server = require('../GuildServer');
+import { Server } from '@discord/bot/GuildServer';
 import { Nullable, DiscordBot } from '@type-manager';
 
 

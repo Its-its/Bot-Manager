@@ -1,5 +1,5 @@
 import Discord = require('discord.js');
-import Server = require('../../GuildServer');
+import { Server } from '../../GuildServer';
 
 import redis = require('redis');
 import async = require('async');

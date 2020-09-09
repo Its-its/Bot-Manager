@@ -1,7 +1,7 @@
 import mongoose = require('mongoose');
 import Discord = require('discord.js');
 
-import DiscordServer = require('@discord/bot/GuildServer');
+import { Server as DiscordServer } from '@discord/bot/GuildServer';
 import DiscordTwitter = require('@discord/models/twitter');
 import GlobalTwitterFeeds = require('@base/models/twitterfeed');
 

@@ -4,7 +4,7 @@
 */
 
 import Discord = require('discord.js');
-import DiscordServer = require('../../GuildServer');
+import { Server as DiscordServer } from '@discord/bot/GuildServer';
 
 import async = require('async');
 

@@ -24,7 +24,7 @@ import intervalPlugin = require('./plugins/interval');
 import config = require('@config');
 
 import guildClient = require('../guildClient');
-import Server = require('./GuildServer');
+import { Server } from './GuildServer';
 
 import limits = require('../limits');
 

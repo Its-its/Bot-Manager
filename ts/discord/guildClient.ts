@@ -7,7 +7,7 @@ import config = require('@config');
 
 import DiscordServers = require('./models/servers');
 
-import DiscordServer = require('./bot/GuildServer');
+import { Server as DiscordServer } from './bot/GuildServer';
 import { getMusic } from './music/GuildMusic';
 import { CustomDocs } from '@type-manager';
 

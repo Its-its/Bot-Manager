@@ -6,18 +6,18 @@ import * as redis from 'redis';
 
 import generate = require('nanoid/generate');
 
-import Commands = require('../../models/commands');
-import DiscordServers = require('../../discord/models/servers');
-import DiscordMembers = require('../../discord/models/members');
+import Commands = require('@base/models/commands');
+import DiscordServers = require('@discord/models/servers');
+import DiscordMembers = require('@discord/models/members');
 import Users = require('../models/users');
 import Bots = require('../models/bots');
 
-import Intervals = require('../../models/intervals');
-import Phrases = require('../../models/phrases');
+import Intervals = require('@base/models/intervals');
+import Phrases = require('@base/models/phrases');
 
-import discordUtils = require('../../discord/utils');
-import DiscordServer = require('../../discord/bot/GuildServer');
-import discordClient = require('../../discord/guildClient');
+import discordUtils = require('@discord/utils');
+import { Server as DiscordServer } from '@discord/bot/GuildServer';
+import discordClient = require('@discord/guildClient');
 
 import config = require('@config');
 import { CustomDocs, DiscordBot, Nullable } from '@type-manager';

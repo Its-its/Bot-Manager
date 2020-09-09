@@ -1435,4 +1435,9 @@ function uniqueID(size: number): string {
 }
 
 
-export = Server;
+export {
+	Server,
+	Interval,
+	Permissions,
+	Moderation
+};

@@ -3,7 +3,7 @@ import generate = require('nanoid/generate');
 
 import utils = require('@discord/utils');
 
-import DiscordServer = require('@discord/bot/GuildServer');
+import { Server as DiscordServer } from '@discord/bot/GuildServer';
 import DiscordRSSFeeds = require('@discord/models/feed');
 
 import GlobalRSSFeeds = require('../../../../../../models/rssfeed');

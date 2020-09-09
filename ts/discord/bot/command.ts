@@ -1,4 +1,4 @@
-import Server = require('./GuildServer');
+import { Server } from './GuildServer';
 
 import info = require('../utils');
 
