@@ -192,7 +192,7 @@ async function singleDeletions(messages: Discord.Message[], editMessage: Discord
 		let message = messages[pos++];
 
 
-		let [_, error] = await utils.asyncCatch(message.delete());
+		let error = await utils.asyncCatchError(message.delete());
 
 		if (error == null) {
 			await utils.asyncTimeout(500);

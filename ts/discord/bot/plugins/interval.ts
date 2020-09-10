@@ -1,5 +1,5 @@
 import Discord = require('discord.js');
-import { CustomDocs, DiscordBot } from '@type-manager';
+import { DiscordBot } from '@type-manager';
 
 
 import GlobalModelIntervals = require('../../../models/intervals');
@@ -10,65 +10,65 @@ import DiscordModelFeed = require('../../models/feed');
 
 
 
-function onGuildDelete(guild: Discord.Guild) {
-	DiscordModelFeed.find({ guild_id: guild.id }, (err, feeds) => {
-		if (err) return console.error(err);
-		if (feeds.length == 0) return;
+async function onGuildDelete(guild: Discord.Guild) {
+	let feeds = await DiscordModelFeed.find({ guild_id: guild.id }).exec();
 
-		// TODO: dec GlobalModelRSSFeed.sending_to
+	await GlobalModelIntervals.remove({ guild_id: guild.id }).exec();
 
-		// GlobalModelRSSFeed.updateOne({  });
-	});
-
-	GlobalModelIntervals.remove({ guild_id: guild.id }).exec();
+	return Promise.resolve();
 }
 
-function onChannelDelete(channel: Discord.Channel) {
+async function onChannelDelete(channel: Discord.Channel) {
 	if (channel.type == 'text') {
 		// If channel has RSSFeed deactivate it and set channel_id to null.
-		DiscordModelFeed.findOneAndUpdate(
+		let found = await DiscordModelFeed.findOneAndUpdate(
 			{ guild_id: (<Discord.TextChannel>channel).guild.id, channel_id: channel.id },
-			{ $set: { active: false, 'feeds.items': [] }, $unset: { channel_id: 1 } },
-			(err, found) => {
-				if (found != null) {
-					GlobalModelRSSFeed.update({ _id: { $in: found['feeds'] } }, { $inc: { sending_to: -1 } }).exec();
-				}
-			}
-		);
+			{ $set: { active: false, 'feeds.items': [] }, $unset: { channel_id: 1 } }
+		).exec();
+
+		if (found != null) {
+			await GlobalModelRSSFeed.update({ _id: { $in: found['feeds'] } }, { $inc: { sending_to: -1 } }).exec();
+		}
 
 		//
 	}
+
+	return Promise.resolve();
 }
 
 
 
-function getAllFromGuild(id: string, cb: (err: any, items: CustomDocs.global.Intervals[]) => any) {
-	GlobalModelIntervals.find({ $or: [ { _id: id }, { guild_id: id } ] }, (err, items) => cb(err, items));
+async function getAllFromGuild(id: string) {
+	return GlobalModelIntervals.find({ $or: [ { _id: id }, { guild_id: id } ] }).exec();
 }
 
 
-function editInterval(guild_id: string, newObj: EditableInterval) {
-	GlobalModelIntervals.findOneAndUpdate(
+async function editInterval(guild_id: string, newObj: EditableInterval) {
+	await GlobalModelIntervals.findOneAndUpdate(
 		{ $or: [ { _id: guild_id }, { guild_id: guild_id } ] },
-		{ $set: newObj },
-		err => err && console.error(err)
-	);
+		{ $set: newObj }
+	).exec();
+
+	return Promise.resolve();
 }
 
 
-function addInterval(params: DiscordBot.Interval) {
+async function addInterval(params: DiscordBot.Interval) {
 	if (params.active && params.nextCall == null && params.every != null) {
 		params.nextCall = Date.now() * (params.every * 1000);
 	}
 
 	let model = new GlobalModelIntervals(params);
-	model.save(() => {});
+
+	await model.save();
+
 	return model._id;
 }
 
 
-function removeInterval(id: string) {
-	GlobalModelIntervals.remove({ $or: [ { _id: id }, { guild_id: id } ] }, () => {});
+async function removeInterval(id: string) {
+	await GlobalModelIntervals.remove({ $or: [ { _id: id }, { guild_id: id } ] }).exec();
+	return Promise.resolve();
 }
 
 

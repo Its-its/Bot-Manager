@@ -194,8 +194,8 @@ declare namespace CustomDocs {
 
 		// Temp Punishment
 
-		export interface TempPunishments extends _TempPunishments<ObjectID> {}
-		export interface TempPunishmentsPopulated extends _TempPunishments<Punishments> {}
+		export type TempPunishments = _TempPunishments<ObjectID>;
+		export type TempPunishmentsPopulated = _TempPunishments<Punishments>;
 
 		export interface _TempPunishments<P> extends Document {
 			server_id: string;
@@ -207,8 +207,8 @@ declare namespace CustomDocs {
 		}
 
 		// RSS
-		export interface DiscordRss extends DiscordFeedsTemp<ObjectID> {}
-		export interface DiscordRssPopulated extends DiscordFeedsTemp<CustomDocs.global.RSSFeeds> {}
+		export type DiscordRss = DiscordFeedsTemp<ObjectID>;
+		export type DiscordRssPopulated = DiscordFeedsTemp<CustomDocs.global.RSSFeeds>;
 
 		export interface DiscordFeedsTemp<F> extends Document {
 			pid: string;
@@ -228,8 +228,8 @@ declare namespace CustomDocs {
 		}
 
 		// Twitter
-		export interface DiscordTwitter extends DiscordTwitterTemp<ObjectID> {}
-		export interface DiscordTwitterPopulated extends DiscordTwitterTemp<CustomDocs.global.TwitterFeeds> {}
+		export type DiscordTwitter = DiscordTwitterTemp<ObjectID>;
+		export type DiscordTwitterPopulated = DiscordTwitterTemp<CustomDocs.global.TwitterFeeds>;
 
 		export interface DiscordTwitterTemp<F> extends Document {
 			pid: string;
@@ -257,13 +257,13 @@ declare namespace CustomDocs {
 			created_at: Date;
 		}
 
-		export interface ServersPopulatedDocument extends ServersDocumentTemp<
+		export type ServersPopulatedDocument = ServersDocumentTemp<
 			CustomDocs.global.CommandsDoc,
 			CustomDocs.global.Intervals,
-			CustomDocs.global.Phrases> {}
+			CustomDocs.global.Phrases>;
 
-		export interface ServersDocument extends ServersDocumentTemp<
-			ObjectID, ObjectID, ObjectID> {}
+		export type ServersDocument = ServersDocumentTemp<
+			ObjectID, ObjectID, ObjectID>;
 
 		export interface ServersDocumentTemp<C, I, P> extends Document {
 			user_id: ObjectID;
@@ -456,9 +456,6 @@ declare namespace DiscordBot {
 		}
 
 		type SongGlobal = SongYT;
-
-		interface Playlist {
-		}
 	}
 
 
@@ -871,10 +868,9 @@ declare namespace DiscordBot {
 			| Modify.EventModify
 			| EventWait;
 
-		type EventTypes =
-			  'react'
-			| 'role'
-			| 'member';
+		type EventTypes = 'react'
+						| 'role'
+						| 'member';
 
 
 		interface EventWait {

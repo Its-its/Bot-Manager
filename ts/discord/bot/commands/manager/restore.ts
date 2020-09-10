@@ -6,8 +6,6 @@
 import Discord = require('discord.js');
 import { Server as DiscordServer } from '@discord/bot/GuildServer';
 
-import async = require('async');
-
 import Backups = require('../../../models/backup');
 
 import Command = require('../../command');
@@ -42,14 +40,9 @@ interface Backup {
 	created_at: Date;
 }
 
-type ITEMS = 'all' | 'channels' | 'roles' | 'bans' | 'moderation' | 'overview' | 'emojis' | 'commands' | 'ignored' |
-			 'intervals' | 'phrases' | 'blacklists' | 'perms' | 'prefix' | 'ranks' | 'alias' | 'warnings' | 'disabled';
+type ITEMS = 'channels' | 'roles' | 'bans' | 'moderation' | 'overview' | 'emojis' | 'commands' | 'ignored' |
+			'intervals' | 'phrases' | 'blacklists' | 'perms' | 'prefix' | 'ranks' | 'alias' | 'disabled';
 
-const items = [
-	'channels', 'roles', 'bans', 'moderation', 'overview', 'emojis',
-	'commands', 'intervals', 'phrases', 'blacklists', 'perms', 'prefix', 'ranks', 'alias', 'warnings',
-	'ignored', 'disabled'
-];
 
 class Restore extends Command {
 	constructor() {
@@ -184,7 +177,7 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 	let items: Compiled = JSON.parse(backup.json);
 
 	function isRestoring(name: ITEMS) {
-		return backup.items.indexOf(name) != -1 && items[name] != null;
+		return backup.items.indexOf(name) != -1;
 	}
 
 	let tempIdToNew: { [str: string]: string } = {};
@@ -192,8 +185,6 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 	const guild = message.guild!;
 
 	let startTime = Date.now();
-
-	let failed = [];
 
 	await message.edit(Command.info([['Restore', 'Starting restore process...\n__' + backup.items.join(',') + '__']]));
 
@@ -208,62 +199,10 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 					]
 				]));
 
-				await nextRole(0);
+				await createNextRole(0, tempIdToNew, items.roles!, guild);
 
 				// 0, 1, 2, 3
 				items.roles = items.roles!.sort((r1, r2) => r1.position - r2.position);
-
-				async function nextRole(pos: number) {
-					if (items.roles!.length == pos) {
-						return Promise.resolve();
-					}
-
-					let or = items.roles![pos];
-
-					if (or.name == '@everyone' && or.position == 0) {
-						let roles = guild.roles.cache.array();
-
-						for(let i = 0; i < roles.length; i++) {
-							let role = roles[i];
-
-							if (role.position == 0) {
-								let discRole = await role.edit({
-									permissions: or.permissions,//<any>utils.getPermissions(or.permissions).toArray()
-								});
-
-								console.log(`[Roles]: ${or.id} - ${discRole.id} - ${discRole.name}`);
-								tempIdToNew[or.id] =  discRole.id;
-
-								await utils.asyncTimeout(1000);
-
-								await nextRole(pos + 1);
-
-								break;
-							}
-						}
-					} else {
-						let discRole = await guild.roles.create({
-							data: {
-								name: or.name,
-								color: or.color,
-								hoist: or.hoist,
-								// position: or.position, // No need b/c it appends roles and I sort it from 0+
-								permissions: or.permissions,//<any>utils.getPermissions().toArray(),
-								mentionable: or.mentionable
-							},
-							reason: 'Restore'
-						});
-
-						console.log(`[Roles]: ${or.id} - ${discRole.id} - ${discRole.name}`);
-						tempIdToNew[or.id] =  discRole.id;
-
-						await utils.asyncTimeout(1000);
-
-						await nextRole(pos + 1);
-					}
-
-					return Promise.resolve();
-				}
 			}
 
 			return Promise.resolve();
@@ -359,15 +298,7 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 		// Emoji
 		async function() {
 			if (isRestoring('emojis')) {
-				// nextEmoji(0);
-
-				function nextEmoji(pos: number) {
-					if (items.emojis!.length == pos) return;
-
-					let emoji = items.emojis![pos];
-
-					// emoji.
-				}
+				//
 			}
 
 			return Promise.resolve();
@@ -382,24 +313,7 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 					]
 				]));
 
-				await nextBan(0);
-
-
-				async function nextBan(pos: number) {
-					if (items.bans!.length == pos) {
-						return Promise.resolve();
-					}
-
-					let b = items.bans![pos];
-
-					await guild.members.ban(b/*, { days: null, reason: null }*/);
-
-					await utils.asyncTimeout(200);
-
-					await nextBan(pos + 1);
-
-					return Promise.resolve();
-				}
+				await createNextBan(0, items.bans!, guild);
 			}
 
 			return Promise.resolve();
@@ -409,22 +323,7 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 			if (isRestoring('phrases')) {
 				await message.edit(Command.info([['Restore', 'Restoring Phrases...']]));
 
-				await nextPhrase(0);
-
-				async function nextPhrase(pos: number) {
-					if (items.phrases!.length == pos) {
-						return Promise.resolve();
-					}
-
-					let p = items.phrases![pos];
-
-					let phrase = await server.phrases.createPhrase(message.member!, p.phrases);
-
-					await server.phrases.setPhraseIgnoreCase(phrase.pid, p.ignoreCase);
-					await server.phrases.setPhraseResponse(phrase.pid, p.responses);
-
-					await nextPhrase(pos + 1);
-				}
+				await createNextPhrase(0, items.phrases!, server, message);
 			}
 
 			return Promise.resolve();
@@ -434,20 +333,7 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 			if (isRestoring('commands')) {
 				await message.edit(Command.info([['Restore', 'Restoring Commands...']]));
 
-				nextCommand(0);
-
-
-				async function nextCommand(pos: number): Promise<void> {
-					if (items.commands!.length == pos) {
-						return Promise.resolve();
-					}
-
-					let c = items.commands![pos];
-
-					await server.commands.createCommand(guild.owner!, c.alias, c.params);
-
-					return nextCommand(pos + 1);
-				}
+				await createNextCommand(0, items.commands!, server, guild);
 			}
 
 			return Promise.resolve();
@@ -557,6 +443,99 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 export = Restore;
 
 
+async function createNextRole(pos: number, tempIdToNew: { [str: string]: string }, savedRoles: DiscordBot.Role[], guild: Discord.Guild) {
+	if (savedRoles.length == pos) {
+		return Promise.resolve();
+	}
+
+	let or = savedRoles[pos];
+
+	if (or.name == '@everyone' && or.position == 0) {
+		let roles = guild.roles.cache.array();
+
+		for(let i = 0; i < roles.length; i++) {
+			let role = roles[i];
+
+			if (role.position == 0) {
+				let discRole = await role.edit({
+					permissions: or.permissions,//<any>utils.getPermissions(or.permissions).toArray()
+				});
+
+				console.log(`[Roles]: ${or.id} - ${discRole.id} - ${discRole.name}`);
+				tempIdToNew[or.id] =  discRole.id;
+
+				await utils.asyncTimeout(1000);
+
+				await createNextRole(pos + 1, tempIdToNew, savedRoles, guild);
+
+				break;
+			}
+		}
+	} else {
+		let discRole = await guild.roles.create({
+			data: {
+				name: or.name,
+				color: or.color,
+				hoist: or.hoist,
+				// position: or.position, // No need b/c it appends roles and I sort it from 0+
+				permissions: or.permissions,//<any>utils.getPermissions().toArray(),
+				mentionable: or.mentionable
+			},
+			reason: 'Restore'
+		});
+
+		console.log(`[Roles]: ${or.id} - ${discRole.id} - ${discRole.name}`);
+		tempIdToNew[or.id] =  discRole.id;
+
+		await utils.asyncTimeout(1000);
+
+		await createNextRole(pos + 1, tempIdToNew, savedRoles, guild);
+	}
+
+	return Promise.resolve();
+}
+
+async function createNextBan(pos: number, bans: string[], guild: Discord.Guild): Promise<void> {
+	if (bans.length == pos) {
+		return Promise.resolve();
+	}
+
+	let b = bans[pos];
+
+	await guild.members.ban(b/*, { days: null, reason: null }*/);
+
+	await utils.asyncTimeout(200);
+
+	return createNextBan(pos + 1, bans, guild);
+}
+
+async function createNextPhrase(pos: number, phrases: Omit<DiscordBot.Phrase, 'pid'>[], server: DiscordServer, message: Discord.Message): Promise<void> {
+	if (phrases.length == pos) {
+		return Promise.resolve();
+	}
+
+	let p = phrases[pos];
+
+	let phrase = await server.phrases.createPhrase(message.member!, p.phrases);
+
+	await server.phrases.setPhraseIgnoreCase(phrase.pid, p.ignoreCase);
+	await server.phrases.setPhraseResponse(phrase.pid, p.responses);
+
+	return createNextPhrase(pos + 1, phrases, server, message);
+}
+
+async function createNextCommand(pos: number, commands: Omit<DiscordBot.Command, '_id' | 'pid'>[], server: DiscordServer, guild: Discord.Guild): Promise<void> {
+	if (commands.length == pos) {
+		return Promise.resolve();
+	}
+
+	let c = commands[pos];
+
+	await server.commands.createCommand(guild.owner!, c.alias, c.params);
+
+	return createNextCommand(pos + 1, commands, server, guild);
+}
+
 async function asdf(items: (() => Promise<void>)[], finish: () => Promise<void>) {
 	for (let i = 0; i < items.length; i++) {
 		await items[i]();
@@ -594,6 +573,4 @@ interface Compiled {
 	intervals?: DiscordBot.Interval[];
 
 	phrases?: Omit<DiscordBot.Phrase, 'pid'>[];
-
-	[key: string]: any;
 }

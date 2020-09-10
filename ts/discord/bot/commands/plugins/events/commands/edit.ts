@@ -135,19 +135,19 @@ async function showEditPage(event_id: number, senderMessage: Discord.Message, se
 	selector.addSelection(
 		'Variables',
 		'Changes the event specific variables you can access throughout.',
-		async page => showVariablesPage(group, page, senderMessage, server)
+		page => showVariablesPage(group, page, senderMessage, server)
 	);
 
 	selector.addSelection(
 		'Conditions',
 		'Specify the conditions to activate event.',
-		async page => showVariablesPage(group, page, senderMessage, server)
+		page => showVariablesPage(group, page, senderMessage, server)
 	);
 
 	selector.addSelection(
 		'Events',
 		'What happens when the conditions are met.',
-		async page => showVariablesPage(group, page, senderMessage, server)
+		page => showVariablesPage(group, page, senderMessage, server)
 	);
 
 
@@ -156,7 +156,7 @@ async function showEditPage(event_id: number, senderMessage: Discord.Message, se
 	return null;
 }
 
-async function showVariablesPage(group: DiscordBot.PluginEvents.Grouping, page: utils.MessagePage, senderMessage: Discord.Message, server: DiscordServer) {
+function showVariablesPage(group: DiscordBot.PluginEvents.Grouping, page: utils.MessagePage, senderMessage: Discord.Message, server: DiscordServer) {
 	page.setFormat(() => [
 		'Add, Remove, or Edit your Variables.',
 		'```' + (group.variables != null ? Object.entries(group.variables).map(i => i[0] + ' = ' + i[1]).join('\n') : 'Empty') + '```',
@@ -164,7 +164,7 @@ async function showVariablesPage(group: DiscordBot.PluginEvents.Grouping, page: 
 		'{page_items}'
 	]);
 
-	page.addSelection('Add', 'Add a new variable', async addPage => {
+	page.addSelection('Add', 'Add a new variable', addPage => {
 		addPage.setFormat(() => [
 			'Adding a new variable',
 			'```' + (group.variables != null ? Object.entries(group.variables).map(i => i[0] + ' = ' + i[1]).join('\n') : 'Empty') + '```',
@@ -213,11 +213,11 @@ async function showVariablesPage(group: DiscordBot.PluginEvents.Grouping, page: 
 			return false;
 		});
 
-		addPage.display();
+		return addPage.display();
 	});
 
 	if (group.variables != null) {
-		page.addSelection('Remove', 'Remove an existing variable', async remPage => {
+		page.addSelection('Remove', 'Remove an existing variable', remPage => {
 			remPage.setFormat(() => [
 				'Remove a variable by name',
 				'```' + (group.variables != null ? Object.entries(group.variables).map(i => i[0] + ' = ' + i[1]).join('\n') : 'Empty') + '```',
@@ -255,7 +255,7 @@ async function showVariablesPage(group: DiscordBot.PluginEvents.Grouping, page: 
 			return remPage.display();
 		});
 
-		page.addSelection('Edit', 'Edit an existing variable', async editPage => {
+		page.addSelection('Edit', 'Edit an existing variable', editPage => {
 			editPage.setFormat(() => [
 				'Edit a variable',
 				'```' + (group.variables != null ? Object.entries(group.variables).map(i => i[0] + ' = ' + i[1]).join('\n') : 'Empty') + '```',
@@ -306,7 +306,7 @@ async function showVariablesPage(group: DiscordBot.PluginEvents.Grouping, page: 
 	return page.display();
 }
 
-async function showEditEventPage(group: DiscordBot.PluginEvents.Grouping, page: utils.MessagePage, senderMessage: Discord.Message, server: DiscordServer) {
+function showEditEventPage(group: DiscordBot.PluginEvents.Grouping, page: utils.MessagePage, senderMessage: Discord.Message, server: DiscordServer) {
 	if (!server.userHasPerm(senderMessage.member!, PERMS.EDIT)) return utils.noPermsMessage('Events');
 
 	let selector = utils.createPageSelector(senderMessage.author.id, senderMessage.channel)!;

@@ -255,7 +255,7 @@ client.on('guildDelete', asyncFnWrapper(
 
 		limits.guildDelete(guild.id);
 
-		intervalPlugin.onGuildDelete(guild);
+		await intervalPlugin.onGuildDelete(guild);
 		await PunishmentCmd.onGuildRemove(guild, server);
 
 		await DiscordServers.updateOne({ server_id: guild.id }, { $set: { removed: true } }).exec();
@@ -370,7 +370,7 @@ client.on('guildCreate', asyncFnWrapper(
 
 client.on('channelDelete', asyncFnWrapper(
 	async channel => {
-		intervalPlugin.onChannelDelete(channel);
+		await intervalPlugin.onChannelDelete(channel);
 
 		if (channel.type == 'text' || channel.type == 'category' || channel.type == 'voice') {
 			let server = await guildClient.get((<Discord.GuildChannel>channel).guild.id);
@@ -607,7 +607,7 @@ setInterval(() => {
 				item: CustomDocs.global.TwitterFeedsItem
 			}[] = [];
 
-			let feedItems: { [name: string]: any } = {};
+			let feedItems: { [name: string]: string[] } = {};
 
 			for(let i = 0; i < doc.feeds.length; i++) {
 				let feeds = doc.feeds[i];
@@ -697,7 +697,7 @@ setInterval(() => {
 				item: CustomDocs.global.RSSFeedsItem
 			}[] = [];
 
-			let feedItems: { [name: string]: any } = {};
+			let feedItems: { [name: string]: string[] } = {};
 
 			for(let i = 0; i < doc.feeds.length; i++) {
 				let feeds = doc.feeds[i];

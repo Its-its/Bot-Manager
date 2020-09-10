@@ -53,7 +53,7 @@ class Phrase extends Command {
 		let cmdCallOrPhraseId = params.shift()!;
 
 		switch (cmdCallOrPhraseId) {
-			case 'list':
+			case 'list': {
 				if (!this.hasPerms(message.member!, server, PERMS.LIST)) return Command.noPermsMessage('Phrase');
 
 				await message.channel.send([
@@ -72,8 +72,9 @@ class Phrase extends Command {
 				].join('\n'));
 
 				break;
+			}
 
-			case 'create':
+			case 'create': {
 				if (!this.hasPerms(message.member!, server, PERMS.CREATE)) return Command.noPermsMessage('Phrase');
 
 				if (params.length < 2) return;
@@ -94,8 +95,9 @@ class Phrase extends Command {
 				await message.channel.send(Command.info([['Phrase', 'Created Phrase Successfully.']]));
 
 				break;
+			}
 
-			case 'ignorecase':
+			case 'ignorecase': {
 				if (!this.hasPerms(message.member!, server, PERMS.IGNORECASE)) return Command.noPermsMessage('Phrase');
 
 				if (params.length < 2) return Command.error([['Phrase', 'Invalid Params']]);
@@ -109,8 +111,9 @@ class Phrase extends Command {
 				await message.channel.send(Command.info([['Phrase', 'Changed Phrase Ignore Case.']]));
 
 				break;
+			}
 
-			default:
+			default: {
 				let dodis = params.shift();
 				let name = params.shift();
 
@@ -148,6 +151,7 @@ class Phrase extends Command {
 						return Command.info([['Phrase', 'Not implemented yet. :/']])
 					}
 				}
+			}
 
 			// case 'add':
 			// 	if (params.length < 2) return;

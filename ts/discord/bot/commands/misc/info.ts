@@ -45,7 +45,7 @@ class Info extends Command {
 
 
 		switch(idType) {
-			case 'member':
+			case 'member': {
 				if (!this.hasPerms(message.member!, server, PERMS.MEMBER)) return Command.noPermsMessage('Info');
 
 				let guildMember = message.guild!.members.cache.get(strippedDiscordId);
@@ -111,6 +111,7 @@ class Info extends Command {
 						]
 					}
 				};
+			}
 
 			case 'role': break;
 			case 'channel': break;

@@ -98,7 +98,7 @@ async function onDidCallCommand(bot_id: string, message: Discord.Message, server
 function parseOptions(message: Discord.Message, server: Server, value: DiscordBot.PhraseResponses) {
 	if (typeof value != 'string') {
 		switch(value.type) {
-			case 'echo':
+			case 'echo': {
 				if (value.reply) {
 					message.reply(value.message);
 				} else {
@@ -106,7 +106,9 @@ function parseOptions(message: Discord.Message, server: Server, value: DiscordBo
 				}
 
 				return;
-			case 'interval':
+			}
+
+			case 'interval': {
 				let id = value.id;
 				let type = value.do;
 
@@ -115,6 +117,8 @@ function parseOptions(message: Discord.Message, server: Server, value: DiscordBo
 					server.save().catch(console.error);
 				}
 				return;
+			}
+
 			case 'alias':
 				// value.do
 				return;

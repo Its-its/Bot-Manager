@@ -1,21 +1,8 @@
 import Discord = require('discord.js');
-import { Server as DiscordServer } from '@discord/bot/GuildServer';
+import { Server } from '@discord/bot/GuildServer';
 
 
-import Command = require('../../../command');
-import MusicHistory = require('../../../../../music/models/history');
-import Playlists = require('../../../../../music/models/playlists');
-
-
-import guildClient = require('../../../../guildClient');
-// import config = require('@config');
-
-import musicPlugin = require('../../../../music/plugins/music');
-import musicPermissions = require('../../../../../music/permissions');
-
-import utils = require('../../../../utils');
-
-import client = require('../../../../client');
+import Command = require('@discord/bot/command');
 
 import PERMS = require('./perms');
 import commands = require('./commands');
@@ -33,7 +20,7 @@ class Music extends Command {
 		this.description = 'Used to manage music in voice channels.';
 	}
 
-	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
+	public async call(params: string[], server: Server, message: Discord.Message) {
 		if (params.length == 0) return commands.help.call(params, server, message);
 
 		switch (params.shift()!.toLowerCase()) {

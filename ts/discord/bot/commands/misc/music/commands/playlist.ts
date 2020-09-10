@@ -169,7 +169,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 				]
 
 				fields = fields.concat(songs
-				.map((q: any, i) => [
+				.map((q, i) => [
 					'ID: ' + (((page - 1) * 5) + i + 1),
 					[	q.title,
 						utils.videoIdToUrl(q.type || 'youtube', q.id)

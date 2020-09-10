@@ -12,7 +12,7 @@ const PERMISSIONS = {
 };
 
 type ITEMS = 'all' | 'channels' | 'roles' | 'bans' | 'moderation' | 'overview' | 'emojis' | 'commands' | 'ignored' |
-			 'intervals' | 'phrases' | 'blacklists' | 'perms' | 'prefix' | 'ranks' | 'alias' | 'warnings' | 'disabled';
+			'intervals' | 'phrases' | 'blacklists' | 'perms' | 'prefix' | 'ranks' | 'alias' | 'warnings' | 'disabled';
 
 const items = [
 	'channels', 'roles', 'bans', 'moderation', 'overview', 'emojis',
@@ -74,79 +74,14 @@ class Backup extends Command {
 		if (params[0] == 'clone') {
 			let chann = message.guild!.channels.cache.get(params[1]);
 
+			let tempIdToNew: { [old_id: string]: string } = {};
+
 			if (chann != null) {
-				await createChannels([parseChannel(chann)]);
+				await createChannels([parseChannel(chann)], tempIdToNew, message.guild!);
 
 				console.log('fin');
 			} else {
 				console.log('errr');
-			}
-
-			function parseChannel(channel: Discord.GuildChannel): DiscordBot.BackupChannel {
-				let opt: DiscordBot.BackupChannel = {
-					id: channel.id,
-					name: channel.name,
-					// @ts-ignore
-					type: channel.type,
-					perms: channel.permissionOverwrites.map(p => {
-						return {
-							id: p.id,
-							allow: p.allow,
-							deny: p.deny,
-							type: p.type
-						}
-					}).filter(p => p.id != null),
-					position: channel.calculatedPosition
-				}
-
-
-				if (channel.parentID != null) {
-					opt.parent = channel.parentID;
-				}
-
-				if (channel.type == 'category') {
-					opt.children = (<Discord.CategoryChannel>channel).children.map(c => parseChannel(c));
-				}
-
-				return opt;
-			}
-
-			let tempIdToNew: { [old_id: string]: string } = {};
-
-
-			async function createChannels(channels: DiscordBot.BackupChannel[]) {
-				if (channels == null || channels.length == 0) return Promise.resolve();
-
-				channels = channels.sort((c1, c2) => c1.position - c2.position);
-
-				createAtPos(0);
-
-				async function createAtPos(pos: number) {
-					if (channels.length == pos) return Promise.resolve();
-
-					let c = channels[pos];
-
-					let channel = await message.guild!.channels.create(c.name, {
-						type: c.type,
-						permissionOverwrites: c.perms
-					});
-
-					console.log(`[Channels]: ${c.id} - ${channel.id}`);
-					tempIdToNew[c.id] = channel.id;
-
-					if (c.parent != null && tempIdToNew[c.parent] != null) {
-						channel.setParent(tempIdToNew[c.parent], { reason: 'Restore' });
-					}
-
-					//TODO: temp save channel name. (ignored channels)
-					if (c.children != null) {
-						await createChannels(c.children);
-					}
-
-					await utils.asyncTimeout(1000);
-
-					await createAtPos(pos + 1);
-				}
 			}
 
 			return Promise.resolve();
@@ -278,37 +213,7 @@ class Backup extends Command {
 					// Required for: overview.afk_channel, overview.new_member_channel
 					// TODO: Proper order.
 					if (isBackingUp('channels')) {
-						compiled['channels'] = guild.channels.cache.filter(c => c.parent == null).map(c => parseChannel(c));
-
-						function parseChannel(channel: Discord.GuildChannel): DiscordBot.BackupChannel {
-
-							let opt: DiscordBot.BackupChannel = {
-								id: channel.id,
-								name: channel.name,
-								// @ts-ignore
-								type: channel.type,
-								perms: channel.permissionOverwrites.map(p => {
-									return {
-										id: p.id,
-										allow: p.allow,
-										deny: p.deny,
-										type: p.type
-									}
-								}).filter(p => p.id != null),
-								position: channel.calculatedPosition
-							}
-
-
-							if (channel.parentID != null) {
-								opt.parent = channel.parentID;
-							}
-
-							if (channel.type == 'category') {
-								opt.children = (<Discord.CategoryChannel>channel).children.map(c => parseChannel(c));
-							}
-
-							return opt;
-						}
+						compiled['channels'] = guild.channels.cache.filter(c => c.parent == null).map(parseChannel);
 					}
 
 					if (isBackingUp('overview')) {
@@ -447,6 +352,72 @@ class Backup extends Command {
 }
 
 
+async function createChannels(channels: DiscordBot.BackupChannel[], tempIdToNew: { [old_id: string]: string }, guild: Discord.Guild) {
+	if (channels == null || channels.length == 0) return Promise.resolve();
+
+	channels = channels.sort((c1, c2) => c1.position - c2.position);
+
+	createAtPos(0);
+
+	async function createAtPos(pos: number) {
+		if (channels.length == pos) return Promise.resolve();
+
+		let c = channels[pos];
+
+		let channel = await guild.channels.create(c.name, {
+			type: c.type,
+			permissionOverwrites: c.perms
+		});
+
+		console.log(`[Channels]: ${c.id} - ${channel.id}`);
+		tempIdToNew[c.id] = channel.id;
+
+		if (c.parent != null && tempIdToNew[c.parent] != null) {
+			channel.setParent(tempIdToNew[c.parent], { reason: 'Restore' });
+		}
+
+		//TODO: temp save channel name. (ignored channels)
+		if (c.children != null) {
+			await createChannels(c.children, tempIdToNew, guild);
+		}
+
+		await utils.asyncTimeout(1000);
+
+		await createAtPos(pos + 1);
+	}
+}
+
+
+function parseChannel(channel: Discord.GuildChannel): DiscordBot.BackupChannel {
+	let opt: DiscordBot.BackupChannel = {
+		id: channel.id,
+		name: channel.name,
+		// @ts-ignore
+		type: channel.type,
+		perms: channel.permissionOverwrites.map(p => {
+			return {
+				id: p.id,
+				allow: p.allow,
+				deny: p.deny,
+				type: p.type
+			}
+		}).filter(p => p.id != null),
+		position: channel.calculatedPosition
+	}
+
+
+	if (channel.parentID != null) {
+		opt.parent = channel.parentID;
+	}
+
+	if (channel.type == 'category') {
+		opt.children = (<Discord.CategoryChannel>channel).children.map(parseChannel);
+	}
+
+	return opt;
+}
+
+
 async function asdf(items: (() => Promise<void>)[], finish: () => Promise<void>) {
 	for (let i = 0; i < items.length; i++) {
 		await items[i]();
@@ -503,11 +474,6 @@ interface Compiled {
 	intervals?: DiscordBot.Interval[];
 
 	phrases?: Omit<DiscordBot.Phrase, 'pid'>[];
-}
-
-
-function tempID() {
-	return uniqueID(1);
 }
 
 function uniqueID(size: number): string {

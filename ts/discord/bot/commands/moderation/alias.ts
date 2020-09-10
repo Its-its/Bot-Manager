@@ -53,6 +53,8 @@ class Alias extends Command {
 				} else {
 					await message.channel.send(Command.table(['Alias', 'Command'], server.alias.items.map(a => [a.alias.join(','), a.command])))
 				}
+
+				break;
 			}
 
 			case 'add': {

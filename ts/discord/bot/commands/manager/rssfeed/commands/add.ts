@@ -6,9 +6,9 @@ import utils = require('@discord/utils');
 import { Server as DiscordServer } from '@discord/bot/GuildServer';
 import DiscordRSSFeeds = require('@discord/models/feed');
 
-import GlobalRSSFeeds = require('../../../../../../models/rssfeed');
+import GlobalRSSFeeds = require('@base/models/rssfeed');
 
-import intervalUtils = require('../../../../../../rssgrabber/utils');
+import intervalUtils = require('@base/rssgrabber/utils');
 
 import PERMISSIONS = require('../perms');
 

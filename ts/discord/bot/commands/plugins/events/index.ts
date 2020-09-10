@@ -25,13 +25,13 @@ class Events extends Command {
 	public async call(params: string[], server: DiscordServer, message: Discord.Message) {
 		if (!server.isPluginEnabled('events')) return Command.error([['Error', 'Please enable the Events Plugin!']]);
 
-		let events = server.plugins.events!;
+		const events = server.plugins.events!;
 
 		if (events.groups == null) {
 			events.groups = [];
 		}
 
-		let callType = params.shift();
+		const callType = params.shift();
 
 		switch(callType == null ? null : callType.toLowerCase()) {
 			case 'list': return comm.List.call(params, server, message);
@@ -48,9 +48,9 @@ class Events extends Command {
 
 		console.log(reaction.emoji.identifier);
 
-		let eventGroup = idea;
+		const eventGroup = idea;
 
-		let success = await doEventCondition(
+		const success = await doEventCondition(
 			{
 				exists: true,
 				reaction: reaction,
@@ -70,9 +70,9 @@ class Events extends Command {
 
 		console.log(reaction.emoji.identifier);
 
-		let eventGroup = idea;
+		const eventGroup = idea;
 
-		let success = await doEventCondition(
+		const success = await doEventCondition(
 			{
 				exists: false,
 				reaction: reaction,
@@ -136,6 +136,8 @@ async function doEventModify(
 							return true;
 						}
 					}
+
+					break;
 				}
 
 				case 'remove': {
@@ -147,6 +149,8 @@ async function doEventModify(
 							return true;
 						}
 					}
+
+					break;
 				}
 
 				case 'create': {
@@ -164,7 +168,7 @@ async function doEventModify(
 		case 'role': {
 			switch (modify.do) {
 				case 'add': {
-					let member = await opts.guild.members.fetch(opts.caller.id);
+					const member = await opts.guild.members.fetch(opts.caller.id);
 
 					if (member != null) {
 						await member.roles.add(modify.id);
@@ -176,7 +180,7 @@ async function doEventModify(
 				}
 
 				case 'remove': {
-					let member = await opts.guild.members.fetch(opts.caller.id);
+					const member = await opts.guild.members.fetch(opts.caller.id);
 
 					if (member != null) {
 						await member.roles.remove(modify.id);
@@ -217,9 +221,9 @@ async function doEventCondition(
 			let all_events_correct = true;
 
 			for (let i = 0; i < condition.conditions.length; i++) {
-				let con_opts = condition.conditions[i];
+				const con_opts = condition.conditions[i];
 
-				let result = await verifyCondition(con_opts);
+				const result = await verifyCondition(con_opts);
 
 				if (!result) {
 					all_events_correct = false;
@@ -231,7 +235,7 @@ async function doEventCondition(
 			// All conditions must be satisfied.
 			if (all_events_correct) {
 				for (let i = 0; i < condition.thenDo.length; i++) {
-					let event = condition.thenDo[i];
+					const event = condition.thenDo[i];
 
 					await doEvents(opts, variables, event)
 				}
@@ -246,9 +250,9 @@ async function doEventCondition(
 			let at_least_one_correct = false;
 
 			for (let i = 0; i < condition.conditions.length; i++) {
-				let con_opts = condition.conditions[i];
+				const con_opts = condition.conditions[i];
 
-				let result = await verifyCondition(con_opts);
+				const result = await verifyCondition(con_opts);
 
 				if (result) {
 					at_least_one_correct = true;
@@ -259,7 +263,7 @@ async function doEventCondition(
 			// At least one condition must be satisfied.
 			if (at_least_one_correct) {
 				for (let i = 0; i < condition.thenDo.length; i++) {
-					let event = condition.thenDo[i];
+					const event = condition.thenDo[i];
 
 					await doEvents(opts, variables, event);
 				}
@@ -273,22 +277,22 @@ async function doEventCondition(
 		}
 	}
 
-	async function verifyCondition(condition: DiscordBot.PluginEvents.Condition.EventCondition) {
+	function verifyCondition(condition: DiscordBot.PluginEvents.Condition.EventCondition) {
 		condition.id = correctString(condition.id, variables);
 
 		switch (condition.type) {
 			case 'role': {
 				if (condition.for == 'member') {
 					if (opts.caller != null) {
-						let guildMember = opts.guild.members.resolve(opts.caller.id);
+						const guildMember = opts.guild.members.resolve(opts.caller.id);
 
 						if (guildMember != null) {
-							let exists = guildMember.roles.cache.findKey(r => r.id == condition.id) != null;
+							const exists = guildMember.roles.cache.findKey(r => r.id == condition.id) != null;
 							return condition.exists == exists;
 						}
 					}
 				} else if (condition.for == 'guild') {
-					let exists = opts.guild.roles.cache.findKey(r => r.id == condition.id) != null;
+					const exists = opts.guild.roles.cache.findKey(r => r.id == condition.id) != null;
 					return condition.exists == exists;
 				}
 
@@ -320,8 +324,8 @@ async function doEventCondition(
 
 function correctString(str: string, variables: Optional<DiscordBot.PluginEvents.Variables>): string {
 	if (variables != null && str.startsWith('{') && str.endsWith('}')) {
-		for (let key in variables) {
-			let value = variables[key];
+		for (const key in variables) {
+			const value = variables[key];
 
 			if (str.slice(1, str.length - 1) == key) {
 				return value;
@@ -413,19 +417,19 @@ const idea2 = {
 };
 
 
-async function getOrFetchUser(user: Discord.User | Discord.PartialUser): Promise<Discord.User> {
+function getOrFetchUser(user: Discord.User | Discord.PartialUser): Promise<Discord.User> {
 	if (user.username == null) {
 		return user.fetch();
 	} else {
-		return user;
+		return Promise.resolve(user);
 	}
 }
 
-async function getOrFetchGuildMember(user: Discord.GuildMember | Discord.PartialGuildMember): Promise<Discord.GuildMember> {
+function getOrFetchGuildMember(user: Discord.GuildMember | Discord.PartialGuildMember): Promise<Discord.GuildMember> {
 	if (user.joinedTimestamp == null) {
 		return user.fetch();
 	} else {
-		return user;
+		return Promise.resolve(user);
 	}
 }
 

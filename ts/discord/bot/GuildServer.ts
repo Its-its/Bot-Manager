@@ -1,6 +1,5 @@
-import { Document, Types } from 'mongoose';
-import { DiscordBot, CustomDocs, Nullable, Optional } from '@type-manager';
-import { ObjectId } from 'bson';
+import { Types } from 'mongoose';
+import { DiscordBot, Nullable, Optional } from '@type-manager';
 
 import * as redis from 'redis';
 import * as Discord from 'discord.js';
@@ -21,7 +20,7 @@ import utils = require('../utils');
 
 
 
-let redisGuildsClient = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.guildsDB });
+const redisGuildsClient = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.guildsDB });
 
 const SERVER = {
 	LATEST_VERSION: 1,
@@ -50,8 +49,6 @@ class Changes {
 	}
 
 	public copy(value: any): any {
-		let type = typeof value;
-
 		switch(typeof value) {
 			case 'string': return String(value);
 			case 'undefined':
@@ -68,8 +65,8 @@ class Changes {
 					}
 
 					let clonedObj = new value.constructor();
-					for(let prop in value) {
-						if(value.hasOwnProperty(prop)){
+					for (let prop in value) {
+						if (Object.prototype.hasOwnProperty.call(value, prop)) {
 							clonedObj[prop] = this.copy(value[prop]);
 						}
 					}
@@ -151,7 +148,7 @@ class Server extends Changes {
 		this.init_changes();
 	}
 
-	public async regrab() {
+	public regrab() {
 		return getServer(this.serverId);
 	}
 
@@ -756,7 +753,7 @@ class Phrases {
 		} else {
 			await ModelPhrases.updateOne({ _id: phrase._id }, { $pull: { phrases: { $in: phrases } } }).exec();
 
-			phrases.forEach((p, i) => {
+			phrases.forEach(p => {
 				let index = phrase!.phrases.indexOf(p);
 				if (index != -1) phrase!.phrases.splice(index, 1);
 			});
@@ -976,7 +973,7 @@ class Intervals {
 
 		if (interval == null) return console.error('Interval not found for ID: ' + id);
 
-		let params: { every: number; nextCall?: any; } = {
+		let params: { every: number; nextCall?: number; } = {
 			every: minutes
 		};
 
