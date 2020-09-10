@@ -113,7 +113,7 @@ function parseOptions(message: Discord.Message, server: Server, value: DiscordBo
 				let type = value.do;
 
 				if (type == 'reset') {
-					server.intervals.resetInterval(id);
+					server.intervals.resetInterval(id).catch(console.error);
 					server.save().catch(console.error);
 				}
 				return;

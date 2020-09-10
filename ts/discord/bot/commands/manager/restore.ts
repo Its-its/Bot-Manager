@@ -399,19 +399,21 @@ async function startImport(backup: Backup, message: Discord.Message, server: Dis
 			}
 
 			if (isRestoring('intervals')) {
-				items.intervals!.forEach(i => {
-					server.intervals.createInterval({
+				for (let i = 0; i < items.intervals!.length; i++) {
+					let interval = items.intervals![i];
+
+					await server.intervals.createInterval({
 						guild_id: guild.id,
 
-						displayName: i.displayName,
-						message: i.message,
+						displayName: interval.displayName,
+						message: interval.message,
 						active: false,
 
-						every: i.every,
-						nextCall: i.nextCall,
-						events: i.events
+						every: interval.every,
+						nextCall: interval.nextCall,
+						events: interval.events
 					});
-				});
+				}
 			}
 
 			if (isRestoring('prefix')) {

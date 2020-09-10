@@ -890,16 +890,18 @@ class Intervals {
 		this.items = opts;
 	}
 
-	public createInterval(opts: DiscordBot.Interval): number {
+	public async createInterval(opts: DiscordBot.Interval): Promise<number> {
 		this.items.push(opts);
-		let modelId = intervalPlugin.addInterval(opts);
+
+		let modelId = await intervalPlugin.addInterval(opts);
+
 		opts._id = modelId;
 
 		return this.items.length;
 	}
 
-	public addInterval(seconds: number, guildId: string, channelId: string): number {
-		this.createInterval({
+	public async addInterval(seconds: number, guildId: string, channelId: string): Promise<number> {
+		await this.createInterval({
 			pid: uniqueID(4),
 			guild_id: guildId,
 			channel_id: channelId,
@@ -913,22 +915,24 @@ class Intervals {
 		return this.items.length;
 	}
 
-	public removeInterval(id: number | string) {
+	public async removeInterval(id: number | string) {
 		if (typeof id == 'string') {
 			for(let i = 0; i < this.items.length; i++) {
 				if (this.items[i].pid == id) {
-					intervalPlugin.removeInterval(this.items[i]._id!);
+					await intervalPlugin.removeInterval(this.items[i]._id!);
 					break;
 				}
 			}
 		} else {
 			let interval = this.items.splice(id - 1, 1)[0];
 			if (interval == null) return console.error('Remove Interval, id does not exist!');
-			intervalPlugin.removeInterval(interval._id!);
+			await intervalPlugin.removeInterval(interval._id!);
 		}
+
+		return Promise.resolve();
 	}
 
-	public toggleInterval(id: number | string): Nullable<boolean> {
+	public async toggleInterval(id: number | string): Promise<Nullable<boolean>> {
 		let interval = null;
 
 		if (typeof id == 'string') {
@@ -954,12 +958,12 @@ class Intervals {
 			interval.nextCall = opts.nextCall = Date.now() + (interval.every! * 1000);
 		}
 
-		intervalPlugin.editInterval(interval._id!, opts);
+		await intervalPlugin.editInterval(interval._id!, opts);
 
 		return interval.active;
 	}
 
-	public setIntervalTime(id: number | string, minutes: number) {
+	public async setIntervalTime(id: number | string, minutes: number) {
 		let interval: DiscordBot.Interval | null = null;
 
 		if (typeof id == 'string') {
@@ -983,10 +987,12 @@ class Intervals {
 
 		Object.assign(interval, params);
 
-		intervalPlugin.editInterval(interval._id!, params);
+		await intervalPlugin.editInterval(interval._id!, params);
+
+		return Promise.resolve();
 	}
 
-	public setIntervalName(id: number | string, name: string) {
+	public async setIntervalName(id: number | string, name: string) {
 		let interval = null;
 
 		if (typeof id == 'string') {
@@ -1000,11 +1006,14 @@ class Intervals {
 
 		if (interval == null) return console.error('Interval not found for ID: ' + id);
 
-		intervalPlugin.editInterval(interval._id!, { displayName: name });
+		await intervalPlugin.editInterval(interval._id!, { displayName: name });
+
 		interval.displayName = name;
+
+		return Promise.resolve();
 	}
 
-	public setIntervalMessage(id: number | string, name: string) {
+	public async setIntervalMessage(id: number | string, name: string) {
 		let interval = null;
 
 		if (typeof id == 'string') {
@@ -1018,8 +1027,11 @@ class Intervals {
 
 		if (interval == null) return console.error('Interval not found for ID: ' + id);
 
-		intervalPlugin.editInterval(interval._id!, { message: name });
+		await intervalPlugin.editInterval(interval._id!, { message: name });
+
 		interval.message = name;
+
+		return Promise.resolve();
 	}
 
 	// public setIntervalEvent(id: number, event: 'onCall' | 'onReset', content: string) {
@@ -1032,7 +1044,7 @@ class Intervals {
 	// 	intervalPlugin.editInterval(interval._id, { events: interval.events });
 	// }
 
-	public resetInterval(id: number | string): boolean {
+	public async resetInterval(id: number | string): Promise<boolean> {
 		let interval = null;
 
 		if (typeof id == 'string') {
@@ -1046,7 +1058,8 @@ class Intervals {
 
 		if (interval == null) return false;
 
-		this.setIntervalTime(id, interval.every!);
+		await this.setIntervalTime(id, interval.every!);
+
 		return true;
 	}
 

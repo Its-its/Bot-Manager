@@ -88,7 +88,8 @@ class Interval extends Command {
 
 				if (message.channel.type != 'text') return Command.error([[ 'Interval', 'Channel is not a text channel.' ]]);
 
-				let pos = server.intervals.addInterval(minutes, message.guild!.id, message.channel.id);
+				let pos = await server.intervals.addInterval(minutes, message.guild!.id, message.channel.id);
+
 				await server.save();
 
 				return Command.info([
@@ -105,7 +106,8 @@ class Interval extends Command {
 					case 'remove': {
 						if (!this.hasPerms(message.member!, server, PERMS.REMOVE)) return Command.noPermsMessage('Interval');
 
-						server.intervals.removeInterval(intervalId);
+						await server.intervals.removeInterval(intervalId);
+
 						await server.save();
 
 						return Command.info([
@@ -116,7 +118,8 @@ class Interval extends Command {
 					case 'toggle': {
 						if (!this.hasPerms(message.member!, server, PERMS.TOGGLE)) return Command.noPermsMessage('Interval');
 
-						let togglePos = server.intervals.toggleInterval(intervalId);
+						let togglePos = await server.intervals.toggleInterval(intervalId);
+
 						await server.save();
 
 						return Command.info([
@@ -133,7 +136,9 @@ class Interval extends Command {
 
 								let seconds = parseInt(params[3]);
 								if (isNaN(seconds)) return Command.error([[ 'Interval', 'Invalid Seconds.' ]]);
-								server.intervals.setIntervalTime(intervalId, seconds);
+
+								await server.intervals.setIntervalTime(intervalId, seconds);
+
 								await server.save();
 
 								return Command.info([
@@ -145,7 +150,9 @@ class Interval extends Command {
 								if (!this.hasPerms(message.member!, server, PERMS.SET_MESSAGE)) return Command.noPermsMessage('Interval');
 
 								let text = params.slice(3).join(' ');
-								server.intervals.setIntervalMessage(intervalId, text);
+
+								await server.intervals.setIntervalMessage(intervalId, text);
+
 								await server.save();
 
 								return Command.info([[ 'Interval', 'Interval ' + intervalId + ' updated.' ]]);
@@ -155,7 +162,9 @@ class Interval extends Command {
 								if (!this.hasPerms(message.member!, server, PERMS.SET_NAME)) return Command.noPermsMessage('Interval');
 
 								let text = params.slice(3).join(' ');
-								server.intervals.setIntervalName(intervalId, text);
+
+								await server.intervals.setIntervalName(intervalId, text);
+
 								await server.save();
 
 								return Command.info([[ 'Interval', 'Interval ' + intervalId + ' updated.' ]]);
