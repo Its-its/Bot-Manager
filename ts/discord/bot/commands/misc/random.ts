@@ -1,5 +1,6 @@
 import Discord = require('discord.js');
-import { Server as DiscordServer } from '@discord/bot/GuildServer';
+
+import { Server as DiscordServer }  from '../../GuildServer';
 
 import Command = require('../../command');
 
@@ -132,7 +133,7 @@ class Random extends Command {
 
 				let reqDiscordMessage = await discordChannel.messages.fetch(msgIdStripped);
 
-				let messageReaction = reqDiscordMessage.reactions.cache.get(reactionIdStripped);
+				let messageReaction = reqDiscordMessage.reactions.cache.get(reactionIdStripped)!;
 
 				if (messageReaction == null) {
 					await message.channel.send(Command.error([[ 'Random', 'Unable to find reaction (emoji) ID in message.' ]]));
@@ -144,37 +145,43 @@ class Random extends Command {
 					return Promise.resolve();
 				}
 
-				if (messageReaction.count == messageReaction.users.cache.size) {
-					// Use cache if we already have it filled.
+				await outputRandom();
 
-					let randomUserId = messageReaction.users.cache.random();
+				async function outputRandom() {
+					// TODO: Verify user is still in guild before sending message.
 
-					if (randomUserId != null) {
-						await message.channel.send(Command.success([
-							[
-								'Random',
-								'Randomly picked <@' + randomUserId + '>'
-							]
-						]));
+					if (messageReaction.count == messageReaction.users.cache.size) {
+						// Use cache if we already have it filled.
+
+						let randomUser = messageReaction.users.cache.random();
+
+						if (randomUser != null) {
+							await message.channel.send(Command.success([
+								[
+									'Random',
+									`Randomly picked ${randomUser.toString()} (${randomUser.tag})`
+								]
+							]));
+						} else {
+							await message.channel.send(Command.error([[ 'Random', 'Unable to grab member.' ]]));
+						}
 					} else {
-						await message.channel.send(Command.error([[ 'Random', 'Unable to grab member.' ]]));
-					}
-				} else {
-					// Fetch all the users if cache wasn't filled.
+						// Fetch all the users if cache wasn't filled.
 
-					let userCollection = await messageReaction.users.fetch();
+						let userCollection = await messageReaction.users.fetch();
 
-					let randomUserId = userCollection.random();
+						let randomUser = userCollection.random();
 
-					if (randomUserId != null) {
-						await message.channel.send(Command.success([
-							[
-								'Random',
-								'Randomly picked <@' + randomUserId + '>'
-							]
-						]));
-					} else {
-						await message.channel.send(Command.error([[ 'Random', 'Unable to grab member.' ]]));
+						if (randomUser != null) {
+							await message.channel.send(Command.success([
+								[
+									'Random',
+									`Randomly picked ${randomUser.toString()} (${randomUser.tag})`
+								]
+							]));
+						} else {
+							await message.channel.send(Command.error([[ 'Random', 'Unable to grab member.' ]]));
+						}
 					}
 				}
 			}

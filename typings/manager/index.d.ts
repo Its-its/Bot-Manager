@@ -699,10 +699,6 @@ declare namespace DiscordBot {
 		type: 'ban';
 	}
 
-	interface Channels {
-		admin?: string;
-	}
-
 	interface Leveling {
 		roles: {
 			id: string;

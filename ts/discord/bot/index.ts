@@ -40,7 +40,6 @@ const EventsCmd = commandPlugin.defaultCommands.get('events')!;
 
 
 if (config.debug) mongoose.set('debug', true);
-mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true });
 
 import client = require('../client');
 
@@ -58,6 +57,8 @@ function defaultStats() {
 
 client.on('ready', asyncFnWrapper(
 	async () => {
+		await mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true });
+
 		logger.info(' - Client ID:' + client.user!.id);
 		logger.info(' - Found ' + client.guilds.cache.size + ' Guild(s).');
 

@@ -100,7 +100,6 @@ class Server extends Changes {
 	public commandPrefix?: string;
 
 
-	public channels: DiscordBot.Channels;
 	public punishments: DiscordBot.Punishments;
 
 
@@ -131,22 +130,20 @@ class Server extends Changes {
 		this.memberCount = options.memberCount;
 		this.ownerID = options.ownerID;
 
-		this.events = new Events(options.events);
-		this.alias = new Alias(this, def(options.alias, options.aliasList));
-		this.intervals = new Intervals(options.intervals);
-		this.ranks = new Ranks(options.ranks);
-		this.roles = new Roles(options.roles);
-		this.commands = new Command(this, options.commands);
-		this.phrases = new Phrases(this, options.phrases);
-		this.plugins = new Plugins(options.plugins);
-
-		this.channels = def({}, options.channels);
 		this.punishments = def({}, options.punishments);
 
 		this.migration = def(SERVER.LATEST_VERSION, options.version);
 
 		this.commandPrefix = options.commandPrefix;
 
+		this.events = new Events(options.events);
+		this.alias = new Alias(this, def(undefined, options.alias, options.aliasList));
+		this.intervals = new Intervals(options.intervals);
+		this.ranks = new Ranks(options.ranks);
+		this.roles = new Roles(options.roles);
+		this.commands = new Command(this, options.commands);
+		this.phrases = new Phrases(this, options.phrases);
+		this.plugins = new Plugins(options.plugins);
 		this.leveling = new Leveling(options.leveling);
 		this.moderation = new Moderation(options.moderation);
 		this.permissions = new Permissions(options.permissions);
@@ -214,7 +211,7 @@ class Server extends Changes {
 	}
 
 
-	public toDBPrint() {
+	public toDBPrint(): DiscordBot.ServerOptions {
 		return {
 			version: this.migration,
 			region: this.region,
@@ -248,16 +245,17 @@ class Server extends Changes {
 			commandPrefix: this.commandPrefix,
 
 			punishments: this.punishments,
-
 			aliasList: this.alias.toJSON(),
 			ranks: this.ranks.toJSON(),
 			moderation: this.moderation.toJSON(),
 			plugins: this.plugins.toJSON(),
-			intervals: this.intervals.toJSON(),
-			commands: this.commands.toJSON(),
-			phrases: this.phrases.toJSON(),
+
 			roles: this.roles.toJSON(),
-			permissions: this.permissions.toJSON()
+			permissions: this.permissions.toJSON(),
+
+			phrases: this.phrases.toJSON(),
+			commands: this.commands.toJSON(),
+			intervals: this.intervals.toJSON()
 		});
 	}
 }
