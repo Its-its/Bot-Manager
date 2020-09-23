@@ -16,7 +16,7 @@
 
 import redis = require('redis');
 
-import Command = require('../command');
+import { Command } from '@discord/bot/command';
 
 import CommandManger = require('../../../command-manager');
 

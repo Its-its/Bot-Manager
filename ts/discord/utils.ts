@@ -1,6 +1,6 @@
 import Discord = require('discord.js');
 
-import Command = require('./bot/command');
+import { Command } from '@discord/bot/command';
 
 import { Nullable } from '@type-manager';
 import utils = require('@base/discord/utils');

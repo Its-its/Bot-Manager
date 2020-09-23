@@ -1,7 +1,7 @@
 import Discord = require('discord.js');
 import { Server as DiscordServer } from '@discord/bot/GuildServer';
 
-import Command = require('@discord/bot/command');
+import { Command } from '@discord/bot/command';
 
 import utils = require('@discord/utils');
 import PERMS = require('../perms');
@@ -45,7 +45,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 			return Promise.resolve();
 		}
 
-		let fields = [
+		let fields: [string, string][] = [
 			[
 				'Music',
 				'Items In History: ' + item.song_count + '\nPage: ' + page + '/' + maxPages

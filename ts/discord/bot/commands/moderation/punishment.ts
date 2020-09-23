@@ -3,7 +3,7 @@ import { Server as DiscordServer } from '@discord/bot/GuildServer';
 
 import async = require('async');
 
-import Command = require('../../command');
+import { Command } from '@discord/bot/command';
 
 import discordClient = require('../../../client');
 import guildClient = require('../../../guildClient');

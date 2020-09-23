@@ -3,7 +3,7 @@ import { Server as DiscordServer } from '@discord/bot/GuildServer';
 
 import utils = require('../../../utils');
 
-import Command = require('../../command');
+import { Command } from '@discord/bot/command';
 
 const maxBulkDeleteTime = (1000 * 60 * 60 * 24 * 14);
 const MAX_PRUNE_SIZE = 100;

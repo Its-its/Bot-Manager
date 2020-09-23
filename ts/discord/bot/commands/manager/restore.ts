@@ -8,7 +8,7 @@ import { Server as DiscordServer } from '@discord/bot/GuildServer';
 
 import Backups = require('../../../models/backup');
 
-import Command = require('../../command');
+import { Command } from '@discord/bot/command';
 
 import utils = require('../../../utils');
 import { DiscordBot, Optional } from '@type-manager';

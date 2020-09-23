@@ -2,7 +2,7 @@ import Discord = require('discord.js');
 
 import { Server as DiscordServer }  from '../../GuildServer';
 
-import Command = require('../../command');
+import { Command } from '@discord/bot/command';
 
 import utils = require('../../../utils');
 

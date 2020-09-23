@@ -8,7 +8,7 @@
 import Discord = require('discord.js');
 import { Server as DiscordServer } from '@discord/bot/GuildServer';
 
-import Command = require('@discord/bot/command');
+import { Command } from '@discord/bot/command';
 
 import PERMISSIONS = require('./perms');
 import LocalCommands = require('./commands');

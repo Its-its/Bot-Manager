@@ -1,7 +1,7 @@
 import Discord = require('discord.js');
 import { Server as DiscordServer } from '@discord/bot/GuildServer';
 
-import Command = require('@discord/bot/command');
+import { Command } from '@discord/bot/command';
 
 import DiscordMembers = require('@discord/models/members');
 
@@ -161,7 +161,7 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 
 				songs = Array.isArray(songs) ? songs : [songs];
 
-				let fields = [
+				let fields: [string, string][] = [
 					[
 						'Playlist',
 						'Items: ' + item.song_count + '\nPage: ' + page + '/' + maxPages

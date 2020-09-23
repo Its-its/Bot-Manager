@@ -4,7 +4,7 @@ import { Server as DiscordServer } from '@discord/bot/GuildServer';
 
 import generate = require('nanoid/generate');
 
-import Command = require('../../command');
+import { Command } from '@discord/bot/command';
 
 import Punishments = require('../../../models/punishments');
 import TempPunishments = require('../../../models/temp_punishments');
