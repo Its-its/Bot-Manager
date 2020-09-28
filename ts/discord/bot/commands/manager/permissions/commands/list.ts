@@ -1,11 +1,16 @@
 import Discord = require('discord.js');
 import { Server as DiscordServer } from '@discord/bot/GuildServer';
 
-import { Command } from '@discord/bot/command';
+import { Command, Parser, CompiledParam } from '@discord/bot/command';
 import GlobalCommands = require('../../../index');
 
 import PERMISSIONS = require('../perms');
 import { DiscordBot } from '@type-manager';
+
+async function newCall(this: Parser, params: CompiledParam[], userOptions: DiscordServer, message: Discord.Message) {
+	//
+}
+
 
 async function call(params: string[], server: DiscordServer, message: Discord.Message) {
 	if (!server.userHasPerm(message.member!, PERMISSIONS.LIST)) return Command.noPermsMessage('Perms');
@@ -67,5 +72,6 @@ async function call(params: string[], server: DiscordServer, message: Discord.Me
 }
 
 export {
-	call
+	call,
+	newCall
 };

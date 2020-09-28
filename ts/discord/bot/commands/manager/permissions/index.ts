@@ -8,10 +8,41 @@
 import Discord = require('discord.js');
 import { Server as DiscordServer } from '@discord/bot/GuildServer';
 
-import { Command } from '@discord/bot/command';
+import { Command, Parser, Param } from '@discord/bot/command';
 
 import PERMISSIONS = require('./perms');
 import LocalCommands = require('./commands');
+
+
+const PARSER = new Parser(
+	['perms', 'perm', 'permissions', 'permission'],
+	[
+		{
+			name: 'help',
+			defaultParameter: true,
+			guildPermsRequired: ['SEND_MESSAGES'],
+			callFunction: (_0, _1, message) => message.channel.send('help!')
+		},
+		{
+			name: 'list',
+			guildPermsRequired: ['SEND_MESSAGES'],
+			callFunction: LocalCommands.list.newCall,
+			params: [
+				{
+					name: 'command/group/@channel/@role',
+					transformValue: v => (v == 'command' || v == 'group') ? v : parseInt(v),
+					canPassValue: v => v == 'command' || v == 'group' || !isNaN(<number>v),
+					errorMsgPassValue: 'Argument isn\'t "command", "group" or number'
+				},
+				{
+					defaultValue: null,
+					name: 'command name/group id',
+					canPassValue: v => true
+				}
+			]
+		}
+	]
+);
 
 class Perms extends Command {
 	constructor() {

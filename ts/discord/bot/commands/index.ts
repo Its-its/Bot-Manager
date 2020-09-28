@@ -25,6 +25,8 @@ import Discord = require('discord.js');
 import { Server } from '@discord/bot/GuildServer';
 import { Nullable, DiscordBot } from '@type-manager';
 
+import utils = require('../../utils');
+
 
 let categoryCommands: { [category: string]: Command[] } = {};
 let defaultCommands: Command[] = [];
@@ -80,7 +82,20 @@ async function parseMessage(message: string, server: Server, defaultMessage: Dis
 
 			console.log('[DefComm]: ' + message);
 
-			return command.call(CommandManger.fix(parts), server, defaultMessage);
+			if (command.parser != null) {
+				// Remove await. Respond with error message in channel.
+				let [evaluation, error] = await utils.asyncCatch(command.parser.evaluate(CommandManger.fix(parts)));
+
+				if (error != null) {
+					await defaultMessage.channel.send(error);
+				} else if (evaluation != null) {
+					await evaluation.call(server, defaultMessage);
+				}
+
+				return Promise.resolve(null);
+			} else {
+				return command.call(CommandManger.fix(parts), server, defaultMessage);
+			}
 		}
 	}
 

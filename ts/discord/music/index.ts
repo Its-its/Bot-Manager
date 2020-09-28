@@ -1,3 +1,4 @@
+/* eslint-disable no-inner-declarations */
 console.log('DISCORD: MUSIC');
 
 import { CustomDocs, DiscordBot } from '@type-manager';
@@ -48,7 +49,7 @@ function shardListener() {
 
 			switch(msg._event) {
 				case 'join': {
-					let [_, err] = await utils.asyncCatch(joinVoiceChannel(guild_id, channel_id));
+					let err = await utils.asyncCatchError(joinVoiceChannel(guild_id, channel_id));
 
 					if (err) {
 						console.error(err);
@@ -62,7 +63,7 @@ function shardListener() {
 				}
 
 				case 'leave': {
-					let [_, err] = await utils.asyncCatch(leaveVoiceChannel(guild_id));
+					let err = await utils.asyncCatchError(leaveVoiceChannel(guild_id));
 
 					if (err) {
 						console.error(err);
@@ -77,7 +78,7 @@ function shardListener() {
 
 				case 'search': break;
 				case 'stop': {
-					let [_, err] = await utils.asyncCatch(stop(guild_id, undefined));
+					let err = await utils.asyncCatchError(stop(guild_id, undefined));
 
 					if (err == null) {
 						await send(utils.successMsg([['Music', 'Stopped Playing Song.']]));

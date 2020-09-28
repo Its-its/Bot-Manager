@@ -17,6 +17,8 @@ class Command {
 	public adminOnly: boolean;
 	public perms: string[] = [];
 
+	public parser: Nullable<Parser> = null;
+
 	constructor(commandName: string | string[], togglable = true, adminOnly = true) {
 		this.commandName = (typeof commandName == 'string' ? [commandName] : commandName);
 		this.togglable = (togglable == null ? true : togglable);
@@ -201,14 +203,15 @@ class Parser {
 	}
 
 	public async evaluate(strParams: string[]): Promise<Nullable<CallableParser>> {
-		const baseName = strParams.shift();
+		console.log('Eval:', strParams);
+		// const baseName = strParams.shift();
 
-		if (baseName != null && this.commandName.some(c => c == baseName!.toLowerCase())) {
-			console.log(`Matching: ${strParams}`);
+		// if (baseName != null && this.commandName.some(c => c == baseName!.toLowerCase())) {
+		// 	console.log(`Matching: ${strParams}`);
 			return this.parseSubCommands(strParams);
-		}
+		// }
 
-		return null;
+		// return null;
 	}
 
 	public async parseSubCommands(strParams: string[]): Promise<Nullable<CallableParser>> {
@@ -253,20 +256,20 @@ class Parser {
 		for(let i = 0; i < params.length; i++) {
 			const param = params[i];
 
-			parsed.push(await this.parseParameter(strParams, param));
+			parsed.push(await this.parseParameter(strParams, param, parsed));
 		}
 
 		return parsed;
 	}
 
-	public async parseParameter(strParams: string[], param: Param): Promise<CompiledParam> {
+	public async parseParameter(strParams: string[], param: Param, parsedParams: CompiledParam[]): Promise<CompiledParam> {
 		const strValue = strParams.shift();
 
 		if (strValue != null) {
 			const value = (param.transformValue ? param.transformValue(strValue) : strValue);
 
-			if (param.canPassValue && !param.canPassValue(value)) {
-				return Promise.reject(`Command parameter error for "${param.name}" ${param.errorMsgPassValue}`);
+			if (param.canPassValue && !param.canPassValue(value, parsedParams)) {
+				return Promise.reject(`Command parameter error for "${param.name}" ${param.errorMsgPassValue ? param.errorMsgPassValue : 'Cannot Pass Values...'}`);
 			}
 
 			return {
@@ -274,7 +277,7 @@ class Parser {
 				value,
 				original: strValue
 			};
-		} else if (param.defaultValue) {
+		} else if (param.defaultValue !== undefined) {
 			return {
 				param,
 				value: param.defaultValue,
@@ -303,6 +306,9 @@ class CallableParser {
 	}
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type CallFunction = (this: Parser, params: CompiledParam[], userOptions: Server, message: Discord.Message) => Promise<any>;
+
 interface SubCommand<P = Param[]> {
 	name: string;
 
@@ -310,26 +316,28 @@ interface SubCommand<P = Param[]> {
 	params?: P;
 
 	canPassParams?: (params: CompiledParam[]) => boolean;
-	callFunction: (this: Parser, params: CompiledParam[], userOptions: Server, message: Discord.Message) => Promise<void>;
+	callFunction: CallFunction;
 
-	errorMsgPassParams: string;
+	errorMsgPassParams?: string;
 
 	// Discord
-	guildPermsRequired?: string[];
+	guildPermsRequired?: Discord.PermissionString[];
 	userPermsRequired?: string[];
 }
 
-interface Param<V = string | number> {
+type ParamValues = string | number | null;
+
+interface Param<V = ParamValues> {
 	name: string;
 
 	defaultValue?: V;
 	transformValue?: (v: string) => V;
-	canPassValue?: (v: V) => boolean;
+	canPassValue?: (v: V, parsed: CompiledParam[]) => boolean;
 
-	errorMsgPassValue: string;
+	errorMsgPassValue?: string;
 }
 
-interface CompiledParam<P = Param, V = string | number> {
+interface CompiledParam<P = Param, V = ParamValues> {
 	param: P;
 	value: V;
 	original?: string;
@@ -343,5 +351,7 @@ export {
 
 	SubCommand,
 	Param,
-	CompiledParam
+	CallFunction,
+	CompiledParam,
+	ParamValues
 };
