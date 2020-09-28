@@ -16,7 +16,8 @@ const clients = [
 	'bot',
 	'games',
 	'interval',
-	'music'
+	'music',
+	'recording'
 ];
 
 let manager: ShardingManager;

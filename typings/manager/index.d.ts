@@ -381,6 +381,12 @@ declare namespace CustomDocs {
 
 declare namespace DiscordBot {
 	namespace plugins {
+		interface RecordingOptions {
+			lastVoiceChannelId: string;
+			lastTextChannelId?: string;
+		}
+
+
 		export class Music {
 			guildId: string;
 

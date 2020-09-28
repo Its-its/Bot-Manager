@@ -9,6 +9,7 @@
 		"discord_games": "nodemon src/discord --delay 3 --watch src -- --client games",
 		"discord_master": "nodemon src/discord/master --delay 3 --watch src",
 		"discord_music": "nodemon src/discord --delay 3 --watch src -- --client music",
+		"discord_recording": "nodemon src/discord --delay 3 --watch src -- --client recording",
 		"website": "nodemon src/site --delay 3 --watch src",
 		"grabber": "nodemon src/rssgrabber --delay 3 --watch src"
 	},
