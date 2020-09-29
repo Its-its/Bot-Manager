@@ -1,5 +1,3 @@
-// Ability to record audio of people in channel.
-
 // Donor perk? Ability to have a mp3/video/transcript of what was recorded in the channel.
 
 console.log('DISCORD: RECORDING');
@@ -81,7 +79,7 @@ class GuildStream {
 	}
 
 	public selfdestruct() {
-		console.log('Destructing...');
+		console.log(`Destructing ${this.channel.guild.name} (${this.channel.name})`);
 
 		Object.values(this.members)
 		.forEach(m => m.stream.destroy());
@@ -251,7 +249,7 @@ function getOrCreateRecordingStream(guild_id: string, channel: Discord.VoiceChan
 	return guild;
 }
 
-function createRecordingStream(startTime: number, connection: Discord.VoiceConnection, member: Discord.GuildMember, channel: Discord.VoiceChannel): Readable {
+function createRecordingStream(startTime: number, connection: Discord.VoiceConnection, member: Discord.GuildMember, channel: Discord.VoiceChannel) {
 	console.log('Recording ' + member.displayName + ' (' + member.id + ')');
 
 	let guild = getRecording(connection.channel.guild.id);
@@ -263,8 +261,6 @@ function createRecordingStream(startTime: number, connection: Discord.VoiceConne
 	let stream = connection.receiver.createStream(member.id, { mode: 'pcm', end: 'manual' });
 
 	guild.createMember(member.id, channel.id, startTime, stream);
-
-	return stream;
 }
 
 function removeRecordingStreamForMember(guild_id: string, member_id: string) {
@@ -306,6 +302,8 @@ function initConnection(connection: Discord.VoiceConnection) {
 	const now = Date.now();
 
 	const guild = getOrCreateRecordingStream(connection.channel.guild.id, connection.channel);
+
+	// TODO: Connection Listeners are not listening...
 
 	// TODO: Figure out a 1 sec delay.
 	// When you stop speaking it can toggle off, on, off again. Each toggle around ~100ms
