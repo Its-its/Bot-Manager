@@ -134,7 +134,7 @@ class GuildStream {
 		// Check 'self' first.
 
 		if (oldState.selfMute != newState.selfMute) {
-			newState.serverMute ? this.memberSelfMute(newState.member) : this.memberUnMute(newState.member);
+			newState.selfMute ? this.memberSelfMute(newState.member) : this.memberUnMute(newState.member);
 		} else if (oldState.serverMute != newState.serverMute) {
 			newState.serverMute ? this.memberServerMute(newState.member) : this.memberUnMute(newState.member);
 		}
@@ -399,6 +399,11 @@ client.on('voiceStateUpdate', utils.asyncFnWrapper(async (oldMember, newMember) 
 	if (recording != null && client.voice != null) {
 		const connection = client.voice.connections.get(newMember.guild.id);
 
+		// Neither in the recording channel.
+		if ((newMember.channel == null || recording.channel.id != newMember.channel.id) &&
+			(oldMember.channel == null || recording.channel.id != oldMember.channel.id)
+		) return;
+
 		// Member update in channel.
 		if (newMember.channel != null &&
 			oldMember.channel != null &&
@@ -482,7 +487,7 @@ async function shouldLeaveChannel(channel: Discord.VoiceChannel) {
 
 	console.log('I should leave the channel now..');
 
-	// await leaveVoiceChannel(channel.guild.id);
+	await leaveVoiceChannel(channel.guild.id);
 
 	return true;
 }
