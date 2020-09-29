@@ -34,7 +34,7 @@ if (client.shard != null && client.shard.count != 0) {
 
 const RECORDING_DIRECTORY = path.join(__dirname, '../../../app/recordings');
 
-fs.mkdir(RECORDING_DIRECTORY, err => err && console.error(err));
+fs.stat(RECORDING_DIRECTORY, err => err != null && fs.mkdir(RECORDING_DIRECTORY, err => err && console.error(err)));
 
 const active_streams: { [guild_id: string]: GuildStream } = {};
 
@@ -81,6 +81,8 @@ class GuildStream {
 	}
 
 	public selfdestruct() {
+		console.log('Destructing...');
+
 		Object.values(this.members)
 		.forEach(m => m.stream.destroy());
 
@@ -392,7 +394,16 @@ let UPDATE_TYPES: UpdateTypes[] = ['deaf', 'mute', 'selfDeaf', 'selfMute', 'self
 
 client.on('voiceStateUpdate', utils.asyncFnWrapper(async (oldMember, newMember) => {
 	if (newMember.member == null) return;
-	if (newMember.member.user.bot) return;
+	if (newMember.member.user.bot) {
+		let recording = getRecording(newMember.guild.id);
+
+		if (recording != null && newMember.channelID != oldMember.channelID && newMember.channelID != recording.channel.id) {
+			// No longer in channel.
+			removeRecordingStream(newMember.guild.id);
+		}
+
+		return;
+	}
 
 	let recording = getRecording(newMember.guild.id);
 
