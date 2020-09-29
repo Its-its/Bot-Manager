@@ -32,6 +32,12 @@ if (client.shard != null && client.shard.count != 0) {
 	shardListener();
 }
 
+const RECORDING_DIRECTORY = path.join(__dirname, '../../../app/recordings');
+
+fs.mkdir(RECORDING_DIRECTORY, err => err && console.error(err));
+
+const active_streams: { [guild_id: string]: GuildStream } = {};
+
 
 interface MemberStream {
 	started_at: number;
@@ -55,26 +61,72 @@ class GuildStream {
 
 		this.infoFile = fs.createWriteStream(path.join(directory, 'member-states.txt'), 'utf-8');
 
+		// Started At
 		this.infoFile.write(`${this.started_at}\n`);
 		this.infoFile.write('\n');
+
+		// Guild Info
 		this.infoFile.write(`${channel.guild.id}\n`);
 		this.infoFile.write(`${channel.guild.name}\n`);
 		this.infoFile.write(`${channel.guild.region}\n`);
 		this.infoFile.write(`${channel.guild.memberCount}\n`);
 		this.infoFile.write('\n');
+
+		// Channel Info
+		this.infoFile.write(`${channel.id}\n`);
 		this.infoFile.write(`${channel.name}\n`);
 		this.infoFile.write(`${channel.userLimit}\n`);
 		this.infoFile.write(`${channel.bitrate}\n`);
 		this.infoFile.write('\n');
 	}
 
-	public destroy() {
+	public selfdestruct() {
 		Object.values(this.members)
 		.forEach(m => m.stream.destroy());
 
 		this.infoFile.destroy();
 		this.infoFile.close();
 	}
+
+	// Member Functions
+	public createMember(member_id: string, channel_id: string, started_at: number, stream: Readable) {
+		const fileName = `${channel_id}-${member_id}-${started_at}.pcm`;
+
+		this.infoFile.write(`user-file ${fileName}\n`);
+
+		stream.pipe(fs.createWriteStream(path.join(this.directory, fileName), { encoding: 'binary' }));
+
+		if (this.hasMember(member_id)) {
+			console.log(`Somehow didn't remove member (${member_id}) before re-creating it.`);
+			this.removeMember(member_id);
+		}
+
+
+		this.members[member_id] = {
+			channel_id,
+			stream,
+			started_at
+		};
+	}
+
+	public removeMember(member_id: string) {
+		if (this.hasMember(member_id)) {
+			this.members[member_id].stream.destroy();
+
+			delete this.members[member_id];
+
+			return true;
+		}
+
+		return false;
+	}
+
+	public hasMember(member_id: string) {
+		return this.members[member_id] != null;
+	}
+
+
+	// Member Updates
 
 	public memberStateUpdate(oldState: Discord.VoiceState, newState: Discord.VoiceState) {
 		if (newState.member == null) return;
@@ -169,20 +221,19 @@ class GuildStream {
 	}
 
 	public write(member: Discord.GuildMember, value: string) {
-		console.log(value);
+		console.log(`[${new Date().toLocaleTimeString()}]: ${value}`);
 
 		this.infoFile.write(`${this.prefixData(member)}: ${value}\n`);
 	}
 
-	// TIME   DISC ID      Nick Name       name#dis :
-	// 12345 010101010 "[Admin] #DJ Its_" "Its#0001":
+	// SINCE  DISC ID      Nick Name       name#dis : reason
+	// 12345 010101010 "[Admin] #DJ Its_" "Its#0001": joined
 	public prefixData(member: Discord.GuildMember) {
 		return `${Date.now() - this.started_at} ${member.id} "${member.nickname}" "${member.user.username}#${member.user.discriminator}"`;
 	}
 }
 
 
-const active_streams: { [guild_id: string]: GuildStream } = {};
 
 function getRecording(guild_id: string): Nullable<GuildStream> {
 	return active_streams[guild_id];
@@ -192,29 +243,24 @@ function getOrCreateRecordingStream(guild_id: string, channel: Discord.VoiceChan
 	let guild = getRecording(guild_id);
 
 	if (guild == null) {
-		guild = active_streams[guild_id] = new GuildStream(path.join(__dirname, '../../../tests/recording'), channel);
+		guild = active_streams[guild_id] = new GuildStream(RECORDING_DIRECTORY, channel);
 	}
 
 	return guild;
 }
 
 function createRecordingStream(startTime: number, connection: Discord.VoiceConnection, member: Discord.GuildMember, channel: Discord.VoiceChannel): Readable {
-	console.log('Starting recording for ' + member.id);
+	console.log('Recording ' + member.displayName + ' (' + member.id + ')');
 
 	let guild = getRecording(connection.channel.guild.id);
 
 	if (guild == null) {
-		guild = active_streams[connection.channel.guild.id] = new GuildStream(path.join(__dirname, '../../../tests/recording'), channel);
+		guild = active_streams[connection.channel.guild.id] = new GuildStream(RECORDING_DIRECTORY, channel);
 	}
 
-	const stream = connection.receiver.createStream(member.id, { mode: 'pcm', end: 'manual' });
-	stream.pipe(fs.createWriteStream(path.join(guild.directory, `${startTime}-${channel.id}-${member.id}.pcm`), { encoding: 'binary' }));
+	let stream = connection.receiver.createStream(member.id, { mode: 'pcm', end: 'manual' });
 
-	guild.members[member.id] = {
-		started_at: startTime,
-		channel_id: channel.id,
-		stream
-	};
+	guild.createMember(member.id, channel.id, startTime, stream);
 
 	return stream;
 }
@@ -223,9 +269,8 @@ function removeRecordingStreamForMember(guild_id: string, member_id: string) {
 	let guild_stream = getRecording(guild_id);
 
 	if (guild_stream != null) {
-		console.log('Stopping recording for ' + member_id);
-		guild_stream.members[member_id].stream.destroy();
-		delete guild_stream.members[member_id];
+		console.log('Stopping Recording ' + member_id);
+		guild_stream.removeMember(member_id);
 
 	}
 }
@@ -235,7 +280,7 @@ function removeRecordingStream(guild_id: string) {
 
 	// Delete Guild Stream if no one is being recorded anymore.
 	if (guild_stream != null && Object.values(guild_stream.members).length == 0) {
-		guild_stream.destroy();
+		guild_stream.selfdestruct();
 		delete active_streams[guild_id];
 
 		return true;
@@ -246,7 +291,7 @@ function removeRecordingStream(guild_id: string) {
 
 function isRecordingStream(guild_id: string, member_id: string) {
 	let guild = getRecording(guild_id);
-	return guild != null && guild.members[member_id] != null;
+	return guild != null && guild.hasMember(member_id);
 }
 
 function isRecording(guild_id: string) {
@@ -254,6 +299,8 @@ function isRecording(guild_id: string) {
 }
 
 function initConnection(connection: Discord.VoiceConnection) {
+	console.log('initConnection');
+
 	const now = Date.now();
 
 	const guild = getOrCreateRecordingStream(connection.channel.guild.id, connection.channel);
@@ -262,9 +309,7 @@ function initConnection(connection: Discord.VoiceConnection) {
 	// When you stop speaking it can toggle off, on, off again. Each toggle around ~100ms
 	connection.on('speaking', (user, speaking) => {
 		connection.channel.guild.members.fetch(user.id)
-		.then(member => {
-			guild.memberTalking(member, speaking.bitfield == 1)
-		})
+		.then(member => guild.memberTalking(member, speaking.bitfield == 1))
 		.catch(console.error);
 	});
 
@@ -309,7 +354,7 @@ function shardListener() {
 
 			switch(msg._event) {
 				case 'start': {
-					const connection = await joinVoiceChannel(guild_id, channel_id);
+					let connection = await joinVoiceChannel(guild_id, channel_id);
 
 					initConnection(connection);
 
@@ -437,13 +482,15 @@ async function shouldLeaveChannel(channel: Discord.VoiceChannel) {
 
 	console.log('I should leave the channel now..');
 
-	await leaveVoiceChannel(channel.guild.id);
+	// await leaveVoiceChannel(channel.guild.id);
 
 	return true;
 }
 
-client.login(config.bot.discord.token)
-.catch(console.error);
+setTimeout(() => {
+	client.login(config.bot.discord.token)
+	.catch(console.error);
+}, 1500);
 
 // INTERNAL
 

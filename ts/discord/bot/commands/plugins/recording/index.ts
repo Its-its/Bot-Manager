@@ -34,7 +34,7 @@ const PARSER = new Parser(
 
 class Recording extends Command {
 	constructor() {
-		super('recording');
+		super('recording', true, true);
 
 		this.perms = Object.values(PERMS);
 		this.description = 'Used to manage recordings in voice channels.';
