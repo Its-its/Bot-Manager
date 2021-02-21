@@ -12,8 +12,10 @@ import Options = require('./options');
 
 import RSSFeed = require('./rssfeed');
 import TwitterFeed = require('./twitter');
+import List = require('./list');
 
 export = [
+	List,
 	Options,
 	Plugin,
 	// Rank,
