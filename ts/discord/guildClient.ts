@@ -20,7 +20,7 @@ const redisGuildsClient = redis.createClient({ host: config.redis.address, port:
 const redisMusic = redis.createClient({ host: config.redis.address, port: config.redis.port, db: config.redis.musicDB });
 
 
-async function putInCache(serverId: string, server: DiscordServer) {
+async function putInCache(serverId: string, server: DiscordServer): Promise<void> {
 	return new Promise((resolve, reject) => {
 		redisGuildsClient.set(serverId, JSON.stringify(server), (err, ok) => {
 			if (err != null) return reject(err);

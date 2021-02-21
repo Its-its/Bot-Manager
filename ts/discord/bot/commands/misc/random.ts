@@ -5,6 +5,7 @@ import { Server as DiscordServer }  from '../../GuildServer';
 import { Command } from '@discord/bot/command';
 
 import utils = require('../../../utils');
+import { Optional } from '@type-manager';
 
 
 const PERMS = {
@@ -157,41 +158,56 @@ class Random extends Command {
 }
 
 async function outputRandom(messageReaction: Discord.MessageReaction, message: Discord.Message) {
+	let sent_message = await message.channel.send(Command.success([
+		[
+			'Random',
+			`Grabbing the list of users whom reacted to this.\nThis will take at least ${Math.floor((messageReaction.count!/100)/2)} second(s)`
+		]
+	]));
+
 	// TODO: Verify user is still in guild before sending message.
 
-	if (messageReaction.count == messageReaction.users.cache.size) {
-		// Use cache if we already have it filled.
+	let userCollection = await fetchAllUsers(messageReaction);
 
-		let randomUser = messageReaction.users.cache.random();
+	let randomUser = userCollection.random();
 
-		if (randomUser != null) {
-			await message.channel.send(Command.success([
-				[
-					'Random',
-					`Randomly picked ${randomUser.toString()} (${randomUser.tag})`
-				]
-			]));
-		} else {
-			await message.channel.send(Command.error([[ 'Random', 'Unable to grab member.' ]]));
-		}
+	if (randomUser != null) {
+		await sent_message.edit(Command.success([
+			[
+				'Random',
+				`Randomly picked ${randomUser.toString()} (${randomUser.tag})\nRan Against ${userCollection.size}/${messageReaction.count} u/r`
+			]
+		]));
 	} else {
-		// Fetch all the users if cache wasn't filled.
-
-		let userCollection = await messageReaction.users.fetch();
-
-		let randomUser = userCollection.random();
-
-		if (randomUser != null) {
-			await message.channel.send(Command.success([
-				[
-					'Random',
-					`Randomly picked ${randomUser.toString()} (${randomUser.tag})`
-				]
-			]));
-		} else {
-			await message.channel.send(Command.error([[ 'Random', 'Unable to grab member.' ]]));
-		}
+		await sent_message.edit(Command.error([[ 'Random', 'Unable to grab member.' ]]));
 	}
+}
+
+async function fetchAllUsers(messageReaction: Discord.MessageReaction): Promise<Discord.Collection<string, Discord.User>> {
+	await utils.asyncTimeout(250);
+
+	let users = await messageReaction.users.fetch({ limit: 100 });
+	let lastId: Optional<string> = undefined;
+
+	for(;;) {
+		await utils.asyncTimeout(500);
+
+		let userColl = await messageReaction.users.fetch({
+			limit: 100,
+			after: lastId
+		});
+
+		users = users.concat(userColl);
+
+		if (userColl.size != 100) {
+			break;
+		}
+
+		lastId = users.lastKey();
+	}
+
+
+	return users;
 }
 
 function random(min: number, max: number) {

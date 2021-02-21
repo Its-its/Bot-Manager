@@ -3,7 +3,7 @@ import { Server as DiscordServer } from '@discord/bot/GuildServer';
 
 import { Command } from '@discord/bot/command';
 import utils = require('@discord/utils');
-import { Nullable } from '@type-manager';
+import { Nullable, Optional } from '@type-manager';
 
 const PERMS = {
 	MAIN: 'commands.list',
@@ -84,20 +84,19 @@ class Message extends Command {
 
 
 async function outputReactionList(messageReaction: Discord.MessageReaction, message: Discord.Message) {
-	let users: Discord.Collection<string, Discord.User>;
-
-	if (messageReaction.count == messageReaction.users.cache.size) {
-		// Use cache if we already have it filled.
-		users = messageReaction.users.cache;
-	} else {
-		// Fetch all the users if cache wasn't filled.
-		users = await messageReaction.users.fetch();
-	}
-
-	await message.channel.send(Command.success([
+	let sent_message = await message.channel.send(Command.success([
 		[
 			'List Reactions',
-			`Reaction: ${messageReaction.emoji.name}\nFound: ${users.size}`
+			`Grabbing the list of users whom reacted to this.\nThis will take at least ${Math.floor(messageReaction.count!/100)} second(s)`
+		]
+	]));
+
+	let users = await fetchAllUsers(messageReaction);
+
+	await sent_message.edit(Command.success([
+		[
+			'List Reactions',
+			`Reaction: ${messageReaction.emoji.name}\nFound: ${users.length}/${messageReaction.count}\n:arrow_down: Outputting Below :arrow_down:`
 		]
 	]));
 
@@ -106,10 +105,45 @@ async function outputReactionList(messageReaction: Discord.MessageReaction, mess
 	for (const user of users.values()) {
 		messageCache += `${user.tag} (${user.toString()})\n`;
 
-		await message.channel.send(messageCache);
+		if (messageCache.length >= 1850) {
+			await message.channel.send(messageCache);
+			messageCache = '';
 
-		messageCache = '';
+			await utils.asyncTimeout(500);
+		}
 	}
+
+	await message.channel.send(Command.success([
+		[
+			'List Reactions',
+			`Completed output.`
+		]
+	]));
+}
+
+async function fetchAllUsers(messageReaction: Discord.MessageReaction): Promise<Discord.User[]> {
+	let users: Discord.User[] = [];
+	let lastId: Optional<string> = undefined;
+
+	for(;;) {
+		let userColl = await messageReaction.users.fetch({
+			limit: 100,
+			after: lastId
+		});
+
+		userColl.forEach(u => users.push(u));
+
+		if (userColl.size != 100) {
+			break;
+		}
+
+		lastId = users[users.length - 1].id;
+
+		await utils.asyncTimeout(500);
+	}
+
+
+	return users;
 }
 
 export = Message;

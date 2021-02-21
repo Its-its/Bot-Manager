@@ -378,7 +378,7 @@ async function joinVoiceChannel(guildId: string, channelId: string) {
 	return Promise.resolve();
 }
 
-async function leaveVoiceChannel(guildId: string) {
+async function leaveVoiceChannel(guildId: string): Promise<void> {
 	return new Promise((resolve, reject) => {
 		let connection = client.voice!.connections.get(guildId);
 
@@ -602,7 +602,7 @@ async function stopPlaying(guildId: string) {
 	return Promise.resolve();
 }
 
-async function stopReason(guild_id: string, reason: 'stopped' | 'next' = 'stopped') {
+async function stopReason(guild_id: string, reason: 'stopped' | 'next' = 'stopped'): Promise<void> {
 	return new Promise((resolve, reject) => {
 		let voiceConnection = client.voice!.connections.get(guild_id);
 
