@@ -35,21 +35,27 @@ class Message extends Command {
 
 		switch(usage.toLowerCase()) {
 			case 'reaction': {
-				if (!this.hasPerms(message.member!, server, PERMS.REACTION)) return Command.noPermsMessage('Random');
+				if (!this.hasPerms(message.member!, server, PERMS.REACTION)) return Command.noPermsMessage('List');
 
 				let discordChannelIdStr = params.shift()!;
 				let msgIdStripped = params.shift()!;
 				let reactionIdStripped = params.shift()!;
 
-				if (reactionIdStripped == null) return Command.error([[ 'Random', 'Invalid: random reaction <channel> <message id> <emoji id>' ]]);
+				if (reactionIdStripped == null) {
+					return Command.error([[ 'List Reaction', 'Invalid: random reaction <channel> <message id> <emoji id>' ]]);
+				}
 
 				let channelIdType = server.idType(discordChannelIdStr);
-				if (channelIdType != null && channelIdType != 'channel') return Command.error([[ 'Random', 'Channel ID is invalid. Doesn\'t exist or not a channel.' ]]);
+				if (channelIdType != null && channelIdType != 'channel') {
+					return Command.error([[ 'List Reaction', 'Channel ID is invalid. Doesn\'t exist or not a channel.' ]]);
+				}
 
 				let channelIdStripped = server.strpToId(discordChannelIdStr)!;
 
 				let discordChannel = <Discord.TextChannel>message.guild!.channels.cache.get(channelIdStripped);
-				if (discordChannel == null || discordChannel.type != 'text') return Command.error([[ 'Random', 'Message ID is invalid. Doesn\'t exist or not a text channel.' ]]);
+				if (discordChannel == null || discordChannel.type != 'text') {
+					return Command.error([[ 'List Reaction', 'Message ID is invalid. Doesn\'t exist or not a text channel.' ]]);
+				}
 
 
 				let reqDiscordMessage = await discordChannel.messages.fetch(msgIdStripped);
@@ -57,12 +63,12 @@ class Message extends Command {
 				let messageReaction = reqDiscordMessage.reactions.cache.get(reactionIdStripped);
 
 				if (messageReaction == null) {
-					await message.channel.send(Command.error([[ 'Random', 'Unable to find reaction (emoji) ID in message.' ]]));
+					await message.channel.send(Command.error([[ 'List Reaction', 'Unable to find reaction (emoji) ID in message.' ]]));
 					return Promise.resolve();
 				}
 
 				if (messageReaction.count == null || messageReaction.count == 0) {
-					await message.channel.send(Command.error([[ 'Random', 'There are no reactions affiliated with this message.' ]]));
+					await message.channel.send(Command.error([[ 'List Reaction', 'There are no reactions affiliated with this message.' ]]));
 					return Promise.resolve();
 				}
 
@@ -78,7 +84,6 @@ class Message extends Command {
 
 
 async function outputReactionList(messageReaction: Discord.MessageReaction, message: Discord.Message) {
-	// TODO: Verify user is still in guild before sending message.
 	let users: Discord.Collection<string, Discord.User>;
 
 	if (messageReaction.count == messageReaction.users.cache.size) {
