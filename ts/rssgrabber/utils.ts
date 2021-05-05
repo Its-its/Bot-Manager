@@ -14,20 +14,23 @@ import cheerio = require('cheerio');
 import { URL } from 'url';
 import { CustomDocs } from '@type-manager';
 
+import config = require('@config');
+
 const DEFAULT_RSS_FORMAT = ':newspaper:  **{title}**\n\n{link}';
 const DEFAULT_TWITTER_FORMAT = ':bird:  **{text}**\n\n{link}';
+
 
 
 
 // TWITTER
 
 const twitter = new Twit({
-	consumer_key:         'dZwMAukw0gd1U3detHh38XvK8',
-	consumer_secret:      'elh1y4iZoqUutXKA86HvfB1yX6xj6vqdAC8c9HBU6ryNxLrmVY',
-	access_token:         '358512140-4r97ewMT0IUOETldmcsEBS3ew0vrPbhKbOBBqkGt',
-	access_token_secret:  'sEk54lu8YyNtxz8IzI3lBLUXl2P4XeTQNig2JMoCOvNxm',
-	timeout_ms:           60 * 1000,
-	strictSSL:            true
+	consumer_key: config.twitter.consumer_key,
+	consumer_secret: config.twitter.consumer_secret,
+	access_token: config.twitter.access_token,
+	access_token_secret: config.twitter.access_token_secret,
+	timeout_ms: 60 * 1000,
+	strictSSL: true
 });
 
 interface TwitterFeedFix extends Document {
@@ -130,7 +133,7 @@ interface ArticleDB {
     link: string;
     sending_to: number;
     items: CustomDocs.global.RSSFeedsItem[];
-};
+}
 
 interface RSSFeedFix extends Document {
 	url: string;
@@ -199,7 +202,7 @@ async function getFeedItems(url: string, cookies: any) {
 		feedparser.on('readable', function(this: FeedParser) {
 			let item: FeedParser.Item;
 
-			while(item = this.read()) {
+			while((item = this.read()) != null) {
 				feedItems.push(item);
 			}
 		});
@@ -386,6 +389,8 @@ function compileFormat(format: string, opts: Obj) {
 
 
 export = {
+	twitter,
+
 	DEFAULT_RSS_FORMAT,
 	DEFAULT_TWITTER_FORMAT,
 	returnArticlesAfter,

@@ -9,6 +9,8 @@ import TwitterFeed = require('../models/twitterfeed');
 
 import utils = require('./utils');
 
+const twitter = utils.twitter;
+
 interface FeedFix extends mongoose.Document {
 	url: string;
 	xmlUrl: string;
@@ -30,15 +32,6 @@ interface FeedFix extends mongoose.Document {
 
 if (config.debug) mongoose.set('debug', true);
 mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true });
-
-const twitter = new Twit({
-	consumer_key:         'dZwMAukw0gd1U3detHh38XvK8',
-	consumer_secret:      'elh1y4iZoqUutXKA86HvfB1yX6xj6vqdAC8c9HBU6ryNxLrmVY',
-	access_token:         '358512140-4r97ewMT0IUOETldmcsEBS3ew0vrPbhKbOBBqkGt',
-	access_token_secret:  'sEk54lu8YyNtxz8IzI3lBLUXl2P4XeTQNig2JMoCOvNxm',
-	timeout_ms:           60 * 1000,
-	strictSSL:            true
-});
 
 const callAgain = 1000 * 60 * 10;
 
